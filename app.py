@@ -13,7 +13,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_file
 
-from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, WATERCOLOR_DEFAULTS, generate
+from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate
 from fulfillment import (
     fulfill_order_item,
     parse_order_items,
@@ -84,17 +84,8 @@ def generate_route():
     upload_path = UPLOAD_DIR / f"{uuid.uuid4()}{suffix}"
     file.save(upload_path)
 
-    # Build style_vars from WATERCOLOR_DEFAULTS keys — stays in sync automatically
-    style_vars = None
-    if style == "watercolor":
-        style_vars = {
-            k: v for k in WATERCOLOR_DEFAULTS
-            if (v := request.form.get(k.lower(), "").strip())
-        }
-
     try:
-        raw_path, comp_path = generate(str(upload_path), pet_name, style,
-                                       style_vars=style_vars)
+        raw_path, comp_path = generate(str(upload_path), pet_name, style)
         return jsonify(
             raw=f"/preview/{raw_path.name}",
             composited=f"/preview/{comp_path.name}",

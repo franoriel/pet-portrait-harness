@@ -115,33 +115,36 @@ COMPOSITION:
 """
 
 _WATERCOLOR_TEMPLATE = """\
-A {BREED} with {EYE_COLOR} eyes and {FUR_COLOR} coat, watercolor pet portrait, \
-loose expressive brushwork, soft wet-on-wet color washes in {COLOR_PALETTE} tones, \
-white paper background with natural watercolor bleed edges, painterly fur texture \
-with subtle fine ink linework on facial features, warm soft lighting, no harsh shadows, \
-centered portrait composition, 4:5 aspect ratio (portrait orientation), \
-slight natural vignette, fine art illustration style, high resolution 300dpi, print-ready. \
-Watercolor style, wet-on-wet wash, loose brushwork, ink linework, white paper background, \
-bleed edges, painterly, fine art, pet portrait, Etsy art style. \
-The bottom 20%% of the image must be left as lightly tinted white wash — \
-completely free of the animal — reserved for a name label. \
-Do NOT include any text, words, letters, watermarks, or signatures anywhere.
+Transform this photo into a watercolor pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
+must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
+- Match the animal's actual eye color from the photo.
+- The color palette of the painting should complement the pet's real coat color, \
+not override it.
+
+STYLE:
+- Loose expressive brushwork, soft wet-on-wet color washes
+- White paper background with natural watercolor bleed edges
+- Painterly fur texture with subtle fine ink linework on facial features
+- Warm soft lighting, no harsh shadows
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Slight natural vignette
+- The bottom 20%% of the image must be left as lightly tinted white wash — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
 blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border.\
 """
 
-WATERCOLOR_DEFAULTS: dict[str, str] = {
-    "BREED":         "dog",
-    "EYE_COLOR":     "warm brown",
-    "FUR_COLOR":     "golden",
-    "COLOR_PALETTE": "warm amber and honey",
-}
-
-
-def build_watercolor_prompt(style_vars: Optional[dict]) -> str:
-    merged = {**WATERCOLOR_DEFAULTS, **(style_vars or {})}
-    return _WATERCOLOR_TEMPLATE.format(**merged)
+def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
+    return _WATERCOLOR_TEMPLATE
 
 
 def _static(text: str) -> Callable[[Optional[dict]], str]:
