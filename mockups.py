@@ -194,7 +194,7 @@ def create_mockup_task(
     )
     if not resp.ok:
         log.error(f"Mockup task creation failed ({resp.status_code}): {resp.text}")
-    resp.raise_for_status()
+        raise RuntimeError(f"Printful API {resp.status_code}: {resp.text[:500]}")
     data = resp.json()
 
     task_id = data.get("data", {}).get("id") or data.get("id")
