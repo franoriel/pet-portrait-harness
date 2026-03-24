@@ -173,7 +173,6 @@ def create_mockup_task(
                 "placements": [
                     {
                         "placement": "default",
-                        "technique": "dtg",  # direct-to-garment / print
                         "layers": [
                             {
                                 "type": "file",
@@ -185,6 +184,7 @@ def create_mockup_task(
             }
         ],
     }
+    log.info(f"Mockup task payload: {payload}")
 
     resp = requests.post(
         f"{PRINTFUL_API}/mockup-tasks",
@@ -192,6 +192,8 @@ def create_mockup_task(
         headers=_headers(),
         timeout=30,
     )
+    if not resp.ok:
+        log.error(f"Mockup task creation failed ({resp.status_code}): {resp.text}")
     resp.raise_for_status()
     data = resp.json()
 
