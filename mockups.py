@@ -90,17 +90,30 @@ CATALOG_PRODUCTS = {
     "poster": 1,    # Enhanced matte poster
 }
 
-# Map our variant labels to Printful size labels
-# These get matched against what Printful returns from the catalog API
+# Printful uses unicode: 10″×10″ (U+2033 double prime, U+00D7 multiplication sign)
+# Map our variant labels to Printful's exact size labels
 VARIANT_SIZE_MAP = {
     "canvas": {
-        "10x10": "10×10″",
-        "10x20": "10×20″",
-        "12x18": "12×18″",
-        "12x24": "12×24″",
+        "10x10": '10\u2033\u00d710\u2033',
+        "10x20": '10\u2033\u00d720\u2033',
+        "12x18": '12\u2033\u00d718\u2033',
+        "12x24": '12\u2033\u00d724\u2033',
     },
     "poster": {
-        "default": None,  # single variant, use first available
+        "default": None,  # single variant poster, use first available
+    },
+}
+
+# Direct hardcoded variant IDs as fallback (from Printful catalog)
+VARIANT_ID_FALLBACK = {
+    "canvas": {
+        "10x10": 19296,
+        "10x20": 19297,
+        "12x18": 19299,
+        "12x24": 19300,
+    },
+    "poster": {
+        "default": 3876,  # 12″×18″ poster
     },
 }
 
@@ -111,28 +124,29 @@ def _resolve_variant_ids(product_type: str) -> dict[str, int]:
     if not catalog_id:
         raise ValueError(f"Unknown product type: {product_type}")
 
-    all_variants = get_catalog_variants(catalog_id)
     size_map = VARIANT_SIZE_MAP.get(product_type, {})
-    resolved = {}
+    fallback = VARIANT_ID_FALLBACK.get(product_type, {})
 
+    # Try API lookup first
+    try:
+        all_variants = get_catalog_variants(catalog_id)
+    except Exception as e:
+        log.warning(f"Catalog lookup failed, using fallback IDs: {e}")
+        all_variants = {}
+
+    resolved = {}
     for our_label, printful_label in size_map.items():
         if printful_label is None:
-            # Use first available variant
+            # Use first available variant or fallback
             if all_variants:
                 first_key = next(iter(all_variants))
                 resolved[our_label] = all_variants[first_key]
-        else:
-            # Try exact match first, then fuzzy
-            if printful_label in all_variants:
-                resolved[our_label] = all_variants[printful_label]
-            else:
-                # Fuzzy: match by digits (e.g. "10" and "10" in "10×10″")
-                for pf_size, pf_vid in all_variants.items():
-                    # Extract just the numbers for comparison
-                    our_nums = our_label.replace("x", "×")
-                    if our_nums in pf_size or our_label in pf_size.lower().replace("″", "").replace("\"", ""):
-                        resolved[our_label] = pf_vid
-                        break
+            elif our_label in fallback:
+                resolved[our_label] = fallback[our_label]
+        elif printful_label in all_variants:
+            resolved[our_label] = all_variants[printful_label]
+        elif our_label in fallback:
+            resolved[our_label] = fallback[our_label]
 
     log.info(f"Resolved variant IDs for {product_type}: {resolved}")
     return resolved
