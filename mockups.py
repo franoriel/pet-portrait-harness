@@ -223,11 +223,12 @@ def poll_mockup_result(task_id: str, timeout: int = 60, interval: int = 3) -> di
             timeout=15,
         )
         resp.raise_for_status()
-        data = resp.json().get("data", resp.json())
+        raw_json = resp.json()
+        data = raw_json.get("data", raw_json)
 
-        status = data.get("status", "")
+        status = data.get("status", "") if isinstance(data, dict) else ""
         if status == "completed":
-            log.info(f"Mockup task {task_id} completed")
+            log.info(f"Mockup task {task_id} completed. Keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
             return data
         elif status == "failed":
             reasons = data.get("failure_reasons", [])
@@ -242,26 +243,47 @@ def extract_mockup_urls(result: dict) -> list[dict]:
     """Extract mockup image URLs from completed task result.
     Returns: [{ 'variant_id': int, 'url': str, 'placement': str }, ...]
     """
+    log.info(f"Extracting mockups from result keys: {list(result.keys()) if isinstance(result, dict) else type(result)}")
     mockups = []
-    for variant_mockup in result.get("catalog_variant_mockups", []):
-        variant_id = variant_mockup.get("catalog_variant_id")
-        for mockup in variant_mockup.get("mockups", []):
-            url = mockup.get("url", "")
-            placement = mockup.get("placement", "default")
-            if url:
-                mockups.append({
-                    "variant_id": variant_id,
-                    "url": url,
-                    "placement": placement,
-                })
-            # Also grab extra mockups (different angles)
-            for extra in mockup.get("extra_mockups", []):
-                if extra.get("url"):
-                    mockups.append({
-                        "variant_id": variant_id,
-                        "url": extra["url"],
-                        "placement": extra.get("placement", "extra"),
-                    })
+
+    # v2 format: catalog_variant_mockups is a list of { catalog_variant_id, mockups: [...] }
+    variant_mockups = result.get("catalog_variant_mockups", [])
+    if isinstance(variant_mockups, list):
+        for item in variant_mockups:
+            if not isinstance(item, dict):
+                continue
+            variant_id = item.get("catalog_variant_id")
+            item_mockups = item.get("mockups", [])
+            if isinstance(item_mockups, list):
+                for mockup in item_mockups:
+                    if not isinstance(mockup, dict):
+                        continue
+                    url = mockup.get("url", "")
+                    placement = mockup.get("placement", "default")
+                    if url:
+                        mockups.append({
+                            "variant_id": variant_id,
+                            "url": url,
+                            "placement": placement,
+                        })
+
+    # If nothing found, try flattened format
+    if not mockups:
+        # Some responses put mockups directly at top level
+        for key in ["mockups", "mockup_urls", "result"]:
+            items = result.get(key, [])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and item.get("url"):
+                        mockups.append({
+                            "variant_id": item.get("catalog_variant_id") or item.get("variant_id"),
+                            "url": item["url"],
+                            "placement": item.get("placement", "default"),
+                        })
+
+    if not mockups:
+        log.warning(f"No mockups extracted. Full result: {str(result)[:500]}")
+
     return mockups
 
 
