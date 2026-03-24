@@ -225,8 +225,10 @@ def poll_mockup_result(task_id: str, timeout: int = 60, interval: int = 3) -> di
     deadline = time.time() + timeout
 
     while time.time() < deadline:
+        # Printful v2 uses query param: /v2/mockup-tasks?id=XXX
         resp = requests.get(
-            f"{PRINTFUL_API}/mockup-tasks/{task_id}",
+            f"{PRINTFUL_API}/mockup-tasks",
+            params={"id": task_id},
             headers=_headers(),
             timeout=15,
         )
