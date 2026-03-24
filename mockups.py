@@ -157,47 +157,35 @@ def _resolve_variant_ids(product_type: str) -> dict[str, int]:
 # ---------------------------------------------------------------------------
 
 
-# Common mockup style IDs (from Printful catalog — "default" room scenes)
-# These were retrieved from a 400 error listing available styles for canvas variants
-MOCKUP_STYLE_IDS = {
-    "canvas": [21533],  # Wall scene
-    "poster": [21533],  # Wall scene (shared across print products)
-}
-
 
 def create_mockup_task(
     image_url: str,
     catalog_product_id: int,
     catalog_variant_ids: list[int],
-    product_type: str = "canvas",
     format: str = "jpg",
 ) -> str:
     """Create a Printful mockup generation task. Returns task ID."""
-    style_ids = MOCKUP_STYLE_IDS.get(product_type, [])
-
-    product_entry = {
-        "source": "catalog",
-        "catalog_product_id": catalog_product_id,
-        "catalog_variant_ids": catalog_variant_ids,
-        "placements": [
+    payload = {
+        "format": format,
+        "products": [
             {
-                "placement": "default",
-                "technique": "DIGITAL",
-                "layers": [
+                "source": "catalog",
+                "catalog_product_id": catalog_product_id,
+                "catalog_variant_ids": catalog_variant_ids,
+                "placements": [
                     {
-                        "type": "file",
-                        "url": image_url,
+                        "placement": "default",
+                        "technique": "DIGITAL",
+                        "layers": [
+                            {
+                                "type": "file",
+                                "url": image_url,
+                            }
+                        ],
                     }
                 ],
             }
         ],
-    }
-    if style_ids:
-        product_entry["mockup_style_ids"] = style_ids
-
-    payload = {
-        "format": format,
-        "products": [product_entry],
     }
     log.info(f"Mockup task payload: {payload}")
 
@@ -311,7 +299,7 @@ def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
     errors = []
     for label, variant_id in variant_map.items():
         try:
-            task_id = create_mockup_task(image_url, catalog_id, [variant_id], product_type=product_type)
+            task_id = create_mockup_task(image_url, catalog_id, [variant_id])
             result = poll_mockup_result(task_id)
             raw_mockups = extract_mockup_urls(result)
 
