@@ -291,7 +291,7 @@ def crop_to_ratio(image: Image.Image, ratio: tuple) -> Image.Image:
 
 @functools.lru_cache(maxsize=1)
 def _get_client() -> genai.Client:
-    return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    return genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyCeXkHhEVmBx__GH_gEyI4FOOiKcjllC7E"))
 
 
 # ---------------------------------------------------------------------------
