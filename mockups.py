@@ -199,14 +199,22 @@ def create_mockup_task(
         log.error(f"Mockup task creation failed ({resp.status_code}): {resp.text}")
         raise RuntimeError(f"Printful API {resp.status_code}: {resp.text[:500]}")
     data = resp.json()
+    log.info(f"Mockup creation response: {str(data)[:500]}")
 
-    task_id = data.get("data", {}).get("id") or data.get("id")
-    if not task_id:
-        # Try v1-style response
-        task_id = data.get("result", {}).get("task_key")
+    # Handle both dict and list responses for "data" key
+    inner = data.get("data", {})
+    if isinstance(inner, dict):
+        task_id = inner.get("id")
+    elif isinstance(inner, list) and len(inner) > 0 and isinstance(inner[0], dict):
+        task_id = inner[0].get("id") or inner[0].get("task_key")
+    else:
+        task_id = None
 
     if not task_id:
-        raise RuntimeError(f"No task ID in mockup response: {data}")
+        task_id = data.get("id") or data.get("result", {}).get("task_key") if isinstance(data.get("result"), dict) else None
+
+    if not task_id:
+        raise RuntimeError(f"No task ID in mockup response: {str(data)[:300]}")
 
     log.info(f"Created mockup task: {task_id}")
     return str(task_id)
@@ -226,9 +234,18 @@ def poll_mockup_result(task_id: str, timeout: int = 60, interval: int = 3) -> di
         raw_json = resp.json()
         data = raw_json.get("data", raw_json)
 
-        status = data.get("status", "") if isinstance(data, dict) else ""
+        # If data is a list, try first element
+        if isinstance(data, list) and len(data) > 0:
+            data = data[0] if isinstance(data[0], dict) else {}
+
+        if not isinstance(data, dict):
+            log.warning(f"Unexpected poll response type: {type(data)}, raw: {str(raw_json)[:300]}")
+            time.sleep(interval)
+            continue
+
+        status = data.get("status", "")
         if status == "completed":
-            log.info(f"Mockup task {task_id} completed. Keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
+            log.info(f"Mockup task {task_id} completed. Keys: {list(data.keys())}")
             return data
         elif status == "failed":
             reasons = data.get("failure_reasons", [])
