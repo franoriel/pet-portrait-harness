@@ -290,27 +290,26 @@ def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
     if not variant_map:
         raise RuntimeError(f"No variant IDs resolved for {product_type}")
 
-    variant_ids = list(variant_map.values())
-
-    # Create task
-    task_id = create_mockup_task(image_url, catalog_id, variant_ids)
-
-    # Poll for result
-    result = poll_mockup_result(task_id)
-
-    # Extract URLs
-    raw_mockups = extract_mockup_urls(result)
-
-    # Map back to our size labels
+    # Generate mockups one variant at a time to avoid style compatibility issues
     id_to_label = {vid: label for label, vid in variant_map.items()}
     final = []
-    for m in raw_mockups:
-        label = id_to_label.get(m["variant_id"], "unknown")
-        final.append({
-            "variant": label,
-            "url": m["url"],
-            "placement": m["placement"],
-        })
+
+    for label, variant_id in variant_map.items():
+        try:
+            task_id = create_mockup_task(image_url, catalog_id, [variant_id])
+            result = poll_mockup_result(task_id)
+            raw_mockups = extract_mockup_urls(result)
+
+            for m in raw_mockups:
+                final.append({
+                    "variant": label,
+                    "url": m["url"],
+                    "placement": m["placement"],
+                })
+                break  # Just take the first mockup per variant
+        except Exception as e:
+            log.warning(f"Mockup failed for {label} (variant {variant_id}): {e}")
+            continue
 
     log.info(f"Generated {len(final)} mockups for {product_type}")
     return final
