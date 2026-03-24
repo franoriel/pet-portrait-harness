@@ -62,6 +62,17 @@ def health():
     return jsonify(status="ok", gemini_key=key_preview, env_count=len(os.environ))
 
 
+@app.route("/debug/catalog/<int:product_id>")
+def debug_catalog(product_id):
+    """Temporary debug endpoint to inspect Printful catalog variants."""
+    from mockups import get_catalog_variants
+    try:
+        variants = get_catalog_variants(product_id)
+        return jsonify(product_id=product_id, variants=variants)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+
 @app.route("/generate", methods=["POST"])
 def generate_route():
     # ── Validate inputs ──────────────────────────────────────────────────────
