@@ -145,6 +145,15 @@ def download(filename):
 # Printful mockup generation
 # ---------------------------------------------------------------------------
 
+@app.route("/debug/mockup-poll/<int:task_id>")
+def debug_mockup_poll(task_id):
+    """Debug: poll a mockup task and return raw Printful response."""
+    import requests as req
+    from mockups import _headers, PRINTFUL_API
+    resp = req.get(f"{PRINTFUL_API}/mockup-tasks", params={"id": task_id}, headers=_headers(), timeout=15)
+    return jsonify(status_code=resp.status_code, raw=resp.json() if resp.ok else resp.text[:1000])
+
+
 @app.route("/debug/mockup-raw", methods=["POST"])
 def debug_mockup_raw():
     """Debug: create a single mockup task and return the RAW Printful response."""
