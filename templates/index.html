@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pet Portrait Generator</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f11;
+      --surface:   #18181c;
+      --border:    #2a2a30;
+      --accent:    #c8a97e;
+      --accent-dk: #a8855a;
+      --text:      #e8e6e0;
+      --muted:     #7a7870;
+      --danger:    #e07070;
+      --radius:    10px;
+      --font:      'Georgia', 'Times New Roman', serif;
+      --mono:      'Menlo', 'Consolas', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 2rem;
+      letter-spacing: 0.18em;
+      font-weight: normal;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    header p {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* ── Form rows ────────────────────────────────────────────────────────── */
+    .field { margin-bottom: 24px; }
+    .field label {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* ── Drag-drop zone ───────────────────────────────────────────────────── */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    #drop-zone:hover,
+    #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(200,169,126,0.05);
+    }
+    #drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    #drop-zone .drop-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    #drop-zone p {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    #drop-zone .file-name {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      font-family: var(--mono);
+      color: var(--accent);
+      display: none;
+    }
+    #preview-thumb {
+      display: none;
+      margin-top: 14px;
+      max-height: 140px;
+      max-width: 100%;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Text input ───────────────────────────────────────────────────────── */
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 1rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    /* ── Style picker ─────────────────────────────────────────────────────── */
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .style-card {
+      position: relative;
+    }
+    .style-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .style-card label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .style-card label:hover { border-color: var(--accent); }
+    .style-card input:checked + label {
+      border-color: var(--accent);
+      background: rgba(200,169,126,0.08);
+    }
+    .style-card .style-icon { font-size: 1.4rem; }
+    .style-card .style-name {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+      font-family: var(--font);
+    }
+    .style-card .style-desc {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.4;
+      font-family: var(--font);
+    }
+
+    /* ── Generate button ──────────────────────────────────────────────────── */
+    #gen-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #0f0f11;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--font);
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      margin-top: 8px;
+    }
+    #gen-btn:hover:not(:disabled) { background: var(--accent-dk); }
+    #gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Status / error ───────────────────────────────────────────────────── */
+    #status {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-align: center;
+      min-height: 20px;
+    }
+    #status.error { color: var(--danger); }
+
+    /* ── Spinner ──────────────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result panel ─────────────────────────────────────────────────────── */
+    #result {
+      display: none;
+      margin-top: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+    #result h2 {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      justify-content: center;
+    }
+    .tab-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 16px;
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+    .tab-btn.active { border-color: var(--accent); color: var(--accent); }
+
+    #result-img {
+      width: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    #dl-btn {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px;
+      background: none;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--accent);
+      font-family: var(--font);
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    #dl-btn:hover {
+      background: var(--accent);
+      color: #0f0f11;
+    }
+
+    /* ── Divider ──────────────────────────────────────────────────────────── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Pet Portrait</h1>
+    <p>AI line art · Gemini · Print-ready PNG</p>
+  </header>
+
+  <!-- ── Form card ── -->
+  <div class="card">
+    <!-- Photo upload -->
+    <div class="field">
+      <label>Pet photo</label>
+      <div id="drop-zone">
+        <input type="file" id="photo-input" accept=".jpg,.jpeg,.png,.webp" />
+        <span class="drop-icon">🐾</span>
+        <p>Drag &amp; drop or click to select</p>
+        <p style="margin-top:4px;font-size:0.72rem;">JPG · PNG · WebP · max 20 MB</p>
+        <div class="file-name" id="file-name"></div>
+        <img id="preview-thumb" alt="preview" />
+      </div>
+    </div>
+
+    <!-- Pet name -->
+    <div class="field">
+      <label for="pet-name">Pet name</label>
+      <input type="text" id="pet-name" placeholder="e.g. Buddy" maxlength="40" />
+    </div>
+
+    <!-- Style variants -->
+    <div class="field">
+      <label>Style variant</label>
+      <div class="style-grid">
+        <div class="style-card">
+          <input type="radio" name="style" id="s-classic" value="classic" checked />
+          <label for="s-classic">
+            <span class="style-icon">✒️</span>
+            <span class="style-name">Classic</span>
+            <span class="style-desc">Elegant continuous contour, fine-tip pen</span>
+          </label>
+        </div>
+        <div class="style-card">
+          <input type="radio" name="style" id="s-minimal" value="minimal" />
+          <label for="s-minimal">
+            <span class="style-icon">◻️</span>
+            <span class="style-name">Minimal</span>
+            <span class="style-desc">~30 confident strokes, luxury logo feel</span>
+          </label>
+        </div>
+        <div class="style-card">
+          <input type="radio" name="style" id="s-naturalist" value="naturalist" />
+          <label for="s-naturalist">
+            <span class="style-icon">🔬</span>
+            <span class="style-name">Naturalist</span>
+            <span class="style-desc">Victorian field-guide, hatched body</span>
+          </label>
+        </div>
+        <div class="style-card" style="grid-column: 1 / -1;">
+          <input type="radio" name="style" id="s-watercolor" value="watercolor" />
+          <label for="s-watercolor" style="flex-direction: row; justify-content: center; gap: 12px; padding: 12px 16px;">
+            <span class="style-icon">🎨</span>
+            <div style="text-align:left;">
+              <span class="style-name" style="display:block;">Watercolor</span>
+              <span class="style-desc">Loose wet-on-wet washes, ink linework, fine art print</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Watercolor variable inputs (shown only when watercolor is selected) -->
+    <div id="watercolor-vars" style="display:none;">
+      <div style="border-top: 1px solid var(--border); margin: 4px 0 20px; padding-top: 20px;">
+        <p style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;">
+          Watercolor parameters
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="field" style="margin-bottom:0;">
+            <label for="wc-breed">Breed</label>
+            <input type="text" id="wc-breed" name="breed" placeholder="e.g. golden retriever" />
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="wc-eye-color">Eye color</label>
+            <input type="text" id="wc-eye-color" name="eye_color" placeholder="e.g. warm brown" />
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="wc-fur-color">Fur color</label>
+            <input type="text" id="wc-fur-color" name="fur_color" placeholder="e.g. golden" />
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="wc-palette">Color palette</label>
+            <input type="text" id="wc-palette" name="color_palette" placeholder="e.g. warm amber and honey" />
+          </div>
+        </div>
+        <p style="font-size:0.68rem;color:var(--muted);margin-top:10px;">
+          Leave blank to auto-detect from the photo.
+        </p>
+      </div>
+    </div>
+
+    <button id="gen-btn" disabled>Generate portrait</button>
+    <div id="status"></div>
+  </div>
+
+  <!-- ── Result panel ── -->
+  <div id="result">
+    <h2>Result</h2>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="composited">With name</button>
+      <button class="tab-btn"        data-tab="raw">Raw AI output</button>
+    </div>
+    <img id="result-img" src="" alt="Generated portrait" />
+    <a id="dl-btn" href="#" download>⬇ Download PNG</a>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────────────
+    let currentUrls = { composited: null, raw: null, download: null };
+    let activeTab   = "composited";
+
+    // ── DOM refs ───────────────────────────────────────────────────────────
+    const dropZone    = document.getElementById("drop-zone");
+    const photoInput  = document.getElementById("photo-input");
+    const petNameEl   = document.getElementById("pet-name");
+    const genBtn      = document.getElementById("gen-btn");
+    const statusEl    = document.getElementById("status");
+    const resultPanel = document.getElementById("result");
+    const resultImg   = document.getElementById("result-img");
+    const dlBtn       = document.getElementById("dl-btn");
+    const fileNameEl  = document.getElementById("file-name");
+    const thumbEl     = document.getElementById("preview-thumb");
+
+    // ── File selection ─────────────────────────────────────────────────────
+    function onFileSelected(file) {
+      if (!file) return;
+      fileNameEl.textContent = file.name;
+      fileNameEl.style.display = "block";
+      const reader = new FileReader();
+      reader.onload = e => {
+        thumbEl.src = e.target.result;
+        thumbEl.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+      updateGenBtn();
+    }
+
+    photoInput.addEventListener("change", () => onFileSelected(photoInput.files[0]));
+
+    // Drag-and-drop
+    dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        // Inject into the file input so FormData picks it up
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        photoInput.files = dt.files;
+        onFileSelected(file);
+      }
+    });
+
+    petNameEl.addEventListener("input", updateGenBtn);
+
+    // Show/hide watercolor vars when style changes
+    document.querySelectorAll("input[name='style']").forEach(radio => {
+      radio.addEventListener("change", () => {
+        document.getElementById("watercolor-vars").style.display =
+          radio.value === "watercolor" && radio.checked ? "block" : "none";
+      });
+    });
+
+    function updateGenBtn() {
+      const hasFile = photoInput.files && photoInput.files.length > 0;
+      const hasName = petNameEl.value.trim().length > 0;
+      genBtn.disabled = !(hasFile && hasName);
+    }
+
+    // ── Generate ───────────────────────────────────────────────────────────
+    genBtn.addEventListener("click", async () => {
+      const style = document.querySelector("input[name='style']:checked").value;
+
+      // Build form data
+      const fd = new FormData();
+      fd.append("photo",    photoInput.files[0]);
+      fd.append("pet_name", petNameEl.value.trim());
+      fd.append("style",    style);
+
+      // UI: loading state
+      genBtn.disabled = true;
+      statusEl.className = "";
+      statusEl.innerHTML = '<span class="spinner"></span>Generating… this takes 10–30 s';
+      resultPanel.style.display = "none";
+
+      try {
+        const res  = await fetch("/generate", { method: "POST", body: fd });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+
+        // Store URLs
+        currentUrls = { composited: data.composited, raw: data.raw, download: data.download };
+
+        // Show result
+        showTab("composited");
+        dlBtn.href     = data.download;
+        dlBtn.download = data.filename;
+        resultPanel.style.display = "block";
+        resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        statusEl.innerHTML = "Done!";
+        setTimeout(() => { statusEl.innerHTML = ""; }, 3000);
+      } catch (err) {
+        statusEl.className = "error";
+        statusEl.textContent = `Error: ${err.message}`;
+      } finally {
+        genBtn.disabled = false;
+        updateGenBtn();
+      }
+    });
+
+    // ── Tabs ───────────────────────────────────────────────────────────────
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => showTab(btn.dataset.tab));
+    });
+
+    function showTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.tab === tab);
+      });
+      resultImg.src = currentUrls[tab] || "";
+    }
+  </script>
+</body>
+</html>
