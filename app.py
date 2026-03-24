@@ -19,6 +19,7 @@ from fulfillment import (
     parse_order_items,
     verify_shopify_webhook,
 )
+from mockups import generate_mockups
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger(__name__)
@@ -117,6 +118,36 @@ def download(filename):
                          download_name=filename)
     except FileNotFoundError:
         return "Not found", 404
+
+
+# ---------------------------------------------------------------------------
+# Printful mockup generation
+# ---------------------------------------------------------------------------
+
+@app.route("/mockups", methods=["POST", "OPTIONS"])
+def mockups():
+    """Generate Printful product mockups with the user's portrait."""
+    if request.method == "OPTIONS":
+        return "", 204
+
+    data = request.get_json(silent=True) or {}
+    image_filename = data.get("image_filename", "")
+    product_type = data.get("product_type", "canvas")
+
+    if not image_filename:
+        return jsonify(error="image_filename required"), 400
+
+    # Verify file exists
+    path = OUTPUT_DIR / Path(image_filename).name
+    if not path.exists():
+        return jsonify(error="Image not found"), 404
+
+    try:
+        results = generate_mockups(path.name, product_type)
+        return jsonify(mockups=results)
+    except Exception as e:
+        log.exception("Mockup generation failed")
+        return jsonify(error=str(e)), 500
 
 
 # ---------------------------------------------------------------------------
