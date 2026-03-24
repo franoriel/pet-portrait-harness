@@ -64,11 +64,21 @@ def health():
 
 @app.route("/debug/catalog/<int:product_id>")
 def debug_catalog(product_id):
-    """Temporary debug endpoint to inspect Printful catalog variants."""
-    from mockups import get_catalog_variants
+    """Temporary debug endpoint to inspect Printful catalog variants and techniques."""
+    import requests as req
+    from mockups import _headers, PRINTFUL_API_V1
     try:
-        variants = get_catalog_variants(product_id)
-        return jsonify(product_id=product_id, variants=variants)
+        resp = req.get(f"{PRINTFUL_API_V1}/products/{product_id}", headers=_headers(), timeout=15)
+        resp.raise_for_status()
+        data = resp.json().get("result", {})
+        product = data.get("product", {})
+        variants = {v.get("size", ""): v.get("id") for v in data.get("variants", []) if v.get("size")}
+        return jsonify(
+            product_id=product_id,
+            type=product.get("type", ""),
+            techniques=product.get("techniques", []),
+            variants=variants,
+        )
     except Exception as e:
         return jsonify(error=str(e)), 500
 
