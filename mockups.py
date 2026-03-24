@@ -338,24 +338,40 @@ def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
     final = []
 
     errors = []
-    for label, variant_id in variant_map.items():
-        try:
-            task_id = create_mockup_task(image_url, catalog_id, [variant_id])
-            result = poll_mockup_result(task_id)
-            raw_mockups = extract_mockup_urls(result)
+    for i, (label, variant_id) in enumerate(variant_map.items()):
+        # Rate limit: wait between variants (Printful allows ~10 req/min)
+        if i > 0:
+            time.sleep(8)
 
-            for m in raw_mockups:
-                final.append({
-                    "variant": label,
-                    "url": m["url"],
-                    "placement": m["placement"],
-                })
-                break  # Just take the first mockup per variant
-        except Exception as e:
-            err_msg = f"{label} (variant {variant_id}): {e}"
-            log.warning(f"Mockup failed for {err_msg}")
-            errors.append(err_msg)
-            continue
+        for attempt in range(3):
+            try:
+                task_id = create_mockup_task(image_url, catalog_id, [variant_id])
+                result = poll_mockup_result(task_id)
+                raw_mockups = extract_mockup_urls(result)
+
+                for m in raw_mockups:
+                    final.append({
+                        "variant": label,
+                        "url": m["url"],
+                        "placement": m["placement"],
+                    })
+                    break  # Just take the first mockup per variant
+                break  # Success, move to next variant
+            except RuntimeError as e:
+                if "429" in str(e) and attempt < 2:
+                    wait = 40 * (attempt + 1)
+                    log.warning(f"Rate limited on {label}, waiting {wait}s (attempt {attempt+1})")
+                    time.sleep(wait)
+                    continue
+                err_msg = f"{label} (variant {variant_id}): {e}"
+                log.warning(f"Mockup failed for {err_msg}")
+                errors.append(err_msg)
+                break
+            except Exception as e:
+                err_msg = f"{label} (variant {variant_id}): {e}"
+                log.warning(f"Mockup failed for {err_msg}")
+                errors.append(err_msg)
+                break
 
     if not final and errors:
         raise RuntimeError(f"All mockups failed. First error: {errors[0]}")
