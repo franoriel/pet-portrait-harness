@@ -145,6 +145,37 @@ def download(filename):
 # Printful mockup generation
 # ---------------------------------------------------------------------------
 
+@app.route("/debug/mockup-raw", methods=["POST"])
+def debug_mockup_raw():
+    """Debug: create a single mockup task and return the RAW Printful response."""
+    import requests as req
+    from mockups import _headers, PRINTFUL_API
+    data = request.get_json(silent=True) or {}
+    image_url = data.get("image_url", "")
+    variant_id = data.get("variant_id", 19296)
+    catalog_product_id = data.get("catalog_product_id", 3)
+
+    payload = {
+        "format": "jpg",
+        "products": [{
+            "source": "catalog",
+            "catalog_product_id": catalog_product_id,
+            "catalog_variant_ids": [variant_id],
+            "placements": [{
+                "placement": "default",
+                "technique": "DIGITAL",
+                "layers": [{"type": "file", "url": image_url}],
+            }],
+        }],
+    }
+    resp = req.post(f"{PRINTFUL_API}/mockup-tasks", json=payload, headers=_headers(), timeout=30)
+    return jsonify(
+        status_code=resp.status_code,
+        raw_response=resp.json() if resp.ok else resp.text[:1000],
+        payload_sent=payload,
+    )
+
+
 @app.route("/mockups", methods=["POST", "OPTIONS"])
 def mockups():
     """Generate Printful product mockups with the user's portrait."""
