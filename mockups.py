@@ -308,6 +308,7 @@ def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
     id_to_label = {vid: label for label, vid in variant_map.items()}
     final = []
 
+    errors = []
     for label, variant_id in variant_map.items():
         try:
             task_id = create_mockup_task(image_url, catalog_id, [variant_id], product_type=product_type)
@@ -322,8 +323,13 @@ def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
                 })
                 break  # Just take the first mockup per variant
         except Exception as e:
-            log.warning(f"Mockup failed for {label} (variant {variant_id}): {e}")
+            err_msg = f"{label} (variant {variant_id}): {e}"
+            log.warning(f"Mockup failed for {err_msg}")
+            errors.append(err_msg)
             continue
+
+    if not final and errors:
+        raise RuntimeError(f"All mockups failed. First error: {errors[0]}")
 
     log.info(f"Generated {len(final)} mockups for {product_type}")
     return final
