@@ -54,6 +54,12 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 def index():
     return render_template("index.html")
 
+@app.route("/health")
+def health():
+    has_key = "GEMINI_API_KEY" in os.environ
+    key_preview = os.environ.get("GEMINI_API_KEY", "NOT SET")[:8] + "..." if has_key else "NOT SET"
+    return jsonify(status="ok", gemini_key=key_preview, env_count=len(os.environ))
+
 
 @app.route("/generate", methods=["POST"])
 def generate_route():
