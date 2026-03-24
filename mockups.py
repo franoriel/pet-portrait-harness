@@ -173,6 +173,7 @@ def create_mockup_task(
                 "placements": [
                     {
                         "placement": "default",
+                        "technique": "DIGITAL",
                         "layers": [
                             {
                                 "type": "file",
