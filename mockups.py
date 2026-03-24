@@ -277,7 +277,7 @@ def extract_mockup_urls(result: dict) -> list[dict]:
                 for mockup in item_mockups:
                     if not isinstance(mockup, dict):
                         continue
-                    url = mockup.get("url", "")
+                    url = mockup.get("mockup_url") or mockup.get("url", "")
                     placement = mockup.get("placement", "default")
                     if url:
                         mockups.append({
