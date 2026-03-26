@@ -15,10 +15,13 @@ from __future__ import annotations
 import argparse
 import base64
 import functools
+import logging
 import os
 import re
 import sys
 import tempfile
+import threading
+import time
 import urllib.request
 from io import BytesIO
 from pathlib import Path
@@ -27,6 +30,13 @@ from typing import Callable, Optional
 from google import genai
 from google.genai import types
 from PIL import Image, ImageDraw, ImageFont
+
+log = logging.getLogger(__name__)
+
+# Concurrency limiter — prevents OOM when many requests arrive at once.
+# Requests beyond this limit get a 503 from app.py instead of queuing.
+MAX_CONCURRENT_GENERATIONS = 6
+_generation_semaphore = threading.Semaphore(MAX_CONCURRENT_GENERATIONS)
 
 OUTPUT_DIR = Path("output")
 FONTS_DIR  = Path("fonts")
@@ -578,45 +588,65 @@ def call_gemini(
     photo_path: Path,
     style: str,
     style_vars: Optional[dict] = None,
+    max_retries: int = 2,
 ) -> bytes:
-    """Send photo + prompt to Gemini; return raw PNG/JPEG bytes of the generated image."""
-    client     = _get_client()
+    """Send photo + prompt to Gemini; return raw PNG/JPEG bytes of the generated image.
+
+    Retries transient failures with exponential backoff.
+    """
+    client      = _get_client()
     image_bytes = photo_path.read_bytes()
     mime_type   = MIME_MAP.get(photo_path.suffix.lower(), "image/jpeg")
     prompt      = PROMPTS[style](style_vars)   # unified — no per-style branching
 
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-image-preview",
-        contents=[
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                    types.Part.from_text(text=prompt),
+    last_exc: Optional[Exception] = None
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.1-flash-image-preview",
+                contents=[
+                    types.Content(
+                        role="user",
+                        parts=[
+                            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                            types.Part.from_text(text=prompt),
+                        ],
+                    )
                 ],
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                ),
             )
-        ],
-        config=types.GenerateContentConfig(
-            response_modalities=["IMAGE", "TEXT"],
-        ),
-    )
 
-    for candidate in response.candidates:
-        for part in candidate.content.parts:
-            if part.inline_data is not None:
-                data = part.inline_data.data
-                # SDK may return base64 str or raw bytes depending on version
-                if isinstance(data, str):
-                    data = base64.b64decode(data)
-                return data
+            for candidate in response.candidates:
+                for part in candidate.content.parts:
+                    if part.inline_data is not None:
+                        data = part.inline_data.data
+                        if isinstance(data, str):
+                            data = base64.b64decode(data)
+                        return data
 
-    text_parts = [
-        p.text for c in response.candidates
-        for p in c.content.parts if hasattr(p, "text") and p.text
-    ]
-    raise RuntimeError(
-        f"Gemini returned no image. Model response: {' | '.join(text_parts) or 'no details'}"
-    )
+            text_parts = [
+                p.text for c in response.candidates
+                for p in c.content.parts if hasattr(p, "text") and p.text
+            ]
+            raise RuntimeError(
+                f"Gemini returned no image. Model response: {' | '.join(text_parts) or 'no details'}"
+            )
+
+        except Exception as exc:
+            last_exc = exc
+            err_str = str(exc).lower()
+            is_transient = any(k in err_str for k in ("429", "500", "503", "overloaded", "timeout", "deadline"))
+            if is_transient and attempt < max_retries:
+                wait = (attempt + 1) * 3  # 3s, 6s
+                log.warning("Gemini transient error (attempt %d/%d), retrying in %ds: %s",
+                            attempt + 1, max_retries + 1, wait, exc)
+                time.sleep(wait)
+                continue
+            raise
+
+    raise last_exc  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
@@ -633,16 +663,37 @@ def generate(
     """
     Generate a portrait and composite the pet name onto it.
 
+    Uses a semaphore to limit concurrent Gemini calls and prevent OOM.
+    Raises RuntimeError('BUSY') if the semaphore cannot be acquired within 2s,
+    which app.py maps to a 503 response so the frontend can retry.
+
     Returns:
         (raw_path, composited_path)
     """
+    if not _generation_semaphore.acquire(timeout=2):
+        raise RuntimeError("BUSY")
+
+    try:
+        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars)
+    finally:
+        _generation_semaphore.release()
+
+
+def _generate_inner(
+    photo_path: "str | Path",
+    pet_name: str,
+    style: str,
+    output_dir: Optional[Path],
+    style_vars: Optional[dict],
+) -> tuple[Path, Path]:
+    import uuid as _uuid
     out = output_dir or OUTPUT_DIR
     out.mkdir(parents=True, exist_ok=True)
 
     photo = Path(photo_path)
-    stem  = photo.stem
+    uid   = _uuid.uuid4().hex[:10]  # unique per request — no file collisions
 
-    print(f"[generate] {style:12s}  '{pet_name}'  ←  {photo.name}", file=sys.stderr)
+    log.info("[generate] %s  '%s'  ←  %s", style, pet_name, photo.name)
 
     raw_bytes = call_gemini(photo, style, style_vars)
 
@@ -650,19 +701,25 @@ def generate(
     ai_image = Image.open(BytesIO(raw_bytes))
     ai_image.load()
 
-    raw_path = out / f"{stem}_{style}_raw.png"
+    raw_path = out / f"{uid}_{style}_raw.png"
     raw_path.write_bytes(raw_bytes)
-    print(f"           raw  → {raw_path}", file=sys.stderr)
+    log.info("           raw  → %s", raw_path)
 
     # Per-style post-processing (crop, resize, colour-grade, …)
-    ai_image = POST_PROCESS.get(style, lambda img: img)(ai_image)
+    processed = POST_PROCESS.get(style, lambda img: img)(ai_image)
+    if processed is not ai_image:
+        ai_image.close()
+    ai_image = processed
 
     # Composite name
     composited = composite_name(ai_image, pet_name)
-    safe_name  = "".join(c for c in pet_name.lower() if c.isalnum())
-    comp_path  = out / f"{stem}_{style}_{safe_name}.png"
+    ai_image.close()
+
+    safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
+    comp_path = out / f"{uid}_{style}_{safe_name}.png"
     composited.save(comp_path, "PNG")
-    print(f"           comp → {comp_path}", file=sys.stderr)
+    composited.close()
+    log.info("           comp → %s", comp_path)
 
     return raw_path, comp_path
 

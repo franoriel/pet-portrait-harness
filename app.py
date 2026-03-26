@@ -51,6 +51,29 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
+# ---------------------------------------------------------------------------
+# Output file cleanup — remove files older than 24 hours every 30 minutes
+# ---------------------------------------------------------------------------
+import time as _time, threading as _threading
+
+def _cleanup_old_outputs():
+    while True:
+        _time.sleep(1800)  # 30 min
+        try:
+            cutoff = _time.time() - 86400  # 24h
+            for f in OUTPUT_DIR.iterdir():
+                if f.is_file() and f.stat().st_mtime < cutoff:
+                    f.unlink(missing_ok=True)
+            for f in UPLOAD_DIR.iterdir():
+                if f.is_file() and f.stat().st_mtime < cutoff:
+                    f.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+_cleanup_thread = _threading.Thread(target=_cleanup_old_outputs, daemon=True)
+_cleanup_thread.start()
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -114,7 +137,13 @@ def generate_route():
             download=f"/download/{comp_path.name}",
             filename=comp_path.name,
         )
+    except RuntimeError as exc:
+        if "BUSY" in str(exc):
+            return jsonify(error="Server is at capacity. Please try again in a few seconds."), 503
+        log.exception("Generation failed for style=%s", style)
+        return jsonify(error=str(exc)), 500
     except Exception as exc:
+        log.exception("Generation failed for style=%s", style)
         return jsonify(error=str(exc)), 500
     finally:
         upload_path.unlink(missing_ok=True)
