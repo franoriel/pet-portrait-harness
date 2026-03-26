@@ -25,18 +25,26 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s
 log = logging.getLogger(__name__)
 
 # Background executor for async fulfillment (webhook responds immediately)
-_fulfillment_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="fulfill")
+_fulfillment_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="fulfill")
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20 MB
 
-# CORS — allows the Shopify theme dev server (localhost:9292) and any origin
-# to call /generate. Safe for local test use.
+# ── Request queue tracking ────────────────────────────────────────────────────
+# Tracks active generation requests so we can return queue position to clients.
+import threading as _thr
+_active_generations = 0
+_active_lock = _thr.Lock()
+_peak_generations = 0
+
+# CORS — allows the Shopify storefront and any origin to call API endpoints.
 @app.after_request
 def _add_cors(response):
     response.headers["Access-Control-Allow-Origin"]  = "*"
     response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    # Cache preflight for 1 hour to reduce OPTIONS roundtrips
+    response.headers["Access-Control-Max-Age"] = "3600"
     return response
 
 @app.route("/generate", methods=["OPTIONS"])
@@ -82,7 +90,14 @@ def index():
 def health():
     has_key = "GEMINI_API_KEY" in os.environ
     key_preview = os.environ.get("GEMINI_API_KEY", "NOT SET")[:8] + "..." if has_key else "NOT SET"
-    return jsonify(status="ok", gemini_key=key_preview, env_count=len(os.environ))
+    from generate import MAX_CONCURRENT_GENERATIONS
+    return jsonify(
+        status="ok",
+        gemini_key=key_preview,
+        active_generations=_active_generations,
+        peak_generations=_peak_generations,
+        max_concurrent=MAX_CONCURRENT_GENERATIONS,
+    )
 
 
 @app.route("/debug/catalog/<int:product_id>")
@@ -129,6 +144,12 @@ def generate_route():
     upload_path = UPLOAD_DIR / f"{uuid.uuid4()}{suffix}"
     file.save(upload_path)
 
+    global _active_generations, _peak_generations
+    with _active_lock:
+        _active_generations += 1
+        if _active_generations > _peak_generations:
+            _peak_generations = _active_generations
+
     try:
         raw_path, comp_path = generate(str(upload_path), pet_name, style)
         return jsonify(
@@ -139,13 +160,19 @@ def generate_route():
         )
     except RuntimeError as exc:
         if "BUSY" in str(exc):
-            return jsonify(error="Server is at capacity. Please try again in a few seconds."), 503
+            return jsonify(
+                error="Server is at capacity. Please try again in a few seconds.",
+                retry_after=5,
+                queue_depth=_active_generations,
+            ), 503
         log.exception("Generation failed for style=%s", style)
         return jsonify(error=str(exc)), 500
     except Exception as exc:
         log.exception("Generation failed for style=%s", style)
         return jsonify(error=str(exc)), 500
     finally:
+        with _active_lock:
+            _active_generations -= 1
         upload_path.unlink(missing_ok=True)
 
 

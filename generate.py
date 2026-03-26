@@ -35,7 +35,8 @@ log = logging.getLogger(__name__)
 
 # Concurrency limiter — prevents OOM when many requests arrive at once.
 # Requests beyond this limit get a 503 from app.py instead of queuing.
-MAX_CONCURRENT_GENERATIONS = 6
+# Set via env var for easy scaling on Railway/Render (default 20 for production).
+MAX_CONCURRENT_GENERATIONS = int(os.environ.get("MAX_CONCURRENT_GENERATIONS", 20))
 _generation_semaphore = threading.Semaphore(MAX_CONCURRENT_GENERATIONS)
 
 OUTPUT_DIR = Path("output")
