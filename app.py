@@ -20,6 +20,7 @@ from fulfillment import (
     verify_shopify_webhook,
 )
 from mockups import generate_mockups
+from storage import upload_portrait
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger(__name__)
@@ -152,11 +153,17 @@ def generate_route():
 
     try:
         raw_path, comp_path = generate(str(upload_path), pet_name, style)
+
+        # Upload to R2 for permanent CDN URLs (falls back gracefully if not configured)
+        raw_cdn = upload_portrait(raw_path)
+        comp_cdn = upload_portrait(comp_path)
+
         return jsonify(
-            raw=f"/preview/{raw_path.name}",
-            composited=f"/preview/{comp_path.name}",
+            raw=raw_cdn or f"/preview/{raw_path.name}",
+            composited=comp_cdn or f"/preview/{comp_path.name}",
             download=f"/download/{comp_path.name}",
             filename=comp_path.name,
+            cdn=bool(comp_cdn),  # tells frontend whether URLs are permanent
         )
     except RuntimeError as exc:
         if "BUSY" in str(exc):
