@@ -40,8 +40,12 @@ MIME_MAP: dict[str, str] = {
 }
 ALLOWED_SUFFIXES = frozenset(MIME_MAP)
 
-WATERCOLOR_RATIO    = (4, 5)
-WATERCOLOR_MIN_SIZE = (1200, 1500)
+PORTRAIT_RATIO    = (4, 5)
+PORTRAIT_MIN_SIZE = (1200, 1500)
+
+# Legacy aliases (used by watercolor; kept for backwards compatibility)
+WATERCOLOR_RATIO    = PORTRAIT_RATIO
+WATERCOLOR_MIN_SIZE = PORTRAIT_MIN_SIZE
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +118,253 @@ COMPOSITION:
 - Bottom 25% is empty white space for text — do NOT generate any text\
 """
 
+_MINIMAL_LINE_ART_TEMPLATE = """\
+Transform this photo into a minimal line art pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
+must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
+- Match the animal's actual eye color from the photo.
+
+STYLE:
+- Clean, confident single-weight ink lines on a warm off-white (#FAF8F5) background
+- High contrast — bold black linework against the light background
+- Minimal detail: capture the essence of the pet in as few strokes as possible
+- No shading, no fills, no gradients — pure linework only
+- Suggest fur direction with sparse, deliberate strokes
+- Fine art illustration quality, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, direct or three-quarter gaze
+- The bottom 20%% of the image must be left as clean off-white space — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, photorealism, cartoon, anime, 3D render, gray shading, \
+crosshatching, stippling, color fills, text, watermark, border.\
+"""
+
+_MODERN_OIL_PAINT_TEMPLATE = """\
+Transform this photo into a modern oil painting pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
+must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
+- Match the animal's actual eye color from the photo.
+- The color palette of the painting should complement the pet's real coat color, \
+not override it.
+
+STYLE:
+- Rich, visible impasto brush strokes with thick paint texture
+- Warm studio lighting — soft golden directional light from one side
+- Deep, saturated colors with luminous highlights
+- Painterly fur texture with bold confident strokes following fur direction
+- Slightly dark, moody background with warm amber and sienna tones that vignette softly
+- Classical oil portrait aesthetic with a contemporary looseness
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, noble three-quarter angle, direct gaze
+- The bottom 20%% of the image must be a softly darkened area — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, photorealism, flat digital art, cartoon, anime, 3D render, \
+harsh shadows, neon colors, pixelation, blurry, text, watermark, border.\
+"""
+
+_NEON_POP_ART_TEMPLATE = """\
+Transform this photo into a neon pop art pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Use the animal's fur/coat pattern and markings as the structural guide. \
+Reinterpret the coat in bold saturated pop art colors — but preserve all \
+distinguishing markings, patches, and patterns from the original photo.
+- The overall palette should be electric and vibrant: hot pink, electric blue, \
+neon green, bright orange, vivid yellow.
+- Match the animal's actual eye shape and expression from the photo.
+
+STYLE:
+- Bold thick black outlines (comic book / screen print weight)
+- Flat saturated color fills — no gradients within sections, hard color boundaries
+- Bright contrasting background — single bold color or geometric color blocks
+- Andy Warhol meets Keith Haring aesthetic — playful, graphic, punchy
+- Halftone dot texture in select areas for retro pop feel
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, facing forward with personality and attitude
+- The bottom 20%% of the image must be a bold solid color block — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
+oil paint, 3D render, blurry, low resolution, text, watermark, border.\
+"""
+
+_RENAISSANCE_ROYALTY_TEMPLATE = """\
+Transform this photo into a Renaissance-style royal pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
+must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
+- Match the animal's actual eye color from the photo.
+- The surrounding palette should use rich muted Renaissance tones — deep burgundy, \
+gold, forest green, midnight blue — while keeping the pet's natural coloring intact.
+
+STYLE:
+- Classical Renaissance oil portrait (Rembrandt / Titian lighting)
+- The pet is depicted wearing ornate royal attire — velvet robes, gold embroidery, \
+jeweled collar, or regal military sash appropriate to the animal
+- Rich chiaroscuro lighting with a dark dramatic background
+- Muted, aged color palette as if the painting is centuries old
+- Subtle craquelure texture for authenticity
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and upper body in regal pose, noble and dignified
+- Dark moody background with subtle drapery or classical column
+- The bottom 20%% of the image must be a dark toned area — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, photorealism, bright neon colors, cartoon, anime, 3D render, \
+modern clothing, contemporary objects, text, watermark, border.\
+"""
+
+_COZY_FILM_GRAIN_TEMPLATE = """\
+Transform this photo into a cozy vintage film-style pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift \
+the hue — only apply a subtle warm vintage color grade over the entire image. \
+A black dog must stay dark. A brown dog must stay brown. A white cat must stay \
+cream-white. Preserve the original coloring through the vintage filter.
+- Match the animal's actual eye color from the photo, with a warm tint.
+
+STYLE:
+- Soft warm vintage color grade — slightly faded, lifted blacks, warm highlights
+- Kodak Portra 400 / Fuji Pro 400H film emulation aesthetic
+- Subtle organic film grain texture across the entire image
+- Gentle vignette darkening the edges
+- Warm golden hour lighting — soft, diffused, wrapping around the subject
+- Slightly desaturated but warm overall — autumn/honey tones
+- Fine art photography feel, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, natural relaxed pose, soft eye contact
+- Shallow depth of field feel — soft blurred warm background
+- The bottom 20%% of the image must be a softly blurred warm-toned area — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: harsh digital sharpness, oversaturation, cold blue tones, high contrast, \
+cartoon, anime, 3D render, pixelation, text, watermark, border.\
+"""
+
+_RAINBOW_BRIDGE_TEMPLATE = """\
+Transform this photo into a serene Rainbow Bridge memorial pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. Preserve the original coloring faithfully \
+so the pet is instantly recognizable.
+- Match the animal's actual eye color from the photo.
+- The surrounding environment uses soft ethereal pastel tones — but the pet itself \
+must retain its true colors.
+
+STYLE:
+- Soft, luminous, ethereal atmosphere — the pet bathed in warm golden light
+- Gentle clouds or soft mist in the background, pastel sky with warm sunset hues
+- Subtle rainbow arc or prismatic light in the distant background (not overpowering)
+- Warm angelic glow surrounding the pet — peaceful, comforting, serene mood
+- Soft painterly rendering — between watercolor and digital painting
+- Respectful memorial tone — beautiful but not sad
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, peaceful expression, gentle eye contact
+- Soft light emanating from behind/around the pet
+- The bottom 20%% of the image must be soft clouds or gentle mist — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, photorealism, dark/morbid imagery, tears, sadness, harsh shadows, \
+cartoon, anime, 3D render, pixelation, text, watermark, border.\
+"""
+
+_BOLD_GRAPHIC_POSTER_TEMPLATE = """\
+Transform this photo into a bold graphic poster-style pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Use the animal's fur/coat pattern and markings as the structural guide. \
+Simplify into 4-6 flat color zones that respect the original coloring. \
+A black dog uses deep charcoal/black shapes. A brown dog uses warm earth tones. \
+Preserve the recognizable pattern of the specific animal.
+- Match the animal's actual eye shape from the photo.
+
+STYLE:
+- Flat vector illustration — clean geometric shapes with hard edges
+- Strong color blocking with 4-6 bold flat colors, no gradients
+- Thick confident outlines where color zones meet
+- Mid-century modern poster / screen print aesthetic
+- Clean solid background — single bold contrasting color
+- Shepard Fairey / Aaron Draplin inspired graphic boldness
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, strong forward-facing pose, graphic impact
+- Clean negative space around the subject
+- The bottom 20%% of the image must be a solid color block — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, photorealism, soft edges, gradients, watercolor, painterly strokes, \
+3D render, blurry, detailed fur texture, text, watermark, border.\
+"""
+
+_AURA_GRADIENT_TEMPLATE = """\
+Transform this photo into a dreamy aura gradient pet portrait.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
+must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
+- Match the animal's actual eye color from the photo.
+- The glowing aura colors should complement the pet's natural coloring — \
+not compete with it.
+
+STYLE:
+- Soft, luminous color gradient halos radiating outward from the pet
+- Smooth ethereal aura in 2-3 complementary colors (lavender, soft teal, warm peach)
+- The pet rendered in soft realistic detail, slightly dreamy and glowing
+- Background is a smooth gradient blend of the aura colors — no hard edges
+- Subtle light bloom / lens flare effect around the pet's outline
+- Mystical, spiritual, new-age aesthetic — calming and beautiful
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, serene expression, gentle eye contact
+- Aura radiates symmetrically from the pet outward to the edges
+- The bottom 20%% of the image must be a smooth gradient wash — \
+completely free of the animal — reserved for a name label
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: photography, harsh edges, flat colors, cartoon, anime, 3D render, \
+dark/moody atmosphere, pixelation, blurry, text, watermark, border.\
+"""
+
 _WATERCOLOR_TEMPLATE = """\
 Transform this photo into a watercolor pet portrait.
 
@@ -155,10 +406,18 @@ def _static(text: str) -> Callable[[Optional[dict]], str]:
 # Master registry: style → prompt builder callable
 # All values share the same signature: (style_vars: Optional[dict]) -> str
 PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
-    "classic":    _static(_CLASSIC_PROMPT),
-    "minimal":    _static(_MINIMAL_PROMPT),
-    "naturalist": _static(_NATURALIST_PROMPT),
-    "watercolor": build_watercolor_prompt,
+    "classic":            _static(_CLASSIC_PROMPT),
+    "minimal":            _static(_MINIMAL_PROMPT),
+    "naturalist":         _static(_NATURALIST_PROMPT),
+    "watercolor":         build_watercolor_prompt,
+    "minimal-line-art":   _static(_MINIMAL_LINE_ART_TEMPLATE),
+    "modern-oil-paint":   _static(_MODERN_OIL_PAINT_TEMPLATE),
+    "neon-pop-art":       _static(_NEON_POP_ART_TEMPLATE),
+    "renaissance-royalty": _static(_RENAISSANCE_ROYALTY_TEMPLATE),
+    "cozy-film-grain":    _static(_COZY_FILM_GRAIN_TEMPLATE),
+    "rainbow-bridge":     _static(_RAINBOW_BRIDGE_TEMPLATE),
+    "bold-graphic-poster": _static(_BOLD_GRAPHIC_POSTER_TEMPLATE),
+    "aura-gradient":      _static(_AURA_GRADIENT_TEMPLATE),
 }
 
 
@@ -166,9 +425,10 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
 # Per-style post-processing hooks
 # ---------------------------------------------------------------------------
 
-def _watercolor_post_process(img: Image.Image) -> Image.Image:
-    img = crop_to_ratio(img, WATERCOLOR_RATIO)
-    min_w, min_h = WATERCOLOR_MIN_SIZE
+def _portrait_post_process(img: Image.Image) -> Image.Image:
+    """Standard post-process for all portrait styles: 4:5 crop + minimum size."""
+    img = crop_to_ratio(img, PORTRAIT_RATIO)
+    min_w, min_h = PORTRAIT_MIN_SIZE
     if img.width < min_w or img.height < min_h:
         scale = max(min_w / img.width, min_h / img.height)
         img = img.resize(
@@ -177,9 +437,22 @@ def _watercolor_post_process(img: Image.Image) -> Image.Image:
     return img
 
 
-# Styles not listed here pass through unchanged
+# All colour/painterly styles share the same 4:5 crop + min-size pipeline.
+# Ink-only styles (classic, minimal, naturalist) pass through unchanged.
+_PORTRAIT_STYLES = [
+    "watercolor",
+    "minimal-line-art",
+    "modern-oil-paint",
+    "neon-pop-art",
+    "renaissance-royalty",
+    "cozy-film-grain",
+    "rainbow-bridge",
+    "bold-graphic-poster",
+    "aura-gradient",
+]
+
 POST_PROCESS: dict[str, Callable[[Image.Image], Image.Image]] = {
-    "watercolor": _watercolor_post_process,
+    style: _portrait_post_process for style in _PORTRAIT_STYLES
 }
 
 
