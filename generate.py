@@ -558,6 +558,26 @@ def composite_name(image: Image.Image, pet_name: str) -> Image.Image:
 # Image utilities
 # ---------------------------------------------------------------------------
 
+def save_web_preview(image: Image.Image, out_path: Path, max_width: int = 800) -> Path:
+    """
+    Save a fast-loading web preview: resize to max_width, convert to WebP at q80.
+
+    Typical output: ~60-120 KB vs 2-5 MB for the full PNG.
+    Returns the path to the saved .webp file.
+    """
+    preview_path = out_path.with_suffix(".webp")
+    img = image if image.mode == "RGB" else image.convert("RGB")
+    w, h = img.size
+    if w > max_width:
+        scale = max_width / w
+        img = img.resize((max_width, int(h * scale)), Image.LANCZOS)
+    img.save(preview_path, "WEBP", quality=80)
+    log.info("           web  → %s (%dx%d, %d KB)",
+             preview_path.name, img.width, img.height,
+             preview_path.stat().st_size // 1024)
+    return preview_path
+
+
 def crop_to_ratio(image: Image.Image, ratio: tuple) -> Image.Image:
     """Centre-crop image to the given (width, height) ratio."""
     w, h = image.size
@@ -669,13 +689,13 @@ def generate(
     which app.py maps to a 503 response so the frontend can retry.
 
     Returns:
-        (raw_path, composited_path)
+        (raw_path, composited_path, web_preview_path)
     """
     if not _generation_semaphore.acquire(timeout=2):
         raise RuntimeError("BUSY")
 
     try:
-        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars)
+        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars)  # type: ignore[return-value]
     finally:
         _generation_semaphore.release()
 
@@ -719,10 +739,13 @@ def _generate_inner(
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
     comp_path = out / f"{uid}_{style}_{safe_name}.png"
     composited.save(comp_path, "PNG")
-    composited.close()
     log.info("           comp → %s", comp_path)
 
-    return raw_path, comp_path
+    # Optimized web preview (small WebP for fast frontend display)
+    web_path = save_web_preview(composited, comp_path)
+    composited.close()
+
+    return raw_path, comp_path, web_path
 
 
 # ---------------------------------------------------------------------------
@@ -757,10 +780,11 @@ def main():
             "COLOR_PALETTE": args.color_palette,
         }.items() if v is not None}
 
-    raw_path, comp_path = generate(args.photo_path, args.pet_name, args.style,
-                                   style_vars=style_vars)
+    raw_path, comp_path, web_path = generate(args.photo_path, args.pet_name, args.style,
+                                             style_vars=style_vars)
     print(f"\nRaw output:   {raw_path}")
     print(f"Composited:   {comp_path}")
+    print(f"Web preview:  {web_path}")
 
 
 if __name__ == "__main__":

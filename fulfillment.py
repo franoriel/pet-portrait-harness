@@ -46,33 +46,36 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 PRINT_SIZES: dict[str, tuple[int, int]] = {
-    # Canvas
-    "canvas-12x12": (3600, 3600),
-    "canvas-18x18": (5400, 5400),
-    # Poster
-    "poster-12x16": (3600, 4800),
-    "poster-18x24": (5400, 7200),
+    # Canvas — matches Shopify storefront sizes (pixels at 300 DPI)
+    "canvas-10x10": (3000, 3000),
+    "canvas-10x20": (3000, 6000),
+    "canvas-12x18": (3600, 5400),
+    "canvas-12x24": (3600, 7200),
+    # Poster — Printful 12x16 standard
+    "poster-default": (3600, 4800),
     # Mug — Printful 11oz white mug print area
     "mug-11oz": (4500, 1876),
 }
 
 # Aspect ratios for each product type (width:height)
 PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
-    "canvas-12x12": (1, 1),
-    "canvas-18x18": (1, 1),
-    "poster-12x16": (3, 4),
-    "poster-18x24": (3, 4),
+    "canvas-10x10": (1, 1),
+    "canvas-10x20": (1, 2),
+    "canvas-12x18": (2, 3),
+    "canvas-12x24": (1, 2),
+    "poster-default": (3, 4),
     "mug-11oz": (12, 5),  # Mug wrap: wide and short
 }
 
 # TODO: Replace with real Printful variant IDs from their catalog API
 # Find these at: GET https://api.printful.com/products
 PRINTFUL_VARIANT_MAP: dict[str, int] = {
-    "canvas-12x12": 1,    # placeholder
-    "canvas-18x18": 2,    # placeholder
-    "poster-12x16": 3,    # placeholder
-    "poster-18x24": 4,    # placeholder
-    "mug-11oz": 5,        # placeholder
+    "canvas-10x10": 1,    # placeholder
+    "canvas-10x20": 2,    # placeholder
+    "canvas-12x18": 3,    # placeholder
+    "canvas-12x24": 4,    # placeholder
+    "poster-default": 5,  # placeholder
+    "mug-11oz": 6,        # placeholder
 }
 
 
@@ -152,14 +155,14 @@ def generate_print_file(
     if not product_key.startswith("mug"):
         img = composite_name(img, pet_name)
 
-    # Save
+    # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
     filename = f"print_{product_key}_{safe_name}_{uuid.uuid4().hex[:8]}.png"
     out_path = OUTPUT_DIR / filename
-    img.save(out_path, "PNG")
+    img.save(out_path, "PNG", dpi=(300, 300))
 
-    log.info("Print file saved: %s (%dx%d)", out_path, img.width, img.height)
+    log.info("Print file saved: %s (%dx%d @ 300 DPI)", out_path, img.width, img.height)
     return out_path
 
 
@@ -189,29 +192,23 @@ def _map_style_id(react_style_id: str) -> str:
 
 def upload_print_file(local_path: Path) -> str:
     """
-    Upload a print-ready file to cloud storage and return a public URL.
+    Upload a print-ready file to Cloudflare R2 and return a public URL.
 
-    TODO: Implement with your storage provider (S3, Cloudflare R2, GCS, etc.).
-    For now, returns a local file URL for development.
+    Falls back to local /preview/ URL if R2 is not configured.
+    Uses the print-files/ prefix to separate from preview portraits/.
     """
-    bucket_url = os.environ.get("UPLOAD_BUCKET_URL", "")
+    from storage import upload_portrait as _upload_r2
 
-    if not bucket_url:
-        # Dev mode: serve from local Flask
-        log.warning("UPLOAD_BUCKET_URL not set — using local preview URL")
-        return f"/preview/{local_path.name}"
+    # Upload with a print-files/ prefix to keep separate from preview images
+    cdn_url = _upload_r2(local_path, key=f"print-files/{local_path.name}")
 
-    # TODO: Replace with actual upload logic. Example for S3:
-    #
-    # import boto3
-    # s3 = boto3.client('s3')
-    # key = f"print-files/{local_path.name}"
-    # s3.upload_file(str(local_path), BUCKET_NAME, key,
-    #                ExtraArgs={'ContentType': 'image/png'})
-    # return f"{bucket_url}/{key}"
+    if cdn_url:
+        log.info("Print file uploaded to R2: %s", cdn_url)
+        return cdn_url
 
-    log.info("Would upload %s to %s", local_path.name, bucket_url)
-    return f"{bucket_url}/{local_path.name}"
+    # Fallback: serve from local Flask (dev only — won't survive restarts)
+    log.warning("R2 not configured — using local preview URL for print file")
+    return f"/preview/{local_path.name}"
 
 
 # ---------------------------------------------------------------------------

@@ -202,9 +202,11 @@ def job_status(job_id):
 @app.route("/preview/<filename>")
 def preview(filename):
     """Serve images from output/ for in-browser display."""
-    path = OUTPUT_DIR / Path(filename).name          # prevent path traversal
+    safe_name = Path(filename).name  # prevent path traversal
+    path = OUTPUT_DIR / safe_name
+    mime = "image/webp" if safe_name.endswith(".webp") else "image/png"
     try:
-        return send_file(path, mimetype="image/png")
+        return send_file(path, mimetype=mime)
     except FileNotFoundError:
         return "Not found", 404
 
@@ -425,18 +427,19 @@ def _process_job(job: dict):
             _peak_generations = _active_generations
 
     try:
-        raw_path, comp_path = generate(str(upload_path), job["pet_name"], job["style"])
+        raw_path, comp_path, web_path = generate(str(upload_path), job["pet_name"], job["style"])
 
         # Upload to R2 for permanent CDN URLs
         raw_cdn = upload_portrait(raw_path)
         comp_cdn = upload_portrait(comp_path)
+        web_cdn = upload_portrait(web_path)
 
         update_job(
             job_id,
             status="complete",
             raw=raw_cdn or f"/preview/{raw_path.name}",
-            composited=comp_cdn or f"/preview/{comp_path.name}",
-            download=f"/download/{comp_path.name}",
+            composited=web_cdn or f"/preview/{web_path.name}",  # frontend gets fast WebP
+            download=f"/download/{comp_path.name}",  # full-res PNG for download
             filename=comp_path.name,
             cdn="1" if comp_cdn else "0",
         )

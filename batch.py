@@ -82,7 +82,7 @@ def main():
             photo, style = futures[fut]
             label = f"{photo.name:<35} {style:<14}"
             try:
-                _, comp_path = fut.result()
+                _, comp_path, _web = fut.result()
                 done += 1
                 print(f"{label} ✓  {comp_path.name}")
             except Exception as exc:
