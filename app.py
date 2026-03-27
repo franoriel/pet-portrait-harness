@@ -21,6 +21,7 @@ from fulfillment import (
 )
 from mockups import generate_mockups
 from storage import upload_portrait
+from jobs import create_job, get_job, dequeue_job, update_job, queue_depth
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ def _add_cors(response):
     return response
 
 @app.route("/generate", methods=["OPTIONS"])
+@app.route("/status/<job_id>", methods=["OPTIONS"])
 @app.route("/preview/<filename>", methods=["OPTIONS"])
 @app.route("/download/<filename>", methods=["OPTIONS"])
 def _options_preflight(**_):
@@ -98,6 +100,7 @@ def health():
         active_generations=_active_generations,
         peak_generations=_peak_generations,
         max_concurrent=MAX_CONCURRENT_GENERATIONS,
+        queued_jobs=queue_depth(),
     )
 
 
@@ -124,6 +127,7 @@ def debug_catalog(product_id):
 
 @app.route("/generate", methods=["POST"])
 def generate_route():
+    """Accept a portrait request, enqueue it, and return a job ID immediately."""
     # ── Validate inputs ──────────────────────────────────────────────────────
     if "photo" not in request.files:
         return jsonify(error="No photo file received."), 400
@@ -141,46 +145,58 @@ def generate_route():
     if suffix not in ALLOWED_SUFFIXES:
         return jsonify(error=f"Unsupported file type '{suffix}'. Use JPG, PNG, or WebP."), 400
 
-    # ── Save upload temporarily ───────────────────────────────────────────────
+    # ── Save upload (persists until worker processes it) ──────────────────────
     upload_path = UPLOAD_DIR / f"{uuid.uuid4()}{suffix}"
     file.save(upload_path)
 
-    global _active_generations, _peak_generations
-    with _active_lock:
-        _active_generations += 1
-        if _active_generations > _peak_generations:
-            _peak_generations = _active_generations
+    # ── Enqueue job and return immediately ────────────────────────────────────
+    job = create_job(pet_name=pet_name, style=style, upload_path=str(upload_path))
+    depth = queue_depth()
 
-    try:
-        raw_path, comp_path = generate(str(upload_path), pet_name, style)
+    return jsonify(
+        job_id=job["job_id"],
+        status="queued",
+        position=depth,
+    ), 202
 
-        # Upload to R2 for permanent CDN URLs (falls back gracefully if not configured)
-        raw_cdn = upload_portrait(raw_path)
-        comp_cdn = upload_portrait(comp_path)
 
+@app.route("/status/<job_id>")
+def job_status(job_id):
+    """Poll endpoint — returns job status, queue position, or result URLs."""
+    job = get_job(job_id)
+    if not job:
+        return jsonify(error="Job not found"), 404
+
+    status = job.get("status", "queued")
+
+    if status == "queued":
         return jsonify(
-            raw=raw_cdn or f"/preview/{raw_path.name}",
-            composited=comp_cdn or f"/preview/{comp_path.name}",
-            download=f"/download/{comp_path.name}",
-            filename=comp_path.name,
-            cdn=bool(comp_cdn),  # tells frontend whether URLs are permanent
+            job_id=job_id,
+            status="queued",
+            position=int(job.get("position", 0)),
+            queue_depth=queue_depth(),
         )
-    except RuntimeError as exc:
-        if "BUSY" in str(exc):
-            return jsonify(
-                error="Server is at capacity. Please try again in a few seconds.",
-                retry_after=5,
-                queue_depth=_active_generations,
-            ), 503
-        log.exception("Generation failed for style=%s", style)
-        return jsonify(error=str(exc)), 500
-    except Exception as exc:
-        log.exception("Generation failed for style=%s", style)
-        return jsonify(error=str(exc)), 500
-    finally:
-        with _active_lock:
-            _active_generations -= 1
-        upload_path.unlink(missing_ok=True)
+    elif status == "processing":
+        return jsonify(
+            job_id=job_id,
+            status="processing",
+        )
+    elif status == "complete":
+        return jsonify(
+            job_id=job_id,
+            status="complete",
+            raw=job.get("raw", ""),
+            composited=job.get("composited", ""),
+            download=job.get("download", ""),
+            filename=job.get("filename", ""),
+            cdn=job.get("cdn", False),
+        )
+    else:  # failed
+        return jsonify(
+            job_id=job_id,
+            status="failed",
+            error=job.get("error", "Generation failed"),
+        )
 
 
 @app.route("/preview/<filename>")
@@ -384,6 +400,77 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
 
     except Exception:
         log.exception("Order #%s — fulfillment failed for item %s", order_id, item)
+
+
+# ---------------------------------------------------------------------------
+# Background job worker — processes queued portrait generation jobs
+# ---------------------------------------------------------------------------
+
+import time as _worker_time
+
+# How many jobs to process concurrently (matches the Gemini semaphore)
+_WORKER_THREADS = int(os.environ.get("MAX_CONCURRENT_GENERATIONS", 20))
+_worker_pool = ThreadPoolExecutor(max_workers=_WORKER_THREADS, thread_name_prefix="gen-worker")
+
+
+def _process_job(job: dict):
+    """Process a single generation job — called by the worker pool."""
+    job_id = job["job_id"]
+    upload_path = Path(job["upload_path"])
+
+    global _active_generations, _peak_generations
+    with _active_lock:
+        _active_generations += 1
+        if _active_generations > _peak_generations:
+            _peak_generations = _active_generations
+
+    try:
+        raw_path, comp_path = generate(str(upload_path), job["pet_name"], job["style"])
+
+        # Upload to R2 for permanent CDN URLs
+        raw_cdn = upload_portrait(raw_path)
+        comp_cdn = upload_portrait(comp_path)
+
+        update_job(
+            job_id,
+            status="complete",
+            raw=raw_cdn or f"/preview/{raw_path.name}",
+            composited=comp_cdn or f"/preview/{comp_path.name}",
+            download=f"/download/{comp_path.name}",
+            filename=comp_path.name,
+            cdn="1" if comp_cdn else "0",
+        )
+        log.info("Job %s complete: %s", job_id, comp_path.name)
+
+    except Exception as exc:
+        log.exception("Job %s failed", job_id)
+        update_job(job_id, status="failed", error=str(exc))
+    finally:
+        with _active_lock:
+            _active_generations -= 1
+        upload_path.unlink(missing_ok=True)
+
+
+def _worker_loop():
+    """
+    Continuously poll the job queue and dispatch jobs to the worker pool.
+    Runs in a daemon thread so it dies with the main process.
+    """
+    log.info("Job worker started (%d threads)", _WORKER_THREADS)
+    while True:
+        try:
+            job = dequeue_job()
+            if job:
+                _worker_pool.submit(_process_job, job)
+            else:
+                _worker_time.sleep(0.5)  # no jobs — sleep briefly
+        except Exception:
+            log.exception("Worker loop error")
+            _worker_time.sleep(1)
+
+
+_worker_thread = _threading.Thread(target=_worker_loop, daemon=True)
+_worker_thread.start()
 
 
 if __name__ == "__main__":
