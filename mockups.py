@@ -310,13 +310,22 @@ def extract_mockup_urls(result: dict) -> list[dict]:
 # Main orchestrator
 # ---------------------------------------------------------------------------
 
-def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
+def generate_mockups(
+    image_filename: str,
+    product_type: str,
+    image_url: Optional[str] = None,
+    variants: Optional[list[str]] = None,
+) -> list[dict]:
     """
     Generate Printful mockups for a portrait image.
 
     Args:
-        image_filename: filename in the output/ directory (e.g. 'photo_watercolor_raw.png')
+        image_filename: filename in the output/ directory (fallback for URL construction)
         product_type: 'canvas' or 'poster'
+        image_url: Public URL for the image (R2 CDN preferred). If not provided,
+                   falls back to constructing from RAILWAY_PUBLIC_URL + image_filename.
+        variants: Optional list of variant labels (e.g. ['12x18']) to generate.
+                  If None, generates all variants for the product type.
 
     Returns:
         List of { 'variant': '10x10', 'url': 'https://...', 'placement': 'default' }
@@ -325,13 +334,20 @@ def generate_mockups(image_filename: str, product_type: str) -> list[dict]:
     if not catalog_id:
         raise ValueError(f"Unknown product type: {product_type}")
 
-    # Build public URL for the image
-    image_url = f"{_public_base()}/preview/{image_filename}"
+    # Use provided CDN URL, or fall back to Railway preview URL
+    if not image_url:
+        image_url = f"{_public_base()}/preview/{image_filename}"
 
     # Resolve variant IDs
     variant_map = _resolve_variant_ids(product_type)
     if not variant_map:
         raise RuntimeError(f"No variant IDs resolved for {product_type}")
+
+    # Filter to requested variants only
+    if variants:
+        variant_map = {k: v for k, v in variant_map.items() if k in variants}
+        if not variant_map:
+            raise ValueError(f"No matching variants for {variants} in {product_type}")
 
     # Generate mockups one variant at a time to avoid style compatibility issues
     id_to_label = {vid: label for label, vid in variant_map.items()}

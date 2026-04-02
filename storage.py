@@ -63,12 +63,20 @@ def _get_client():
     return _client
 
 
+MIME_BY_EXT = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+}
+
+
 def upload_portrait(file_path: Path, key: Optional[str] = None) -> Optional[str]:
     """
     Upload a portrait image to R2 and return its public URL.
 
     Args:
-        file_path: Local path to the PNG file
+        file_path: Local path to the image file
         key: Optional S3 key (defaults to portraits/<filename>)
 
     Returns:
@@ -80,13 +88,14 @@ def upload_portrait(file_path: Path, key: Optional[str] = None) -> Optional[str]
     try:
         client = _get_client()
         s3_key = key or f"portraits/{file_path.name}"
+        content_type = MIME_BY_EXT.get(file_path.suffix.lower(), "image/png")
 
         client.upload_file(
             str(file_path),
             _bucket_name,
             s3_key,
             ExtraArgs={
-                "ContentType": "image/png",
+                "ContentType": content_type,
                 "CacheControl": "public, max-age=2592000",  # 30 days
             },
         )
@@ -135,4 +144,36 @@ def upload_bytes(data: bytes, key: str, content_type: str = "image/png") -> Opti
 
     except Exception as exc:
         log.warning("R2 upload failed for %s: %s", key, exc)
+        return None
+
+
+def download_from_r2(key: str, dest_dir: Optional[Path] = None) -> Optional[Path]:
+    """
+    Download a file from R2 to a local temporary path.
+
+    Args:
+        key: S3 key (e.g. 'portraits/abc123_watercolor_biscuit.png')
+        dest_dir: Local directory (defaults to output/)
+
+    Returns:
+        Path to the downloaded file, or None if R2 is not configured or download fails
+    """
+    if not _is_configured():
+        return None
+
+    try:
+        import tempfile
+        client = _get_client()
+        dest = dest_dir or Path("output")
+        dest.mkdir(parents=True, exist_ok=True)
+
+        filename = key.rsplit("/", 1)[-1]
+        local_path = dest / f"_r2dl_{filename}"
+
+        client.download_file(_bucket_name, key, str(local_path))
+        log.info("R2 download: %s → %s", key, local_path)
+        return local_path
+
+    except Exception as exc:
+        log.warning("R2 download failed for %s: %s", key, exc)
         return None

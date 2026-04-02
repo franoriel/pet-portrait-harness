@@ -187,6 +187,7 @@ def job_status(job_id):
             status="complete",
             raw=job.get("raw", ""),
             composited=job.get("composited", ""),
+            composited_png_cdn=job.get("composited_png_cdn", ""),
             download=job.get("download", ""),
             filename=job.get("filename", ""),
             cdn=job.get("cdn", False),
@@ -274,18 +275,26 @@ def mockups():
 
     data = request.get_json(silent=True) or {}
     image_filename = data.get("image_filename", "")
+    image_url = data.get("image_url", "")
     product_type = data.get("product_type", "canvas")
+    variants = data.get("variants")  # optional list of variant labels
 
-    if not image_filename:
-        return jsonify(error="image_filename required"), 400
+    if not image_filename and not image_url:
+        return jsonify(error="image_filename or image_url required"), 400
 
-    # Verify file exists
-    path = OUTPUT_DIR / Path(image_filename).name
-    if not path.exists():
-        return jsonify(error="Image not found"), 404
+    # If no CDN URL provided, verify local file exists
+    if not image_url:
+        path = OUTPUT_DIR / Path(image_filename).name
+        if not path.exists():
+            return jsonify(error="Image not found"), 404
 
     try:
-        results = generate_mockups(path.name, product_type)
+        results = generate_mockups(
+            image_filename=image_filename,
+            product_type=product_type,
+            image_url=image_url or None,
+            variants=variants,
+        )
         return jsonify(mockups=results)
     except Exception as e:
         log.exception("Mockup generation failed")
@@ -384,6 +393,13 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
             log.error("Order #%s — photo not found: %s", order_id, photo_path)
             return
 
+        # Extract R2 key from portrait URL for upscale-based fulfillment
+        composited_r2_key = None
+        portrait_url = item.get("preview_url", "")
+        r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+        if r2_public and portrait_url.startswith(r2_public):
+            composited_r2_key = portrait_url[len(r2_public) + 1:]  # strip base + "/"
+
         result = fulfill_order_item(
             photo_path=photo_path,
             pet_name=item["pet_name"],
@@ -392,6 +408,7 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
             size=item["size"],
             shopify_order_id=order_id,
             recipient=recipient,
+            composited_r2_key=composited_r2_key,
         )
 
         log.info(
@@ -429,7 +446,10 @@ def _process_job(job: dict):
     try:
         raw_path, comp_path, web_path = generate(str(upload_path), job["pet_name"], job["style"])
 
-        # Upload to R2 for permanent CDN URLs
+        # Upload original photo to R2 for future fulfillment (avoids re-generating via Gemini)
+        original_cdn = upload_portrait(upload_path, key=f"originals/{job_id}{upload_path.suffix}")
+
+        # Upload generated images to R2 for permanent CDN URLs
         raw_cdn = upload_portrait(raw_path)
         comp_cdn = upload_portrait(comp_path)
         web_cdn = upload_portrait(web_path)
@@ -439,9 +459,11 @@ def _process_job(job: dict):
             status="complete",
             raw=raw_cdn or f"/preview/{raw_path.name}",
             composited=web_cdn or f"/preview/{web_path.name}",  # frontend gets fast WebP
+            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",  # full-res PNG for Printful
             download=f"/download/{comp_path.name}",  # full-res PNG for download
             filename=comp_path.name,
             cdn="1" if comp_cdn else "0",
+            original_cdn=original_cdn or "",
         )
         log.info("Job %s complete: %s", job_id, comp_path.name)
 

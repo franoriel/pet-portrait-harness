@@ -109,20 +109,31 @@ def generate_print_file(
     style: str,
     product_key: str,
     style_vars: Optional[dict] = None,
+    composited_r2_key: Optional[str] = None,
 ) -> Path:
     """
     Generate a print-ready hi-res portrait sized for the target product.
 
+    Preferred path: download the composited PNG from R2 (already generated
+    during the initial portrait flow) and upscale it with LANCZOS + sharpening.
+    This avoids a second Gemini API call and halves the per-order cost.
+
+    Fallback: if R2 image is unavailable, re-generate via Gemini (old path).
+
     Args:
-        photo_path: Path to the customer's original photo.
+        photo_path: Path to the customer's original photo (fallback source).
         pet_name: Pet's name for compositing.
         style: Style ID (e.g. 'soft-watercolour' from React → mapped to 'watercolor').
-        product_key: Product-size key (e.g. 'canvas-18x18').
+        product_key: Product-size key (e.g. 'canvas-12x24').
         style_vars: Optional watercolor-specific variables.
+        composited_r2_key: R2 key of the composited PNG from initial generation.
 
     Returns:
         Path to the saved print-ready PNG.
     """
+    from PIL import ImageFilter
+    from storage import download_from_r2
+
     target_w, target_h = PRINT_SIZES[product_key]
     ratio = PRODUCT_RATIOS[product_key]
 
@@ -131,29 +142,56 @@ def generate_print_file(
         style, product_key, pet_name, target_w, target_h,
     )
 
-    # Map React style IDs to harness style keys
-    style_key = _map_style_id(style)
+    # ── Preferred path: upscale from R2 composited PNG ───────────
+    r2_path = None
+    if composited_r2_key:
+        r2_path = download_from_r2(composited_r2_key)
 
-    # Generate via Gemini
-    raw_bytes = call_gemini(photo_path, style_key, style_vars)
-    img = Image.open(BytesIO(raw_bytes))
-    img.load()
+    if r2_path and r2_path.exists():
+        log.info("Using R2 composited image for upscale (no Gemini re-generation)")
+        img = Image.open(r2_path)
+        img.load()
 
-    # Crop to product aspect ratio
-    img = crop_to_ratio(img, ratio)
+        # Crop to product aspect ratio
+        img = crop_to_ratio(img, ratio)
 
-    # Apply style-specific post-processing (skip watercolor's own crop since we
-    # already cropped to the product ratio above)
-    if style_key != "watercolor":
-        img = POST_PROCESS.get(style_key, lambda x: x)(img)
+        # Upscale to print dimensions
+        if img.width < target_w or img.height < target_h:
+            img = img.resize((target_w, target_h), Image.LANCZOS)
 
-    # Upscale to print dimensions using LANCZOS
-    if img.width < target_w or img.height < target_h:
-        img = img.resize((target_w, target_h), Image.LANCZOS)
+        # Sharpen to recover detail lost in upscaling
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
-    # Composite pet name (skip for mugs — name goes on a separate text area)
-    if not product_key.startswith("mug"):
-        img = composite_name(img, pet_name)
+        # Re-composite pet name at the larger resolution (skip for mugs)
+        if not product_key.startswith("mug"):
+            img = composite_name(img, pet_name)
+
+        # Clean up downloaded file
+        r2_path.unlink(missing_ok=True)
+
+    else:
+        # ── Fallback: re-generate via Gemini ─────────────────────
+        log.warning("R2 composited image not available, falling back to Gemini re-generation")
+        style_key = _map_style_id(style)
+
+        raw_bytes = call_gemini(photo_path, style_key, style_vars)
+        img = Image.open(BytesIO(raw_bytes))
+        img.load()
+
+        # Crop to product aspect ratio
+        img = crop_to_ratio(img, ratio)
+
+        # Apply style-specific post-processing
+        if style_key != "watercolor":
+            img = POST_PROCESS.get(style_key, lambda x: x)(img)
+
+        # Upscale to print dimensions
+        if img.width < target_w or img.height < target_h:
+            img = img.resize((target_w, target_h), Image.LANCZOS)
+
+        # Composite pet name (skip for mugs)
+        if not product_key.startswith("mug"):
+            img = composite_name(img, pet_name)
 
     # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -310,11 +348,12 @@ def fulfill_order_item(
     shopify_order_id: str,
     recipient: dict,
     style_vars: Optional[dict] = None,
+    composited_r2_key: Optional[str] = None,
 ) -> dict:
     """
     End-to-end fulfillment for a single line item.
 
-    1. Generate hi-res print file
+    1. Generate hi-res print file (upscale from R2, or Gemini fallback)
     2. Upload to cloud storage
     3. Create Printful order
 
@@ -326,13 +365,14 @@ def fulfill_order_item(
     if product_key not in PRINT_SIZES:
         raise ValueError(f"Unknown product configuration: {product_key}")
 
-    # Step 1: Generate
+    # Step 1: Generate (prefers R2 upscale over Gemini re-generation)
     print_path = generate_print_file(
         photo_path=photo_path,
         pet_name=pet_name,
         style=style,
         product_key=product_key,
         style_vars=style_vars,
+        composited_r2_key=composited_r2_key,
     )
 
     # Step 2: Upload
@@ -373,10 +413,10 @@ def parse_order_items(order: dict) -> list[dict]:
             continue
 
         items.append({
-            "pet_name": props.get("Pet name", "Pet"),
-            "style": props.get("Style", "soft-watercolour"),
+            "pet_name": props.get("Pet name", props.get("Pet Name", "Pet")),
+            "style": props.get("Style", props.get("_Style", "soft-watercolour")),
             "job_id": job_id,
-            "preview_url": props.get("Preview URL", ""),
+            "preview_url": props.get("Preview URL", props.get("_Portrait URL", "")),
             "product_type": props.get("Product type", "poster"),
             "size": props.get("Size", "12x16"),
             "quantity": li.get("quantity", 1),
