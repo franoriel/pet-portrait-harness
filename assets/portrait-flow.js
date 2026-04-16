@@ -1845,8 +1845,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
       localStorage.setItem(LS_KEY, JSON.stringify(session));
     } catch {}
-    // Framed products live on a separate Shopify PDP handle
-    const productHandle = wantsFrame ? 'canvas-framed' : 'canvas';
+    // Framed + unframed live on separate Shopify products
+    const productHandle = wantsFrame ? 'framed-canvas' : 'canvas';
     const url = currentVariantId
       ? `/products/${productHandle}?variant=${currentVariantId}`
       : `/products/${productHandle}`;
