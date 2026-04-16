@@ -138,23 +138,18 @@
       + 'background:linear-gradient(180deg, #f0ece6 0%, #e8e3dc 100%);'
       + 'position:relative;';
 
-    // Product print — sized by aspect ratio within the container
-    var productEl = document.createElement('div');
-    productEl.style.cssText = 'width:72%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
-      + 'max-height:80%;overflow:hidden;position:relative;'
+    // Product print — the image IS the product, no forced aspect ratio
+    var portraitImg = document.createElement('img');
+    portraitImg.src = portraitSrc;
+    portraitImg.alt = (petName || 'Portrait') + ' on ' + label + (isCanvas ? ' canvas' : ' print');
+    portraitImg.loading = 'lazy';
+    portraitImg.style.cssText = 'max-width:75%;max-height:78%;display:block;'
       + 'box-shadow:'
       +   '0 2px 4px rgba(0,0,0,0.06),'
       +   '0 8px 16px rgba(0,0,0,0.08),'
       +   '0 20px 40px rgba(0,0,0,0.10),'
       +   '0 32px 64px rgba(0,0,0,0.06);';
-    container.appendChild(productEl);
-
-    var portraitImg = document.createElement('img');
-    portraitImg.src = portraitSrc;
-    portraitImg.alt = (petName || 'Portrait') + ' on ' + label + (isCanvas ? ' canvas' : ' print');
-    portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
-    productEl.appendChild(portraitImg);
+    container.appendChild(portraitImg);
 
     // Size label
     var sizeLabel = document.createElement('div');
