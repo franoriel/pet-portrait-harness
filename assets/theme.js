@@ -271,8 +271,8 @@
         }
       }
 
-      // Update ATC button
-      if (atcBtn) {
+      // Update ATC button (skip if in pre-gen mode — controlled by pdp-portrait-inject.js)
+      if (atcBtn && !atcBtn.hasAttribute('data-pregen')) {
         if (variant.available) {
           atcBtn.disabled = false;
           atcBtn.textContent = 'Add to Cart \u2014 ' + variant.priceFormatted + ' CAD';

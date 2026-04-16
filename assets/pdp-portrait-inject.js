@@ -31,6 +31,16 @@
       atcBtn.textContent = 'CONTINUE \u2192 PICK YOUR STYLE';
       atcBtn.setAttribute('type', 'button');
       atcBtn.removeAttribute('name');
+      atcBtn.setAttribute('data-pregen', 'true');  // flag so theme.js skips updating it
+
+      // Watch for other scripts overwriting the button text and restore it
+      var preGenText = 'CONTINUE \u2192 PICK YOUR STYLE';
+      var observer = new MutationObserver(function () {
+        if (atcBtn.textContent.trim() !== preGenText) {
+          atcBtn.textContent = preGenText;
+        }
+      });
+      observer.observe(atcBtn, { childList: true, characterData: true, subtree: true });
 
       // Also intercept the FORM submission (belt-and-suspenders)
       form.addEventListener('submit', function (e) {
