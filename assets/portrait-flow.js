@@ -1425,11 +1425,44 @@ function PageHero() {
   return React.createElement('div', {
     style: { textAlign: 'center', marginBottom: '20px' },
   },
-    // Example portraits — visual proof of quality, the FIRST thing users see
+    // Page title — concise, emotional
+    React.createElement('h1', {
+      style: {
+        fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
+        fontSize: 'clamp(26px, 7vw, 36px)', color: tokens.colorBrand,
+        margin: '0 0 6px', lineHeight: 1.15,
+      },
+    }, 'Turn your pet into art'),
+
+    // Subtitle
+    React.createElement('p', {
+      style: {
+        fontFamily: fontSans, fontSize: '14px', color: tokens.colorMuted,
+        margin: '0 0 14px', lineHeight: 1.5,
+      },
+    }, '9 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
+
+    // Social proof
+    React.createElement('div', {
+      style: {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '6px', marginBottom: '18px',
+      },
+    },
+      React.createElement('span', {
+        style: { color: '#D4A84B', fontSize: '13px', letterSpacing: '1px' },
+        'aria-hidden': true,
+      }, '\u2605\u2605\u2605\u2605\u2605'),
+      React.createElement('span', {
+        style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted },
+      }, '4.9/5 from 124+ pet parents'),
+    ),
+
+    // Example portraits — visual proof of quality
     React.createElement('div', {
       style: {
         display: 'flex', justifyContent: 'center', gap: '10px',
-        marginBottom: '20px',
+        marginBottom: '0',
       },
       'aria-label': 'Example pet portraits',
     },
@@ -1460,37 +1493,6 @@ function PageHero() {
           }, ex.label),
         ),
       ),
-    ),
-
-    // Page title — concise, emotional
-    React.createElement('h1', {
-      style: {
-        fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
-        fontSize: 'clamp(26px, 7vw, 36px)', color: tokens.colorBrand,
-        margin: '0 0 6px', lineHeight: 1.15,
-      },
-    }, 'Turn your pet into art'),
-    React.createElement('p', {
-      style: {
-        fontFamily: fontSans, fontSize: '14px', color: tokens.colorMuted,
-        margin: '0 0 14px', lineHeight: 1.5,
-      },
-    }, '9 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
-
-    // Social proof — compact single line
-    React.createElement('div', {
-      style: {
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '6px', marginBottom: '0',
-      },
-    },
-      React.createElement('span', {
-        style: { color: '#D4A84B', fontSize: '13px', letterSpacing: '1px' },
-        'aria-hidden': true,
-      }, '\u2605\u2605\u2605\u2605\u2605'),
-      React.createElement('span', {
-        style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted },
-      }, '4.9/5 from 124+ pet parents'),
     ),
   );
 }
