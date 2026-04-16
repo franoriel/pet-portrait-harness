@@ -30,6 +30,40 @@ const tokens = {
 const fontSerif = "'Cormorant Garamond', serif";
 const fontSans  = "'Inter', sans-serif";
 
+/* ── Style → font mapping ─────────────────────────────────── */
+// Each style gets a complementary Google Font for the pet name
+// Fonts are loaded on-demand via Google Fonts CSS
+
+const STYLE_FONTS = {
+  'soft-watercolour':     { family: 'Dancing Script',     css: "'Dancing Script', cursive",     google: 'Dancing+Script:wght@700' },
+  'minimal-line-art':     { family: 'Raleway',            css: "'Raleway', sans-serif",         google: 'Raleway:wght@300;600' },
+  'modern-oil-paint':     { family: 'Playfair Display',   css: "'Playfair Display', serif",     google: 'Playfair+Display:ital,wght@0,700;1,700' },
+  'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
+  'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
+  'cozy-film-grain':      { family: 'Libre Baskerville',  css: "'Libre Baskerville', serif",    google: 'Libre+Baskerville:ital,wght@0,400;1,400' },
+  'rainbow-bridge':       { family: 'Sacramento',         css: "'Sacramento', cursive",         google: 'Sacramento' },
+  'bold-graphic-poster':  { family: 'Oswald',             css: "'Oswald', sans-serif",          google: 'Oswald:wght@700' },
+  'aura-gradient':        { family: 'Quicksand',          css: "'Quicksand', sans-serif",       google: 'Quicksand:wght@500;700' },
+};
+
+const FONT_SIZES = [
+  { id: 'small',  label: 'S', scale: 0.7 },
+  { id: 'medium', label: 'M', scale: 1.0 },
+  { id: 'large',  label: 'L', scale: 1.35 },
+];
+
+// Load a Google Font dynamically
+const _loadedFonts = new Set();
+function loadGoogleFont(styleId) {
+  const fontDef = STYLE_FONTS[styleId];
+  if (!fontDef || _loadedFonts.has(styleId)) return;
+  _loadedFonts.add(styleId);
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${fontDef.google}&display=swap`;
+  document.head.appendChild(link);
+}
+
 /* ── Style catalogue ───────────────────────────────────────── */
 
 const STYLES = [
@@ -165,6 +199,7 @@ function saveSession(state) {
       version: 1,
       petName: state.petName,
       styleId: state.selectedStyleId,
+      fontSize: state.fontSize || 'medium',
       jobId: state.jobId,
       previewDataUrls: state.previewDataUrls || [],
       previewCdnUrls: state.previewCdnUrls || [],
@@ -462,6 +497,7 @@ function usePortraitFlow() {
     previewDataUrls: saved?.previewDataUrls || [],
     previewCdnUrls: saved?.previewCdnUrls || [],
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
+    fontSize: saved?.fontSize || 'medium',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
   });
@@ -1049,71 +1085,27 @@ function GeneratingState() {
     },
     role: 'status', 'aria-live': 'polite', 'aria-label': 'Generating your portrait',
   },
-    // Chase spinner — circular orbit with kitten and puppy
+    // Calm loading indicator — puppy and kitten side by side, gentle bounce
     React.createElement('div', {
       style: {
-        position: 'relative', width: '140px', height: '140px', margin: '0 auto 8px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '24px', margin: '0 auto 16px', padding: '16px 0',
       },
     },
-      // Morphing square (center element inspired by the reference component)
+      React.createElement('div', {
+        style: { animation: 'pf-chase-bounce-1 1.2s ease-in-out infinite' },
+      }, React.createElement(PuppySVG)),
+      // Pulsing center dot
       React.createElement('div', {
         style: {
-          position: 'absolute', top: '50%', left: '50%', width: '24px', height: '24px',
-          marginTop: '-12px', marginLeft: '-12px',
+          width: '10px', height: '10px', borderRadius: '50%',
           background: tokens.colorAccent,
-          animation: 'pf-morph-square 2s ease-in-out infinite',
+          animation: 'pf-watercolor-pulse 2s ease-in-out infinite',
         },
       }),
-      // Spinning orbit track — rotates clockwise
       React.createElement('div', {
-        style: {
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          animation: 'pf-chase-spin 3s linear infinite',
-        },
-      },
-        // Puppy — top of orbit (leading the chase, faces right = clockwise at top)
-        React.createElement('div', {
-          style: {
-            position: 'absolute', top: '-6px', left: '50%', marginLeft: '-20px',
-          },
-        },
-          // Counter-rotate to stay upright as orbit spins
-          React.createElement('div', {
-            style: {
-              animation: 'pf-chase-unspin 3s linear infinite',
-            },
-          },
-            React.createElement('div', {
-              style: { animation: 'pf-chase-bounce-1 0.6s ease-in-out infinite' },
-            }, React.createElement(PuppySVG)),
-          ),
-        ),
-        // Kitten — bottom of orbit (chasing the puppy, flipped to face left = clockwise at bottom)
-        React.createElement('div', {
-          style: {
-            position: 'absolute', bottom: '-2px', left: '50%', marginLeft: '-18px',
-          },
-        },
-          // Counter-rotate AND flip horizontally so kitten faces clockwise direction
-          React.createElement('div', {
-            style: {
-              animation: 'pf-chase-unspin-flip 3s linear infinite',
-            },
-          },
-            React.createElement('div', {
-              style: { animation: 'pf-chase-bounce-2 0.6s ease-in-out 0.3s infinite' },
-            }, React.createElement(KittenSVG)),
-          ),
-        ),
-      ),
-      // Faint circular orbit track line
-      React.createElement('div', {
-        style: {
-          position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px',
-          borderRadius: '50%', border: '1.5px dashed ' + tokens.colorBorder,
-          opacity: 0.5,
-        },
-      }),
+        style: { animation: 'pf-chase-bounce-2 1.2s ease-in-out 0.3s infinite', transform: 'scaleX(-1)' },
+      }, React.createElement(KittenSVG)),
     ),
     // Phrase — with fade animation on change
     React.createElement('p', {
@@ -1144,7 +1136,7 @@ function GeneratingState() {
 
 /* ── PreviewStep ───────────────────────────────────────────── */
 
-function PreviewStep({ state, selectPreview, onContinue, retryFromUpload, retryFromStyle, generate }) {
+function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload, retryFromStyle, generate }) {
   if (state.generationStatus === 'error') {
     return React.createElement('div', { style: { ...s.sectionWrap, textAlign: 'center', padding: '48px 16px' } },
       React.createElement('h2', {
@@ -1165,6 +1157,15 @@ function PreviewStep({ state, selectPreview, onContinue, retryFromUpload, retryF
   }
 
   const mainImage = state.previewImages[state.selectedPreviewIndex];
+  const styleFontDef = STYLE_FONTS[state.selectedStyleId] || STYLE_FONTS['soft-watercolour'];
+  const currentSizeDef = FONT_SIZES.find(f => f.id === (state.fontSize || 'medium')) || FONT_SIZES[1];
+  const nameBasePx = 32;
+  const nameFontSize = Math.round(nameBasePx * currentSizeDef.scale);
+
+  // Load the style-specific Google Font
+  useEffect(() => {
+    if (state.selectedStyleId) loadGoogleFont(state.selectedStyleId);
+  }, [state.selectedStyleId]);
 
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 3 }),
@@ -1207,15 +1208,46 @@ function PreviewStep({ state, selectPreview, onContinue, retryFromUpload, retryF
       ),
     ),
 
-    // Pet name treatment
-    React.createElement('div', { style: { textAlign: 'center', marginBottom: '24px' } },
+    // Pet name treatment with style-matched font
+    React.createElement('div', { style: { textAlign: 'center', marginBottom: '16px' } },
       React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 4px' } }, 'Your bespoke portrait'),
       state.petName && React.createElement('p', {
         style: {
-          fontFamily: fontSerif, fontStyle: 'italic', fontWeight: 400,
-          fontSize: '32px', color: tokens.colorBrand, margin: 0, letterSpacing: '0.02em',
+          fontFamily: styleFontDef.css, fontWeight: 700,
+          fontSize: `${nameFontSize}px`, color: tokens.colorBrand,
+          margin: 0, letterSpacing: '0.04em', transition: 'all 0.3s ease',
         },
       }, state.petName),
+    ),
+
+    // Font size selector
+    state.petName && React.createElement('div', {
+      style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' },
+      role: 'group', 'aria-label': 'Name size',
+    },
+      React.createElement('span', {
+        style: { fontFamily: fontSans, fontSize: '11px', color: tokens.colorMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginRight: '4px' },
+      }, 'Name size'),
+      FONT_SIZES.map(size =>
+        React.createElement('button', {
+          key: size.id, type: 'button',
+          'aria-label': `${size.id} name size`,
+          'aria-pressed': state.fontSize === size.id,
+          onClick: () => {
+            update({ fontSize: size.id });
+            saveSession({ ...state, fontSize: size.id });
+          },
+          style: {
+            width: '36px', height: '36px', borderRadius: '8px',
+            border: state.fontSize === size.id ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+            background: state.fontSize === size.id ? tokens.colorAccentLight : tokens.colorWhite,
+            color: state.fontSize === size.id ? tokens.colorAccent : tokens.colorMuted,
+            fontFamily: fontSans, fontWeight: 600, fontSize: '13px',
+            cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          },
+        }, size.label)
+      ),
     ),
 
     // Actions
@@ -1406,7 +1438,7 @@ function PortraitFlow() {
       content = React.createElement(GeneratingState); break;
     case STAGES.PREVIEW:
       content = React.createElement(PreviewStep, {
-        state, selectPreview: flow.selectPreview,
+        state, update: flow.update, selectPreview: flow.selectPreview,
         onContinue: () => flow.goToStage(STAGES.GALLERY),
         retryFromUpload: flow.retryFromUpload, retryFromStyle: flow.retryFromStyle,
         generate: flow.generate,

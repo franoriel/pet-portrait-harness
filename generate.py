@@ -471,21 +471,44 @@ POST_PROCESS: dict[str, Callable[[Image.Image], Image.Image]] = {
 # Font helpers
 # ---------------------------------------------------------------------------
 
-_font_cache: dict[int, ImageFont.FreeTypeFont] = {}
+_font_cache: dict[str, ImageFont.FreeTypeFont] = {}
+
+# Style → Google Font mapping (must match frontend STYLE_FONTS)
+STYLE_FONT_MAP: dict[str, dict] = {
+    "watercolor":           {"family": "Dancing Script",     "google": "Dancing+Script:wght@700",                  "file": "DancingScript-Bold.ttf"},
+    "minimal-line-art":     {"family": "Raleway",            "google": "Raleway:wght@600",                         "file": "Raleway-SemiBold.ttf"},
+    "modern-oil-paint":     {"family": "Playfair Display",   "google": "Playfair+Display:wght@700",                "file": "PlayfairDisplay-Bold.ttf"},
+    "neon-pop-art":         {"family": "Bungee",             "google": "Bungee",                                   "file": "Bungee-Regular.ttf"},
+    "renaissance-royalty":  {"family": "Cinzel",             "google": "Cinzel:wght@700",                          "file": "Cinzel-Bold.ttf"},
+    "cozy-film-grain":      {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@400",               "file": "LibreBaskerville-Regular.ttf"},
+    "rainbow-bridge":       {"family": "Sacramento",         "google": "Sacramento",                               "file": "Sacramento-Regular.ttf"},
+    "bold-graphic-poster":  {"family": "Oswald",             "google": "Oswald:wght@700",                          "file": "Oswald-Bold.ttf"},
+    "aura-gradient":        {"family": "Quicksand",          "google": "Quicksand:wght@700",                       "file": "Quicksand-Bold.ttf"},
+    # Ink-only legacy styles use Libre Baskerville Bold
+    "classic":              {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@700",               "file": "LibreBaskerville-Bold.ttf"},
+    "minimal":              {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@700",               "file": "LibreBaskerville-Bold.ttf"},
+    "naturalist":           {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@700",               "file": "LibreBaskerville-Bold.ttf"},
+}
+
+# Font size multipliers (matches frontend FONT_SIZES)
+FONT_SIZE_SCALE: dict[str, float] = {
+    "small":  0.7,
+    "medium": 1.0,
+    "large":  1.35,
+}
 
 
-@functools.lru_cache(maxsize=1)
-def _get_font_path() -> Optional[Path]:
-    """Download Libre Baskerville Bold once; result is cached for the process lifetime."""
-    font_path = FONTS_DIR / "LibreBaskerville-Bold.ttf"
+def _download_google_font(google_spec: str, filename: str) -> Optional[Path]:
+    """Download a Google Font TTF file. Cached in fonts/ directory."""
+    font_path = FONTS_DIR / filename
     if font_path.exists():
         return font_path
 
     FONTS_DIR.mkdir(parents=True, exist_ok=True)
-    print("Downloading Libre Baskerville Bold font…", file=sys.stderr)
+    print(f"Downloading Google Font: {google_spec}…", file=sys.stderr)
     try:
         req = urllib.request.Request(
-            "https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700",
+            f"https://fonts.googleapis.com/css2?family={google_spec}",
             headers={"User-Agent": "Mozilla/5.0 (compatible; PetPortraitBot/1.0)"},
         )
         css = urllib.request.urlopen(req, timeout=10).read().decode()
@@ -493,7 +516,6 @@ def _get_font_path() -> Optional[Path]:
         if not matches:
             raise ValueError("Could not parse font URL from Google Fonts response")
         font_url = matches[-1].strip("'\"")
-        # Download to a temp file then rename atomically — avoids partial writes
         tmp = Path(tempfile.mktemp(dir=FONTS_DIR, suffix=".ttf.tmp"))
         with urllib.request.urlopen(font_url, timeout=15) as resp:
             tmp.write_bytes(resp.read())
@@ -505,15 +527,30 @@ def _get_font_path() -> Optional[Path]:
         return None
 
 
-def get_font(size: int) -> ImageFont.FreeTypeFont:
-    """Return a cached FreeTypeFont at the requested size."""
-    if size in _font_cache:
-        return _font_cache[size]
-    font_path = _get_font_path()
+@functools.lru_cache(maxsize=1)
+def _get_font_path() -> Optional[Path]:
+    """Download Libre Baskerville Bold once (legacy default)."""
+    return _download_google_font("Libre+Baskerville:wght@700", "LibreBaskerville-Bold.ttf")
+
+
+def get_font(size: int, style: Optional[str] = None) -> ImageFont.FreeTypeFont:
+    """Return a cached FreeTypeFont at the requested size, optionally style-specific."""
+    cache_key = f"{style or 'default'}:{size}"
+    if cache_key in _font_cache:
+        return _font_cache[cache_key]
+
+    font_path = None
+    if style and style in STYLE_FONT_MAP:
+        spec = STYLE_FONT_MAP[style]
+        font_path = _download_google_font(spec["google"], spec["file"])
+
+    if not font_path:
+        font_path = _get_font_path()
+
     if font_path:
         try:
             font = ImageFont.truetype(str(font_path), size)
-            _font_cache[size] = font
+            _font_cache[cache_key] = font
             return font
         except OSError:
             pass
@@ -524,18 +561,26 @@ def get_font(size: int) -> ImageFont.FreeTypeFont:
 # Text compositing
 # ---------------------------------------------------------------------------
 
-def composite_name(image: Image.Image, pet_name: str) -> Image.Image:
+def composite_name(
+    image: Image.Image,
+    pet_name: str,
+    style: Optional[str] = None,
+    font_size_key: str = "medium",
+) -> Image.Image:
     """
-    Composite the pet name in spaced ALL-CAPS onto the bottom 20% of the image.
+    Composite the pet name onto the bottom 20% of the image.
+    Uses a style-specific Google Font and respects the user's font size choice.
     Adds a thin separator line above the name.
     """
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
     draw = ImageDraw.Draw(img)
     w, h = img.size
 
+    scale = FONT_SIZE_SCALE.get(font_size_key, 1.0)
     spaced   = "  ".join(pet_name.upper())
-    font_size = max(20, int(w * 0.045))
-    font      = get_font(font_size)
+    base_size = max(20, int(w * 0.045))
+    font_size = max(16, int(base_size * scale))
+    font      = get_font(font_size, style=style)
 
     bbox   = draw.textbbox((0, 0), spaced, font=font)
     text_w = bbox[2] - bbox[0]

@@ -110,6 +110,7 @@ def generate_print_file(
     product_key: str,
     style_vars: Optional[dict] = None,
     composited_r2_key: Optional[str] = None,
+    font_size: str = "medium",
 ) -> Path:
     """
     Generate a print-ready hi-res portrait sized for the target product.
@@ -163,8 +164,9 @@ def generate_print_file(
         img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
         # Composite pet name AFTER cropping to correct ratio (skip for mugs)
+        style_key = _map_style_id(style)
         if not product_key.startswith("mug"):
-            img = composite_name(img, pet_name)
+            img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
 
         # Clean up downloaded file
         r2_path.unlink(missing_ok=True)
@@ -191,7 +193,7 @@ def generate_print_file(
 
         # Composite pet name AFTER cropping (skip for mugs)
         if not product_key.startswith("mug"):
-            img = composite_name(img, pet_name)
+            img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
 
     # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -415,6 +417,7 @@ def parse_order_items(order: dict) -> list[dict]:
         items.append({
             "pet_name": props.get("Pet name", props.get("Pet Name", "Pet")),
             "style": props.get("Style", props.get("_Style", "soft-watercolour")),
+            "font_size": props.get("Font Size", props.get("_Font Size", "medium")),
             "job_id": job_id,
             "preview_url": props.get("Preview URL", props.get("_Portrait URL", "")),
             "product_type": props.get("Product type", "poster"),

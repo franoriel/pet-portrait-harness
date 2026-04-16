@@ -36,6 +36,43 @@
 
   var previewUrl = previewUrls[data.selectedPreviewIndex || 0] || previewUrls[0];
   var petName = data.petName || '';
+  var styleId = data.styleId || 'soft-watercolour';
+  var fontSize = data.fontSize || 'medium';
+
+  // ── Style → font mapping (must match portrait-flow.js) ──
+  var STYLE_FONTS = {
+    'soft-watercolour':     "'Dancing Script', cursive",
+    'minimal-line-art':     "'Raleway', sans-serif",
+    'modern-oil-paint':     "'Playfair Display', serif",
+    'neon-pop-art':         "'Bungee', sans-serif",
+    'renaissance-royalty':  "'Cinzel', serif",
+    'cozy-film-grain':      "'Libre Baskerville', serif",
+    'rainbow-bridge':       "'Sacramento', cursive",
+    'bold-graphic-poster':  "'Oswald', sans-serif",
+    'aura-gradient':        "'Quicksand', sans-serif",
+  };
+  var FONT_SCALES = { small: 0.7, medium: 1.0, large: 1.35 };
+  var nameFontCss = STYLE_FONTS[styleId] || "'Cormorant Garamond', serif";
+  var nameFontScale = FONT_SCALES[fontSize] || 1.0;
+
+  // Load Google Font for the style
+  var GOOGLE_FONTS = {
+    'soft-watercolour':     'Dancing+Script:wght@700',
+    'minimal-line-art':     'Raleway:wght@300;600',
+    'modern-oil-paint':     'Playfair+Display:ital,wght@0,700;1,700',
+    'neon-pop-art':         'Bungee',
+    'renaissance-royalty':  'Cinzel:wght@700',
+    'cozy-film-grain':      'Libre+Baskerville:ital,wght@0,400;1,400',
+    'rainbow-bridge':       'Sacramento',
+    'bold-graphic-poster':  'Oswald:wght@700',
+    'aura-gradient':        'Quicksand:wght@500;700',
+  };
+  if (GOOGLE_FONTS[styleId]) {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=' + GOOGLE_FONTS[styleId] + '&display=swap';
+    document.head.appendChild(link);
+  }
 
   // ── Detect product type from URL ────────────────────────
   var pathParts = window.location.pathname.split('/');
@@ -76,19 +113,8 @@
     portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top;display:block;';
     frame.appendChild(portraitImg);
 
-    // Overlay pet name at bottom of frame (mimics final print)
-    if (petName) {
-      var nameOverlay = document.createElement('div');
-      nameOverlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:6% 8px 4%;text-align:center;'
-        + "font-family:'Cormorant Garamond',serif;font-size:clamp(10px,3vw,16px);letter-spacing:0.15em;"
-        + 'color:#1C1C1C;text-transform:uppercase;';
-      // Thin separator line
-      var line = document.createElement('div');
-      line.style.cssText = 'width:30%;margin:0 auto 6px;border-top:1px solid rgba(0,0,0,0.25);';
-      nameOverlay.appendChild(line);
-      nameOverlay.appendChild(document.createTextNode(petName.toUpperCase()));
-      frame.appendChild(nameOverlay);
-    }
+    // No CSS name overlay — the AI-generated image already has the
+    // pet name composited by generate.py's composite_name()
 
     container.appendChild(frame);
 
@@ -294,6 +320,7 @@
     var props = {
       'Pet Name': petName,
       '_Style': data.styleId || '',
+      '_Font Size': fontSize,
       '_Job ID': data.jobId || '',
       '_Portrait URL': portraitUrl,
     };
