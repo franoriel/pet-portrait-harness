@@ -378,9 +378,13 @@ def generate_route():
             error="Pet name must be 1–30 characters using only letters, numbers, spaces, hyphens, periods, or apostrophes."
         ), 400
 
-    # Whitelist style
-    style = request.form.get("style", "classic")
-    if not isinstance(style, str) or len(style) > 40 or style not in PROMPTS:
+    # Whitelist style + map React IDs (soft-watercolour → watercolor)
+    style_raw = request.form.get("style", "classic")
+    if not isinstance(style_raw, str) or len(style_raw) > 40:
+        return jsonify(error="Invalid style."), 400
+    from fulfillment import _map_style_id
+    style = _map_style_id(style_raw)
+    if style not in PROMPTS:
         return jsonify(error="Invalid style."), 400
 
     # Validate file by magic bytes (not just extension)
@@ -591,15 +595,17 @@ def add_name():
 
     data = request.get_json(silent=True) or {}
     image_url = (data.get("image_url") or "").strip()
-    style = (data.get("style") or "watercolor").strip()
+    style_raw = (data.get("style") or "watercolor").strip()
 
     # Validate pet_name
     ok_name, pet_name = sanitize_pet_name(data.get("pet_name", ""))
     if not ok_name:
         return jsonify(error="Invalid pet name."), 400
 
-    # Validate style
-    if len(style) > 40 or style not in PROMPTS:
+    # Map React style ID (soft-watercolour) → PROMPTS key (watercolor)
+    from fulfillment import _map_style_id
+    style = _map_style_id(style_raw) if len(style_raw) <= 40 else None
+    if not style or style not in PROMPTS:
         return jsonify(error="Invalid style."), 400
 
     # Validate image_url — must be HTTPS, from allowed hosts (prevents SSRF)
