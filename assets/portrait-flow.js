@@ -1728,10 +1728,12 @@ const CANVAS_SIZES = [
 function ProductGallery({ state, retryFromStyle, startFresh }) {
   const mainImage = state.previewImages[0] || state.previewCdnUrls[0];
   const [selectedSize, setSelectedSize] = useState('10x10');
-  const [wantsName, setWantsName] = useState(true);
+  // Default to NO name so clicking "Yes" actually triggers something
+  const [wantsName, setWantsName] = useState(false);
   const [wantsFrame, setWantsFrame] = useState(false);
   const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
   const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
+  const [nameError, setNameError] = useState(null);
 
   const activeSize = CANVAS_SIZES.find(s => s.id === selectedSize) || CANVAS_SIZES[0];
   const currentPrice = wantsFrame ? activeSize.priceFramed : activeSize.price;
@@ -1740,29 +1742,55 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   // When user toggles name ON and we don't have a named preview yet, generate it
   const handleNameToggle = useCallback((enabled) => {
     setWantsName(enabled);
-    if (enabled && !namedPreviewUrl && state.petName && !generatingNamedPreview) {
-      setGeneratingNamedPreview(true);
-      const API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-      const imageUrl = state.previewCdnUrls[0] || state.previewImages[0];
-      fetch(`${API_BASE}/add-name`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: imageUrl,
-          pet_name: state.petName,
-          style: state.selectedStyleId,
-        }),
-      })
-      .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Failed'); }))
-      .then(resp => {
-        setNamedPreviewUrl(resp.composited || resp.composited_png_cdn);
-        setGeneratingNamedPreview(false);
-      })
-      .catch(err => {
-        console.error('Add-name failed:', err);
-        setGeneratingNamedPreview(false);
-      });
+    setNameError(null);
+    if (!enabled) return;
+    if (!state.petName) {
+      setNameError('Please go back and enter your pet\u2019s name first.');
+      return;
     }
+    if (namedPreviewUrl) return; // already have it
+    if (generatingNamedPreview) return; // already in progress
+
+    setGeneratingNamedPreview(true);
+    const API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+    const imageUrl = (state.previewCdnUrls && state.previewCdnUrls[0])
+      || (state.previewImages && state.previewImages[0])
+      || '';
+
+    if (!imageUrl) {
+      setNameError('No portrait image available to add name to.');
+      setGeneratingNamedPreview(false);
+      return;
+    }
+
+    console.log('[PetPrintables] Calling /add-name', { imageUrl, petName: state.petName, style: state.selectedStyleId });
+
+    fetch(`${API_BASE}/add-name`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_url: imageUrl,
+        pet_name: state.petName,
+        style: state.selectedStyleId,
+      }),
+    })
+    .then(async r => {
+      if (r.ok) return r.json();
+      let errMsg = `HTTP ${r.status}`;
+      try { const d = await r.json(); errMsg = d.error || errMsg; } catch {}
+      throw new Error(errMsg);
+    })
+    .then(resp => {
+      const url = resp.composited || resp.composited_png_cdn;
+      if (!url) throw new Error('No image returned');
+      setNamedPreviewUrl(url);
+      setGeneratingNamedPreview(false);
+    })
+    .catch(err => {
+      console.error('[PetPrintables] Add-name failed:', err);
+      setNameError(err.message || 'Could not add name. Please try again.');
+      setGeneratingNamedPreview(false);
+    });
   }, [namedPreviewUrl, state.petName, state.selectedStyleId, state.previewCdnUrls, state.previewImages, generatingNamedPreview]);
 
   // Go to PDP with all params
@@ -1921,9 +1949,22 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         `Add "${state.petName}" to the portrait?`
       ),
       React.createElement('div', { style: { display: 'flex', gap: '10px' } },
-        optionCard('Yes, include name', wantsName === true, () => handleNameToggle(true)),
+        optionCard(
+          generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, include name',
+          wantsName === true,
+          () => handleNameToggle(true),
+          null,
+          generatingNamedPreview,
+        ),
         optionCard('No, portrait only', wantsName === false, () => handleNameToggle(false)),
       ),
+      nameError && React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: '12px', color: tokens.colorError,
+          margin: '8px 0 0', lineHeight: 1.4,
+        },
+        role: 'alert',
+      }, '\u26A0 ' + nameError),
     ),
 
     // FRAME toggle
