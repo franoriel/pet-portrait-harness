@@ -92,64 +92,89 @@
     },
   };
 
-  // ── Build a room-scene canvas mockup ─────────────────────
-  // Renders a realistic wall scene with the portrait as a
-  // hanging canvas, including shadow, depth, and furniture hints.
+  // ── Build a photorealistic room-scene mockup ──────────────
+  // Uses real room photography as background with the portrait
+  // composited as a canvas on the wall via CSS positioning.
 
-  // Alternate between two wall/room styles for variety
   var _mockupSceneIndex = 0;
+
+  // Room scene configs — positions define where the canvas sits
+  // within each photo (percentage-based for responsive scaling)
   var ROOM_SCENES = [
     {
-      // Warm living room — cream wall, wooden shelf
-      wall: 'linear-gradient(180deg, #EDE8E0 0%, #E5DFD5 60%, #DDD6CA 100%)',
-      shelfColor: '#8B7355',
-      shelfTop: '78%',
-      accentItem: 'plant',   // small plant on shelf
-      accentColor: '#6B8E5A',
+      // Warm scandinavian — credenza + plant
+      image: 'mockup-room-1.webp',
+      // Canvas placement zone (% of container)
+      canvasTop: 5,
+      canvasLeft: 18,
+      canvasMaxW: 64,   // max width % of container
+      canvasMaxH: 52,   // max height % of container
     },
     {
-      // Modern minimal — light gray wall, floating shelf
-      wall: 'linear-gradient(180deg, #EDEDED 0%, #E4E4E4 60%, #DCDCDC 100%)',
-      shelfColor: '#C4B9A8',
-      shelfTop: '80%',
-      accentItem: 'book',
-      accentColor: '#A89880',
+      // Modern living room — gray couch + side table
+      image: 'mockup-room-2.webp',
+      canvasTop: 4,
+      canvasLeft: 15,
+      canvasMaxW: 50,
+      canvasMaxH: 48,
     },
   ];
+
+  // Resolve Shopify asset URLs for room scene images
+  var _assetBase = '';
+  var _scriptTag = document.querySelector('script[src*="pdp-portrait-inject"]');
+  if (_scriptTag) {
+    _assetBase = _scriptTag.src.replace(/pdp-portrait-inject[^/]*$/, '');
+  }
 
   function createClientMockup(portraitSrc, widthIn, heightIn, label) {
     var scene = ROOM_SCENES[_mockupSceneIndex % ROOM_SCENES.length];
     _mockupSceneIndex++;
 
-    // Outer container — the "room" viewport
+    // Outer container — room photo viewport
     var room = document.createElement('div');
-    room.style.cssText = 'width:100%;aspect-ratio:4/5;border-radius:16px;overflow:hidden;position:relative;'
-      + 'background:' + scene.wall + ';';
+    room.style.cssText = 'width:100%;border-radius:16px;overflow:hidden;position:relative;';
 
-    // Subtle wall texture
-    var texture = document.createElement('div');
-    texture.style.cssText = 'position:absolute;inset:0;opacity:0.03;'
-      + "background-image:url(\"data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='%23000'/%3E%3C/svg%3E\");";
-    room.appendChild(texture);
+    // Room background photo
+    var bgImg = document.createElement('img');
+    bgImg.src = _assetBase + scene.image;
+    bgImg.alt = '';
+    bgImg.setAttribute('aria-hidden', 'true');
+    bgImg.loading = 'lazy';
+    bgImg.style.cssText = 'width:100%;display:block;';
+    room.appendChild(bgImg);
 
-    // Canvas frame — centered on the wall, sized proportionally
-    // Canvas takes ~50-65% of room width depending on aspect ratio
+    // Calculate canvas dimensions within the scene
+    // The canvas must fit within the scene's placement zone
+    // while maintaining the correct product aspect ratio
+    var aspectRatio = heightIn / widthIn;
     var isSquare = widthIn === heightIn;
     var isTall = heightIn > widthIn * 1.5;
-    var canvasWidthPct = isSquare ? 50 : isTall ? 38 : 55;
 
+    // Start with max width, constrain by max height
+    var canvasW = scene.canvasMaxW;
+    var canvasH = canvasW * aspectRatio * 0.8; // 0.8 accounts for container being wider than tall
+    if (canvasH > scene.canvasMaxH) {
+      canvasH = scene.canvasMaxH;
+      canvasW = canvasH / (aspectRatio * 0.8);
+    }
+    // Center horizontally within placement zone
+    var canvasL = scene.canvasLeft + (scene.canvasMaxW - canvasW) / 2;
+
+    // Canvas element — portrait on the wall
     var canvas = document.createElement('div');
-    canvas.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);'
-      + 'top:8%;width:' + canvasWidthPct + '%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
-      + 'border-radius:2px;overflow:hidden;'
-      // Realistic canvas depth + shadow
+    canvas.style.cssText = 'position:absolute;'
+      + 'top:' + scene.canvasTop + '%;'
+      + 'left:' + canvasL + '%;'
+      + 'width:' + canvasW + '%;'
+      + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'overflow:hidden;border-radius:1px;'
+      // Realistic wall-mounted canvas shadows
       + 'box-shadow:'
-      +   '0 2px 4px rgba(0,0,0,0.08),'      // tight shadow
-      +   '0 8px 24px rgba(0,0,0,0.12),'      // medium spread
-      +   '0 20px 40px rgba(0,0,0,0.08),'     // ambient
-      +   '4px 4px 0 0 rgba(0,0,0,0.03);'     // right/bottom edge depth
-      // White canvas wrap edge
-      + 'border:3px solid #fff;';
+      +   '0 2px 6px rgba(0,0,0,0.12),'
+      +   '0 8px 20px rgba(0,0,0,0.10),'
+      +   '0 16px 40px rgba(0,0,0,0.06);'
+      + 'border:3px solid rgba(255,255,255,0.9);';
 
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
@@ -159,54 +184,13 @@
     canvas.appendChild(portraitImg);
     room.appendChild(canvas);
 
-    // Floating shelf
-    var shelf = document.createElement('div');
-    shelf.style.cssText = 'position:absolute;left:10%;right:10%;top:' + scene.shelfTop + ';height:6px;'
-      + 'background:' + scene.shelfColor + ';border-radius:2px;'
-      + 'box-shadow:0 2px 8px rgba(0,0,0,0.1);';
-    room.appendChild(shelf);
-
-    // Accent item on shelf
-    if (scene.accentItem === 'plant') {
-      var plant = document.createElement('div');
-      plant.style.cssText = 'position:absolute;right:15%;top:calc(' + scene.shelfTop + ' - 28px);'
-        + 'width:20px;height:28px;';
-      // Pot
-      var pot = document.createElement('div');
-      pot.style.cssText = 'position:absolute;bottom:0;left:3px;width:14px;height:10px;'
-        + 'background:#C4A882;border-radius:1px 1px 3px 3px;';
-      plant.appendChild(pot);
-      // Leaves (simple circles)
-      var leaf1 = document.createElement('div');
-      leaf1.style.cssText = 'position:absolute;bottom:8px;left:2px;width:8px;height:12px;'
-        + 'background:' + scene.accentColor + ';border-radius:50% 50% 50% 0;transform:rotate(-15deg);';
-      plant.appendChild(leaf1);
-      var leaf2 = document.createElement('div');
-      leaf2.style.cssText = 'position:absolute;bottom:10px;left:8px;width:8px;height:14px;'
-        + 'background:' + scene.accentColor + ';border-radius:50% 50% 0 50%;transform:rotate(10deg);opacity:0.85;';
-      plant.appendChild(leaf2);
-      room.appendChild(plant);
-    } else {
-      // Books
-      var books = document.createElement('div');
-      books.style.cssText = 'position:absolute;left:16%;top:calc(' + scene.shelfTop + ' - 18px);'
-        + 'display:flex;gap:2px;align-items:flex-end;';
-      ['16px', '20px', '14px'].forEach(function(h, i) {
-        var book = document.createElement('div');
-        var colors = ['#B8A088', '#9E8E7E', '#C4B09A'];
-        book.style.cssText = 'width:6px;height:' + h + ';background:' + colors[i] + ';border-radius:1px;';
-        books.appendChild(book);
-      });
-      room.appendChild(books);
-    }
-
-    // Size label — elegant pill
+    // Size label — elegant pill overlay
     var sizeLabel = document.createElement('div');
     sizeLabel.textContent = widthIn + '" × ' + heightIn + '"';
     sizeLabel.style.cssText = 'position:absolute;bottom:10px;left:50%;transform:translateX(-50%);'
       + "font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:500;letter-spacing:0.05em;"
-      + 'color:#6B6560;background:rgba(255,255,255,0.9);padding:4px 12px;border-radius:20px;'
-      + 'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      + 'color:#6B6560;background:rgba(255,255,255,0.92);padding:4px 12px;border-radius:20px;'
+      + 'box-shadow:0 1px 4px rgba(0,0,0,0.08);';
     room.appendChild(sizeLabel);
 
     return room;

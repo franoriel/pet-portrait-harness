@@ -561,6 +561,32 @@ def get_font(size: int, style: Optional[str] = None) -> ImageFont.FreeTypeFont:
 # Text compositing
 # ---------------------------------------------------------------------------
 
+def _detect_text_color(image: Image.Image) -> tuple:
+    """
+    Sample the bottom 20% of the image to determine if text should be
+    light or dark for good contrast.
+    Returns (text_rgb, line_rgba) tuple.
+    """
+    w, h = image.size
+    zone_top = int(h * 0.80)
+    bottom = image.crop((0, zone_top, w, h))
+    # Average the pixel values
+    pixels = list(bottom.getdata())
+    if not pixels:
+        return (0, 0, 0), (0, 0, 0, 80)
+    avg_r = sum(p[0] for p in pixels) / len(pixels)
+    avg_g = sum(p[1] for p in pixels) / len(pixels)
+    avg_b = sum(p[2] for p in pixels) / len(pixels)
+    # Perceived luminance (ITU-R BT.709)
+    luminance = 0.2126 * avg_r + 0.7152 * avg_g + 0.0722 * avg_b
+    if luminance < 128:
+        # Dark background → white text
+        return (255, 255, 255), (255, 255, 255, 100)
+    else:
+        # Light background → dark text
+        return (0, 0, 0), (0, 0, 0, 80)
+
+
 def composite_name(
     image: Image.Image,
     pet_name: str,
@@ -569,12 +595,17 @@ def composite_name(
 ) -> Image.Image:
     """
     Composite the pet name onto the bottom 20% of the image.
-    Uses a style-specific Google Font and respects the user's font size choice.
+    Uses a style-specific Google Font, respects the user's font size choice,
+    and auto-detects text color for contrast against the background.
     Adds a thin separator line above the name.
     """
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
     draw = ImageDraw.Draw(img)
     w, h = img.size
+
+    # Auto-detect text color based on bottom region brightness
+    text_color, line_color_rgba = _detect_text_color(img)
+    line_color = text_color  # simplified — use same color with lower opacity via thin width
 
     scale = FONT_SIZE_SCALE.get(font_size_key, 1.0)
     spaced   = "  ".join(pet_name.upper())
@@ -593,8 +624,8 @@ def composite_name(
 
     line_y = text_y - 16
     margin = (w - int(w * 0.30)) // 2
-    draw.line([(margin, line_y), (w - margin, line_y)], fill=(0, 0, 0), width=1)
-    draw.text((text_x, text_y), spaced, fill=(0, 0, 0), font=font)
+    draw.line([(margin, line_y), (w - margin, line_y)], fill=line_color, width=1)
+    draw.text((text_x, text_y), spaced, fill=text_color, font=font)
 
     return img
 
