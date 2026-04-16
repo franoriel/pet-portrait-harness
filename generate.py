@@ -587,6 +587,83 @@ def _detect_text_color(image: Image.Image) -> tuple:
         return (0, 0, 0), (0, 0, 0, 80)
 
 
+# Per-style text rendering config — controls how the name looks on each style
+STYLE_TEXT_CONFIG: dict[str, dict] = {
+    "watercolor": {
+        "size_ratio": 0.05,     # font size as fraction of image width
+        "transform": "title",   # title case
+        "zone_top": 0.82,       # where the text zone starts (fraction of height)
+        "letter_spacing": 0,    # extra spacing between chars (0 = natural)
+        "opacity": 0.85,        # text opacity (for softer styles)
+    },
+    "minimal-line-art": {
+        "size_ratio": 0.035,
+        "transform": "upper",
+        "zone_top": 0.84,
+        "letter_spacing": 6,
+        "opacity": 1.0,
+    },
+    "modern-oil-paint": {
+        "size_ratio": 0.045,
+        "transform": "title",
+        "zone_top": 0.82,
+        "letter_spacing": 1,
+        "opacity": 0.9,
+    },
+    "neon-pop-art": {
+        "size_ratio": 0.06,
+        "transform": "upper",
+        "zone_top": 0.80,
+        "letter_spacing": 4,
+        "opacity": 1.0,
+    },
+    "renaissance-royalty": {
+        "size_ratio": 0.04,
+        "transform": "upper",
+        "zone_top": 0.83,
+        "letter_spacing": 8,
+        "opacity": 0.9,
+    },
+    "cozy-film-grain": {
+        "size_ratio": 0.04,
+        "transform": "title",
+        "zone_top": 0.84,
+        "letter_spacing": 1,
+        "opacity": 0.8,
+    },
+    "rainbow-bridge": {
+        "size_ratio": 0.06,
+        "transform": "title",
+        "zone_top": 0.82,
+        "letter_spacing": 0,
+        "opacity": 0.85,
+    },
+    "bold-graphic-poster": {
+        "size_ratio": 0.07,
+        "transform": "upper",
+        "zone_top": 0.78,
+        "letter_spacing": 5,
+        "opacity": 1.0,
+    },
+    "aura-gradient": {
+        "size_ratio": 0.045,
+        "transform": "title",
+        "zone_top": 0.83,
+        "letter_spacing": 2,
+        "opacity": 0.85,
+    },
+}
+
+# Default config for styles not in the map
+_DEFAULT_TEXT_CONFIG = {
+    "size_ratio": 0.045,
+    "transform": "title",
+    "zone_top": 0.82,
+    "letter_spacing": 0,
+    "opacity": 1.0,
+}
+
+
 def composite_name(
     image: Image.Image,
     pet_name: str,
@@ -594,35 +671,54 @@ def composite_name(
     font_size_key: str = "medium",
 ) -> Image.Image:
     """
-    Composite the pet name onto the bottom 20% of the image.
-    Uses a style-specific Google Font, respects the user's font size choice,
-    and auto-detects text color for contrast against the background.
-    Adds a thin separator line above the name.
+    Composite the pet name onto the bottom of the image.
+    Uses per-style config for font size, casing, positioning, and opacity
+    so the text feels integrated with each artistic style.
     """
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
-    draw = ImageDraw.Draw(img)
     w, h = img.size
 
+    # Get style-specific config
+    cfg = STYLE_TEXT_CONFIG.get(style, _DEFAULT_TEXT_CONFIG)
+
     # Auto-detect text color based on bottom region brightness
-    text_color, line_color_rgba = _detect_text_color(img)
-    line_color = text_color  # simplified — use same color with lower opacity via thin width
+    text_color, _ = _detect_text_color(img)
 
+    # Apply opacity to text color
+    opacity = cfg["opacity"]
+    if opacity < 1.0:
+        text_color = tuple(int(c * opacity + (255 - 255 * opacity) * (1 - text_color[0] / 255)) for c in text_color)
+
+    # Format the name
+    name = pet_name.strip()
+    if cfg["transform"] == "upper":
+        name = name.upper()
+    else:
+        name = name.title()
+
+    # Add letter spacing if configured
+    spacing = cfg["letter_spacing"]
+    if spacing > 0:
+        name = (" " * spacing).join(name)
+
+    # Calculate font size
     scale = FONT_SIZE_SCALE.get(font_size_key, 1.0)
-    spaced   = pet_name.strip().title()
-    base_size = max(20, int(w * 0.045))
+    base_size = max(20, int(w * cfg["size_ratio"]))
     font_size = max(16, int(base_size * scale))
-    font      = get_font(font_size, style=style)
+    font = get_font(font_size, style=style)
 
-    bbox   = draw.textbbox((0, 0), spaced, font=font)
+    # Position text
+    draw = ImageDraw.Draw(img)
+    bbox = draw.textbbox((0, 0), name, font=font)
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
 
-    zone_top    = int(h * 0.80)
+    zone_top = int(h * cfg["zone_top"])
     zone_center = zone_top + (h - zone_top) // 2
-    text_x      = (w - text_w) // 2
-    text_y      = zone_center - text_h // 2
+    text_x = (w - text_w) // 2
+    text_y = zone_center - text_h // 2
 
-    draw.text((text_x, text_y), spaced, fill=text_color, font=font)
+    draw.text((text_x, text_y), name, fill=text_color, font=font)
 
     return img
 
