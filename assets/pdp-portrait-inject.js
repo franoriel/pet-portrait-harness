@@ -177,73 +177,37 @@
     var canvasL = scene.zoneLeft + (scene.zoneW - canvasW) / 2;
     var canvasT = scene.zoneTop + (scene.zoneH - canvasH) / 2;
 
-    // ── Gallery-wrapped canvas with Printful-quality realism ──
-    // Slight 3D perspective so right + bottom edges are visible
-    var canvasWrap = document.createElement('div');
-    canvasWrap.style.cssText = 'position:absolute;'
+    // ── Canvas print on wall — clean realism ──────────────
+    var canvasEl = document.createElement('div');
+    canvasEl.style.cssText = 'position:absolute;'
       + 'top:' + canvasT + '%;'
       + 'left:' + canvasL + '%;'
       + 'width:' + canvasW + '%;'
       + 'height:' + canvasH + '%;'
-      + 'transform:perspective(900px) rotateY(-1.5deg) rotateX(0.8deg);';
-    room.appendChild(canvasWrap);
-
-    // Canvas face — the printed surface with layered realistic shadows
-    var canvas = document.createElement('div');
-    canvas.style.cssText = 'position:absolute;inset:0;overflow:hidden;'
+      + 'overflow:hidden;'
+      // Layered shadow — warm tone, consistent upper-left light
       + 'box-shadow:'
-      // Contact shadow — tight, anchors canvas to wall
-      +   '1px 1px 2px hsla(30,15%,18%,0.12),'
-      // Near shadow
-      +   '3px 3px 5px hsla(30,15%,18%,0.10),'
-      // Mid shadow
-      +   '6px 6px 10px hsla(30,15%,18%,0.08),'
-      // Far ambient shadow
-      +   '12px 12px 20px hsla(30,15%,18%,0.06),'
-      // Distant glow
-      +   '24px 24px 40px hsla(30,15%,18%,0.04),'
-      // Inset edge shadow — simulates wrap fold
-      +   'inset -2px -2px 4px rgba(0,0,0,0.10),'
-      +   'inset 1px 1px 2px rgba(255,255,255,0.05);';
+      +   '0 1px 2px hsla(30,15%,15%,0.10),'
+      +   '0 3px 6px hsla(30,15%,15%,0.10),'
+      +   '0 8px 16px hsla(30,15%,15%,0.08),'
+      +   '0 16px 32px hsla(30,15%,15%,0.06);';
+    room.appendChild(canvasEl);
 
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
     portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top;display:block;';
-    canvas.appendChild(portraitImg);
+    canvasEl.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise)
     var texture = document.createElement('div');
     texture.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;'
-      + 'mix-blend-mode:overlay;opacity:0.10;'
+      + 'mix-blend-mode:overlay;opacity:0.08;'
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");";
-    canvas.appendChild(texture);
-    canvasWrap.appendChild(canvas);
+    canvasEl.appendChild(texture);
 
-    // Right depth edge — gallery wrap side (1.25" depth)
-    var edgeRight = document.createElement('div');
-    edgeRight.style.cssText = 'position:absolute;top:3px;right:-12px;width:12px;bottom:3px;'
-      + 'background:linear-gradient(to right, #c8b8a4 0%, #a89888 40%, #8a7a68 100%);'
-      + 'transform-origin:left;transform:skewY(-1.2deg);'
-      + 'border-radius:0 1px 1px 0;';
-    canvasWrap.appendChild(edgeRight);
-
-    // Bottom depth edge — gallery wrap bottom
-    var edgeBottom = document.createElement('div');
-    edgeBottom.style.cssText = 'position:absolute;left:3px;right:11px;bottom:-10px;height:10px;'
-      + 'background:linear-gradient(to bottom, #b8a894 0%, #907e6c 60%, #786850 100%);'
-      + 'transform-origin:top;transform:skewX(-1.2deg);'
-      + 'border-radius:0 0 1px 1px;';
-    canvasWrap.appendChild(edgeBottom);
-
-    // Corner join (where right and bottom edges meet)
-    var corner = document.createElement('div');
-    corner.style.cssText = 'position:absolute;right:-12px;bottom:-10px;width:12px;height:10px;'
-      + 'background:#786850;border-radius:0 0 1px 0;';
-    canvasWrap.appendChild(corner);
-
-    // Size label — elegant pill overlay
+    // Size label
     var sizeLabel = document.createElement('div');
     sizeLabel.textContent = widthIn + '" × ' + heightIn + '"';
     sizeLabel.style.cssText = 'position:absolute;bottom:10px;left:50%;transform:translateX(-50%);'
