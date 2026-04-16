@@ -708,22 +708,34 @@
       form.appendChild(input);
     });
 
-    // ── Auto-select the size variant chosen on step 4 ──────
-    if (selectedSize) {
-      // Size values on the PDP look like '10"x10"' or '10×10' — match by digits
+    // ── Auto-select the variant chosen on step 4 ───────────
+    // Prefer URL ?variant= match (already handled by Shopify natively),
+    // then fall back to matching by size label in the variant picker.
+    var urlParams = new URLSearchParams(window.location.search);
+    var urlVariantId = urlParams.get('variant');
+
+    function clickMatchingSize() {
+      if (!selectedSize) return;
       var targetParts = selectedSize.match(/(\d+)\D+(\d+)/);
-      if (targetParts) {
-        var w = targetParts[1], h = targetParts[2];
-        setTimeout(function () {
-          var variantOpts = document.querySelectorAll('.variant-option');
-          variantOpts.forEach(function (opt) {
-            var txt = (opt.textContent || '').match(/(\d+)\D+(\d+)/);
-            if (txt && txt[1] === w && txt[2] === h) {
-              opt.click();
-            }
-          });
-        }, 100); // small delay to let theme.js bind variant-picker
-      }
+      if (!targetParts) return;
+      var w = targetParts[1], h = targetParts[2];
+      var variantOpts = document.querySelectorAll('.variant-option');
+      variantOpts.forEach(function (opt) {
+        var txt = (opt.textContent || '').match(/(\d+)\D+(\d+)/);
+        if (txt && txt[1] === w && txt[2] === h && !opt.classList.contains('is-selected')) {
+          opt.click();
+        }
+      });
+    }
+
+    // Try immediately + after short delay (theme.js might not be ready yet)
+    setTimeout(clickMatchingSize, 50);
+    setTimeout(clickMatchingSize, 300);
+
+    // Also ensure the hidden form id matches the chosen variant
+    if (urlVariantId && form) {
+      var hiddenId = form.querySelector('input[name="id"]');
+      if (hiddenId) hiddenId.value = urlVariantId;
     }
 
     // ── Lazy generation: call /add-name on ATC click ─────────

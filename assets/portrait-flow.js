@@ -1845,10 +1845,11 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
       localStorage.setItem(LS_KEY, JSON.stringify(session));
     } catch {}
-    // Deep-link to the PDP with the specific variant preselected
+    // Framed products live on a separate Shopify PDP handle
+    const productHandle = wantsFrame ? 'canvas-framed' : 'canvas';
     const url = currentVariantId
-      ? `/products/canvas?variant=${currentVariantId}`
-      : '/products/canvas';
+      ? `/products/${productHandle}?variant=${currentVariantId}`
+      : `/products/${productHandle}`;
     window.location.href = url;
   }, [activeSize, currentVariantId, currentPrice, wantsName, wantsFrame, namedPreviewUrl]);
 
@@ -1973,54 +1974,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       ),
     ),
 
-    // SIZE selector — only shows sizes available for current frame choice
+    // 1. FRAME toggle — decided first, since it filters available sizes
     React.createElement('div', { style: { marginBottom: '24px' } },
-      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } }, 'Size'),
-      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' } },
-        availableSizes.map(size => {
-          const priceVal = wantsFrame ? size.priceFramed : size.price;
-          return optionCard(
-            size.label,
-            selectedSize === size.id,
-            () => setSelectedSize(size.id),
-            React.createElement('span', null,
-              React.createElement('span', { style: { fontWeight: 600 } }, size.label),
-              React.createElement('br'),
-              React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } },
-                `$${priceVal.toFixed(2)}`
-              )
-            )
-          );
-        }),
-      ),
-    ),
-
-    // NAME toggle
-    state.petName && React.createElement('div', { style: { marginBottom: '24px' } },
-      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
-        `Add "${state.petName}" to the portrait?`
-      ),
-      React.createElement('div', { style: { display: 'flex', gap: '10px' } },
-        optionCard(
-          generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, include name',
-          wantsName === true,
-          () => handleNameToggle(true),
-          null,
-          generatingNamedPreview,
-        ),
-        optionCard('No, portrait only', wantsName === false, () => handleNameToggle(false)),
-      ),
-      nameError && React.createElement('p', {
-        style: {
-          fontFamily: fontSans, fontSize: '12px', color: tokens.colorError,
-          margin: '8px 0 0', lineHeight: 1.4,
-        },
-        role: 'alert',
-      }, '\u26A0 ' + nameError),
-    ),
-
-    // FRAME toggle
-    React.createElement('div', { style: { marginBottom: '28px' } },
       React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } }, 'Add a frame?'),
       React.createElement('div', { style: { display: 'flex', gap: '10px' } },
         optionCard(
@@ -2044,6 +1999,52 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           )
         ),
       ),
+    ),
+
+    // 2. SIZE selector — filtered by frame choice
+    React.createElement('div', { style: { marginBottom: '24px' } },
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } }, 'Size'),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' } },
+        availableSizes.map(size => {
+          const priceVal = wantsFrame ? size.priceFramed : size.price;
+          return optionCard(
+            size.label,
+            selectedSize === size.id,
+            () => setSelectedSize(size.id),
+            React.createElement('span', null,
+              React.createElement('span', { style: { fontWeight: 600 } }, size.label),
+              React.createElement('br'),
+              React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } },
+                `$${priceVal.toFixed(2)}`
+              )
+            )
+          );
+        }),
+      ),
+    ),
+
+    // 3. NAME toggle
+    state.petName && React.createElement('div', { style: { marginBottom: '28px' } },
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
+        `Add "${state.petName}" to the portrait?`
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: '10px' } },
+        optionCard(
+          generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, include name',
+          wantsName === true,
+          () => handleNameToggle(true),
+          null,
+          generatingNamedPreview,
+        ),
+        optionCard('No, portrait only', wantsName === false, () => handleNameToggle(false)),
+      ),
+      nameError && React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: '12px', color: tokens.colorError,
+          margin: '8px 0 0', lineHeight: 1.4,
+        },
+        role: 'alert',
+      }, '\u26A0 ' + nameError),
     ),
 
     // Summary + CTA
