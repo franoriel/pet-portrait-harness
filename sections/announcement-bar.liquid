@@ -4,7 +4,7 @@
     {%- if section.settings.text != blank -%}
       {{ section.settings.text }}
     {%- else -%}
-      🚚 Free shipping on orders over $75 CAD &nbsp;|&nbsp;
+      🚚 Free shipping on orders over $85 CAD &nbsp;|&nbsp;
       <a href="{{ section.settings.link }}">Shop Now →</a>
     {%- endif -%}
   </p>
@@ -16,7 +16,7 @@
   "name": "Announcement Bar",
   "settings": [
     { "type": "checkbox", "id": "show_bar", "label": "Show announcement bar", "default": true },
-    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Free shipping on orders over $75 CAD — Made in Canada, shipped to your door</p>" },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Free shipping on orders over $85 CAD — Made in Canada, shipped to your door</p>" },
     { "type": "url", "id": "link", "label": "Link URL" }
   ]
 }

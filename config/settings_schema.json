@@ -46,7 +46,8 @@
   {
     "name": "Portrait Preview API",
     "settings": [
-      { "type": "text", "id": "portrait_api_url", "label": "Portrait API base URL", "default": "https://web-production-a392e.up.railway.app", "info": "The URL of the pet-portrait-harness Flask app. Use http://localhost:5001 for local testing." }
+      { "type": "text", "id": "portrait_api_url", "label": "Portrait API base URL", "default": "https://web-production-a392e.up.railway.app", "info": "The URL of the pet-portrait-harness Flask app. Use http://localhost:5001 for local testing." },
+      { "type": "text", "id": "turnstile_site_key", "label": "Cloudflare Turnstile site key", "default": "", "info": "Public site key from Cloudflare Turnstile dashboard. Paired with TURNSTILE_SECRET_KEY env var on the Flask backend. Leave blank to disable bot protection (dev only)." }
     ]
   },
   {

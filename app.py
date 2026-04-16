@@ -7,10 +7,14 @@ Flask web UI for the pet portrait generator.
 
 import logging
 import os
+import time
 import uuid
+from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Lock
 
+import requests as _req
 from flask import Flask, jsonify, render_template, request, send_file
 
 from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate, generate_with_name_on_demand, verify_image_is_pet
@@ -28,6 +32,77 @@ log = logging.getLogger(__name__)
 
 # Background executor for async fulfillment (webhook responds immediately)
 _fulfillment_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="fulfill")
+
+# ─────────────────────────────────────────────────────────────
+# Rate limiting (per-IP, in-memory sliding window)
+# ─────────────────────────────────────────────────────────────
+RATE_LIMIT_HOURLY = int(os.environ.get("RATE_LIMIT_HOURLY", "5"))   # max gens per hour per IP
+RATE_LIMIT_DAILY  = int(os.environ.get("RATE_LIMIT_DAILY", "15"))   # max gens per day per IP
+
+_rate_buckets: dict[str, deque] = defaultdict(deque)
+_rate_lock = Lock()
+
+
+def _client_ip() -> str:
+    """Extract client IP, respecting common proxy headers."""
+    fwd = request.headers.get("X-Forwarded-For", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.headers.get("X-Real-IP") or request.remote_addr or "unknown"
+
+
+def check_rate_limit(ip: str) -> tuple[bool, str]:
+    """Sliding window rate check. Returns (allowed, reason_if_blocked)."""
+    now = time.time()
+    hour_cutoff = now - 3600
+    day_cutoff = now - 86400
+
+    with _rate_lock:
+        bucket = _rate_buckets[ip]
+        # Prune entries older than 24h
+        while bucket and bucket[0] < day_cutoff:
+            bucket.popleft()
+
+        hourly_count = sum(1 for t in bucket if t >= hour_cutoff)
+        daily_count = len(bucket)
+
+        if hourly_count >= RATE_LIMIT_HOURLY:
+            return False, f"You've created {hourly_count} portraits in the last hour. Please try again later."
+        if daily_count >= RATE_LIMIT_DAILY:
+            return False, f"You've reached the daily limit of {RATE_LIMIT_DAILY} portraits. Please try again tomorrow."
+
+        bucket.append(now)
+        return True, ""
+
+
+# ─────────────────────────────────────────────────────────────
+# Cloudflare Turnstile bot protection (free, privacy-friendly)
+# ─────────────────────────────────────────────────────────────
+TURNSTILE_SECRET = os.environ.get("TURNSTILE_SECRET_KEY", "")
+TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+
+
+def verify_turnstile(token: str, ip: str) -> bool:
+    """Verify a Cloudflare Turnstile token. Returns True if valid human.
+
+    If TURNSTILE_SECRET_KEY isn't configured, verification is skipped
+    (dev mode). In production, set the env var to enforce bot protection.
+    """
+    if not TURNSTILE_SECRET:
+        return True  # not configured — skip in dev
+    if not token:
+        return False
+    try:
+        resp = _req.post(TURNSTILE_VERIFY_URL, data={
+            "secret": TURNSTILE_SECRET,
+            "response": token,
+            "remoteip": ip,
+        }, timeout=10)
+        data = resp.json()
+        return bool(data.get("success"))
+    except Exception as exc:
+        log.warning("Turnstile verification failed: %s", exc)
+        return False  # fail closed — reject on error
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20 MB
@@ -128,6 +203,20 @@ def debug_catalog(product_id):
 @app.route("/generate", methods=["POST"])
 def generate_route():
     """Accept a portrait request, enqueue it, and return a job ID immediately."""
+    # ── Bot protection: Cloudflare Turnstile ─────────────────────────────────
+    ip = _client_ip()
+    turnstile_token = request.form.get("turnstile_token", "").strip()
+    if not verify_turnstile(turnstile_token, ip):
+        return jsonify(
+            error="Please complete the verification challenge and try again.",
+            code="turnstile_failed",
+        ), 403
+
+    # ── Rate limiting (per-IP sliding window) ────────────────────────────────
+    allowed, reason = check_rate_limit(ip)
+    if not allowed:
+        return jsonify(error=reason, code="rate_limited"), 429
+
     # ── Validate inputs ──────────────────────────────────────────────────────
     if "photo" not in request.files:
         return jsonify(error="No photo file received."), 400
@@ -300,6 +389,11 @@ def add_name():
     """
     if request.method == "OPTIONS":
         return "", 204
+
+    ip = _client_ip()
+    allowed, reason = check_rate_limit(ip)
+    if not allowed:
+        return jsonify(error=reason, code="rate_limited"), 429
 
     data = request.get_json(silent=True) or {}
     image_url = data.get("image_url", "")

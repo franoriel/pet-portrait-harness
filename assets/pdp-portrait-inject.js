@@ -606,8 +606,9 @@
       '_Show Name': wantsName ? 'Yes' : 'No',
       '_Frame': wantsFrame ? 'Framed' : 'No frame',
       '_Job ID': data.jobId || '',
-      '_Portrait URL': previewUrlForCart,      // preview for display
+      '_Portrait URL': previewUrlForCart,      // preview for display (with or without name)
       '_Print File URL': printFileUrl,         // hi-res for Printful
+      '_No Name URL': (data.previewCdnUrls || [])[0] || '',  // preserved for cart toggle
     };
     Object.keys(props).forEach(function (key) {
       var input = document.createElement('input');

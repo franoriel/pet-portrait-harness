@@ -278,11 +278,23 @@ const STYLE_MAP = {
   'aura-gradient': 'aura-gradient',
 };
 
+// Cloudflare Turnstile token getter — returns current token from the widget.
+// The widget is rendered once on the create page and auto-refreshes tokens.
+function getTurnstileToken() {
+  try {
+    if (window.turnstile && window._pfTurnstileWidgetId !== undefined) {
+      return window.turnstile.getResponse(window._pfTurnstileWidgetId) || '';
+    }
+  } catch {}
+  return '';
+}
+
 async function generatePortrait({ imageFile, styleId, petName }) {
   const formData = new FormData();
   formData.append('photo', imageFile);
   formData.append('pet_name', petName || 'Pet');
   formData.append('style', STYLE_MAP[styleId] || 'classic');
+  formData.append('turnstile_token', getTurnstileToken());
 
   // Step 1: Submit the job
   const submitRes = await fetch(`${API_BASE}/generate`, {
@@ -1760,6 +1772,42 @@ function PortraitFlow() {
   );
 }
 
+/* ── Cloudflare Turnstile bot protection ─────────────────────
+ * Site key is read from window.petPrintables.turnstileSiteKey
+ * (set via Shopify theme settings). Widget renders invisibly on
+ * the create page and provides a token for each /generate call.
+ */
+function mountTurnstile() {
+  const siteKey = window.petPrintables && window.petPrintables.turnstileSiteKey;
+  if (!siteKey) return; // not configured — skip (dev mode)
+
+  // Container for the widget
+  let container = document.getElementById('pf-turnstile');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'pf-turnstile';
+    container.style.cssText = 'margin:16px auto;display:flex;justify-content:center;';
+    document.getElementById('portrait-flow-root')?.appendChild(container);
+  }
+
+  // Load Turnstile script once
+  if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onPfTurnstileLoad';
+    script.async = true; script.defer = true;
+    document.head.appendChild(script);
+  }
+
+  window.onPfTurnstileLoad = function () {
+    window._pfTurnstileWidgetId = window.turnstile.render(container, {
+      sitekey: siteKey,
+      size: 'flexible',
+      theme: 'light',
+      appearance: 'interaction-only',  // invisible unless challenge needed
+    });
+  };
+}
+
 /* ── Mount ─────────────────────────────────────────────────── */
 
 const pfRoot = document.getElementById('portrait-flow-root');
@@ -1767,4 +1815,5 @@ const pfShippingDate = pfRoot?.dataset?.shippingDate || '';
 const pfOccasion = pfRoot?.dataset?.occasion || '';
 if (pfRoot) {
   ReactDOM.createRoot(pfRoot).render(React.createElement(PortraitFlow));
+  mountTurnstile();
 }

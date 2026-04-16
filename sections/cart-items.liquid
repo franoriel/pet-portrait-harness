@@ -7,16 +7,31 @@
       <div class="cart-page__layout">
         <div class="cart-page__items">
           {%- for item in cart.items -%}
-            <div class="cart-page__item" data-cart-item="{{ item.key }}">
+            {%- assign portrait_url = nil -%}
+            {%- assign no_name_url = nil -%}
+            {%- assign show_name = 'Yes' -%}
+            {%- assign pet_name_val = '' -%}
+            {%- assign style_val = '' -%}
+            {%- assign job_id_val = '' -%}
+            {%- for property in item.properties -%}
+              {%- if property.first == '_Portrait URL' and property.last != blank -%}{%- assign portrait_url = property.last -%}{%- endif -%}
+              {%- if property.first == '_No Name URL' and property.last != blank -%}{%- assign no_name_url = property.last -%}{%- endif -%}
+              {%- if property.first == '_Show Name' -%}{%- assign show_name = property.last -%}{%- endif -%}
+              {%- if property.first == 'Pet Name' -%}{%- assign pet_name_val = property.last -%}{%- endif -%}
+              {%- if property.first == '_Style' -%}{%- assign style_val = property.last -%}{%- endif -%}
+              {%- if property.first == '_Job ID' -%}{%- assign job_id_val = property.last -%}{%- endif -%}
+            {%- endfor -%}
+            <div class="cart-page__item"
+                 data-cart-item="{{ item.key }}"
+                 data-show-name="{{ show_name }}"
+                 data-pet-name="{{ pet_name_val | escape }}"
+                 data-style="{{ style_val | escape }}"
+                 data-job-id="{{ job_id_val | escape }}"
+                 data-portrait-url="{{ portrait_url | default: '' | escape }}"
+                 data-no-name-url="{{ no_name_url | default: '' | escape }}">
               <div class="cart-page__item-img">
-                {%- assign portrait_url = nil -%}
-                {%- for property in item.properties -%}
-                  {%- if property.first == '_Portrait URL' and property.last != blank -%}
-                    {%- assign portrait_url = property.last -%}
-                  {%- endif -%}
-                {%- endfor -%}
                 {%- if portrait_url -%}
-                  <img src="{{ portrait_url }}" alt="{{ item.title }}" loading="lazy" style="width:100%;border-radius:8px;object-fit:cover;">
+                  <img src="{{ portrait_url }}" alt="{{ item.title }}" loading="lazy" class="cart-page__portrait-preview" style="width:100%;border-radius:8px;object-fit:cover;">
                 {%- elsif item.image -%}
                   {{- item.image | image_url: width: 200 | image_tag: loading: 'lazy', alt: item.title -}}
                 {%- endif -%}
@@ -46,6 +61,18 @@
                     </svg>
                   </a>
                 </div>
+                {%- if pet_name_val != blank -%}
+                <div class="cart-page__name-toggle" style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:0.85rem;">
+                  <span style="color:var(--color-muted);">Name on portrait:</span>
+                  <button type="button" class="cart-name-btn" data-name-value="Yes"
+                          aria-pressed="{% if show_name == 'Yes' %}true{% else %}false{% endif %}"
+                          style="padding:4px 12px;border-radius:14px;border:1px solid var(--color-border);cursor:pointer;font-size:0.82rem;font-weight:500;background:{% if show_name == 'Yes' %}var(--color-ink);color:#fff;{% else %}transparent;color:var(--color-ink);{% endif %}">Yes</button>
+                  <button type="button" class="cart-name-btn" data-name-value="No"
+                          aria-pressed="{% if show_name == 'No' %}true{% else %}false{% endif %}"
+                          style="padding:4px 12px;border-radius:14px;border:1px solid var(--color-border);cursor:pointer;font-size:0.82rem;font-weight:500;background:{% if show_name == 'No' %}var(--color-ink);color:#fff;{% else %}transparent;color:var(--color-ink);{% endif %}">No</button>
+                  <span class="cart-name-status" style="color:var(--color-muted);font-size:0.78rem;display:none;"></span>
+                </div>
+                {%- endif -%}
                 <div class="cart-page__item-footer">
                   <div class="cart-qty">
                     <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity={{ item.quantity | minus: 1 }}" class="cart-qty__btn" aria-label="Decrease quantity">−</a>
@@ -158,6 +185,120 @@
         };
       });
     } catch (e) {}
+  })();
+
+  /* ── Name-on-portrait toggle (cart page) ────────────────────
+   * Lets user flip between with-name and no-name versions.
+   * Updates line item properties via Shopify Ajax API + live
+   * swaps the preview image. Calls /add-name to generate the
+   * with-name version if we don't already have it.
+   */
+  (function () {
+    var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+
+    document.querySelectorAll('.cart-page__item').forEach(function (itemEl) {
+      var petName = itemEl.dataset.petName;
+      var style = itemEl.dataset.style;
+      if (!petName) return;
+
+      var buttons = itemEl.querySelectorAll('.cart-name-btn');
+      var statusEl = itemEl.querySelector('.cart-name-status');
+      var imgEl = itemEl.querySelector('.cart-page__portrait-preview');
+      var key = itemEl.getAttribute('data-cart-item');
+
+      function updateButtonStyles(activeValue) {
+        buttons.forEach(function (btn) {
+          var isActive = btn.dataset.nameValue === activeValue;
+          btn.style.background = isActive ? 'var(--color-ink)' : 'transparent';
+          btn.style.color = isActive ? '#fff' : 'var(--color-ink)';
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+      }
+
+      function updateCart(properties) {
+        return fetch('/cart/change.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: key, properties: properties }),
+        }).then(function (r) { return r.json(); });
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var value = btn.dataset.nameValue;
+          var current = itemEl.dataset.showName;
+          if (value === current) return;
+
+          // Gather all existing properties so we don't lose them on the update
+          var existingProps = {};
+          // Shopify's /cart/change.js needs the FULL properties object;
+          // read from hidden item data we already stored.
+          existingProps['Pet Name'] = petName;
+          if (style) existingProps['_Style'] = style;
+          if (itemEl.dataset.jobId) existingProps['_Job ID'] = itemEl.dataset.jobId;
+
+          if (value === 'No') {
+            // Switch to no-name version
+            var noNameUrl = itemEl.dataset.noNameUrl;
+            if (!noNameUrl) {
+              // Fall back: same as portrait URL (won't actually remove name
+              // unless the no-name URL was stored at ATC time)
+              noNameUrl = itemEl.dataset.portraitUrl;
+            }
+            existingProps['_Show Name'] = 'No';
+            existingProps['_Portrait URL'] = noNameUrl;
+            existingProps['_Print File URL'] = noNameUrl;
+            btn.disabled = true;
+            updateCart(existingProps).then(function () {
+              if (imgEl) imgEl.src = noNameUrl;
+              itemEl.dataset.showName = 'No';
+              itemEl.dataset.portraitUrl = noNameUrl;
+              updateButtonStyles('No');
+              btn.disabled = false;
+              if (statusEl) { statusEl.textContent = 'Updated'; statusEl.style.display = 'inline'; setTimeout(function(){statusEl.style.display='none';}, 2000); }
+            });
+          } else {
+            // Switch to with-name version — generate on the fly
+            var sourceUrl = itemEl.dataset.noNameUrl || itemEl.dataset.portraitUrl;
+            if (!sourceUrl) return;
+
+            btn.disabled = true;
+            if (statusEl) { statusEl.textContent = 'Adding name…'; statusEl.style.display = 'inline'; }
+
+            fetch(API_BASE + '/add-name', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image_url: sourceUrl,
+                pet_name: petName,
+                style: style,
+              }),
+            })
+            .then(function (r) { return r.ok ? r.json() : r.json().then(function (d) { throw new Error(d.error || 'Failed'); }); })
+            .then(function (resp) {
+              var newUrl = resp.composited || resp.composited_png_cdn;
+              existingProps['_Show Name'] = 'Yes';
+              existingProps['_Portrait URL'] = newUrl;
+              existingProps['_Print File URL'] = resp.composited_png_cdn || newUrl;
+              existingProps['_No Name URL'] = sourceUrl;  // preserve for future toggling
+              return updateCart(existingProps).then(function () {
+                if (imgEl) imgEl.src = newUrl;
+                itemEl.dataset.showName = 'Yes';
+                itemEl.dataset.portraitUrl = newUrl;
+                itemEl.dataset.noNameUrl = sourceUrl;
+                updateButtonStyles('Yes');
+                btn.disabled = false;
+                if (statusEl) { statusEl.textContent = 'Updated'; setTimeout(function(){statusEl.style.display='none';}, 2000); }
+              });
+            })
+            .catch(function (err) {
+              btn.disabled = false;
+              if (statusEl) { statusEl.textContent = 'Error — ' + (err.message || err); setTimeout(function(){statusEl.style.display='none';}, 3000); }
+            });
+          }
+        });
+      });
+    });
   })();
 </script>
 

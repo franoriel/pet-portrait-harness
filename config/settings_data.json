@@ -28,7 +28,7 @@
         "type": "announcement-bar",
         "settings": {
           "show_bar": true,
-          "text": "<p>Free shipping on orders over $75 CAD — Made in Canada, shipped to your door</p>",
+          "text": "<p>Free shipping on orders over $85 CAD — Made in Canada, shipped to your door</p>",
           "link": ""
         }
       },
