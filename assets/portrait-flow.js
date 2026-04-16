@@ -70,68 +70,63 @@ const STYLES = [
   {
     id: 'soft-watercolour',
     name: 'Soft Watercolour',
-    description: 'Pastel washes, soft edges, dreamy feel',
     badge: 'Most popular',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #F5C5A3, #C5D5E8)',
+    exampleImage: 'example-soft-watercolour.webp',
   },
   {
     id: 'minimal-line-art',
     name: 'Minimal Line Art',
-    description: 'Clean lines on off-white, high contrast',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #E8E8E8, #FFFFFF)',
+    exampleImage: 'example-minimal-line-art.webp',
   },
   {
     id: 'modern-oil-paint',
     name: 'Modern Oil Paint',
-    description: 'Rich brush strokes, warm studio light',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #8B6F5C, #C4A882)',
+    exampleImage: 'example-modern-oil-paint.webp',
   },
   {
     id: 'neon-pop-art',
     name: 'Neon Pop Art',
-    description: 'Bold outlines, saturated color, comic feel',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #FF6B6B, #4ECDC4)',
+    exampleImage: 'example-neon-pop-art.webp',
   },
   {
     id: 'renaissance-royalty',
     name: 'Renaissance Royalty',
-    description: 'Classic portrait, muted palette, regal',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #8B7355, #5C4A3A)',
+    exampleImage: 'example-renaissance-royalty.webp',
   },
   {
     id: 'cozy-film-grain',
     name: 'Cozy Film Grain',
-    description: 'Soft vintage tones, subtle grain and vignette',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #D4C5A9, #A89880)',
+    exampleImage: 'example-cozy-film-grain.webp',
   },
   {
     id: 'rainbow-bridge',
     name: 'Rainbow Bridge',
-    description: 'Soft clouds, warm glow, serene memorial mood',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #FFB3BA, #BAFFC9, #BAE1FF)',
+    exampleImage: 'example-rainbow-bridge.webp',
   },
   {
     id: 'bold-graphic-poster',
     name: 'Bold Graphic Poster',
-    description: 'Flat vector shapes, strong color blocking',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #2C2C2C, #E8E0D8)',
+    exampleImage: 'example-bold-graphic-poster.webp',
   },
   {
     id: 'aura-gradient',
     name: 'Aura Gradient',
-    description: 'Glowing color halos, soft and dreamy',
     available: true,
-    gradientPlaceholder: 'linear-gradient(135deg, #C5A3E8, #A3C5E8)',
+    exampleImage: 'example-aura-gradient.webp',
   },
 ];
+
+// Resolve asset base path for style example images
+const _pfScript = document.querySelector('script[src*="portrait-flow"]');
+const _pfAssetBase = _pfScript ? _pfScript.src.replace(/portrait-flow[^/]*$/, '') : '';
 
 /* ── Prices & variant map ──────────────────────────────────── */
 
@@ -423,6 +418,13 @@ const KEYFRAME_CSS = `
   15% { opacity: 1; transform: translateY(0); }
   85% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes pf-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-marquee-track { animation: none !important; }
 }
 `;
 
@@ -977,10 +979,15 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             position: 'relative',
           },
         },
-          // Thumbnail
+          // Thumbnail — real example portrait
           React.createElement('div', {
-            style: { width: '100%', aspectRatio: '1/1', background: style.gradientPlaceholder, position: 'relative' },
+            style: { width: '100%', aspectRatio: '1/1', background: tokens.colorSurface, position: 'relative', overflow: 'hidden' },
           },
+            style.exampleImage && React.createElement('img', {
+              src: _pfAssetBase + style.exampleImage, alt: style.name + ' example',
+              loading: 'lazy',
+              style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+            }),
             // Badge
             style.badge && React.createElement('span', {
               style: {
@@ -1500,15 +1507,10 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 /* ── TrustBar ──────────────────────────────────────────────── */
 
 function PageHero() {
-  // Resolve asset base for example portrait images
-  var heroAssetBase = '';
-  var heroScript = document.querySelector('script[src*="portrait-flow"]');
-  if (heroScript) heroAssetBase = heroScript.src.replace(/portrait-flow[^/]*$/, '');
-
   return React.createElement('div', {
     style: { textAlign: 'center', marginBottom: '20px' },
   },
-    // Page title — concise, emotional
+    // Page title
     React.createElement('h1', {
       style: {
         fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
@@ -1541,40 +1543,49 @@ function PageHero() {
       }, '4.9/5 from 124+ pet parents'),
     ),
 
-    // Example portraits — visual proof of quality
+    // Marquee — all 9 styles scrolling continuously
     React.createElement('div', {
       style: {
-        display: 'flex', justifyContent: 'center', gap: '10px',
-        marginBottom: '0',
+        overflow: 'hidden', margin: '0 -20px',
+        maskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
+        WebkitMaskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
       },
-      'aria-label': 'Example pet portraits',
+      'aria-label': 'Example pet portraits in all 9 styles',
     },
-      [
-        { src: 'example-portrait-1.webp', label: 'Watercolour' },
-        { src: 'example-portrait-2.webp', label: 'Oil Paint' },
-        { src: 'example-portrait-3.webp', label: 'Line Art' },
-      ].map((ex, i) =>
-        React.createElement('div', {
-          key: i,
-          style: { textAlign: 'center', flex: '0 0 28%', maxWidth: '120px' },
+      React.createElement('div', {
+        style: {
+          display: 'flex', gap: '12px', width: 'max-content',
+          animation: 'pf-marquee 30s linear infinite',
         },
-          React.createElement('img', {
-            src: heroAssetBase + ex.src, alt: `${ex.label} example`,
-            loading: 'eager',
-            style: {
-              width: '100%', aspectRatio: '4/5', objectFit: 'cover',
-              borderRadius: '12px', display: 'block',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+      },
+        // Duplicate the set for seamless loop
+        [0, 1].map(setIdx =>
+          STYLES.map((style, i) =>
+            React.createElement('div', {
+              key: `${setIdx}-${i}`,
+              style: { textAlign: 'center', flex: '0 0 auto', width: '90px' },
+              ...(setIdx === 1 ? { 'aria-hidden': true } : {}),
             },
-          }),
-          React.createElement('span', {
-            style: {
-              fontFamily: fontSans, fontSize: '10px', fontWeight: 600,
-              color: tokens.colorMuted, textTransform: 'uppercase',
-              letterSpacing: '0.06em', marginTop: '6px', display: 'block',
-            },
-          }, ex.label),
-        ),
+              React.createElement('img', {
+                src: _pfAssetBase + style.exampleImage, alt: style.name,
+                loading: 'eager',
+                style: {
+                  width: '90px', height: '112px', objectFit: 'cover',
+                  borderRadius: '10px', display: 'block',
+                  boxShadow: '0 3px 12px rgba(0,0,0,0.10)',
+                },
+              }),
+              React.createElement('span', {
+                style: {
+                  fontFamily: fontSans, fontSize: '9px', fontWeight: 600,
+                  color: tokens.colorMuted, textTransform: 'uppercase',
+                  letterSpacing: '0.04em', marginTop: '5px', display: 'block',
+                  whiteSpace: 'nowrap',
+                },
+              }, style.name),
+            ),
+          ),
+        ).flat(),
       ),
     ),
   );
