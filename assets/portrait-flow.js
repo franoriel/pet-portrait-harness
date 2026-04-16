@@ -1591,7 +1591,7 @@ function UrgencyBanner({ generatedAt }) {
           fontFamily: fontSans, fontSize: '13px', fontWeight: 700,
           color: '#991B1B', margin: '0 0 4px', letterSpacing: '0.02em',
         },
-      }, '\u23F0 Your checkout window has expired'),
+      }, '\u23F0 Your session has expired'),
       React.createElement('p', {
         style: { fontFamily: fontSans, fontSize: '12px', color: '#7F1D1D', margin: 0, lineHeight: 1.5 },
       }, 'Your portrait is still saved for 24 hours \u2014 please start a new session to order.'),
@@ -1625,7 +1625,7 @@ function UrgencyBanner({ generatedAt }) {
       },
     }, isUrgent
       ? '\uD83D\uDEA8 Hurry \u2014 expires very soon'
-      : '\u23F1\uFE0F Your portrait expires in'),
+      : '\u23F1\uFE0F Your session expires in'),
 
     // Large countdown display
     React.createElement('div', {

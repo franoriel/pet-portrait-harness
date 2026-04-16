@@ -540,7 +540,7 @@
         banner.style.boxShadow = 'none';
         banner.style.animation = 'none';
         label.style.color = '#991B1B';
-        label.textContent = '\u23F0 Your checkout window has expired';
+        label.textContent = '\u23F0 Your session has expired';
         clock.style.display = 'none';
         msg.style.color = '#7F1D1D';
         msg.innerHTML = 'Your portrait is still saved for 24 hours \u2014 please start a new session to order.';
@@ -566,7 +566,7 @@
         banner.style.boxShadow = '0 0 0 3px rgba(217,119,6,0.12)';
         banner.style.animation = 'pf-urgency-pulse 2.5s ease-in-out infinite';
         label.style.color = '#B45309';
-        label.textContent = '\u23F1\uFE0F YOUR PORTRAIT EXPIRES IN';
+        label.textContent = '\u23F1\uFE0F YOUR SESSION EXPIRES IN';
         clock.style.color = '#1C1C1C';
       }
 
