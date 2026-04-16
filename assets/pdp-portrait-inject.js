@@ -6,38 +6,26 @@
    mockups replacing them when available.
    ───────────────────────────────────────────────────────────── */
 (function () {
+  console.log('[PetPrintables] PDP inject script loaded v3');
   var LS_KEY = 'petPrintables_session';
   var PENDING_KEY = 'petPrintables_pending';
   var raw;
   try { raw = localStorage.getItem(LS_KEY); } catch (e) { /* no storage access */ }
 
-  // No completed session — hijack the PDP upload form so users can
-  // start Step 1 (upload + name) here, then continue to Step 2 (style)
-  if (!raw) {
-    setupPdpPreGenFlow();
-    return;
-  }
-
-  var data;
-  try { data = JSON.parse(raw); } catch (e) {}
-  if (!data || data.version !== 1) {
-    setupPdpPreGenFlow();
-    return;
-  }
-
+  // Function definitions (hoisted, but defining explicitly for clarity)
   function setupPdpPreGenFlow() {
+    console.log('[PetPrintables] Setting up pre-gen PDP flow');
     function init() {
       var uploadInput = document.getElementById('PetPhotoUpload');
       var nameInput = document.getElementById('PetName');
       var atcBtn = document.querySelector('.atc-btn');
       var form = document.querySelector('.product-form, form[action*="/cart/add"]');
 
-      if (!uploadInput || !nameInput || !atcBtn || !form) {
-        console.log('[PetPrintables] Pre-gen flow: required elements not found', {
-          uploadInput: !!uploadInput, nameInput: !!nameInput, atcBtn: !!atcBtn, form: !!form
-        });
-        return;
-      }
+      console.log('[PetPrintables] Pre-gen init found elements:', {
+        uploadInput: !!uploadInput, nameInput: !!nameInput, atcBtn: !!atcBtn, form: !!form
+      });
+
+      if (!uploadInput || !nameInput || !atcBtn || !form) return;
 
       // Rename the ATC button to lead into the flow
       atcBtn.textContent = 'CONTINUE \u2192 PICK YOUR STYLE';
@@ -102,6 +90,22 @@
       init();
     }
   }
+
+  // ── Main flow decision ────────────────────────────────────
+  // No completed session → run the pre-gen PDP flow
+  if (!raw) {
+    setupPdpPreGenFlow();
+    return;
+  }
+
+  var data;
+  try { data = JSON.parse(raw); } catch (e) {}
+  if (!data || data.version !== 1) {
+    setupPdpPreGenFlow();
+    return;
+  }
+
+  console.log('[PetPrintables] Session found, showing completed portrait flow');
 
   // Accept either base64 data URLs or CDN URLs — whichever is available
   var previewUrls = (data.previewDataUrls && data.previewDataUrls.length)
