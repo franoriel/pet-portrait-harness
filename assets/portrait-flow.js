@@ -181,7 +181,9 @@ function loadSession() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data.version !== 1 || !data.previewDataUrls?.length) return null;
+    if (data.version !== 1) return null;
+    // Accept either data URLs or CDN URLs
+    if (!data.previewDataUrls?.length && !data.previewCdnUrls?.length && !data.imageFilename) return null;
     // Expire after 7 days
     const age = Date.now() - new Date(data.generatedAt).getTime();
     if (age > 7 * 24 * 60 * 60 * 1000) { localStorage.removeItem(LS_KEY); return null; }
@@ -456,8 +458,9 @@ function usePortraitFlow() {
     petName: saved?.petName || '',
     selectedStyleId: saved?.styleId || null,
     generationStatus: saved ? 'success' : 'idle',
-    previewImages: saved?.previewDataUrls || [],
+    previewImages: (saved?.previewDataUrls?.length ? saved.previewDataUrls : saved?.previewCdnUrls) || [],
     previewDataUrls: saved?.previewDataUrls || [],
+    previewCdnUrls: saved?.previewCdnUrls || [],
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
@@ -507,14 +510,15 @@ function usePortraitFlow() {
         styleId: state.selectedStyleId,
         petName: state.petName,
       });
-      // Convert preview URLs to base64 data URLs for localStorage persistence
+      // Try to convert preview URLs to base64 for localStorage,
+      // but always keep the original URLs as fallback
       const dataUrls = await Promise.all(result.previews.map(imageUrlToDataUrl));
       const validDataUrls = dataUrls.filter(Boolean);
       const newState = {
         stage: STAGES.PREVIEW, generationStatus: 'success',
         previewImages: validDataUrls.length ? validDataUrls : result.previews,
         previewDataUrls: validDataUrls,
-        previewCdnUrls: result.cdn ? result.previews : [],
+        previewCdnUrls: result.previews,  // always save original URLs as fallback
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null,
       };
