@@ -92,42 +92,7 @@
     },
   };
 
-  // ── Build a photorealistic room-scene mockup ──────────────
-  // Uses real room photography as background with the portrait
-  // composited as a canvas on the wall via CSS positioning.
-
-  var _mockupSceneIndex = 0;
-
-  // Room scene configs — positions define the blank wall zone where
-  // the canvas fits (percentage of image dimensions, measured from
-  // the actual room photographs)
-  var ROOM_SCENES = [
-    {
-      // Warm scandinavian — credenza + olive tree, blank wall
-      image: 'mockup-room-1.webp',
-      // Wall zone above the credenza (percentages of image)
-      zoneTop: 5,
-      zoneLeft: 22,
-      zoneW: 55,
-      zoneH: 48,
-    },
-    {
-      // Modern living room — gray sofa + side table, blank wall
-      image: 'mockup-room-2.webp',
-      zoneTop: 5,
-      zoneLeft: 12,
-      zoneW: 55,
-      zoneH: 45,
-    },
-  ];
-
-  // Resolve Shopify asset URLs for room scene images
-  var _assetBase = '';
-  var _scriptTag = document.querySelector('script[src*="pdp-portrait-inject"]');
-  if (_scriptTag) {
-    _assetBase = _scriptTag.src.replace(/pdp-portrait-inject[^/]*$/, '');
-  }
-
+  // ── Client-side product mockup ──────────────────────────
   function createClientMockup(portraitSrc, widthIn, heightIn, label) {
     var isCanvas = productHandle !== 'poster';
 
@@ -194,7 +159,9 @@
     // Determine which sizes to use for this product
     var sizes = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
 
-    // Build mockup slides — use Printful mockups if available, otherwise client-side
+    // Build mockup slides — always use consistent client-side mockups
+    // Printful mockups only replace ALL at once (via background fetch)
+    // to avoid a mix of styles looking inconsistent
     var printfulByVariant = {};
     mockups.forEach(function (m) {
       if (m.placement !== 'default') return;
@@ -202,16 +169,18 @@
       var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
       if (!printfulByVariant[key]) printfulByVariant[key] = m;
     });
+    var allSizeKeys = Object.keys(sizes);
+    var hasAllPrintful = allSizeKeys.length > 0 && allSizeKeys.every(function (k) { return !!printfulByVariant[k]; });
 
-    Object.keys(sizes).forEach(function (sizeKey) {
+    allSizeKeys.forEach(function (sizeKey) {
       var dim = sizes[sizeKey];
       var mockupSlide = document.createElement('div');
       mockupSlide.className = 'product-gallery__slide product-gallery__slide--mockup';
       mockupSlide.setAttribute('role', 'listitem');
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
-      if (printfulByVariant[sizeKey]) {
-        // Use real Printful mockup
+      if (hasAllPrintful) {
+        // All Printful mockups ready — use them for consistency
         var mockupImg = document.createElement('img');
         mockupImg.src = printfulByVariant[sizeKey].url;
         mockupImg.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
@@ -219,7 +188,7 @@
         mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
         mockupSlide.appendChild(mockupImg);
       } else {
-        // Client-side canvas mockup
+        // Client-side mockup for all variants
         var clientMockup = createClientMockup(previewUrl, dim.w, dim.h, sizeKey);
         mockupSlide.appendChild(clientMockup);
       }
