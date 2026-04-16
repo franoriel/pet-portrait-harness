@@ -74,106 +74,120 @@ def _name_integration(style_id: str, pet_name: str) -> str:
     name = pet_name.strip().title()
     name_upper = pet_name.strip().upper()
 
+    # SAFE ZONE RULES (for all styles):
+    # - Name must be placed between 70% and 88% of image height
+    # - Top boundary (70%) keeps name clearly below the pet
+    # - Bottom boundary (88%) keeps a 12% safety margin so Printful's
+    #   "sides and back" wrap zone doesn't cut off the text
+    safe_zone = (
+        "- Position: name must be placed within 70%-88% of image height "
+        "(i.e. a comfortable margin above the bottom edge — leave at least "
+        "12% empty space BELOW the name so it isn't cut off when the canvas "
+        "is wrapped around the frame edges).\n"
+        "- Horizontal margin: at least 10% from left and right edges.\n"
+    )
+
     integrations = {
         "watercolor": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 18% of the image, render the name \"{name}\" as if "
-            f"hand-painted with the same watercolor brush and pigments as the portrait. "
-            f"Use a flowing, slightly imperfect calligraphic script. The lettering "
-            f"should have the same wet-on-wet bleeds and soft edges as the portrait. "
+            f"{safe_zone}"
+            f"- Render the name \"{name}\" as if hand-painted with the same watercolor brush "
+            f"and pigments as the portrait. Use a flowing, slightly imperfect calligraphic script. "
+            f"The lettering should have the same wet-on-wet bleeds and soft edges as the portrait. "
             f"Color: a muted sepia or deep watercolor wash that complements (not matches) the palette. "
-            f"Size: moderate, roughly 6-8% of image height. Centered horizontally."
+            f"Size: moderate, roughly 5-7% of image height. Centered horizontally."
         ),
         "minimal-line-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 15% of the image, render the name \"{name_upper}\" in "
-            f"the exact same single-weight pen stroke as the portrait linework. "
-            f"Use a clean geometric sans-serif (Futura/Avenir feel), uppercase, "
-            f"wide letter-spacing. Black ink only, no fill, no shadow. "
-            f"Size: small and refined, 4-5% of image height. Centered horizontally."
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" in the exact same single-weight pen stroke as "
+            f"the portrait linework. Use a clean geometric sans-serif (Futura/Avenir feel), "
+            f"uppercase, wide letter-spacing. Black ink only, no fill, no shadow. "
+            f"Size: small and refined, 3.5-5% of image height. Centered horizontally."
         ),
         "modern-oil-paint": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 18% of the image, render the name \"{name}\" as if "
-            f"signed into the wet oil paint with a palette knife. Use an elegant "
-            f"italic serif in warm cream or ivory, slightly imperfect, blended "
-            f"subtly into the dark painterly background. Size: 6-7% of image height. Centered."
+            f"{safe_zone}"
+            f"- Render the name \"{name}\" as if signed into the wet oil paint with a palette "
+            f"knife. Use an elegant italic serif in warm cream or ivory, slightly imperfect, "
+            f"blended subtly into the dark painterly background. Size: 5-7% of image height. Centered."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 18% of the image, render the name \"{name_upper}\" as "
-            f"thick bold comic-book lettering with a heavy black outline and a "
-            f"contrasting saturated pop color fill (hot pink, electric blue, or yellow). "
-            f"The lettering must feel like native pop art — Warhol/Lichtenstein style. "
-            f"Size: prominent, 8-10% of image height. Centered horizontally."
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" as thick bold comic-book lettering with a heavy "
+            f"black outline and a contrasting saturated pop color fill (hot pink, electric blue, "
+            f"or yellow). The lettering must feel like native pop art — Warhol/Lichtenstein style. "
+            f"Size: prominent, 7-9% of image height. Centered horizontally."
         ),
         "renaissance-royalty": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 18% of the image, render the name \"{name_upper}\" as "
-            f"if engraved on a small ornate plaque or directly into the painting "
-            f"using Trajan-style classical Roman capitals. Aged gold or antique ivory "
-            f"color, subtle letterpress depth. Size: 5-6% of image height. Centered."
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" as if engraved on a small ornate plaque or "
+            f"directly into the painting using Trajan-style classical Roman capitals. Aged gold "
+            f"or antique ivory color, subtle letterpress depth. Size: 4-5% of image height. Centered."
         ),
         "cozy-film-grain": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 15% of the image, render the name \"{name}\" as if "
-            f"handwritten in ballpoint pen on the edge of a vintage photograph — "
-            f"a personal, slightly imperfect cursive. Warm sepia or faded black. "
-            f"Size: small and intimate, 5-6% of image height. Centered, slightly "
+            f"{safe_zone}"
+            f"- Render the name \"{name}\" as if handwritten in ballpoint pen on the edge of a "
+            f"vintage photograph — a personal, slightly imperfect cursive. Warm sepia or faded "
+            f"black. Size: small and intimate, 4-5% of image height. Centered, slightly "
             f"off-baseline as if handwritten."
         ),
         "rainbow-bridge": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 18% of the image, render the name \"{name}\" as if "
-            f"written in soft luminous cursive script with the same ethereal glow "
-            f"as the portrait background. Use warm gold or soft pastel color with "
-            f"a gentle halo effect. Size: 6-8% of image height. Centered. "
+            f"{safe_zone}"
+            f"- Render the name \"{name}\" as if written in soft luminous cursive script with the "
+            f"same ethereal glow as the portrait background. Use warm gold or soft pastel color "
+            f"with a gentle halo effect. Size: 5-7% of image height. Centered. "
             f"Should feel heavenly and serene."
         ),
         "bold-graphic-poster": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- Integrate the name \"{name_upper}\" as a core design element of the poster, "
-            f"not an afterthought. Use an ultra-bold geometric sans-serif (Futura Black, "
-            f"Bebas, or Gotham Black), placed either as a strong horizontal band at the "
-            f"bottom 20% OR vertically along one side. The lettering should use one of "
-            f"the flat poster colors already in the palette. Size: 10-14% of image height. "
+            f"{safe_zone}"
+            f"- Integrate the name \"{name_upper}\" as a core design element of the poster. "
+            f"Use an ultra-bold geometric sans-serif (Futura Black, Bebas, or Gotham Black) "
+            f"placed as a strong horizontal band within the safe zone. Use one of the flat poster "
+            f"colors already in the palette. Size: 8-12% of image height. "
             f"Must feel like part of the poster composition."
         ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 15% of the image, render the name \"{name}\" as a "
-            f"soft luminous text that glows with the same aura gradient as the "
-            f"portrait. Use a delicate rounded sans-serif (Quicksand/Nunito feel). "
-            f"Color should blend gently with the surrounding aura. Size: 5-6% of "
-            f"image height. Centered, with a faint light bloom around the letters."
+            f"{safe_zone}"
+            f"- Render the name \"{name}\" as soft luminous text that glows with the same aura "
+            f"gradient as the portrait. Use a delicate rounded sans-serif (Quicksand/Nunito feel). "
+            f"Color should blend gently with the surrounding aura. Size: 4-5% of image height. "
+            f"Centered, with a faint light bloom around the letters."
         ),
-        # Legacy ink-only styles (classic/minimal/naturalist) — small refined text
+        # Legacy ink-only styles (classic/minimal/naturalist)
         "classic": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 15% of the image, render the name \"{name_upper}\" as "
-            f"fine single-stroke pen lettering matching the portrait's line weight. "
-            f"Refined classical serif capitals, wide letter-spacing. Black ink only. "
-            f"Size: 4-5% of image height. Centered."
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" as fine single-stroke pen lettering matching "
+            f"the portrait's line weight. Refined classical serif capitals, wide letter-spacing. "
+            f"Black ink only. Size: 3.5-4.5% of image height. Centered."
         ),
         "minimal": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 12% of the image, render the name \"{name_upper}\" as "
-            f"minimal sans-serif capitals with extreme letter-spacing, matching the "
-            f"portrait's pared-back aesthetic. Black ink only, very small and refined. "
-            f"Size: 3-4% of image height. Centered."
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" as minimal sans-serif capitals with extreme "
+            f"letter-spacing, matching the portrait's pared-back aesthetic. Black ink only, "
+            f"very small and refined. Size: 3-4% of image height. Centered."
         ),
         "naturalist": (
             f"NAME INTEGRATION — CRITICAL:\n"
-            f"- In the bottom 15% of the image, render the name \"{name_upper}\" as "
-            f"Victorian field-guide lettering — classical serif capitals with fine "
-            f"hairlines, as if inscribed by a steel nib pen. Black ink only. "
-            f"Size: 4-5% of image height. Centered."
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" as Victorian field-guide lettering — classical "
+            f"serif capitals with fine hairlines, as if inscribed by a steel nib pen. Black ink only. "
+            f"Size: 3.5-4.5% of image height. Centered."
         ),
     }
 
     return integrations.get(style_id, (
-        f"- Include the name \"{name_upper}\" in small refined text in the bottom 15% "
-        f"of the image, rendered in a style that matches the artwork."
+        f"NAME INTEGRATION — CRITICAL:\n"
+        f"{safe_zone}"
+        f"- Render the name \"{name_upper}\" in small refined text matching the artwork style."
     ))
 
 

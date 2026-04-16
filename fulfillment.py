@@ -154,7 +154,8 @@ def generate_print_file(
         img.load()
 
         # Crop to product aspect ratio — top-weighted to keep pet's face
-        img = crop_to_ratio(img, ratio, gravity="top")
+        # Use center gravity to preserve both the pet (top) and the name (bottom)
+        img = crop_to_ratio(img, ratio, gravity="center")
 
         # Upscale to print dimensions
         if img.width < target_w or img.height < target_h:
@@ -181,7 +182,8 @@ def generate_print_file(
         img.load()
 
         # Crop to product aspect ratio — top-weighted to keep pet's face
-        img = crop_to_ratio(img, ratio, gravity="top")
+        # Use center gravity to preserve both the pet (top) and the name (bottom)
+        img = crop_to_ratio(img, ratio, gravity="center")
 
         # Apply style-specific post-processing
         if style_key != "watercolor":
