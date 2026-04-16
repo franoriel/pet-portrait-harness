@@ -288,13 +288,33 @@
       +           'inset -1px 0 0 rgba(0,0,0,0.04);';
     canvasFace.appendChild(edgeHighlight);
 
-    // Size label
+    // Size label — glass morphism pill with W × H × D dimensions
     var sizeLabel = document.createElement('div');
-    sizeLabel.textContent = widthIn + '\u2033 \u00D7 ' + heightIn + '\u2033';
-    sizeLabel.style.cssText = 'position:absolute;bottom:10px;right:14px;'
+    sizeLabel.style.cssText = 'position:absolute;bottom:12px;right:14px;'
+      + 'display:flex;align-items:center;gap:8px;'
       + "font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.04em;"
-      + 'color:#6B6560;background:rgba(255,255,255,0.88);padding:3px 10px;border-radius:12px;'
-      + 'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2;';
+      + 'color:#3a3530;background:rgba(255,255,255,0.55);padding:6px 12px;border-radius:999px;'
+      + 'border:1px solid rgba(255,255,255,0.6);'
+      + 'box-shadow:0 2px 8px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.6);'
+      + 'backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%);z-index:2;';
+
+    // W × H
+    var dimMain = document.createElement('span');
+    dimMain.innerHTML = '<strong style="font-weight:600;">' + widthIn + '\u2033 \u00D7 ' + heightIn + '\u2033</strong>';
+    sizeLabel.appendChild(dimMain);
+
+    // Separator dot
+    var sep = document.createElement('span');
+    sep.style.cssText = 'color:#a09890;font-size:0.7em;';
+    sep.textContent = '\u00B7';
+    sizeLabel.appendChild(sep);
+
+    // Depth (gallery-wrapped canvases are 1.25")
+    var dimDepth = document.createElement('span');
+    dimDepth.style.cssText = 'color:#7a7369;';
+    dimDepth.textContent = '1.25\u2033 deep';
+    sizeLabel.appendChild(dimDepth);
+
     container.appendChild(sizeLabel);
 
     return container;
