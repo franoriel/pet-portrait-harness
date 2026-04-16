@@ -140,8 +140,8 @@
 
     // Product frame — sized to variant aspect ratio
     var productEl = document.createElement('div');
-    productEl.style.cssText = 'width:72%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
-      + 'max-height:80%;overflow:hidden;position:relative;'
+    productEl.style.cssText = 'width:58%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'max-height:70%;overflow:hidden;position:relative;'
       + 'display:flex;align-items:center;justify-content:center;'
       + 'box-shadow:'
       +   '0 2px 4px rgba(0,0,0,0.06),'
@@ -161,7 +161,7 @@
     // Size label
     var sizeLabel = document.createElement('div');
     sizeLabel.textContent = widthIn + '\u2033 \u00D7 ' + heightIn + '\u2033';
-    sizeLabel.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);'
+    sizeLabel.style.cssText = 'position:absolute;bottom:10px;right:14px;'
       + "font-family:'Inter',sans-serif;font-size:0.75rem;font-weight:500;letter-spacing:0.04em;"
       + 'color:#8a8580;';
     container.appendChild(sizeLabel);
