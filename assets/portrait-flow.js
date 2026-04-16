@@ -201,6 +201,7 @@ function saveSession(state) {
       selectedPreviewIndex: state.selectedPreviewIndex,
       generatedAt: new Date().toISOString(),
       imageFilename: state.imageFilename || '',
+      originalPhotoUrl: state.originalPhotoUrl || '',
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) { /* quota exceeded — silently fail */ }
@@ -304,7 +305,7 @@ async function generatePortrait({ imageFile, styleId, petName }) {
     const previews = [submitData.composited, submitData.raw]
       .filter(Boolean)
       .map(p => p.startsWith('http') ? p : `${API_BASE}${p}`);
-    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false };
+    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '' };
   }
 
   // Step 2: Poll /status/<job_id> until complete
@@ -324,7 +325,8 @@ async function generatePortrait({ imageFile, styleId, petName }) {
       const previews = [status.composited, status.raw]
         .filter(Boolean)
         .map(p => p.startsWith('http') ? p : `${API_BASE}${p}`);
-      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true };
+      const originalPhoto = status.original_cdn || '';
+      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto };
     }
 
     if (status.status === 'failed') {
@@ -501,6 +503,7 @@ function usePortraitFlow() {
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
     fontSize: saved?.fontSize || 'medium',
     imageFilename: saved?.imageFilename || '',
+    originalPhotoUrl: saved?.originalPhotoUrl || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
   });
@@ -547,15 +550,17 @@ function usePortraitFlow() {
       // If we don't have the File object (restored session / retry from style),
       // fetch the image from the stored URL and create a File from it
       let imageFile = state.photo;
-      if (!imageFile && state.imageFilename) {
-        const cdnUrls = state.previewCdnUrls || [];
-        const imgUrl = cdnUrls[0] || `${API_BASE}/preview/${state.imageFilename}`;
+      if (!imageFile && (state.originalPhotoUrl || state.imageFilename)) {
+        // Use original photo URL (not the generated portrait) for re-generation
+        const imgUrl = state.originalPhotoUrl
+          || `${API_BASE}/preview/${state.imageFilename}`;
         try {
           const resp = await fetch(imgUrl);
+          if (!resp.ok) throw new Error('fetch failed');
           const blob = await resp.blob();
-          imageFile = new File([blob], state.imageFilename, { type: blob.type || 'image/png' });
+          imageFile = new File([blob], 'pet-photo.jpg', { type: blob.type || 'image/jpeg' });
         } catch (e) {
-          update({ stage: STAGES.PREVIEW, generationStatus: 'error', generationError: 'Could not reload your photo. Please upload it again.' });
+          update({ stage: STAGES.STYLE, generationStatus: 'idle', generationError: 'Could not reload your photo. Please upload it again.' });
           generatingRef.current = false;
           return;
         }
@@ -574,6 +579,7 @@ function usePortraitFlow() {
         previewImages: validDataUrls.length ? validDataUrls : result.previews,
         previewDataUrls: validDataUrls,
         previewCdnUrls: result.previews,  // always save original URLs as fallback
+        originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null,
       };
@@ -619,7 +625,7 @@ function usePortraitFlow() {
     } finally {
       generatingRef.current = false;
     }
-  }, [state.photo, state.imageFilename, state.previewCdnUrls, state.selectedStyleId, state.petName, update]);
+  }, [state.photo, state.imageFilename, state.originalPhotoUrl, state.selectedStyleId, state.petName, update]);
 
   const selectPreview = useCallback((idx) => update({ selectedPreviewIndex: idx }), [update]);
   const goToStage = useCallback((stage) => update({ stage }), [update]);
