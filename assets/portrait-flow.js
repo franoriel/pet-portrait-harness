@@ -202,6 +202,7 @@ function saveSession(state) {
       generatedAt: new Date().toISOString(),
       imageFilename: state.imageFilename || '',
       originalPhotoUrl: state.originalPhotoUrl || '',
+      printFileUrl: state.printFileUrl || '',
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) { /* quota exceeded — silently fail */ }
@@ -326,7 +327,11 @@ async function generatePortrait({ imageFile, styleId, petName }) {
         .filter(Boolean)
         .map(p => p.startsWith('http') ? p : `${API_BASE}${p}`);
       const originalPhoto = status.original_cdn || '';
-      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto };
+      // Hi-res PNG URL for Printful fulfillment (3000x3750+ @ 300 DPI)
+      const printFileUrl = status.composited_png_cdn
+        ? (status.composited_png_cdn.startsWith('http') ? status.composited_png_cdn : `${API_BASE}${status.composited_png_cdn}`)
+        : '';
+      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl };
     }
 
     if (status.status === 'failed') {
@@ -529,6 +534,7 @@ function usePortraitFlow() {
     fontSize: saved?.fontSize || 'medium',
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
+    printFileUrl: saved?.printFileUrl || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
     pendingPhoto: pending,  // hold pending for later conversion to File
@@ -618,6 +624,7 @@ function usePortraitFlow() {
         previewDataUrls: validDataUrls,
         previewCdnUrls: result.previews,  // always save original URLs as fallback
         originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
+        printFileUrl: result.printFileUrl || '',  // hi-res PNG for Printful
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null,
       };

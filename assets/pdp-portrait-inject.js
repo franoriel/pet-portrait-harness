@@ -582,9 +582,13 @@
 
     var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
     var cdnUrls = data.previewCdnUrls || [];
-    var portraitUrl = cdnUrls[data.selectedPreviewIndex || 0]
+    var previewUrlForCart = cdnUrls[data.selectedPreviewIndex || 0]
       || cdnUrls[0]
       || (data.imageFilename ? (API_BASE + '/preview/' + data.imageFilename) : '');
+
+    // Hi-res print-ready PNG (3000x3750+ @ 300 DPI) for Printful fulfillment
+    // Falls back to preview URL if the hi-res isn't available (shouldn't happen).
+    var printFileUrl = data.printFileUrl || previewUrlForCart;
 
     var props = {
       'Pet Name': petName,
@@ -592,7 +596,8 @@
       '_Font Size': fontSize,
       '_Show Name': 'Yes',
       '_Job ID': data.jobId || '',
-      '_Portrait URL': portraitUrl,
+      '_Portrait URL': previewUrlForCart,      // preview for display
+      '_Print File URL': printFileUrl,         // hi-res for Printful
     };
     Object.keys(props).forEach(function (key) {
       var input = document.createElement('input');

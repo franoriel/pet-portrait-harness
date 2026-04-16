@@ -51,8 +51,9 @@ MIME_MAP: dict[str, str] = {
 }
 ALLOWED_SUFFIXES = frozenset(MIME_MAP)
 
+# Print-ready minimum — 300 DPI at 10×12.5" for canvas variants
 PORTRAIT_RATIO    = (4, 5)
-PORTRAIT_MIN_SIZE = (1200, 1500)
+PORTRAIT_MIN_SIZE = (3000, 3750)
 
 # Legacy aliases (used by watercolor; kept for backwards compatibility)
 WATERCOLOR_RATIO    = PORTRAIT_RATIO
@@ -1059,15 +1060,17 @@ def _generate_inner(
     ai_image_no_name = Image.open(BytesIO(raw_bytes))
     ai_image_no_name.load()
 
-    raw_path = out / f"{uid}_{style}_raw.png"
-    raw_path.write_bytes(raw_bytes)
-    log.info("           raw (no name) → %s", raw_path)
-
-    # Per-style post-processing on the no-name version
+    # Per-style post-processing on the no-name version (upscales to print size)
     processed_no_name = POST_PROCESS.get(style, lambda img: img)(ai_image_no_name)
     if processed_no_name is not ai_image_no_name:
         ai_image_no_name.close()
     ai_image_no_name = processed_no_name
+
+    # Save the hi-res no-name version with 300 DPI metadata
+    raw_path = out / f"{uid}_{style}_raw.png"
+    ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
+    log.info("           raw (no name) → %s (%dx%d @ 300 DPI)",
+             raw_path, ai_image_no_name.width, ai_image_no_name.height)
 
     # Now generate the WITH-NAME version (name integrated into art by Gemini)
     if pet_name and pet_name.strip():
@@ -1084,8 +1087,10 @@ def _generate_inner(
 
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
     comp_path = out / f"{uid}_{style}_{safe_name}.png"
-    composited.save(comp_path, "PNG")
-    log.info("           comp (with name) → %s", comp_path)
+    # Save with 300 DPI metadata so Printful reads the correct print quality
+    composited.save(comp_path, "PNG", dpi=(300, 300))
+    log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
+             comp_path, composited.width, composited.height)
 
     # Optimized web preview (small WebP for fast frontend display)
     web_path = save_web_preview(composited, comp_path)

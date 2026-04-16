@@ -420,6 +420,7 @@ def parse_order_items(order: dict) -> list[dict]:
             "font_size": props.get("Font Size", props.get("_Font Size", "medium")),
             "job_id": job_id,
             "preview_url": props.get("Preview URL", props.get("_Portrait URL", "")),
+            "print_file_url": props.get("_Print File URL", ""),  # hi-res 300 DPI PNG
             "product_type": props.get("Product type", "poster"),
             "size": props.get("Size", "12x16"),
             "quantity": li.get("quantity", 1),
