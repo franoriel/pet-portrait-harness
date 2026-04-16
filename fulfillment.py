@@ -46,36 +46,39 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 PRINT_SIZES: dict[str, tuple[int, int]] = {
-    # Canvas — matches Shopify storefront sizes (pixels at 300 DPI)
-    "canvas-10x10": (3000, 3000),
-    "canvas-10x20": (3000, 6000),
-    "canvas-12x18": (3600, 5400),
-    "canvas-12x24": (3600, 7200),
-    # Poster — Printful 12x16 standard
-    "poster-default": (3600, 4800),
-    # Mug — Printful 11oz white mug print area
-    "mug-11oz": (4500, 1876),
+    # Canvas — matches Shopify/Printful sizes (pixels at 300 DPI)
+    "canvas-12x12":        (3600, 3600),
+    "canvas-12x16":        (3600, 4800),
+    "canvas-16x16":        (4800, 4800),
+    "canvas-16x20":        (4800, 6000),
+    "canvas-16x20-framed": (4800, 6000),
+    "canvas-18x24-framed": (5400, 7200),
+    "poster-default":      (3600, 4800),
 }
 
 # Aspect ratios for each product type (width:height)
 PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
-    "canvas-10x10": (1, 1),
-    "canvas-10x20": (1, 2),
-    "canvas-12x18": (2, 3),
-    "canvas-12x24": (1, 2),
-    "poster-default": (3, 4),
-    "mug-11oz": (12, 5),  # Mug wrap: wide and short
+    "canvas-12x12":        (1, 1),
+    "canvas-12x16":        (3, 4),
+    "canvas-16x16":        (1, 1),
+    "canvas-16x20":        (4, 5),
+    "canvas-16x20-framed": (4, 5),
+    "canvas-18x24-framed": (3, 4),
+    "poster-default":      (3, 4),
 }
 
-# TODO: Replace with real Printful variant IDs from their catalog API
-# Find these at: GET https://api.printful.com/products
+# TODO: Replace with real Printful catalog variant IDs (from Printful dashboard
+# or GET https://api.printful.com/products). The numbers below are placeholders.
+# These are DIFFERENT from the Shopify variant IDs above — Printful has its own
+# internal product catalog IDs.
 PRINTFUL_VARIANT_MAP: dict[str, int] = {
-    "canvas-10x10": 1,    # placeholder
-    "canvas-10x20": 2,    # placeholder
-    "canvas-12x18": 3,    # placeholder
-    "canvas-12x24": 4,    # placeholder
-    "poster-default": 5,  # placeholder
-    "mug-11oz": 6,        # placeholder
+    "canvas-12x12":        0,  # TODO: Printful catalog variant for Canvas 12x12
+    "canvas-12x16":        0,  # TODO
+    "canvas-16x16":        0,  # TODO
+    "canvas-16x20":        0,  # TODO
+    "canvas-16x20-framed": 0,  # TODO (framed canvas line)
+    "canvas-18x24-framed": 0,  # TODO
+    "poster-default":      0,  # TODO
 }
 
 

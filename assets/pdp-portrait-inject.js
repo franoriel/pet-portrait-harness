@@ -199,13 +199,14 @@
   var productHandle = pathParts[pathParts.indexOf('products') + 1] || '';
   var mockups = data.mockups && data.mockups[productHandle] ? data.mockups[productHandle] : [];
 
-  // ── Canvas variant sizes (inches) ───────────────────────
+  // ── Canvas variant sizes (inches) — matches Shopify SKUs ──
   var VARIANT_SIZES = {
     'canvas': {
-      '10x10': { w: 10, h: 10 },
-      '10x20': { w: 10, h: 20 },
-      '12x18': { w: 12, h: 18 },
-      '12x24': { w: 12, h: 24 },
+      '12x12': { w: 12, h: 12 },
+      '12x16': { w: 12, h: 16 },
+      '16x16': { w: 16, h: 16 },
+      '16x20': { w: 16, h: 20 },
+      '18x24': { w: 18, h: 24 },
     },
     'poster': {
       '12x18': { w: 12, h: 18 },

@@ -131,19 +131,24 @@ const _pfAssetBase = _pfScript ? _pfScript.src.replace(/portrait-flow[^/]*$/, ''
 /* ── Prices & variant map ──────────────────────────────────── */
 
 const PRICES = {
-  canvas: { '10x10': '$37.00 CAD', '10x20': '$57.50 CAD', '12x18': '$55.00 CAD', '12x24': '$63.00 CAD' },
+  canvas: {
+    '12x12': '$79.99 CAD',
+    '12x16': '$84.99 CAD',
+    '16x16': '$99.99 CAD',
+    '16x20': '$109.99 CAD',
+    '18x24': '$197.00 CAD',  // framed only
+  },
   poster: { 'default': '$36.11 CAD' },
-  // TODO: Add mug once created in Printful
-  // mug: { '11oz': '$24.99 CAD' },
 };
 
 const VARIANT_MAP = {
-  'canvas-10x10': 47156486209685,
-  'canvas-10x20': 47156486242453,
-  'canvas-12x18': 47156486275221,
-  'canvas-12x24': 47156486307989,
+  'canvas-12x12': 47267971760277,
+  'canvas-12x16': 47267971793045,
+  'canvas-16x16': 47267971825813,
+  'canvas-16x20': 47267971858581,
+  'canvas-16x20-framed': 47267981885589,
+  'canvas-18x24-framed': 47267981918357,
   'poster-default': 47167380521109,
-  // TODO: Add mug variant IDs once created
 };
 
 /* ── Flow stages ───────────────────────────────────────────── */
@@ -1716,28 +1721,43 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
 
 /* ── ProductGallery ────────────────────────────────────────── */
 
-// Canvas configurator — size + name + framed
-// Prices reflect real variant pricing (canvas only for now)
+// Canvas configurator — real Shopify variants
+// Source: Printful → Shopify product sync (accurate as of 2026-04)
+// Each size has an unframed variant; only 16x20 has both frame options; 18x24 is framed-only.
 const CANVAS_SIZES = [
-  { id: '10x10', label: '10\u2033 \u00D7 10\u2033', price: 37.00, priceFramed: 67.00 },
-  { id: '12x18', label: '12\u2033 \u00D7 18\u2033', price: 55.00, priceFramed: 95.00 },
-  { id: '10x20', label: '10\u2033 \u00D7 20\u2033', price: 57.50, priceFramed: 99.50 },
-  { id: '12x24', label: '12\u2033 \u00D7 24\u2033', price: 63.00, priceFramed: 108.00 },
+  { id: '12x12', label: '12\u2033 \u00D7 12\u2033', price: 79.99,  variantId: 47267971760277, framedAvailable: false },
+  { id: '12x16', label: '12\u2033 \u00D7 16\u2033', price: 84.99,  variantId: 47267971793045, framedAvailable: false },
+  { id: '16x16', label: '16\u2033 \u00D7 16\u2033', price: 99.99,  variantId: 47267971825813, framedAvailable: false },
+  { id: '16x20', label: '16\u2033 \u00D7 20\u2033', price: 109.99, variantId: 47267971858581, framedAvailable: true,  priceFramed: 171.50, variantIdFramed: 47267981885589 },
+  { id: '18x24', label: '18\u2033 \u00D7 24\u2033', unframedAvailable: false, price: null, priceFramed: 197.00, variantIdFramed: 47267981918357 },
 ];
 
 function ProductGallery({ state, retryFromStyle, startFresh }) {
   const mainImage = state.previewImages[0] || state.previewCdnUrls[0];
-  const [selectedSize, setSelectedSize] = useState('10x10');
-  // Default to NO name so clicking "Yes" actually triggers something
+  const [selectedSize, setSelectedSize] = useState('12x12'); // first unframed size
   const [wantsName, setWantsName] = useState(false);
   const [wantsFrame, setWantsFrame] = useState(false);
   const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
   const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
   const [nameError, setNameError] = useState(null);
 
-  const activeSize = CANVAS_SIZES.find(s => s.id === selectedSize) || CANVAS_SIZES[0];
+  // Only show sizes that exist for the current frame choice
+  const availableSizes = CANVAS_SIZES.filter(s =>
+    wantsFrame ? s.framedAvailable : (s.unframedAvailable !== false)
+  );
+
+  // If current selection isn't valid for the new frame choice, fall back
+  const activeSize = availableSizes.find(s => s.id === selectedSize) || availableSizes[0];
   const currentPrice = wantsFrame ? activeSize.priceFramed : activeSize.price;
+  const currentVariantId = wantsFrame ? activeSize.variantIdFramed : activeSize.variantId;
   const displayImage = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
+
+  // When user toggles frame on, ensure selectedSize is valid in the new list
+  useEffect(() => {
+    if (!availableSizes.find(s => s.id === selectedSize)) {
+      setSelectedSize(availableSizes[0].id);
+    }
+  }, [wantsFrame]);
 
   // When user toggles name ON and we don't have a named preview yet, generate it
   const handleNameToggle = useCallback((enabled) => {
@@ -1798,14 +1818,20 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
     // Save selections to localStorage so PDP picks them up
     try {
       const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-      session.selectedSize = selectedSize;
+      session.selectedSize = activeSize.id;
+      session.selectedVariantId = currentVariantId;
+      session.selectedPrice = currentPrice;
       session.wantsName = wantsName;
       session.wantsFrame = wantsFrame;
       if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
       localStorage.setItem(LS_KEY, JSON.stringify(session));
     } catch {}
-    window.location.href = '/products/canvas';
-  }, [selectedSize, wantsName, wantsFrame, namedPreviewUrl]);
+    // Deep-link to the PDP with the specific variant preselected
+    const url = currentVariantId
+      ? `/products/canvas?variant=${currentVariantId}`
+      : '/products/canvas';
+    window.location.href = url;
+  }, [activeSize, currentVariantId, currentPrice, wantsName, wantsFrame, namedPreviewUrl]);
 
   const optionCard = (label, selected, onClick, children, disabled) => React.createElement('button', {
     type: 'button',
@@ -1826,7 +1852,10 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
   // Live canvas mockup — updates as user changes size/frame
   // Maps size id to aspect ratio (width:height in inches)
-  const sizeDims = { '10x10': [10, 10], '12x18': [12, 18], '10x20': [10, 20], '12x24': [12, 24] };
+  const sizeDims = {
+    '12x12': [12, 12], '12x16': [12, 16], '16x16': [16, 16],
+    '16x20': [16, 20], '18x24': [18, 24],
+  };
   const [sizeW, sizeH] = sizeDims[selectedSize] || [10, 10];
 
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
@@ -1925,21 +1954,25 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       ),
     ),
 
-    // SIZE selector
+    // SIZE selector — only shows sizes available for current frame choice
     React.createElement('div', { style: { marginBottom: '24px' } },
       React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } }, 'Size'),
       React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' } },
-        CANVAS_SIZES.map(size =>
-          optionCard(size.label, selectedSize === size.id, () => setSelectedSize(size.id),
+        availableSizes.map(size => {
+          const priceVal = wantsFrame ? size.priceFramed : size.price;
+          return optionCard(
+            size.label,
+            selectedSize === size.id,
+            () => setSelectedSize(size.id),
             React.createElement('span', null,
               React.createElement('span', { style: { fontWeight: 600 } }, size.label),
               React.createElement('br'),
               React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } },
-                `$${(wantsFrame ? size.priceFramed : size.price).toFixed(2)}`
+                `$${priceVal.toFixed(2)}`
               )
             )
-          )
-        ),
+          );
+        }),
       ),
     ),
 

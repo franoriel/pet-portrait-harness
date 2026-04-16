@@ -95,92 +95,89 @@ def _name_integration(style_id: str, pet_name: str) -> str:
         "Do NOT use pale, washed-out, or low-contrast colors for the name.\n"
     )
 
+    # AESTHETIC PRINCIPLE: The name is a SMALL, REFINED accent — never
+    # competing with the pet portrait. Minimalist, editorial sensibility.
+    # Target sizes: 3-5% of image height for most styles. Bold styles go
+    # slightly larger (5-6%) but never oversized.
+
     integrations = {
         "watercolor": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as flowing calligraphic brush script, hand-painted "
-            f"with a watercolor brush. Use a DEEP, high-contrast color (deep sepia #4a2c14, "
-            f"rich umber, or near-black with slight warmth) so it reads clearly against the "
-            f"white paper above the pet. Slight natural bleed at letter edges is okay but "
-            f"keep the lettering FULLY LEGIBLE. Size: 8-10% of image height. Centered."
+            f"- Render the name \"{name}\" as DELICATE hand-written calligraphy (thin brush, "
+            f"flowing script). Use deep sepia #4a2c14 or rich umber for contrast but with "
+            f"a LIGHT, refined stroke — not bold. Slight natural bleed at letter edges is okay. "
+            f"Size: SMALL and refined, 3-4% of image height. Centered. Minimalist, editorial feel."
         ),
         "minimal-line-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in clean geometric sans-serif capitals "
-            f"(Futura/Avenir feel) matching the portrait's pen-stroke weight. Wide letter-spacing. "
-            f"Solid jet black ink (#000000) for maximum contrast. No fill, no shadow, no shading. "
-            f"Size: 6-8% of image height. Centered."
+            f"(Futura/Avenir feel). Wide letter-spacing (~0.15em). Thin-to-medium weight, "
+            f"NOT bold. Solid black (#000000). Size: 2.5-3.5% of image height. Centered."
         ),
         "modern-oil-paint": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name}\" as an elegant italic serif (Playfair Display feel), "
-            f"painted into the top of the canvas as part of the composition. Use a RICH DARK "
-            f"warm brown or deep charcoal (#3a2818 or #2a1e14) for strong legibility against "
-            f"the lighter area. Size: 8-10% of image height. Centered."
+            f"thin weight, painted subtly into the canvas. Use warm dark brown #3a2818 for "
+            f"contrast but keep the stroke REFINED — not chunky. "
+            f"Size: 3-4% of image height. Centered."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as thick bold comic-book lettering with a "
-            f"HEAVY black outline (5-7% of letter height) and a solid saturated pop-color fill "
-            f"(hot pink, electric blue, or yellow). The outline guarantees legibility on any "
-            f"background. Warhol/Lichtenstein aesthetic. Size: 10-14% of image height. Centered."
+            f"- Render the name \"{name_upper}\" as a small accent in a bold sans-serif with "
+            f"thin black outline and a single solid pop color (hot pink, electric blue, or yellow). "
+            f"Understated — not a huge banner. Size: 4-5% of image height. Centered."
         ),
         "renaissance-royalty": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" in Trajan-style classical Roman capitals with "
-            f"fine serifs. Use RICH ANTIQUE GOLD (#8B7355) with subtle darker outline, OR deep "
-            f"burnt umber (#3a2414) — whichever gives the strongest contrast against the "
-            f"background. Size: 7-9% of image height. Centered. Must be CLEARLY LEGIBLE."
+            f"- Render the name \"{name_upper}\" in fine Trajan-style classical Roman capitals. "
+            f"Thin serifs, refined proportions. Use antique gold #8B7355 OR deep burnt umber "
+            f"#3a2414 for strong contrast. Size: 3-4% of image height. Centered. Elegant, not loud."
         ),
         "cozy-film-grain": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as slightly imperfect handwritten cursive (ballpoint "
-            f"pen feel). Use DEEP WARM SEPIA (#2e1a0a) or deep faded black for strong contrast "
-            f"against the warm vintage tones. Size: 7-9% of image height. Centered. Fully legible."
+            f"- Render the name \"{name}\" as a small personal handwritten cursive (ballpoint "
+            f"pen). Deep warm sepia #2e1a0a or deep faded black. Slightly imperfect but "
+            f"delicate. Size: 3-4% of image height. Centered. Intimate, not shouty."
         ),
         "rainbow-bridge": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as soft luminous cursive script. Use a WARM GOLD "
-            f"(#B8860B) or rich dark rose (#9A3B4B) with a subtle darker outline so it reads "
-            f"clearly against the ethereal pastel background. Gentle glow is fine but the "
-            f"core letters must be solid and legible. Size: 8-10% of image height. Centered."
+            f"- Render the name \"{name}\" as a delicate flowing cursive script. Warm gold "
+            f"#B8860B or rich dark rose #9A3B4B for solid contrast. Thin strokes, refined. "
+            f"Size: 3-4% of image height. Centered. Soft and restrained."
         ),
         "bold-graphic-poster": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as ultra-bold geometric sans-serif (Bebas, "
-            f"Futura Black, or Gotham Black). Solid high-contrast color (jet black #000000 OR "
-            f"a bold accent color from the palette) as a STRONG horizontal banner above the pet. "
-            f"Must feel like a core poster design element. Size: 12-16% of image height. Centered."
+            f"- Render the name \"{name_upper}\" in a bold geometric sans-serif, but kept at a "
+            f"MODERATE size — a refined design accent, not a billboard. Use jet black #000000 "
+            f"OR a palette accent color. Size: 5-6% of image height. Centered."
         ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" in a delicate rounded sans-serif (Quicksand feel). "
-            f"Use a DEEP PURPLE or RICH PLUM (#4a2c5a) with optional subtle light glow around "
-            f"the letters. Must be high contrast and clearly legible against the aura gradient. "
-            f"Size: 7-9% of image height. Centered."
+            f"- Render the name \"{name}\" in a delicate rounded sans-serif (Quicksand feel), "
+            f"thin weight. Deep purple #4a2c5a with optional subtle glow. "
+            f"Size: 3-4% of image height. Centered. Airy, minimal."
         ),
         # Legacy ink-only styles (classic/minimal/naturalist)
         "classic": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as fine single-stroke pen lettering in classical "
-            f"serif capitals with wide letter-spacing. Solid black ink (#000000) for maximum "
-            f"legibility. Size: 6-8% of image height. Centered."
+            f"- Render the name \"{name_upper}\" as fine single-stroke pen capitals with wide "
+            f"letter-spacing. Solid black #000000. Size: 2.5-3.5% of image height. Centered. Refined."
         ),
         "minimal": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as minimal sans-serif capitals with extreme "
-            f"letter-spacing. Solid jet black (#000000) ink only. Size: 5-7% of image height. Centered."
+            f"- Render the name \"{name_upper}\" as tiny sans-serif capitals with extreme "
+            f"letter-spacing. Solid jet black #000000. Size: 2-3% of image height. Centered."
         ),
         "naturalist": (
             f"NAME INTEGRATION — CRITICAL:\n"
