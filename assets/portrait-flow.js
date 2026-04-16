@@ -188,7 +188,7 @@ const PRODUCT_CATALOGUE = [
 
 const LS_KEY = 'petPrintables_session';
 const LIBRARY_KEY = 'petPrintables_library';
-const LIBRARY_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+const LIBRARY_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours — images stored server-side for 24h max
 
 /* ── Portrait library (multi-portrait support) ──────────────
  * Each entry: { id, petName, styleId, previewUrl, printUrl,
@@ -281,7 +281,7 @@ function loadSession() {
     if (!data.previewDataUrls?.length && !data.previewCdnUrls?.length && !data.imageFilename) return null;
     // Expire after 7 days
     const age = Date.now() - new Date(data.generatedAt).getTime();
-    if (age > 7 * 24 * 60 * 60 * 1000) { localStorage.removeItem(LS_KEY); return null; }
+    if (age > 24 * 60 * 60 * 1000) { localStorage.removeItem(LS_KEY); return null; }
     return data;
   } catch { return null; }
 }
@@ -504,6 +504,10 @@ const KEYFRAME_CSS = `
 @keyframes pf-marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+@keyframes pf-urgency-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
 }
 @media (prefers-reduced-motion: reduce) {
   .pf-marquee-track { animation: none !important; }
@@ -1545,6 +1549,103 @@ function GeneratingState() {
 
 /* ── PreviewStep ───────────────────────────────────────────── */
 
+/* ── UrgencyBanner — 10-minute checkout window countdown ─── */
+const URGENCY_SESSION_MS = 10 * 60 * 1000; // 10 minutes
+
+function UrgencyBanner({ generatedAt }) {
+  const [timeLeft, setTimeLeft] = useState(() => calcTimeLeft());
+
+  function calcTimeLeft() {
+    try {
+      const ageMs = Date.now() - new Date(generatedAt).getTime();
+      const remaining = URGENCY_SESSION_MS - ageMs;
+      if (remaining <= 0) return null;
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      return { minutes, seconds, totalMs: remaining };
+    } catch { return null; }
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => setTimeLeft(calcTimeLeft()), 1000);
+    return () => clearInterval(interval);
+  }, [generatedAt]);
+
+  if (!timeLeft) {
+    // Expired — show expired state
+    return React.createElement('div', {
+      style: {
+        maxWidth: '520px', margin: '0 auto 20px',
+        background: '#FEE2E2', border: '1.5px solid #DC2626',
+        borderRadius: tokens.radiusCard, padding: '14px 18px', textAlign: 'center',
+      },
+      role: 'alert',
+    },
+      React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: '13px', fontWeight: 700,
+          color: '#991B1B', margin: '0 0 4px', letterSpacing: '0.02em',
+        },
+      }, '\u23F0 Your checkout window has expired'),
+      React.createElement('p', {
+        style: { fontFamily: fontSans, fontSize: '12px', color: '#7F1D1D', margin: 0, lineHeight: 1.5 },
+      }, 'Your portrait is still saved for 24 hours \u2014 please start a new session to order.'),
+    );
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  const isUrgent = timeLeft.totalMs < 3 * 60 * 1000; // <3 min = urgent
+
+  return React.createElement('div', {
+    style: {
+      maxWidth: '520px', margin: '0 auto 20px',
+      background: isUrgent ? '#FEE2E2' : '#FEF3E6',
+      border: `1.5px solid ${isUrgent ? '#DC2626' : '#D97706'}`,
+      borderRadius: tokens.radiusCard,
+      padding: '14px 18px', textAlign: 'center',
+      boxShadow: isUrgent
+        ? '0 0 0 3px rgba(220,38,38,0.15), 0 4px 12px rgba(220,38,38,0.10)'
+        : '0 0 0 3px rgba(217,119,6,0.12)',
+      animation: isUrgent
+        ? 'pf-urgency-pulse 1.2s ease-in-out infinite'
+        : 'pf-urgency-pulse 2.5s ease-in-out infinite',
+    },
+    role: 'alert', 'aria-live': 'polite',
+  },
+    React.createElement('p', {
+      style: {
+        fontFamily: fontSans, fontSize: '11px', fontWeight: 700,
+        color: isUrgent ? '#991B1B' : '#B45309',
+        margin: '0 0 8px', letterSpacing: '0.10em', textTransform: 'uppercase',
+      },
+    }, isUrgent
+      ? '\uD83D\uDEA8 Hurry \u2014 expires very soon'
+      : '\u23F1\uFE0F Your portrait expires in'),
+
+    // Large countdown display
+    React.createElement('div', {
+      style: {
+        fontFamily: fontSans, fontWeight: 700,
+        fontSize: '42px', color: isUrgent ? '#991B1B' : tokens.colorBrand,
+        lineHeight: 1, margin: '0 0 6px',
+        fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em',
+      },
+    }, `${pad(timeLeft.minutes)}:${pad(timeLeft.seconds)}`),
+
+    React.createElement('p', {
+      style: {
+        fontFamily: fontSans, fontSize: '12px', color: tokens.colorBrand,
+        margin: 0, lineHeight: 1.4, fontWeight: 500,
+      },
+    }, 'This exact portrait is ',
+      React.createElement('strong', { style: { fontWeight: 700 } }, 'one-of-a-kind'),
+      ' and can ',
+      React.createElement('strong', { style: { fontWeight: 700 } }, 'never be recreated'),
+      '.'
+    ),
+  );
+}
+
 function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload, retryFromStyle, generate }) {
   if (state.generationStatus === 'error') {
     return React.createElement('div', { style: { ...s.sectionWrap, textAlign: 'center', padding: '48px 16px' } },
@@ -1590,28 +1691,8 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       }),
     ),
 
-    // Uniqueness + urgency message
-    React.createElement('div', {
-      style: {
-        textAlign: 'center', maxWidth: '420px', margin: '0 auto 24px',
-        padding: '12px 16px', background: tokens.colorAccentLight,
-        borderRadius: tokens.radiusCard,
-      },
-    },
-      React.createElement('p', {
-        style: {
-          fontFamily: fontSans, fontSize: '13px', fontWeight: 600,
-          color: tokens.colorAccent, margin: '0 0 4px', letterSpacing: '0.02em',
-        },
-      }, '\u2728 This exact portrait is yours alone'),
-      React.createElement('p', {
-        style: {
-          fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted,
-          margin: 0, lineHeight: 1.5,
-        },
-      }, 'Every portrait we create is completely unique \u2014 once you leave, '
-        + 'this exact one can never be recreated. Saved for 14 days.'),
-    ),
+    // Urgency banner — session countdown + unique-art scarcity
+    React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
 
     // Actions
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
@@ -1722,6 +1803,9 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 4, total: 4 }),
+
+    // Urgency banner — countdown follows user through checkout decision
+    React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
 
     // LIVE MOCKUP — reflects size + frame choices
     React.createElement('div', {

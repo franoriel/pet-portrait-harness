@@ -143,7 +143,7 @@
 
   // Check expiry (7 days)
   var age = Date.now() - new Date(data.generatedAt).getTime();
-  if (age > 7 * 24 * 60 * 60 * 1000) { try { localStorage.removeItem(LS_KEY); } catch (e) {} return; }
+  if (age > 24 * 60 * 60 * 1000) { try { localStorage.removeItem(LS_KEY); } catch (e) {} return; }
 
   // Default preview (no-name). If user opted in to name on step 4 and we
   // already generated the named preview, use that instead.
@@ -490,18 +490,6 @@
   styleLabel.textContent = styleName;
   info.appendChild(styleLabel);
 
-  // Expiry notice — show when portrait has <3 days left
-  try {
-    var ageMs = Date.now() - new Date(data.generatedAt).getTime();
-    var daysLeft = Math.max(0, Math.ceil((14 * 24 * 60 * 60 * 1000 - ageMs) / (24 * 60 * 60 * 1000)));
-    if (daysLeft <= 3 && daysLeft > 0) {
-      var expiryWarn = document.createElement('p');
-      expiryWarn.style.cssText = 'margin:4px 0 0;font-size:0.72rem;font-weight:600;color:#9E3B33;';
-      expiryWarn.textContent = '\u26A0 Your preview expires in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's');
-      info.appendChild(expiryWarn);
-    }
-  } catch (e) {}
-
   strip.appendChild(info);
 
   var changeLink = document.createElement('a');
@@ -515,10 +503,97 @@
   });
   strip.appendChild(changeLink);
 
+  // ── Build urgency countdown banner ─────────────────────
+  function buildUrgencyBanner() {
+    var URGENCY_MS = 10 * 60 * 1000;
+    var generatedAt = new Date(data.generatedAt).getTime();
+
+    var banner = document.createElement('div');
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'max-width:100%;margin-bottom:16px;border-radius:12px;padding:14px 18px;'
+      + 'text-align:center;transition:all 0.3s ease;';
+
+    var label = document.createElement('p');
+    label.style.cssText = "font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;"
+      + 'margin:0 0 8px;letter-spacing:0.10em;text-transform:uppercase;';
+
+    var clock = document.createElement('div');
+    clock.style.cssText = "font-family:'Inter',sans-serif;font-weight:700;font-size:36px;"
+      + 'line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums;letter-spacing:0.02em;';
+
+    var msg = document.createElement('p');
+    msg.style.cssText = "font-family:'Inter',sans-serif;font-size:12px;color:#1C1C1C;"
+      + 'margin:0;line-height:1.4;font-weight:500;';
+
+    banner.appendChild(label);
+    banner.appendChild(clock);
+    banner.appendChild(msg);
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tick() {
+      var remaining = URGENCY_MS - (Date.now() - generatedAt);
+      if (remaining <= 0) {
+        banner.style.background = '#FEE2E2';
+        banner.style.border = '1.5px solid #DC2626';
+        banner.style.boxShadow = 'none';
+        banner.style.animation = 'none';
+        label.style.color = '#991B1B';
+        label.textContent = '\u23F0 Your checkout window has expired';
+        clock.style.display = 'none';
+        msg.style.color = '#7F1D1D';
+        msg.innerHTML = 'Your portrait is still saved for 24 hours \u2014 please start a new session to order.';
+        clearInterval(interval);
+        return;
+      }
+
+      var mins = Math.floor(remaining / 60000);
+      var secs = Math.floor((remaining % 60000) / 1000);
+      var isUrgent = remaining < 3 * 60 * 1000;
+
+      if (isUrgent) {
+        banner.style.background = '#FEE2E2';
+        banner.style.border = '1.5px solid #DC2626';
+        banner.style.boxShadow = '0 0 0 3px rgba(220,38,38,0.15), 0 4px 12px rgba(220,38,38,0.10)';
+        banner.style.animation = 'pf-urgency-pulse 1.2s ease-in-out infinite';
+        label.style.color = '#991B1B';
+        label.textContent = '\uD83D\uDEA8 HURRY \u2014 EXPIRES VERY SOON';
+        clock.style.color = '#991B1B';
+      } else {
+        banner.style.background = '#FEF3E6';
+        banner.style.border = '1.5px solid #D97706';
+        banner.style.boxShadow = '0 0 0 3px rgba(217,119,6,0.12)';
+        banner.style.animation = 'pf-urgency-pulse 2.5s ease-in-out infinite';
+        label.style.color = '#B45309';
+        label.textContent = '\u23F1\uFE0F YOUR PORTRAIT EXPIRES IN';
+        clock.style.color = '#1C1C1C';
+      }
+
+      clock.textContent = pad(mins) + ':' + pad(secs);
+      msg.innerHTML = 'This exact portrait is <strong style="font-weight:700;">one-of-a-kind</strong>'
+        + ' and can <strong style="font-weight:700;">never be recreated</strong>.';
+    }
+
+    tick();
+    var interval = setInterval(tick, 1000);
+    return banner;
+  }
+
+  // Inject pulse keyframe once
+  if (!document.getElementById('pdp-urgency-keyframes')) {
+    var kf = document.createElement('style');
+    kf.id = 'pdp-urgency-keyframes';
+    kf.textContent = '@keyframes pf-urgency-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.015); } }';
+    document.head.appendChild(kf);
+  }
+
   // Insert strip where upload widget was (before gift message)
   var giftMsg = document.querySelector('input[name="properties[Gift Message]"]');
   var insertTarget = giftMsg ? giftMsg.closest('div[style]') : null;
   if (insertTarget && insertTarget.parentNode) {
+    // Urgency banner sits ABOVE the portrait strip
+    var urgencyBanner = buildUrgencyBanner();
+    insertTarget.parentNode.insertBefore(urgencyBanner, insertTarget);
     insertTarget.parentNode.insertBefore(strip, insertTarget);
   }
 
