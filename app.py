@@ -13,7 +13,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_file
 
-from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate, generate_with_name_on_demand
+from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate, generate_with_name_on_demand, verify_image_is_pet
 from fulfillment import (
     fulfill_order_item,
     parse_order_items,
@@ -148,6 +148,29 @@ def generate_route():
     # ── Save upload (persists until worker processes it) ──────────────────────
     upload_path = UPLOAD_DIR / f"{uuid.uuid4()}{suffix}"
     file.save(upload_path)
+
+    # ── Verify the image is actually a pet (cheap classifier call) ───────────
+    # Rejects: humans, logos, cartoons, screenshots, NSFW, scenery, objects.
+    # Costs ~$0.0001 per call vs $0.04 for wasted generation.
+    try:
+        is_pet, detail = verify_image_is_pet(upload_path)
+        if not is_pet:
+            # Clean up the upload since we won't use it
+            try: upload_path.unlink(missing_ok=True)
+            except: pass
+            return jsonify(
+                error="We can only create portraits of pets. "
+                      "Please upload a clear photo of your dog, cat, or other pet.",
+                detail=detail,
+            ), 400
+        log.info("Pet verified: %s (%s)", detail, upload_path.name)
+    except Exception as exc:
+        log.warning("Pet verification errored, rejecting: %s", exc)
+        try: upload_path.unlink(missing_ok=True)
+        except: pass
+        return jsonify(
+            error="Could not verify your photo. Please try a different image of your pet."
+        ), 400
 
     # ── Enqueue job and return immediately ────────────────────────────────────
     job = create_job(pet_name=pet_name, style=style, upload_path=str(upload_path))

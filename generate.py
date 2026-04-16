@@ -955,6 +955,79 @@ def _get_client() -> genai.Client:
 # Gemini API call
 # ---------------------------------------------------------------------------
 
+def verify_image_is_pet(photo_path: Path) -> tuple[bool, str]:
+    """Use Gemini's text-only classification to verify the uploaded image
+    contains a real pet (dog, cat, small animal) and nothing offensive.
+
+    Returns:
+        (is_pet, reason) — if False, reason contains user-friendly message.
+
+    Costs ~$0.0001 per call (text-only Gemini Flash) vs $0.04 for image gen.
+    """
+    try:
+        client = _get_client()
+        image_bytes = photo_path.read_bytes()
+        mime_type = MIME_MAP.get(photo_path.suffix.lower(), "image/jpeg")
+
+        classification_prompt = (
+            "Look at this image and answer with ONLY a JSON object (no markdown, no code fence). "
+            "Is the primary subject of this image a real pet animal (dog, cat, bird, rabbit, "
+            "guinea pig, hamster, reptile, or similar domesticated pet)?\n\n"
+            "Return JSON like this:\n"
+            '{"is_pet": true, "animal": "dog"}\n'
+            "or\n"
+            '{"is_pet": false, "reason": "brief description of what the image is"}\n\n'
+            "Rules:\n"
+            "- Humans are NOT pets. Return false if the primary subject is a person.\n"
+            "- Cartoons, drawings, stuffed animals, or AI-generated fake pets are NOT pets. "
+            "Return false for non-real/non-photographic pets.\n"
+            "- Wild animals (lions, bears, dolphins) are NOT pets unless clearly domesticated.\n"
+            "- Logos, text, memes, screenshots, objects, scenery — NOT pets.\n"
+            "- Any NSFW, violent, or inappropriate content — return false with reason.\n"
+            "- If the image is blank, solid color, or unidentifiable — return false."
+        )
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",  # cheap text-only model
+            contents=[
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                        types.Part.from_text(text=classification_prompt),
+                    ],
+                )
+            ],
+        )
+
+        text = ""
+        for candidate in response.candidates:
+            for part in candidate.content.parts:
+                if hasattr(part, "text") and part.text:
+                    text += part.text
+
+        # Extract JSON (may be wrapped in markdown despite instructions)
+        import json as _json
+        text = text.strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*", "", text)
+            text = re.sub(r"\s*```$", "", text)
+
+        result = _json.loads(text)
+        is_pet = bool(result.get("is_pet", False))
+
+        if is_pet:
+            return True, result.get("animal", "pet")
+        else:
+            reason = result.get("reason", "not a pet photo")
+            return False, reason
+
+    except Exception as exc:
+        # If classification fails, fail SAFE (reject) to prevent abuse
+        log.warning("Pet verification failed: %s", exc)
+        return False, "Could not verify the uploaded image. Please try a different photo of your pet."
+
+
 def add_name_to_image(
     image_bytes: bytes,
     style: str,

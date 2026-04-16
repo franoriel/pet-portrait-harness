@@ -664,9 +664,17 @@ function usePortraitFlow() {
     } catch (err) {
       const msg = err.message || '';
       let userError = 'Something went wrong. Please try again.';
+      let sendToUpload = false;
       if (msg === 'TIMEOUT') userError = 'This is taking longer than usual. Please try again — it usually works on the second attempt.';
       else if (msg === 'BUSY') userError = 'Our servers are busy right now. Please wait a moment and try again.';
-      update({ stage: STAGES.PREVIEW, generationStatus: 'error', generationError: userError });
+      else if (/only create portraits of pets/i.test(msg) || /verify your photo/i.test(msg)) {
+        userError = msg; // pass through pet-verification rejection
+        sendToUpload = true;
+      }
+      update({
+        stage: sendToUpload ? STAGES.UPLOAD : STAGES.PREVIEW,
+        generationStatus: 'error', generationError: userError,
+      });
     } finally {
       generatingRef.current = false;
     }
