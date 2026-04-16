@@ -203,91 +203,98 @@
     },
   };
 
-  // ── Canvas background photos (AI-generated blank canvases) ──
-  // Each has a different aspect ratio and a measured "portrait zone"
-  // where we composite the customer's image onto the blank canvas.
+  // Resolve asset base URL for the linen texture
   var _assetBase = '';
   var _scriptTag = document.querySelector('script[src*="pdp-portrait-inject"]');
   if (_scriptTag) _assetBase = _scriptTag.src.replace(/pdp-portrait-inject[^/]*$/, '');
 
-  var CANVAS_BACKGROUNDS = {
-    // Each config: { img, containerAspect, zone: { top, left, w, h } as % of image }
-    square:   { img: 'canvas-bg-square.webp',   aspect: '1/1',    zone: { top: 17, left: 18, w: 64, h: 65 } },
-    portrait: { img: 'canvas-bg-portrait.webp', aspect: '800/1192', zone: { top: 16, left: 12, w: 60, h: 60 } },
-    tall:     { img: 'canvas-bg-tall.webp',     aspect: '768/1376', zone: { top: 13, left: 12, w: 55, h: 55 } },
-  };
-
-  function pickBackground(widthIn, heightIn) {
-    var ratio = heightIn / widthIn;
-    if (ratio >= 1.8) return CANVAS_BACKGROUNDS.tall;
-    if (ratio >= 1.3) return CANVAS_BACKGROUNDS.portrait;
-    return CANVAS_BACKGROUNDS.square;
-  }
-
-  // ── Client-side product mockup ──────────────────────────
+  // ── Client-side product mockup — CSS-composed canvas ─────
+  // Strategy: no pre-photographed canvas background. Instead, build
+  // the canvas from scratch in CSS so it always matches the variant
+  // aspect ratio exactly (no misalignment). The linen surface + shadow
+  // + canvas weave texture sell the realism.
   function createClientMockup(portraitSrc, widthIn, heightIn, label) {
-    var bg = pickBackground(widthIn, heightIn);
-    var productAspect = heightIn / widthIn;
-
-    // Outer container uses the background image's aspect ratio
+    // Outer container: square 1:1 lifestyle shot
     var container = document.createElement('div');
-    container.style.cssText = 'width:100%;aspect-ratio:' + bg.aspect + ';border-radius:16px;'
-      + 'overflow:hidden;position:relative;background:#f0ece6;';
+    container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
+      + 'overflow:hidden;position:relative;'
+      + "background-image:url(" + _assetBase + "linen-texture.webp);"
+      + 'background-size:cover;background-position:center;'
+      + 'display:flex;align-items:center;justify-content:center;';
 
-    // Background canvas photo
-    var bgImg = document.createElement('img');
-    bgImg.src = _assetBase + bg.img;
-    bgImg.alt = '';
-    bgImg.setAttribute('aria-hidden', 'true');
-    bgImg.loading = 'lazy';
-    bgImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;';
-    container.appendChild(bgImg);
+    // Subtle directional light from upper-left (matches Printful style)
+    var lightGradient = document.createElement('div');
+    lightGradient.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+      + 'background:radial-gradient(ellipse at 30% 20%, rgba(255,250,240,0.18) 0%, transparent 60%);';
+    container.appendChild(lightGradient);
 
-    // Calculate portrait placement within the blank canvas zone,
-    // maintaining the variant's exact aspect ratio
-    // Convert zone to normalized units (width=100, height scaled by aspect)
-    var bgRatio = bg.img === 'canvas-bg-square.webp' ? 1 : (bg.img === 'canvas-bg-portrait.webp' ? 1192/800 : 1376/768);
-    var zoneW = bg.zone.w;
-    var zoneH = bg.zone.h;  // zone.h is already % of container height
-    var zoneAspect = (zoneH * bgRatio) / zoneW;  // height-to-width of zone in actual pixels
-
-    var portraitW, portraitH;
-    if (productAspect > zoneAspect) {
-      // Variant is taller than zone — fit by height
-      portraitH = zoneH;
-      portraitW = (portraitH * bgRatio) / productAspect;
+    // Canvas wrapper — sized to variant aspect ratio, max 72% of container
+    var productAspect = heightIn / widthIn;
+    var canvasStyleW, canvasStyleH;
+    if (productAspect >= 1) {
+      // Portrait/square: constrain by height (max 72% of container height)
+      canvasStyleH = 72;
+      canvasStyleW = canvasStyleH / productAspect;
     } else {
-      // Variant is wider/squarer — fit by width
-      portraitW = zoneW;
-      portraitH = (portraitW * productAspect) / bgRatio;
+      // Landscape (unused currently): constrain by width
+      canvasStyleW = 72;
+      canvasStyleH = canvasStyleW * productAspect;
     }
 
-    // Center within the zone
-    var portraitL = bg.zone.left + (bg.zone.w - portraitW) / 2;
-    var portraitT = bg.zone.top + (bg.zone.h - portraitH) / 2;
+    var canvasWrap = document.createElement('div');
+    canvasWrap.style.cssText = 'position:relative;'
+      + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
+      + 'max-width:72%;max-height:72%;';
+    container.appendChild(canvasWrap);
 
-    // Portrait image — positioned on top of the blank canvas
+    // Soft ground shadow beneath the canvas
+    var groundShadow = document.createElement('div');
+    groundShadow.style.cssText = 'position:absolute;inset:0;'
+      + 'box-shadow:4px 6px 12px rgba(60,45,30,0.12),'
+      +           '8px 12px 32px rgba(60,45,30,0.10),'
+      +           '12px 20px 48px rgba(60,45,30,0.06);'
+      + 'border-radius:1px;';
+    canvasWrap.appendChild(groundShadow);
+
+    // Canvas face (white surface with weave texture)
+    var canvasFace = document.createElement('div');
+    canvasFace.style.cssText = 'position:absolute;inset:0;overflow:hidden;'
+      + 'background:#fefdfb;'
+      + 'border-radius:1px;';
+    canvasWrap.appendChild(canvasFace);
+
+    // Portrait image (the user's pet)
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'position:absolute;'
-      + 'top:' + portraitT + '%;'
-      + 'left:' + portraitL + '%;'
-      + 'width:' + portraitW + '%;'
-      + 'height:' + portraitH + '%;'
-      + 'object-fit:cover;display:block;'
-      // Blend with the canvas lighting — subtle shadow at edges
-      + 'box-shadow:inset 0 0 8px rgba(0,0,0,0.04);';
-    container.appendChild(portraitImg);
+    portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
+      + 'object-fit:cover;display:block;';
+    canvasFace.appendChild(portraitImg);
 
-    // Size label — discreet bottom right
+    // Canvas weave texture overlay (SVG noise, multiply blend)
+    var weave = document.createElement('div');
+    weave.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+      + 'mix-blend-mode:multiply;opacity:0.12;'
+      + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
+    canvasFace.appendChild(weave);
+
+    // Canvas edge highlight (thin line at top where wrap meets face)
+    var edgeHighlight = document.createElement('div');
+    edgeHighlight.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+      + 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),'
+      +           'inset 0 -1px 0 rgba(0,0,0,0.06),'
+      +           'inset 1px 0 0 rgba(255,255,255,0.3),'
+      +           'inset -1px 0 0 rgba(0,0,0,0.04);';
+    canvasFace.appendChild(edgeHighlight);
+
+    // Size label
     var sizeLabel = document.createElement('div');
     sizeLabel.textContent = widthIn + '\u2033 \u00D7 ' + heightIn + '\u2033';
     sizeLabel.style.cssText = 'position:absolute;bottom:10px;right:14px;'
       + "font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.04em;"
-      + 'color:#8a8580;background:rgba(255,255,255,0.85);padding:3px 10px;border-radius:12px;'
-      + 'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      + 'color:#6B6560;background:rgba(255,255,255,0.88);padding:3px 10px;border-radius:12px;'
+      + 'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2;';
     container.appendChild(sizeLabel);
 
     return container;
