@@ -129,78 +129,25 @@
   }
 
   function createClientMockup(portraitSrc, widthIn, heightIn, label) {
-    var scene = ROOM_SCENES[_mockupSceneIndex % ROOM_SCENES.length];
-    _mockupSceneIndex++;
-
-    // Outer container — room photo viewport
-    var room = document.createElement('div');
-    room.style.cssText = 'width:100%;border-radius:16px;overflow:hidden;position:relative;';
-
-    // Room background photo
-    var bgImg = document.createElement('img');
-    bgImg.src = _assetBase + scene.image;
-    bgImg.alt = '';
-    bgImg.setAttribute('aria-hidden', 'true');
-    bgImg.loading = 'lazy';
-    bgImg.style.cssText = 'width:100%;display:block;';
-    room.appendChild(bgImg);
-
-    // Calculate canvas dimensions to fit within the wall zone
-    // while maintaining the product's aspect ratio.
-    // The zone is defined in % of the image. We need to fit the
-    // canvas (widthIn:heightIn) inside the zone (zoneW:zoneH).
-    // Image aspect is ~4:5 (800x993), so zoneH in px is ~1.24x zoneH%
-    var imgAspect = 993 / 800; // height/width of room photos
-    var productAspect = heightIn / widthIn;
-
-    // Zone in "normalized" units (width=100)
-    var zW = scene.zoneW;
-    var zH = scene.zoneH * imgAspect; // convert height % to same scale as width %
-
-    // Fit canvas inside zone
-    var canvasW, canvasH;
-    if (productAspect > zH / zW) {
-      // Product is taller than zone — constrain by height
-      canvasH = scene.zoneH;
-      canvasW = canvasH * imgAspect / productAspect;
-    } else {
-      // Product is wider/squarer — constrain by width
-      canvasW = zW;
-      canvasH = canvasW * productAspect / imgAspect;
-    }
-
-    // Shrink slightly (90%) to leave breathing room within the zone
-    canvasW *= 0.88;
-    canvasH *= 0.88;
-
-    // Center within the zone
-    var canvasL = scene.zoneLeft + (scene.zoneW - canvasW) / 2;
-    var canvasT = scene.zoneTop + (scene.zoneH - canvasH) / 2;
-
-    // ── Product mockup on wall ─────────────────────────────
     var isCanvas = productHandle !== 'poster';
 
+    // Clean background container
+    var container = document.createElement('div');
+    container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;overflow:hidden;'
+      + 'display:flex;align-items:center;justify-content:center;'
+      + 'background:linear-gradient(180deg, #f0ece6 0%, #e8e3dc 100%);'
+      + 'position:relative;';
+
+    // Product print — sized by aspect ratio within the container
     var productEl = document.createElement('div');
-    productEl.style.cssText = 'position:absolute;'
-      + 'top:' + canvasT + '%;'
-      + 'left:' + canvasL + '%;'
-      + 'width:' + canvasW + '%;'
-      + 'height:' + canvasH + '%;'
-      + 'overflow:hidden;'
-      + (isCanvas
-        // Canvas: thick gallery wrap, warm directional shadow
-        ? 'box-shadow:'
-          +   '2px 3px 2px hsla(30,20%,15%,0.08),'    // contact
-          +   '3px 5px 8px hsla(30,20%,15%,0.10),'    // near
-          +   '5px 10px 20px hsla(30,20%,15%,0.10),'  // mid
-          +   '8px 16px 36px hsla(30,20%,15%,0.08);'  // ambient
-        // Poster: thin flat print, softer centered shadow
-        : 'box-shadow:'
-          +   '0 1px 3px hsla(220,10%,20%,0.08),'
-          +   '0 4px 10px hsla(220,10%,20%,0.08),'
-          +   '0 10px 24px hsla(220,10%,20%,0.06);'
-      );
-    room.appendChild(productEl);
+    productEl.style.cssText = 'width:72%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'max-height:80%;overflow:hidden;position:relative;'
+      + 'box-shadow:'
+      +   '0 2px 4px rgba(0,0,0,0.06),'
+      +   '0 8px 16px rgba(0,0,0,0.08),'
+      +   '0 20px 40px rgba(0,0,0,0.10),'
+      +   '0 32px 64px rgba(0,0,0,0.06);';
+    container.appendChild(productEl);
 
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
@@ -209,22 +156,15 @@
     portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
     productEl.appendChild(portraitImg);
 
-    // Inset shadow — subtle edge darkening where print meets wall
-    var inset = document.createElement('div');
-    inset.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;'
-      + 'box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);';
-    productEl.appendChild(inset);
-
     // Size label
     var sizeLabel = document.createElement('div');
-    sizeLabel.textContent = widthIn + '" × ' + heightIn + '"';
-    sizeLabel.style.cssText = 'position:absolute;bottom:10px;left:50%;transform:translateX(-50%);'
-      + "font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:500;letter-spacing:0.05em;"
-      + 'color:#6B6560;background:rgba(255,255,255,0.92);padding:4px 12px;border-radius:20px;'
-      + 'box-shadow:0 1px 4px rgba(0,0,0,0.08);';
-    room.appendChild(sizeLabel);
+    sizeLabel.textContent = widthIn + '\u2033 \u00D7 ' + heightIn + '\u2033';
+    sizeLabel.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);'
+      + "font-family:'Inter',sans-serif;font-size:0.75rem;font-weight:500;letter-spacing:0.04em;"
+      + 'color:#8a8580;';
+    container.appendChild(sizeLabel);
 
-    return room;
+    return container;
   }
 
   // ── Inject portrait + mockup images into gallery ──────
