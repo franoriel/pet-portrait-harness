@@ -490,6 +490,20 @@
     refreshCartCount();
     new CartDrawer();
 
+    // Transparent header on homepage — switch to solid when scrolled past hero
+    if (document.body.classList.contains('template-index')) {
+      const header = document.querySelector('.site-header');
+      const hero = document.querySelector('.hero');
+      if (header && hero) {
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            header.classList.toggle('is-scrolled', !entry.isIntersecting);
+          });
+        }, { threshold: 0.1 });
+        observer.observe(hero);
+      }
+    }
+
     // Disable right-click save on portrait/product images
     document.addEventListener('contextmenu', function(e) {
       if (e.target.tagName === 'IMG' && (
