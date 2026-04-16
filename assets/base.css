@@ -121,6 +121,8 @@ p { color: var(--color-ink); }
 .announcement-bar a { color: var(--color-primary); text-decoration: underline; }
 /* Hide on homepage — trust bar marquee covers the same info */
 .template-index .announcement-bar { display: none; }
+/* Homepage urgency banner hidden too (hero has its own urgency) — keep on other pages */
+.template-index .urgency-banner { display: none; }
 
 /* ── Header ───────────────────────────────────────────────── */
 .site-header {

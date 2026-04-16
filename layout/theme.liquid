@@ -31,6 +31,7 @@
 
 <body class="template-{{ template.name }}{% if template.suffix %} template-{{ template.name }}-{{ template.suffix }}{% endif %}">
 
+  {%- section 'urgency-banner' -%}
   {%- section 'announcement-bar' -%}
   {%- section 'header' -%}
 

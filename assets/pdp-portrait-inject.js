@@ -489,6 +489,19 @@
   styleLabel.style.cssText = 'margin:2px 0 0;font-size:0.8rem;color:var(--color-muted, #8a8580);';
   styleLabel.textContent = styleName;
   info.appendChild(styleLabel);
+
+  // Expiry notice — show when portrait has <3 days left
+  try {
+    var ageMs = Date.now() - new Date(data.generatedAt).getTime();
+    var daysLeft = Math.max(0, Math.ceil((14 * 24 * 60 * 60 * 1000 - ageMs) / (24 * 60 * 60 * 1000)));
+    if (daysLeft <= 3 && daysLeft > 0) {
+      var expiryWarn = document.createElement('p');
+      expiryWarn.style.cssText = 'margin:4px 0 0;font-size:0.72rem;font-weight:600;color:#9E3B33;';
+      expiryWarn.textContent = '\u26A0 Your preview expires in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's');
+      info.appendChild(expiryWarn);
+    }
+  } catch (e) {}
+
   strip.appendChild(info);
 
   var changeLink = document.createElement('a');

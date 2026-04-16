@@ -187,6 +187,69 @@ const PRODUCT_CATALOGUE = [
 /* ── localStorage persistence ─────────────────────────────── */
 
 const LS_KEY = 'petPrintables_session';
+const LIBRARY_KEY = 'petPrintables_library';
+const LIBRARY_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+/* ── Portrait library (multi-portrait support) ──────────────
+ * Each entry: { id, petName, styleId, previewUrl, printUrl,
+ *               noNameUrl, createdAt, imageFilename, jobId,
+ *               originalPhotoUrl }
+ * Lets users save multiple portraits and order any of them. */
+function loadLibrary() {
+  try {
+    const raw = localStorage.getItem(LIBRARY_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    if (!Array.isArray(list)) return [];
+    // Drop expired entries
+    const now = Date.now();
+    return list.filter(p => {
+      const age = now - new Date(p.createdAt).getTime();
+      return age < LIBRARY_EXPIRY_MS;
+    });
+  } catch { return []; }
+}
+
+function saveLibrary(list) {
+  try {
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify(list));
+  } catch {}
+}
+
+function addToLibrary(state) {
+  if (!state.imageFilename && !state.previewCdnUrls?.length) return;
+  const list = loadLibrary();
+  const id = state.jobId || state.imageFilename || `p-${Date.now()}`;
+  // Dedupe — replace if an entry with same id already exists
+  const filtered = list.filter(p => p.id !== id);
+  filtered.unshift({
+    id,
+    petName: state.petName || 'Pet',
+    styleId: state.selectedStyleId || 'soft-watercolour',
+    previewUrl: (state.previewCdnUrls || [])[0] || (state.previewImages || [])[0] || '',
+    noNameUrl: (state.previewCdnUrls || [])[0] || '',
+    printUrl: state.printFileUrl || '',
+    createdAt: state.generatedAt || new Date().toISOString(),
+    imageFilename: state.imageFilename || '',
+    jobId: state.jobId || '',
+    originalPhotoUrl: state.originalPhotoUrl || '',
+  });
+  // Cap at 10 most recent
+  saveLibrary(filtered.slice(0, 10));
+}
+
+function removeFromLibrary(id) {
+  const list = loadLibrary().filter(p => p.id !== id);
+  saveLibrary(list);
+}
+
+// Human-friendly "days left" for a portrait
+function daysRemaining(createdAt) {
+  try {
+    const age = Date.now() - new Date(createdAt).getTime();
+    return Math.max(0, Math.ceil((LIBRARY_EXPIRY_MS - age) / (24 * 60 * 60 * 1000)));
+  } catch { return 0; }
+}
 
 function saveSession(state) {
   try {
@@ -642,6 +705,7 @@ function usePortraitFlow() {
       };
       update(newState);
       saveSession({ ...state, ...newState });
+      addToLibrary({ ...state, ...newState });
 
       // Fire background mockup generation (non-blocking, with retry)
       if (result.filename) {
@@ -935,6 +999,79 @@ function PhotoGuidelines() {
 
 /* ── UploadStep ────────────────────────────────────────────── */
 
+/* ── YourPortraits gallery — shows saved portraits at top of upload step ─── */
+function YourPortraits({ onOrderPortrait }) {
+  const library = loadLibrary();
+  if (!library.length) return null;
+
+  return React.createElement('div', {
+    style: {
+      marginBottom: '24px', padding: '16px',
+      background: tokens.colorWhite, borderRadius: tokens.radiusCard,
+      border: `1px solid ${tokens.colorBorder}`,
+    },
+  },
+    React.createElement('div', {
+      style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' },
+    },
+      React.createElement('p', { style: { ...s.smallCaps, margin: 0 } }, 'Your saved portraits'),
+      React.createElement('span', {
+        style: { fontFamily: fontSans, fontSize: '11px', color: tokens.colorMuted },
+      }, `${library.length} saved`),
+    ),
+
+    React.createElement('div', {
+      style: { display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' },
+    },
+      library.map(p => {
+        const daysLeft = daysRemaining(p.createdAt);
+        return React.createElement('div', {
+          key: p.id,
+          style: { flex: '0 0 auto', width: '120px', textAlign: 'left' },
+        },
+          React.createElement('button', {
+            type: 'button',
+            onClick: () => onOrderPortrait(p),
+            style: {
+              width: '120px', padding: 0, border: 'none', background: 'none',
+              cursor: 'pointer', outline: 'none', textAlign: 'left',
+            },
+            'aria-label': `Order ${p.petName}'s portrait`,
+          },
+            React.createElement('img', {
+              src: p.previewUrl, alt: `${p.petName} portrait`,
+              style: {
+                width: '120px', height: '150px', objectFit: 'cover',
+                borderRadius: '10px', display: 'block',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              },
+            }),
+            React.createElement('p', {
+              style: {
+                fontFamily: fontSerif, fontStyle: 'italic', fontSize: '15px',
+                color: tokens.colorBrand, margin: '8px 0 2px', lineHeight: 1.2,
+              },
+            }, p.petName),
+            React.createElement('p', {
+              style: {
+                fontFamily: fontSans, fontSize: '10px', color: daysLeft <= 3 ? tokens.colorWarning : tokens.colorMuted,
+                margin: 0,
+              },
+            }, daysLeft <= 3 ? `Expires in ${daysLeft}d` : `${daysLeft}d left`),
+          ),
+        );
+      }),
+    ),
+
+    React.createElement('p', {
+      style: {
+        fontFamily: fontSans, fontSize: '11px', color: tokens.colorMuted,
+        margin: '12px 0 0', textAlign: 'center',
+      },
+    }, 'Tap to order again, or create a new one below'),
+  );
+}
+
 function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
   const cameraRef = useRef(null);
   const fileRef = useRef(null);
@@ -947,8 +1084,36 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
   const handlePetName = useCallback((e) => update({ petName: e.target.value }), [update]);
   const hasPhoto = state.photo && !state.photoError;
 
+  // Order an existing portrait — restore its data into session and go to step 4
+  const handleOrderSaved = useCallback((portrait) => {
+    try {
+      const saved = {
+        version: 1,
+        petName: portrait.petName,
+        styleId: portrait.styleId,
+        fontSize: 'medium',
+        jobId: portrait.jobId,
+        previewDataUrls: [],
+        previewCdnUrls: [portrait.previewUrl].filter(Boolean),
+        selectedPreviewIndex: 0,
+        generatedAt: portrait.createdAt,
+        imageFilename: portrait.imageFilename || '',
+        originalPhotoUrl: portrait.originalPhotoUrl || '',
+        printFileUrl: portrait.printUrl || portrait.previewUrl,
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(saved));
+      // Reload — the flow will restore the session and land at PREVIEW
+      window.location.reload();
+    } catch (e) {
+      console.error('Failed to restore portrait:', e);
+    }
+  }, []);
+
   return React.createElement('div', { style: s.sectionWrap },
     React.createElement(StepIndicator, { current: 1 }),
+
+    // Saved portraits (if any) — shown above the upload form
+    React.createElement(YourPortraits, { onOrderPortrait: handleOrderSaved }),
 
     // Pet name FIRST — emotional hook, personal immediately
     React.createElement(PetNameInput, { id: 'pf-pet-name', value: state.petName, onChange: handlePetName }),
@@ -1407,7 +1572,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     React.createElement(StepIndicator, { current: 3 }),
 
     // Heading
-    React.createElement('p', { style: { ...s.smallCaps, textAlign: 'center', margin: '0 0 6px' } }, 'Your bespoke portrait'),
+    React.createElement('p', { style: { ...s.smallCaps, textAlign: 'center', margin: '0 0 6px' } }, 'One-of-one \u00B7 never recreated'),
     state.petName && React.createElement('h2', {
       style: { ...s.serifHeading, textAlign: 'center', marginBottom: '20px' },
     }, state.petName),
@@ -1415,7 +1580,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     // Main preview (single, large)
     React.createElement('div', {
       style: {
-        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 28px', borderRadius: tokens.radiusCard,
+        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 16px', borderRadius: tokens.radiusCard,
         overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
       },
     },
@@ -1423,6 +1588,29 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
         style: { width: '100%', display: 'block' },
       }),
+    ),
+
+    // Uniqueness + urgency message
+    React.createElement('div', {
+      style: {
+        textAlign: 'center', maxWidth: '420px', margin: '0 auto 24px',
+        padding: '12px 16px', background: tokens.colorAccentLight,
+        borderRadius: tokens.radiusCard,
+      },
+    },
+      React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: '13px', fontWeight: 600,
+          color: tokens.colorAccent, margin: '0 0 4px', letterSpacing: '0.02em',
+        },
+      }, '\u2728 This exact portrait is yours alone'),
+      React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted,
+          margin: 0, lineHeight: 1.5,
+        },
+      }, 'Every portrait we create is completely unique \u2014 once you leave, '
+        + 'this exact one can never be recreated. Saved for 14 days.'),
     ),
 
     // Actions
