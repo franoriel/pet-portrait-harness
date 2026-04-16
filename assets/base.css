@@ -134,19 +134,31 @@ p { color: var(--color-ink); }
 .template-index .site-header {
   position: absolute;
   width: 100%;
-  background: transparent;
-  backdrop-filter: none;
-  border-bottom: none;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-bottom: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 .template-index .site-header__logo,
 .template-index .site-header__nav a,
 .template-index .site-header__actions a,
 .template-index .site-header__actions button,
-.template-index .hamburger {
-  color: #fff;
+.template-index .hamburger,
+.template-index .hamburger span,
+.template-index .nav-dropdown__trigger {
+  color: #fff !important;
 }
 .template-index .site-header__logo img {
   filter: brightness(0) invert(1);
+}
+/* Make header CTA button outlined/glass on homepage */
+.template-index .site-header .btn--primary,
+.template-index .site-header #HeaderCta {
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  color: #fff !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 /* When scrolled past hero, revert to solid header */
 .template-index .site-header.is-scrolled {
