@@ -794,61 +794,93 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
 
   return React.createElement('div', { style: s.sectionWrap },
     React.createElement(StepIndicator, { current: 1 }),
-    React.createElement('h2', { style: s.serifHeading }, 'Begin with a photo'),
 
-    // Conditional: thumbnail or dropzone
+    // Pet name FIRST — emotional hook, personal immediately
+    React.createElement(PetNameInput, { id: 'pf-pet-name', value: state.petName, onChange: handlePetName }),
+
+    // Photo upload — compact and action-oriented
+    React.createElement('p', {
+      style: { ...s.smallCaps, margin: '0 0 10px' },
+    }, 'Upload their best photo'),
+
     hasPhoto
       ? React.createElement('div', {
-          style: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' },
+          style: {
+            display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px',
+            padding: '12px 16px', background: tokens.colorWhite,
+            borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+          },
         },
           React.createElement('img', {
             src: state.photoThumbnailUrl, alt: 'Selected pet photo',
-            style: { width: '100px', height: '100px', borderRadius: tokens.radiusCard, objectFit: 'cover' },
+            style: { width: '72px', height: '72px', borderRadius: '12px', objectFit: 'cover' },
           }),
-          React.createElement('button', {
-            type: 'button', style: s.secondaryLinkUnderline,
-            onClick: () => fileRef.current?.click(), 'aria-label': 'Change photo',
-          }, 'Change photo'),
+          React.createElement('div', { style: { flex: 1 } },
+            React.createElement('p', {
+              style: { fontFamily: fontSans, fontSize: '14px', fontWeight: 500, color: tokens.colorBrand, margin: '0 0 2px' },
+            }, 'Photo uploaded \u2713'),
+            React.createElement('button', {
+              type: 'button', style: { ...s.secondaryLinkUnderline, fontSize: '13px' },
+              onClick: () => fileRef.current?.click(),
+            }, 'Change photo'),
+          ),
         )
       : React.createElement('div', {
-          style: dropzoneStyle, role: 'group', 'aria-label': 'Photo upload area',
+          style: {
+            ...dropzoneStyle,
+            minHeight: '180px', padding: '24px 20px', gap: '12px',
+          },
+          role: 'group', 'aria-label': 'Photo upload area',
           onDragOver: (e) => e.preventDefault(),
           onDrop: (e) => { e.preventDefault(); const file = e.dataTransfer?.files?.[0]; if (file) setPhoto(file); },
         },
-          React.createElement(CameraIcon, { size: 36 }),
-          React.createElement('button', {
-            type: 'button', style: { ...s.primaryBtn, width: 'auto', minWidth: '200px' },
-            onClick: () => cameraRef.current?.click(), 'aria-label': 'Take a photo with your camera',
-          }, 'TAKE A PHOTO'),
+          React.createElement(CameraIcon, { size: 32 }),
+          React.createElement('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' } },
+            React.createElement('button', {
+              type: 'button', style: { ...s.primaryBtn, width: 'auto', padding: '12px 24px', fontSize: '13px' },
+              onClick: () => cameraRef.current?.click(),
+            }, '\uD83D\uDCF7  TAKE A PHOTO'),
+            React.createElement('button', {
+              type: 'button', style: { ...s.outlineBtn, padding: '12px 24px', fontSize: '13px' },
+              onClick: () => fileRef.current?.click(),
+            }, 'UPLOAD'),
+          ),
           React.createElement(HiddenFileInput, { inputRef: cameraRef, onChange: handleFile, capture: 'environment' }),
-          React.createElement('button', {
-            type: 'button', style: s.outlineBtn,
-            onClick: () => fileRef.current?.click(), 'aria-label': 'Upload from library',
-          }, 'UPLOAD FROM LIBRARY'),
         ),
 
-    // Hidden file input (shared across both states)
+    // Hidden file input (shared)
     React.createElement(HiddenFileInput, { inputRef: fileRef, onChange: handleFile }),
 
     // Warning / error
     state.photoWarning && React.createElement('p', {
-      style: { ...s.bodyMuted, color: tokens.colorWarning, marginBottom: '16px' }, role: 'alert',
+      style: { ...s.bodyMuted, color: tokens.colorWarning, marginBottom: '12px' }, role: 'alert',
     }, state.photoWarning),
     state.photoError && React.createElement('p', {
-      style: { ...s.bodyMuted, color: tokens.colorError, marginTop: '14px' }, role: 'alert',
+      style: { ...s.bodyMuted, color: tokens.colorError, marginTop: '10px' }, role: 'alert',
     }, state.photoError),
 
-    // Pet name + guidelines (always visible)
-    React.createElement(PetNameInput, { id: 'pf-pet-name', value: state.petName, onChange: handlePetName }),
-    React.createElement(PhotoGuidelines),
+    // Photo tips — inline, compact
+    React.createElement('div', {
+      style: {
+        display: 'flex', gap: '12px', flexWrap: 'wrap', margin: '16px 0 24px',
+        justifyContent: 'center',
+      },
+    },
+      ['\uD83D\uDC41 Face clearly visible', '\u2600\uFE0F Good lighting', '\uD83D\uDC3E One pet per photo'].map(tip =>
+        React.createElement('span', {
+          key: tip,
+          style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted },
+        }, tip),
+      ),
+    ),
 
-    // Continue button (only when photo selected)
-    hasPhoto && React.createElement('button', {
+    // Continue button — always visible, disabled state communicates what's needed
+    React.createElement('button', {
       type: 'button',
       style: primaryBtnStyle(canContinue),
       disabled: !canContinue, onClick: onContinue,
       'aria-label': 'Continue to style selection',
-    }, 'CONTINUE'),
+    }, canContinue ? 'CHOOSE YOUR STYLE \u2192' : 'ADD PHOTO & NAME TO CONTINUE'),
   );
 }
 
@@ -1391,36 +1423,63 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
 /* ── TrustBar ──────────────────────────────────────────────── */
 
-function TrustBar() {
-  const badges = [
-    'Ships in 3\u20135 business days',
-    pfShippingDate && pfOccasion ? `Order by ${pfShippingDate} for ${pfOccasion} delivery` : null,
-    'Free returns',
-  ].filter(Boolean);
-
-  const giftPills = ['Dog moms', 'Cat people', 'Birthdays', 'Gotcha days', 'Rainbow bridge memorials'];
-
-  return React.createElement('div', { style: { marginBottom: '32px' } },
-    // Trust line
+function PageHero() {
+  return React.createElement('div', {
+    style: { textAlign: 'center', marginBottom: '28px', padding: '0 8px' },
+  },
+    // Page title — clear, emotional, benefit-driven
+    React.createElement('h1', {
+      style: {
+        fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
+        fontSize: 'clamp(28px, 7vw, 38px)', color: tokens.colorBrand,
+        margin: '0 0 8px', lineHeight: 1.15,
+      },
+    }, 'Turn your pet into art'),
     React.createElement('p', {
-      style: { ...s.smallCaps, fontSize: '10px', margin: '0 0 14px', lineHeight: 1.8 },
-      'aria-label': 'Trust and shipping information',
-    }, badges.join('  \u00B7  ')),
+      style: {
+        fontFamily: fontSans, fontSize: '15px', color: tokens.colorMuted,
+        margin: '0 0 16px', lineHeight: 1.5,
+      },
+    }, 'Upload a photo, pick a style \u2014 we\u2019ll create a one-of-a-kind portrait you can hang on your wall.'),
 
-    // Gift pills
-    React.createElement('p', {
-      style: { ...s.smallCaps, fontSize: '10px', margin: '0 0 8px' },
-    }, 'A beautiful gift for'),
-    React.createElement('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap' } },
-      giftPills.map((pill) =>
+    // Social proof + trust — compact row
+    React.createElement('div', {
+      style: {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '6px', flexWrap: 'wrap', marginBottom: '4px',
+      },
+    },
+      // Stars
+      React.createElement('span', {
+        style: { color: '#D4A84B', fontSize: '14px', letterSpacing: '1px' },
+        'aria-hidden': true,
+      }, '\u2605\u2605\u2605\u2605\u2605'),
+      React.createElement('span', {
+        style: { fontFamily: fontSans, fontSize: '13px', fontWeight: 500, color: tokens.colorBrand },
+      }, '4.9/5'),
+      React.createElement('span', {
+        style: { fontFamily: fontSans, fontSize: '13px', color: tokens.colorMuted },
+      }, '\u00B7 124+ happy pet parents'),
+    ),
+
+    // Trust badges — horizontal, clean
+    React.createElement('div', {
+      style: {
+        display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap',
+        marginTop: '12px',
+      },
+    },
+      ['Preview before you pay', 'Free shipping over $75', 'Satisfaction guaranteed'].map(text =>
         React.createElement('span', {
-          key: pill,
+          key: text,
           style: {
-            fontFamily: fontSans, fontWeight: 500, fontSize: '12px',
-            color: tokens.colorAccent, background: tokens.colorAccentLight,
-            borderRadius: '20px', padding: '5px 12px', whiteSpace: 'nowrap',
+            fontFamily: fontSans, fontSize: '11px', fontWeight: 500,
+            color: tokens.colorMuted, display: 'flex', alignItems: 'center', gap: '4px',
           },
-        }, pill),
+        },
+          React.createElement('span', { style: { color: tokens.colorSuccess, fontSize: '10px' } }, '\u2713'),
+          text,
+        ),
       ),
     ),
   );
@@ -1463,9 +1522,10 @@ function PortraitFlow() {
   }
 
   return React.createElement('div', {
-    style: { fontFamily: fontSans, maxWidth: '600px', margin: '0 auto', padding: '32px 20px', background: tokens.colorSurface },
+    style: { fontFamily: fontSans, maxWidth: '600px', margin: '0 auto', padding: '24px 20px 40px', background: tokens.colorSurface },
   },
-    React.createElement(TrustBar),
+    // Show hero on upload + style steps, hide on later steps (portrait is the hero)
+    (state.stage === STAGES.UPLOAD || state.stage === STAGES.STYLE) && React.createElement(PageHero),
     content,
   );
 }
