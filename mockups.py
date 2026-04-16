@@ -85,32 +85,46 @@ def get_catalog_variants(catalog_product_id: int) -> dict[str, int]:
 # ---------------------------------------------------------------------------
 
 # Printful catalog product IDs (from their public catalog)
+# - Product 3  = Canvas (gallery-wrapped, stretched)
+# - Product 1  = Enhanced matte poster
+# - Product 12 = Framed canvas (product ID TBD — verify on Printful dashboard)
 CATALOG_PRODUCTS = {
-    "canvas": 3,    # Canvas print (stretched)
-    "poster": 1,    # Enhanced matte poster
+    "canvas":        3,    # unframed canvas
+    "canvas-framed": 12,   # TODO: verify the real Printful product ID for framed canvas
+    "poster":        1,
 }
 
-# Printful uses unicode: 10″×10″ (U+2033 double prime, U+00D7 multiplication sign)
-# Map our variant labels to Printful's exact size labels
+# Printful uses unicode: 12″×12″ (U+2033 double prime, U+00D7 multiplication sign)
+# Our size key → Printful's size label (for API variant lookup).
 VARIANT_SIZE_MAP = {
     "canvas": {
-        "10x10": '10\u2033\u00d710\u2033',
-        "10x20": '10\u2033\u00d720\u2033',
-        "12x18": '12\u2033\u00d718\u2033',
-        "12x24": '12\u2033\u00d724\u2033',
+        "12x12": '12\u2033\u00d712\u2033',
+        "12x16": '12\u2033\u00d716\u2033',
+        "16x16": '16\u2033\u00d716\u2033',
+        "16x20": '16\u2033\u00d720\u2033',
+    },
+    "canvas-framed": {
+        "16x20": '16\u2033\u00d720\u2033',
+        "18x24": '18\u2033\u00d724\u2033',
     },
     "poster": {
-        "default": None,  # single variant poster, use first available
+        "default": None,  # single variant poster
     },
 }
 
-# Direct hardcoded variant IDs as fallback (from Printful catalog)
+# Fallback IDs if the API lookup fails. EMPTY until verified — run
+# `curl https://api.printful.com/products/3 -H "Authorization: Bearer $PRINTFUL_API_KEY"`
+# and fill in the real variant IDs for 12x12, 12x16, 16x16, 16x20.
 VARIANT_ID_FALLBACK = {
     "canvas": {
-        "10x10": 19296,
-        "10x20": 19297,
-        "12x18": 19299,
-        "12x24": 19300,
+        # "12x12": 0,   # TODO: fill in after running the API call
+        # "12x16": 0,
+        # "16x16": 0,
+        # "16x20": 0,
+    },
+    "canvas-framed": {
+        # "16x20": 0,   # TODO
+        # "18x24": 0,
     },
     "poster": {
         "default": 3876,  # 12″×18″ poster

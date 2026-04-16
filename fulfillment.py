@@ -67,22 +67,40 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "poster-default":      (3, 4),
 }
 
-# Note: There are TWO different ID types at play here:
-#  - SHOPIFY variant ID (large, 14-digit, e.g. 47267971760277) — used in the
-#    cart/checkout flow on the storefront. Matches VARIANT_MAP in portrait-flow.js.
-#  - PRINTFUL catalog variant ID (small, 4-5 digits, e.g. 19296) — used when
-#    creating Printful orders via their API.
-#
-# The map below is for the SHOPIFY variant IDs (your screenshots show these).
-# If Printful's direct catalog IDs are needed for order creation, they differ.
-PRINTFUL_VARIANT_MAP: dict[str, int] = {
-    "canvas-12x12":        47267971760277,
-    "canvas-12x16":        47267971793045,
-    "canvas-16x16":        47267971825813,
-    "canvas-16x20":        47267971858581,
-    "canvas-16x20-framed": 47267981885589,
-    "canvas-18x24-framed": 47267981918357,
-}
+# Printful catalog variant IDs are resolved DYNAMICALLY at runtime via
+# mockups._resolve_variant_ids() which hits GET /products/<catalog_id>.
+# No hardcoded IDs — we fetch them fresh on each order to stay in sync
+# with Printful's catalog. See: _get_printful_variant_id() below.
+
+def _get_printful_variant_id(product_key: str) -> int:
+    """Resolve the Printful catalog variant ID for a product-size key.
+    e.g. 'canvas-12x16' -> 19298 (or whatever the live Printful ID is).
+
+    Raises ValueError if the key is unknown or the API lookup fails.
+    """
+    from mockups import _resolve_variant_ids
+
+    # Parse product_key into (product_type, size_label)
+    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, canvas-18x24-framed, poster-default
+    if product_key.endswith("-framed"):
+        # e.g. "canvas-16x20-framed" → product_type="canvas-framed", size="16x20"
+        size = product_key.rsplit("-", 1)[0].split("-", 1)[1]
+        product_type = "canvas-framed"
+    else:
+        parts = product_key.split("-", 1)
+        if len(parts) != 2:
+            raise ValueError(f"Invalid product_key: {product_key}")
+        product_type, size = parts
+
+    variants = _resolve_variant_ids(product_type)
+    variant_id = variants.get(size)
+    if not variant_id:
+        raise ValueError(
+            f"No Printful variant for '{product_key}' "
+            f"(resolved product_type={product_type}, size={size}, "
+            f"available={list(variants.keys())})"
+        )
+    return variant_id
 
 
 # ---------------------------------------------------------------------------
@@ -305,9 +323,7 @@ def create_printful_order(
     Returns:
         Printful API response as dict.
     """
-    variant_id = PRINTFUL_VARIANT_MAP.get(product_key)
-    if not variant_id:
-        raise ValueError(f"No Printful variant for '{product_key}'")
+    variant_id = _get_printful_variant_id(product_key)
 
     payload = {
         "external_id": shopify_order_id,
@@ -379,7 +395,13 @@ def fulfill_order_item(
     Returns:
         Printful API response dict.
     """
-    product_key = f"{product_type}-{size}"
+    # Build the product_key used for PRINT_SIZES / Printful lookup
+    # For framed: "canvas-framed" + "16x20" → "canvas-16x20-framed"
+    if product_type.endswith("-framed"):
+        base = product_type[:-len("-framed")]
+        product_key = f"{base}-{size}-framed"
+    else:
+        product_key = f"{product_type}-{size}"
 
     if product_key not in PRINT_SIZES:
         raise ValueError(f"Unknown product configuration: {product_key}")
@@ -431,14 +453,22 @@ def parse_order_items(order: dict) -> list[dict]:
         if not job_id:
             continue
 
+        # Derive product_type — prefer explicit Shopify product handle,
+        # append "-framed" if user chose framed on the configurator
+        base_product = props.get("Product type", "canvas")
+        frame_pref = props.get("_Frame", props.get("Frame", "No frame"))
+        is_framed = "framed" in frame_pref.lower()
+        product_type = f"{base_product}-framed" if is_framed else base_product
+
         items.append({
             "pet_name": props.get("Pet name", props.get("Pet Name", "Pet")),
             "style": props.get("Style", props.get("_Style", "soft-watercolour")),
             "font_size": props.get("Font Size", props.get("_Font Size", "medium")),
+            "show_name": props.get("_Show Name", "Yes"),
             "job_id": job_id,
             "preview_url": props.get("Preview URL", props.get("_Portrait URL", "")),
             "print_file_url": props.get("_Print File URL", ""),  # hi-res 300 DPI PNG
-            "product_type": props.get("Product type", "poster"),
+            "product_type": product_type,
             "size": props.get("Size", "12x16"),
             "quantity": li.get("quantity", 1),
         })
