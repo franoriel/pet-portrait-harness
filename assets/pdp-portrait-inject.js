@@ -13,13 +13,28 @@
 
   var data;
   try { data = JSON.parse(raw); } catch (e) { return; }
-  if (!data || data.version !== 1 || !data.previewDataUrls || !data.previewDataUrls.length) return;
+  if (!data || data.version !== 1) return;
+
+  // Accept either base64 data URLs or CDN URLs — whichever is available
+  var previewUrls = (data.previewDataUrls && data.previewDataUrls.length)
+    ? data.previewDataUrls
+    : (data.previewCdnUrls && data.previewCdnUrls.length)
+      ? data.previewCdnUrls
+      : [];
+
+  // Last resort: construct URL from imageFilename
+  if (!previewUrls.length && data.imageFilename) {
+    var apiBase = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+    previewUrls = [apiBase + '/preview/' + data.imageFilename];
+  }
+
+  if (!previewUrls.length) return;
 
   // Check expiry (7 days)
   var age = Date.now() - new Date(data.generatedAt).getTime();
   if (age > 7 * 24 * 60 * 60 * 1000) { try { localStorage.removeItem(LS_KEY); } catch (e) {} return; }
 
-  var previewUrl = data.previewDataUrls[data.selectedPreviewIndex || 0];
+  var previewUrl = previewUrls[data.selectedPreviewIndex || 0] || previewUrls[0];
   var petName = data.petName || '';
 
   // ── Detect product type from URL ────────────────────────
