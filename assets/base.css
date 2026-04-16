@@ -154,6 +154,7 @@ p { color: var(--color-ink); }
 }
 .template-index .site-header:not(.is-scrolled) .hamburger span {
   background: #fff !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .template-index .site-header:not(.is-scrolled) .site-header__logo img {
   filter: brightness(0) invert(1);
@@ -229,8 +230,8 @@ p { color: var(--color-ink); }
   margin-left: -8px;
   margin-top: -14px;
 }
-.hamburger { display: flex; flex-direction: column; gap: 5px; width: 24px; }
-.hamburger span { display: block; height: 2px; background: var(--color-ink); border-radius: 2px; transition: var(--transition); }
+.hamburger { display: flex; flex-direction: column; gap: 5px; width: 24px; padding: 10px 0; }
+.hamburger span { display: block; height: 2.5px; background: var(--color-ink); border-radius: 2px; transition: var(--transition); }
 
 /* Mobile nav drawer */
 .nav-drawer {
