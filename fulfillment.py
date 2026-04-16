@@ -67,18 +67,21 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "poster-default":      (3, 4),
 }
 
-# TODO: Replace with real Printful catalog variant IDs (from Printful dashboard
-# or GET https://api.printful.com/products). The numbers below are placeholders.
-# These are DIFFERENT from the Shopify variant IDs above — Printful has its own
-# internal product catalog IDs.
+# Note: There are TWO different ID types at play here:
+#  - SHOPIFY variant ID (large, 14-digit, e.g. 47267971760277) — used in the
+#    cart/checkout flow on the storefront. Matches VARIANT_MAP in portrait-flow.js.
+#  - PRINTFUL catalog variant ID (small, 4-5 digits, e.g. 19296) — used when
+#    creating Printful orders via their API.
+#
+# The map below is for the SHOPIFY variant IDs (your screenshots show these).
+# If Printful's direct catalog IDs are needed for order creation, they differ.
 PRINTFUL_VARIANT_MAP: dict[str, int] = {
-    "canvas-12x12":        0,  # TODO: Printful catalog variant for Canvas 12x12
-    "canvas-12x16":        0,  # TODO
-    "canvas-16x16":        0,  # TODO
-    "canvas-16x20":        0,  # TODO
-    "canvas-16x20-framed": 0,  # TODO (framed canvas line)
-    "canvas-18x24-framed": 0,  # TODO
-    "poster-default":      0,  # TODO
+    "canvas-12x12":        47267971760277,
+    "canvas-12x16":        47267971793045,
+    "canvas-16x16":        47267971825813,
+    "canvas-16x20":        47267971858581,
+    "canvas-16x20-framed": 47267981885589,
+    "canvas-18x24-framed": 47267981918357,
 }
 
 
