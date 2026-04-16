@@ -500,6 +500,7 @@ function usePortraitFlow() {
     previewCdnUrls: saved?.previewCdnUrls || [],
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
     fontSize: saved?.fontSize || 'medium',
+    imageFilename: saved?.imageFilename || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
   });
