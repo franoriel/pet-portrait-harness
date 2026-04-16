@@ -705,28 +705,76 @@ const primaryBtnStyle = (enabled) => ({ ...s.primaryBtn, ...(enabled ? {} : s.pr
 
 /* ── StepIndicator ─────────────────────────────────────────── */
 
+const STEP_LABELS = ['Upload', 'Style', 'Preview', 'Format'];
+
 function StepIndicator({ current, total = 4 }) {
   return React.createElement('div', {
-    style: { marginBottom: '32px' },
-    'aria-label': `Step ${current} of ${total}`,
+    style: { marginBottom: '28px' },
+    'aria-label': `Step ${current} of ${total}: ${STEP_LABELS[current - 1]}`,
     role: 'progressbar',
     'aria-valuenow': current,
     'aria-valuemin': 1,
     'aria-valuemax': total,
   },
-    React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
-      `Step ${current} of ${total}`
-    ),
+    // Step dots + labels
     React.createElement('div', {
-      style: { height: '1px', background: tokens.colorBorder, position: 'relative' },
+      style: {
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        position: 'relative', padding: '0 4px', marginBottom: '0',
+      },
     },
+      // Connecting line (behind dots)
       React.createElement('div', {
         style: {
-          position: 'absolute', top: 0, left: 0, height: '1px',
-          background: tokens.colorAccent,
-          width: `${(current / total) * 100}%`,
-          transition: 'width 0.4s ease',
+          position: 'absolute', top: '10px', left: '24px', right: '24px',
+          height: '2px', background: tokens.colorBorder, zIndex: 0,
         },
+      },
+        // Filled portion
+        React.createElement('div', {
+          style: {
+            height: '100%', background: tokens.colorAccent,
+            width: `${((current - 1) / (total - 1)) * 100}%`,
+            transition: 'width 0.4s ease',
+            borderRadius: '1px',
+          },
+        }),
+      ),
+      // Step circles + labels
+      STEP_LABELS.slice(0, total).map((label, i) => {
+        const stepNum = i + 1;
+        const isComplete = stepNum < current;
+        const isCurrent = stepNum === current;
+        const isFuture = stepNum > current;
+        return React.createElement('div', {
+          key: i,
+          style: {
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            position: 'relative', zIndex: 1, flex: '0 0 auto',
+          },
+        },
+          // Circle
+          React.createElement('div', {
+            style: {
+              width: '22px', height: '22px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11px', fontWeight: 600, fontFamily: fontSans,
+              transition: 'all 0.3s ease',
+              background: isComplete ? tokens.colorAccent : isCurrent ? tokens.colorAccent : tokens.colorWhite,
+              color: isComplete || isCurrent ? tokens.colorWhite : tokens.colorMuted,
+              border: isFuture ? `2px solid ${tokens.colorBorder}` : `2px solid ${tokens.colorAccent}`,
+              boxSizing: 'border-box',
+            },
+          }, isComplete ? '\u2713' : stepNum),
+          // Label
+          React.createElement('span', {
+            style: {
+              fontFamily: fontSans, fontSize: '10px', fontWeight: isCurrent ? 700 : 500,
+              color: isCurrent ? tokens.colorBrand : tokens.colorMuted,
+              marginTop: '5px', textTransform: 'uppercase', letterSpacing: '0.04em',
+            },
+          }, label),
+        );
       }),
     ),
   );
