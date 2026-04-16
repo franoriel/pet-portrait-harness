@@ -835,17 +835,10 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
           onDrop: (e) => { e.preventDefault(); const file = e.dataTransfer?.files?.[0]; if (file) setPhoto(file); },
         },
           React.createElement(CameraIcon, { size: 32 }),
-          React.createElement('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' } },
-            React.createElement('button', {
-              type: 'button', style: { ...s.primaryBtn, width: 'auto', padding: '12px 24px', fontSize: '13px' },
-              onClick: () => cameraRef.current?.click(),
-            }, '\uD83D\uDCF7  TAKE A PHOTO'),
-            React.createElement('button', {
-              type: 'button', style: { ...s.outlineBtn, padding: '12px 24px', fontSize: '13px' },
-              onClick: () => fileRef.current?.click(),
-            }, 'UPLOAD'),
-          ),
-          React.createElement(HiddenFileInput, { inputRef: cameraRef, onChange: handleFile, capture: 'environment' }),
+          React.createElement('button', {
+            type: 'button', style: { ...s.primaryBtn, width: 'auto', padding: '12px 32px', fontSize: '13px' },
+            onClick: () => fileRef.current?.click(),
+          }, 'UPLOAD PHOTO'),
         ),
 
     // Hidden file input (shared)
