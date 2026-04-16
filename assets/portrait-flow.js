@@ -855,15 +855,21 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
 /* ── StyleStep ─────────────────────────────────────────────── */
 
 function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
+  // Preload all style fonts so they're ready by preview step
+  useEffect(() => {
+    STYLES.forEach(style => { if (style.available) loadGoogleFont(style.id); });
+  }, []);
+
   return React.createElement('div', { style: s.sectionWrap },
     React.createElement(StepIndicator, { current: 2 }),
     React.createElement('h2', { style: s.serifHeading }, 'Choose your artistic finish'),
 
     React.createElement('div', {
       style: {
-        display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px',
-        WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
-        margin: '0 -16px', padding: '0 16px 8px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '10px',
+        paddingBottom: '8px',
       },
       role: 'listbox', 'aria-label': 'Portrait style options',
     },
@@ -875,8 +881,7 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
           'aria-label': `${style.name}${!style.available ? ' \u2014 available soon' : ''}${style.badge ? ` \u2014 ${style.badge}` : ''}`,
           onClick: () => style.available && selectStyle(style.id),
           style: {
-            flex: '0 0 164px',
-            border: selected ? `1.5px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+            border: selected ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
             borderRadius: tokens.radiusCard, background: selected ? tokens.colorAccentLight : tokens.colorWhite,
             padding: 0, cursor: style.available ? 'pointer' : 'default',
             textAlign: 'left', outline: 'none', overflow: 'hidden', transition: 'all 0.2s',
@@ -885,7 +890,7 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
         },
           // Thumbnail
           React.createElement('div', {
-            style: { width: '100%', height: '140px', background: style.gradientPlaceholder, position: 'relative' },
+            style: { width: '100%', aspectRatio: '1/1', background: style.gradientPlaceholder, position: 'relative' },
           },
             // Badge
             style.badge && React.createElement('span', {
@@ -924,18 +929,25 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
               }, 'Available soon'),
             ),
           ),
-          // Card body
-          React.createElement('div', { style: { padding: '12px 14px 16px' } },
+          // Card body — style name + font preview
+          React.createElement('div', { style: { padding: '8px 8px 10px' } },
             React.createElement('p', {
               style: {
-                fontFamily: fontSans, fontWeight: 500, fontSize: '14px',
+                fontFamily: fontSans, fontWeight: 600, fontSize: '11px',
                 color: selected ? tokens.colorAccent : tokens.colorBrand,
-                margin: '0 0 3px',
+                margin: '0 0 2px', lineHeight: 1.3,
               },
             }, style.name),
+            // Show pet name preview in the style's font (or "Abc" if no name)
             React.createElement('p', {
-              style: { fontFamily: fontSans, fontWeight: 400, fontSize: '12px', color: tokens.colorMuted, margin: 0, lineHeight: 1.4 },
-            }, style.description),
+              style: {
+                fontFamily: (STYLE_FONTS[style.id] || {}).css || fontSerif,
+                fontWeight: 700, fontSize: '13px',
+                color: tokens.colorMuted,
+                margin: 0, lineHeight: 1.2,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              },
+            }, state.petName || 'Abc'),
           ),
         );
       }),
