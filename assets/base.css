@@ -334,7 +334,7 @@ p { color: var(--color-ink); }
   position: relative;
   z-index: 2;
   text-align: center;
-  padding: 60px var(--gutter) 40px;
+  padding: 48px var(--gutter) 32px;
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
@@ -355,15 +355,16 @@ p { color: var(--color-ink); }
 }
 .hero__title {
   color: #fff;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   text-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  font-size: clamp(2rem, 6vw, 3.5rem);
 }
 .hero__sub {
   color: rgba(255,255,255,0.88);
-  font-size: 1.1rem;
-  max-width: 520px;
-  margin: 0 auto 24px;
-  line-height: 1.6;
+  font-size: 1rem;
+  max-width: 480px;
+  margin: 0 auto 20px;
+  line-height: 1.5;
 }
 .hero__cta-group {
   display: flex;
