@@ -361,8 +361,8 @@ p { color: var(--color-ink); }
   content: '';
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 60%;
-  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.1) 80%, transparent 100%);
+  height: 80%;
+  background: linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.65) 35%, rgba(0,0,0,0.25) 65%, transparent 100%);
   z-index: -1;
   pointer-events: none;
 }
@@ -429,6 +429,60 @@ p { color: var(--color-ink); }
   font-size: clamp(0.7rem, 2vw, 0.82rem);
   margin-top: 10px;
   letter-spacing: 0.02em;
+}
+
+/* ── Style carousel ──────────────────────────────────────── */
+.style-carousel {
+  background: var(--color-bg);
+  padding: 32px 0;
+  overflow: hidden;
+}
+.style-carousel__track {
+  display: flex;
+  width: max-content;
+  animation: style-carousel-scroll 40s linear infinite;
+}
+.style-carousel__track:hover { animation-play-state: paused; }
+.style-carousel__set {
+  display: flex;
+  gap: 20px;
+  padding-right: 20px;
+  flex-shrink: 0;
+}
+@keyframes style-carousel-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .style-carousel__track { animation: none; overflow-x: auto; }
+}
+.style-carousel__item {
+  flex: 0 0 auto;
+  text-align: center;
+  width: 160px;
+}
+.style-carousel__item img {
+  width: 160px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.style-carousel__item:hover img {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+}
+.style-carousel__label {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ── Trust bar ────────────────────────────────────────────── */

@@ -1,0 +1,52 @@
+<section class="style-carousel" aria-label="Portrait styles">
+  <div class="style-carousel__track">
+    {%- for i in (1..2) -%}
+      <div class="style-carousel__set" {% if i == 2 %}aria-hidden="true"{% endif %}>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-soft-watercolour.webp' | asset_url }}" alt="Soft Watercolour style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Soft Watercolour</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-minimal-line-art.webp' | asset_url }}" alt="Minimal Line Art style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Minimal Line Art</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-modern-oil-paint.webp' | asset_url }}" alt="Modern Oil Paint style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Modern Oil Paint</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-neon-pop-art.webp' | asset_url }}" alt="Neon Pop Art style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Neon Pop Art</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-renaissance-royalty.webp' | asset_url }}" alt="Renaissance Royalty style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Renaissance Royalty</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-cozy-film-grain.webp' | asset_url }}" alt="Cozy Film Grain style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Cozy Film Grain</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-rainbow-bridge.webp' | asset_url }}" alt="Rainbow Bridge style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Rainbow Bridge</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-bold-graphic-poster.webp' | asset_url }}" alt="Bold Graphic Poster style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Bold Graphic Poster</span>
+        </div>
+        <div class="style-carousel__item">
+          <img src="{{ 'example-aura-gradient.webp' | asset_url }}" alt="Aura Gradient style" loading="lazy" width="200" height="248">
+          <span class="style-carousel__label">Aura Gradient</span>
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Style Carousel",
+  "settings": [],
+  "presets": [{ "name": "Style Carousel" }]
+}
+{% endschema %}

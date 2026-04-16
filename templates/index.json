@@ -64,6 +64,10 @@
       ],
       "settings": {}
     },
+    "style-carousel": {
+      "type": "style-carousel",
+      "settings": {}
+    },
     "how-it-works": {
       "type": "how-it-works",
       "blocks": {
@@ -142,6 +146,7 @@
   "order": [
     "hero",
     "trust-bar",
+    "style-carousel",
     "how-it-works",
     "review-ticker",
     "before-after",
