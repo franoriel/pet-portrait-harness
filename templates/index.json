@@ -12,11 +12,15 @@
     "hero": {
       "type": "hero",
       "settings": {
+        "image": "shopify://shop_images/resized_image_2_1.webp",
         "heading": "They deserve a spot on the wall.",
         "subheading": "Upload a photo of your pet. Choose from 9 artistic styles. Get a stunning portrait printed on canvas or paper, shipped to your door.",
         "show_rating": true,
         "rating_text": "4.9 stars from 2,000+ pet parents",
         "cta_label": "Create My Portrait",
+        "cta_url": "",
+        "secondary_cta_label": "",
+        "secondary_cta_url": "",
         "reassurance": "See it before you buy · Made and shipped in North America"
       }
     },
@@ -101,14 +105,6 @@
         "cta_url": "/pages/create"
       }
     },
-    "product-showcase": {
-      "type": "product-showcase",
-      "settings": {
-        "eyebrow": "Formats",
-        "heading": "Pick how you want it.",
-        "subheading": "Same portrait, different ways to display it."
-      }
-    },
     "review-ticker": {
       "type": "social-proof-ticker",
       "settings": {}
@@ -119,6 +115,8 @@
         "eyebrow": "See the difference",
         "heading": "From camera roll to canvas.",
         "subheading": "Drag the slider. Every portrait is painted from your actual photo.",
+        "before_image": "shopify://shop_images/fe10a6be-9612-44d2-9f21-a8140461b6be_watercolor_charlieking.png",
+        "after_image": "shopify://shop_images/pexels-chevanon-1108099.jpg",
         "cta_label": "Try it with your pet",
         "cta_url": "/pages/create"
       }
@@ -145,7 +143,6 @@
     "hero",
     "trust-bar",
     "how-it-works",
-    "product-showcase",
     "review-ticker",
     "before-after",
     "faq",
