@@ -26,25 +26,39 @@
   }
 
   function setupPdpPreGenFlow() {
-    // Called when user lands on PDP without a generated portrait.
-    // Let them upload + name here, save to pending, redirect to /pages/create.
-    document.addEventListener('DOMContentLoaded', function () {
+    function init() {
       var uploadInput = document.getElementById('PetPhotoUpload');
       var nameInput = document.getElementById('PetName');
       var atcBtn = document.querySelector('.atc-btn');
       var form = document.querySelector('.product-form, form[action*="/cart/add"]');
 
-      if (!uploadInput || !nameInput || !atcBtn || !form) return;
+      if (!uploadInput || !nameInput || !atcBtn || !form) {
+        console.log('[PetPrintables] Pre-gen flow: required elements not found', {
+          uploadInput: !!uploadInput, nameInput: !!nameInput, atcBtn: !!atcBtn, form: !!form
+        });
+        return;
+      }
 
       // Rename the ATC button to lead into the flow
       atcBtn.textContent = 'CONTINUE \u2192 PICK YOUR STYLE';
       atcBtn.setAttribute('type', 'button');
       atcBtn.removeAttribute('name');
 
-      // Intercept the button click — don't add to cart, instead save pending + redirect
+      // Also intercept the FORM submission (belt-and-suspenders)
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleContinue();
+      }, true);
+
+      // Intercept button click
       atcBtn.addEventListener('click', function (e) {
         e.preventDefault();
+        e.stopPropagation();
+        handleContinue();
+      }, true);
 
+      function handleContinue() {
         var file = uploadInput.files && uploadInput.files[0];
         var petName = (nameInput.value || '').trim();
 
@@ -59,8 +73,6 @@
           return;
         }
 
-        // Save the photo as a base64 data URL in a temporary pending slot
-        // so the create flow can pick it up and start at Step 2
         var reader = new FileReader();
         reader.onload = function () {
           try {
@@ -80,8 +92,15 @@
           alert('Could not read your photo. Please try a different image.');
         };
         reader.readAsDataURL(file);
-      });
-    });
+      }
+    }
+
+    // Run immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   }
 
   // Accept either base64 data URLs or CDN URLs — whichever is available
