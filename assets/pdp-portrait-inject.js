@@ -177,35 +177,43 @@
     var canvasL = scene.zoneLeft + (scene.zoneW - canvasW) / 2;
     var canvasT = scene.zoneTop + (scene.zoneH - canvasH) / 2;
 
-    // ── Canvas print on wall — clean realism ──────────────
-    var canvasEl = document.createElement('div');
-    canvasEl.style.cssText = 'position:absolute;'
+    // ── Product mockup on wall ─────────────────────────────
+    var isCanvas = productHandle !== 'poster';
+
+    var productEl = document.createElement('div');
+    productEl.style.cssText = 'position:absolute;'
       + 'top:' + canvasT + '%;'
       + 'left:' + canvasL + '%;'
       + 'width:' + canvasW + '%;'
       + 'height:' + canvasH + '%;'
       + 'overflow:hidden;'
-      // Layered shadow — warm tone, consistent upper-left light
-      + 'box-shadow:'
-      +   '0 1px 2px hsla(30,15%,15%,0.10),'
-      +   '0 3px 6px hsla(30,15%,15%,0.10),'
-      +   '0 8px 16px hsla(30,15%,15%,0.08),'
-      +   '0 16px 32px hsla(30,15%,15%,0.06);';
-    room.appendChild(canvasEl);
+      + (isCanvas
+        // Canvas: thick gallery wrap, warm directional shadow
+        ? 'box-shadow:'
+          +   '2px 3px 2px hsla(30,20%,15%,0.08),'    // contact
+          +   '3px 5px 8px hsla(30,20%,15%,0.10),'    // near
+          +   '5px 10px 20px hsla(30,20%,15%,0.10),'  // mid
+          +   '8px 16px 36px hsla(30,20%,15%,0.08);'  // ambient
+        // Poster: thin flat print, softer centered shadow
+        : 'box-shadow:'
+          +   '0 1px 3px hsla(220,10%,20%,0.08),'
+          +   '0 4px 10px hsla(220,10%,20%,0.08),'
+          +   '0 10px 24px hsla(220,10%,20%,0.06);'
+      );
+    room.appendChild(productEl);
 
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
-    portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
+    portraitImg.alt = (petName || 'Portrait') + ' on ' + label + (isCanvas ? ' canvas' : ' print');
     portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;background:#faf8f5;';
-    canvasEl.appendChild(portraitImg);
+    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
+    productEl.appendChild(portraitImg);
 
-    // Canvas weave texture overlay (SVG noise)
-    var texture = document.createElement('div');
-    texture.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;'
-      + 'mix-blend-mode:overlay;opacity:0.08;'
-      + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");";
-    canvasEl.appendChild(texture);
+    // Inset shadow — subtle edge darkening where print meets wall
+    var inset = document.createElement('div');
+    inset.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;'
+      + 'box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);';
+    productEl.appendChild(inset);
 
     // Size label
     var sizeLabel = document.createElement('div');
