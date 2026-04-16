@@ -697,13 +697,13 @@ const s = {
     color: tokens.colorBrand,
   },
   smallCaps: {
-    fontFamily: fontSans, fontWeight: 500, fontSize: '11px',
-    letterSpacing: '0.14em', textTransform: 'uppercase',
+    fontFamily: fontSans, fontWeight: 500, fontSize: '12px',
+    letterSpacing: '0.12em', textTransform: 'uppercase',
     color: tokens.colorMuted,
   },
   serifHeading: {
     fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
-    fontSize: '28px', color: tokens.colorBrand,
+    fontSize: 'clamp(22px, 5vw, 28px)', color: tokens.colorBrand,
     margin: '0 0 20px 0', lineHeight: 1.2,
   },
   photoGuidelines: {
@@ -993,7 +993,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             style.badge && React.createElement('span', {
               style: {
                 position: 'absolute', top: '8px', left: '8px',
-                ...s.smallCaps, fontSize: '9px', letterSpacing: '0.1em',
+                ...s.smallCaps, fontSize: '10px', letterSpacing: '0.08em',
                 color: tokens.colorWhite, background: tokens.colorSuccess,
                 borderRadius: '3px', padding: '3px 7px',
               },
@@ -1084,7 +1084,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
               saveSession({ ...state, fontSize: size.id });
             },
             style: {
-              width: '32px', height: '32px', borderRadius: '8px',
+              width: '44px', height: '44px', borderRadius: '10px',
               border: state.fontSize === size.id ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
               background: state.fontSize === size.id ? tokens.colorAccentLight : tokens.colorWhite,
               color: state.fontSize === size.id ? tokens.colorAccent : tokens.colorMuted,
@@ -1329,7 +1329,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     // Main preview
     React.createElement('div', {
       style: {
-        width: '100%', maxWidth: '520px', margin: '0 auto 20px', borderRadius: tokens.radiusCard,
+        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 20px', borderRadius: tokens.radiusCard,
         overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
       },
     },
@@ -1578,7 +1578,7 @@ function PageHero() {
               }),
               React.createElement('span', {
                 style: {
-                  fontFamily: fontSans, fontSize: '8px', fontWeight: 600,
+                  fontFamily: fontSans, fontSize: '10px', fontWeight: 600,
                   color: tokens.colorMuted, textTransform: 'uppercase',
                   letterSpacing: '0.02em', marginTop: '5px', display: 'block',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
