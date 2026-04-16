@@ -1,16 +1,21 @@
 <div class="trust-bar" aria-label="Trust signals">
-  <div class="trust-bar__inner">
-    {%- for block in section.blocks -%}
-      <div class="trust-bar__item" {{ block.shopify_attributes }}>
-        {%- if block.settings.icon != blank -%}<span aria-hidden="true">{{ block.settings.icon }}</span>{%- endif -%}
-        {{ block.settings.text }}
+  <div class="trust-bar__track">
+    {%- comment -%}Duplicate items twice for seamless infinite scroll{%- endcomment -%}
+    {%- for i in (1..2) -%}
+      <div class="trust-bar__set" {% if i == 2 %}aria-hidden="true"{% endif %}>
+        {%- for block in section.blocks -%}
+          <div class="trust-bar__item" {{ block.shopify_attributes }}>
+            {%- if block.settings.icon != blank -%}<span class="trust-icon" aria-hidden="true">{{ block.settings.icon }}</span>{%- endif -%}
+            {{ block.settings.text }}
+          </div>
+        {%- else -%}
+          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Made in Canada</div>
+          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Free shipping over $75</div>
+          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Free redos if you're not happy</div>
+          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Preview before you pay</div>
+          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> 9 artistic styles</div>
+        {%- endfor -%}
       </div>
-    {%- else -%}
-      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Preview before you pay</div>
-      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Ships to Canada & the US</div>
-      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Satisfaction guaranteed</div>
-      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> 9 artistic styles</div>
-      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Canadian business</div>
     {%- endfor -%}
   </div>
 </div>

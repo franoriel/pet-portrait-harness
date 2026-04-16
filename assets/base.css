@@ -374,31 +374,33 @@ p { color: var(--color-ink); }
 .trust-bar {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: 14px var(--gutter);
+  padding: 14px 0;
   overflow: hidden;
 }
-.trust-bar__inner {
+.trust-bar__track {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  justify-content: flex-start;
-  max-width: var(--max-width);
-  margin: 0 auto;
+  width: max-content;
+  animation: marquee-scroll 25s linear infinite;
 }
-.trust-bar__inner::-webkit-scrollbar { display: none; }
+.trust-bar__track:hover { animation-play-state: paused; }
+.trust-bar__set {
+  display: flex;
+  flex-shrink: 0;
+}
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
 .trust-bar__item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
   font-size: 0.92rem;
   font-weight: 500;
   color: var(--color-ink);
   letter-spacing: 0.01em;
-  padding: 0 20px;
+  padding: 0 28px;
   flex-shrink: 0;
 }
 .trust-bar__item + .trust-bar__item {
@@ -408,6 +410,10 @@ p { color: var(--color-ink); }
   font-size: 0.6em;
   color: var(--color-muted);
   vertical-align: 1px;
+}
+/* Pause marquee for reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  .trust-bar__track { animation: none; }
 }
 
 /* ── How it works ─────────────────────────────────────────── */
@@ -913,7 +919,7 @@ p { color: var(--color-ink); }
 
   .hero__cta-group { flex-direction: row; justify-content: center; }
 
-  .trust-bar__inner { justify-content: center; }
+  /* marquee scrolls continuously — no centering needed */
 
   .hiw__steps {
     overflow: visible;
