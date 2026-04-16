@@ -225,25 +225,51 @@ _active_lock = _thr.Lock()
 _peak_generations = 0
 
 # ─────────────────────────────────────────────────────────────
-# CORS — restricted to trusted origins only
+# CORS — restricted to trusted origins (supports wildcard suffixes)
 # ─────────────────────────────────────────────────────────────
-_ALLOWED_ORIGINS = set(
-    (os.environ.get("ALLOWED_ORIGINS")
-     or "https://petprintables.ca,https://www.petprintables.ca,https://petprintables.myshopify.com"
-    ).split(",")
-)
+_raw_origins = (os.environ.get("ALLOWED_ORIGINS")
+    or "https://petprintables.ca,https://www.petprintables.ca,https://petprintables.myshopify.com")
+_ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+_ALLOW_ANY_ORIGIN = "*" in _ALLOWED_ORIGINS
+
+
+def _origin_allowed(origin: str) -> bool:
+    """Check if an origin is in the whitelist. Supports:
+     - "*" matches any origin
+     - exact match "https://petprintables.ca"
+     - wildcard subdomain "*.myshopify.com" matches "foo.myshopify.com"
+     - trusted suffix .shopifypreview.com / .myshopify.com for admin previews
+    """
+    if _ALLOW_ANY_ORIGIN:
+        return True
+    if not origin:
+        return False
+    for allowed in _ALLOWED_ORIGINS:
+        if allowed == origin:
+            return True
+        if allowed.startswith("*.") and origin.endswith(allowed[1:]):
+            return True
+    # Allow any Shopify preview/admin subdomain so testing works
+    try:
+        from urllib.parse import urlparse
+        host = (urlparse(origin).hostname or "").lower()
+        if host.endswith(".myshopify.com") or host.endswith(".shopifypreview.com"):
+            return True
+    except Exception:
+        pass
+    return False
+
 
 @app.after_request
 def _add_cors(response):
     origin = request.headers.get("Origin", "")
-    # Exact-match whitelist (no wildcard)
-    if origin in _ALLOWED_ORIGINS:
-        response.headers["Access-Control-Allow-Origin"] = origin
+    if _origin_allowed(origin):
+        response.headers["Access-Control-Allow-Origin"] = origin or "*"
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Admin-Token"
         response.headers["Access-Control-Max-Age"] = "3600"
-    # Basic security headers on every response
+    # Security headers on every response
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
