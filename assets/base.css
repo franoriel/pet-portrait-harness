@@ -356,14 +356,14 @@ p { color: var(--color-ink); }
   object-position: center 30%;
   display: block;
 }
-/* Bottom gradient — covers the text area only */
-.hero__content::before {
+/* Bottom gradient — attached to the hero, not the content */
+.hero::after {
   content: '';
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 80%;
-  background: linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.65) 35%, rgba(0,0,0,0.25) 65%, transparent 100%);
-  z-index: -1;
+  height: 75%;
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.65) 35%, rgba(0,0,0,0.20) 70%, transparent 100%);
+  z-index: 1;
   pointer-events: none;
 }
 .hero__content {
