@@ -119,6 +119,8 @@ p { color: var(--color-ink); }
   letter-spacing: 0.04em;
 }
 .announcement-bar a { color: var(--color-primary); text-decoration: underline; }
+/* Hide on homepage — trust bar marquee covers the same info */
+.template-index .announcement-bar { display: none; }
 
 /* ── Header ───────────────────────────────────────────────── */
 .site-header {
