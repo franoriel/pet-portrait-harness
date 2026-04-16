@@ -98,25 +98,26 @@
 
   var _mockupSceneIndex = 0;
 
-  // Room scene configs — positions define where the canvas sits
-  // within each photo (percentage-based for responsive scaling)
+  // Room scene configs — positions define the blank wall zone where
+  // the canvas fits (percentage of image dimensions, measured from
+  // the actual room photographs)
   var ROOM_SCENES = [
     {
-      // Warm scandinavian — credenza + plant
+      // Warm scandinavian — credenza + plant (has blank canvas on wall)
       image: 'mockup-room-1.webp',
-      // Canvas placement zone (% of container)
-      canvasTop: 5,
-      canvasLeft: 18,
-      canvasMaxW: 64,   // max width % of container
-      canvasMaxH: 52,   // max height % of container
+      // Blank canvas zone in the photo (percentages)
+      zoneTop: 13,
+      zoneLeft: 18,
+      zoneW: 64,
+      zoneH: 43,
     },
     {
-      // Modern living room — gray couch + side table
+      // Modern living room — gray couch + side table (open wall)
       image: 'mockup-room-2.webp',
-      canvasTop: 4,
-      canvasLeft: 15,
-      canvasMaxW: 50,
-      canvasMaxH: 48,
+      zoneTop: 8,
+      zoneLeft: 20,
+      zoneW: 48,
+      zoneH: 42,
     },
   ];
 
@@ -144,37 +145,55 @@
     bgImg.style.cssText = 'width:100%;display:block;';
     room.appendChild(bgImg);
 
-    // Calculate canvas dimensions within the scene
-    // The canvas must fit within the scene's placement zone
-    // while maintaining the correct product aspect ratio
-    var aspectRatio = heightIn / widthIn;
-    var isSquare = widthIn === heightIn;
-    var isTall = heightIn > widthIn * 1.5;
+    // Calculate canvas dimensions to fit within the wall zone
+    // while maintaining the product's aspect ratio.
+    // The zone is defined in % of the image. We need to fit the
+    // canvas (widthIn:heightIn) inside the zone (zoneW:zoneH).
+    // Image aspect is ~4:5 (800x993), so zoneH in px is ~1.24x zoneH%
+    var imgAspect = 993 / 800; // height/width of room photos
+    var productAspect = heightIn / widthIn;
 
-    // Start with max width, constrain by max height
-    var canvasW = scene.canvasMaxW;
-    var canvasH = canvasW * aspectRatio * 0.8; // 0.8 accounts for container being wider than tall
-    if (canvasH > scene.canvasMaxH) {
-      canvasH = scene.canvasMaxH;
-      canvasW = canvasH / (aspectRatio * 0.8);
+    // Zone in "normalized" units (width=100)
+    var zW = scene.zoneW;
+    var zH = scene.zoneH * imgAspect; // convert height % to same scale as width %
+
+    // Fit canvas inside zone
+    var canvasW, canvasH;
+    if (productAspect > zH / zW) {
+      // Product is taller than zone — constrain by height
+      canvasH = scene.zoneH;
+      canvasW = canvasH * imgAspect / productAspect;
+    } else {
+      // Product is wider/squarer — constrain by width
+      canvasW = zW;
+      canvasH = canvasW * productAspect / imgAspect;
     }
-    // Center horizontally within placement zone
-    var canvasL = scene.canvasLeft + (scene.canvasMaxW - canvasW) / 2;
 
-    // Canvas element — portrait on the wall
-    var canvas = document.createElement('div');
-    canvas.style.cssText = 'position:absolute;'
-      + 'top:' + scene.canvasTop + '%;'
+    // Shrink slightly (90%) to leave breathing room within the zone
+    canvasW *= 0.88;
+    canvasH *= 0.88;
+
+    // Center within the zone
+    var canvasL = scene.zoneLeft + (scene.zoneW - canvasW) / 2;
+    var canvasT = scene.zoneTop + (scene.zoneH - canvasH) / 2;
+
+    // Canvas wrapper — simulates gallery-wrapped canvas with depth
+    var canvasWrap = document.createElement('div');
+    canvasWrap.style.cssText = 'position:absolute;'
+      + 'top:' + canvasT + '%;'
       + 'left:' + canvasL + '%;'
       + 'width:' + canvasW + '%;'
-      + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
-      + 'overflow:hidden;border-radius:1px;'
-      // Realistic wall-mounted canvas shadows
+      + 'height:' + canvasH + '%;';
+    room.appendChild(canvasWrap);
+
+    // Canvas face — the printed surface
+    var canvas = document.createElement('div');
+    canvas.style.cssText = 'position:absolute;inset:0;overflow:hidden;'
+      // Realistic wall-mounted canvas shadow
       + 'box-shadow:'
-      +   '0 2px 6px rgba(0,0,0,0.12),'
-      +   '0 8px 20px rgba(0,0,0,0.10),'
-      +   '0 16px 40px rgba(0,0,0,0.06);'
-      + 'border:3px solid rgba(255,255,255,0.9);';
+      +   '0 1px 3px rgba(0,0,0,0.10),'
+      +   '0 4px 12px rgba(0,0,0,0.08),'
+      +   '0 12px 28px rgba(0,0,0,0.06);';
 
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
@@ -182,7 +201,27 @@
     portraitImg.loading = 'lazy';
     portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top;display:block;';
     canvas.appendChild(portraitImg);
-    room.appendChild(canvas);
+
+    // Inner shadow to simulate canvas texture + edge depth
+    var innerShadow = document.createElement('div');
+    innerShadow.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+      + 'box-shadow:inset 0 0 6px rgba(0,0,0,0.08),inset 0 0 1px rgba(0,0,0,0.12);';
+    canvas.appendChild(innerShadow);
+    canvasWrap.appendChild(canvas);
+
+    // Canvas edge (right side) — simulates the wrapped canvas depth
+    var edgeRight = document.createElement('div');
+    edgeRight.style.cssText = 'position:absolute;top:1px;right:-5px;width:5px;bottom:1px;'
+      + 'background:linear-gradient(90deg, #d8d3cc, #c8c3bb);'
+      + 'transform:skewY(-1deg);';
+    canvasWrap.appendChild(edgeRight);
+
+    // Canvas edge (bottom) — wrapped canvas bottom depth
+    var edgeBottom = document.createElement('div');
+    edgeBottom.style.cssText = 'position:absolute;left:1px;right:4px;bottom:-4px;height:4px;'
+      + 'background:linear-gradient(180deg, #d0cbc4, #c0bbb3);'
+      + 'transform:skewX(-1deg);';
+    canvasWrap.appendChild(edgeBottom);
 
     // Size label — elegant pill overlay
     var sizeLabel = document.createElement('div');
