@@ -145,10 +145,19 @@
   var age = Date.now() - new Date(data.generatedAt).getTime();
   if (age > 7 * 24 * 60 * 60 * 1000) { try { localStorage.removeItem(LS_KEY); } catch (e) {} return; }
 
-  var previewUrl = previewUrls[data.selectedPreviewIndex || 0] || previewUrls[0];
+  // Default preview (no-name). If user opted in to name on step 4 and we
+  // already generated the named preview, use that instead.
+  var previewUrl = (data.wantsName !== false && data.namedPreviewUrl)
+    ? data.namedPreviewUrl
+    : (previewUrls[data.selectedPreviewIndex || 0] || previewUrls[0]);
   var petName = data.petName || '';
   var styleId = data.styleId || 'soft-watercolour';
   var fontSize = data.fontSize || 'medium';
+  // Selections from step 4 (size, name, frame)
+  var selectedSize = data.selectedSize || null;       // e.g. '10x10'
+  var wantsName = data.wantsName !== false;           // default true
+  var wantsFrame = data.wantsFrame === true;          // default false
+  var namedPreviewUrl = data.namedPreviewUrl || null; // with-name preview from step 4
 
   // ── Style → font mapping (must match portrait-flow.js) ──
   var STYLE_FONTS = {
@@ -594,7 +603,8 @@
       'Pet Name': petName,
       '_Style': data.styleId || '',
       '_Font Size': fontSize,
-      '_Show Name': 'Yes',
+      '_Show Name': wantsName ? 'Yes' : 'No',
+      '_Frame': wantsFrame ? 'Framed' : 'No frame',
       '_Job ID': data.jobId || '',
       '_Portrait URL': previewUrlForCart,      // preview for display
       '_Print File URL': printFileUrl,         // hi-res for Printful
@@ -607,6 +617,24 @@
       form.appendChild(input);
     });
 
+    // ── Auto-select the size variant chosen on step 4 ──────
+    if (selectedSize) {
+      // Size values on the PDP look like '10"x10"' or '10×10' — match by digits
+      var targetParts = selectedSize.match(/(\d+)\D+(\d+)/);
+      if (targetParts) {
+        var w = targetParts[1], h = targetParts[2];
+        setTimeout(function () {
+          var variantOpts = document.querySelectorAll('.variant-option');
+          variantOpts.forEach(function (opt) {
+            var txt = (opt.textContent || '').match(/(\d+)\D+(\d+)/);
+            if (txt && txt[1] === w && txt[2] === h) {
+              opt.click();
+            }
+          });
+        }, 100); // small delay to let theme.js bind variant-picker
+      }
+    }
+
     // ── Lazy generation: call /add-name on ATC click ─────────
     // The "with name" portrait is only generated when the user commits
     // to buying — cuts Gemini cost in half during preview phase.
@@ -616,10 +644,15 @@
       atcBtn.setAttribute('data-lazy-hooked', '1');
       atcBtn.addEventListener('click', function (e) {
         // Only intercept if user wants the name on the portrait
-        var wantsName = (showNameInput() && showNameInput().value === 'Yes');
-        if (!wantsName) return; // skip — no name needed
+        var wantsNameAtCart = (showNameInput() && showNameInput().value === 'Yes');
+        if (!wantsNameAtCart) return; // skip — no name needed
         // Skip if we already generated the with-name version
         if (atcBtn.hasAttribute('data-named-generated')) return;
+        // Skip if the named preview was already generated on step 4
+        if (data.namedPreviewUrl) {
+          atcBtn.setAttribute('data-named-generated', '1');
+          return; // let the form submit normally with existing URLs
+        }
 
         e.preventDefault();
         e.stopPropagation();

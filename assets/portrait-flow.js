@@ -1363,24 +1363,22 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     );
   }
 
-  const mainImage = state.previewImages[state.selectedPreviewIndex];
-  const styleFontDef = STYLE_FONTS[state.selectedStyleId] || STYLE_FONTS['soft-watercolour'];
-  const currentSizeDef = FONT_SIZES.find(f => f.id === (state.fontSize || 'medium')) || FONT_SIZES[1];
-  const nameBasePx = 32;
-  const nameFontSize = Math.round(nameBasePx * currentSizeDef.scale);
-
-  // Load the style-specific Google Font
-  useEffect(() => {
-    if (state.selectedStyleId) loadGoogleFont(state.selectedStyleId);
-  }, [state.selectedStyleId]);
+  // Single preview (no-name version) — this is what the user confirms
+  const mainImage = state.previewImages[0] || state.previewCdnUrls[0];
 
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 3 }),
 
-    // Main preview
+    // Heading
+    React.createElement('p', { style: { ...s.smallCaps, textAlign: 'center', margin: '0 0 6px' } }, 'Your bespoke portrait'),
+    state.petName && React.createElement('h2', {
+      style: { ...s.serifHeading, textAlign: 'center', marginBottom: '20px' },
+    }, state.petName),
+
+    // Main preview (single, large)
     React.createElement('div', {
       style: {
-        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 20px', borderRadius: tokens.radiusCard,
+        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 28px', borderRadius: tokens.radiusCard,
         overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
       },
     },
@@ -1390,49 +1388,12 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       }),
     ),
 
-    // Thumbnails
-    state.previewImages.length > 1 && React.createElement('div', {
-      style: { display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' },
-      role: 'listbox', 'aria-label': 'Preview variants',
-    },
-      state.previewImages.map((src, idx) =>
-        React.createElement('button', {
-          key: idx, type: 'button', role: 'option',
-          'aria-selected': idx === state.selectedPreviewIndex,
-          'aria-label': `Preview variant ${idx + 1}`,
-          onClick: () => selectPreview(idx),
-          style: {
-            width: '56px', height: '56px', borderRadius: '10px', overflow: 'hidden',
-            border: idx === state.selectedPreviewIndex ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
-            padding: 0, cursor: 'pointer', outline: 'none', background: 'none',
-          },
-        },
-          React.createElement('img', {
-            src, alt: `Variant ${idx + 1}`,
-            style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-          }),
-        )
-      ),
-    ),
-
-    // Pet name treatment with style-matched font
-    React.createElement('div', { style: { textAlign: 'center', marginBottom: '16px' } },
-      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 4px' } }, 'Your bespoke portrait'),
-      state.petName && React.createElement('p', {
-        style: {
-          fontFamily: styleFontDef.css, fontWeight: 700,
-          fontSize: `${nameFontSize}px`, color: tokens.colorBrand,
-          margin: 0, letterSpacing: '0.04em', transition: 'all 0.3s ease',
-        },
-      }, state.petName),
-    ),
-
     // Actions
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
       React.createElement('button', {
         type: 'button', style: s.primaryBtn, onClick: onContinue,
         'aria-label': 'Choose size',
-      }, 'CHOOSE SIZE \u2192'),
+      }, 'CONTINUE \u2192'),
       React.createElement('div', { style: { display: 'flex', gap: '16px' } },
         React.createElement('button', {
           type: 'button', style: s.secondaryLinkUnderline,
@@ -1449,93 +1410,199 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
 
 /* ── ProductGallery ────────────────────────────────────────── */
 
+// Canvas configurator — size + name + framed
+// Prices reflect real variant pricing (canvas only for now)
+const CANVAS_SIZES = [
+  { id: '10x10', label: '10\u2033 \u00D7 10\u2033', price: 37.00, priceFramed: 67.00 },
+  { id: '12x18', label: '12\u2033 \u00D7 18\u2033', price: 55.00, priceFramed: 95.00 },
+  { id: '10x20', label: '10\u2033 \u00D7 20\u2033', price: 57.50, priceFramed: 99.50 },
+  { id: '12x24', label: '12\u2033 \u00D7 24\u2033', price: 63.00, priceFramed: 108.00 },
+];
+
 function ProductGallery({ state, retryFromStyle, startFresh }) {
-  const mainImage = state.previewImages[state.selectedPreviewIndex];
+  const mainImage = state.previewImages[0] || state.previewCdnUrls[0];
+  const [selectedSize, setSelectedSize] = useState('10x10');
+  const [wantsName, setWantsName] = useState(true);
+  const [wantsFrame, setWantsFrame] = useState(false);
+  const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
+  const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
+
+  const activeSize = CANVAS_SIZES.find(s => s.id === selectedSize) || CANVAS_SIZES[0];
+  const currentPrice = wantsFrame ? activeSize.priceFramed : activeSize.price;
+  const displayImage = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
+
+  // When user toggles name ON and we don't have a named preview yet, generate it
+  const handleNameToggle = useCallback((enabled) => {
+    setWantsName(enabled);
+    if (enabled && !namedPreviewUrl && state.petName && !generatingNamedPreview) {
+      setGeneratingNamedPreview(true);
+      const API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+      const imageUrl = state.previewCdnUrls[0] || state.previewImages[0];
+      fetch(`${API_BASE}/add-name`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          pet_name: state.petName,
+          style: state.selectedStyleId,
+        }),
+      })
+      .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Failed'); }))
+      .then(resp => {
+        setNamedPreviewUrl(resp.composited || resp.composited_png_cdn);
+        setGeneratingNamedPreview(false);
+      })
+      .catch(err => {
+        console.error('Add-name failed:', err);
+        setGeneratingNamedPreview(false);
+      });
+    }
+  }, [namedPreviewUrl, state.petName, state.selectedStyleId, state.previewCdnUrls, state.previewImages, generatingNamedPreview]);
+
+  // Go to PDP with all params
+  const handleContinue = useCallback(() => {
+    // Save selections to localStorage so PDP picks them up
+    try {
+      const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      session.selectedSize = selectedSize;
+      session.wantsName = wantsName;
+      session.wantsFrame = wantsFrame;
+      if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
+      localStorage.setItem(LS_KEY, JSON.stringify(session));
+    } catch {}
+    window.location.href = '/products/canvas';
+  }, [selectedSize, wantsName, wantsFrame, namedPreviewUrl]);
+
+  const optionCard = (label, selected, onClick, children, disabled) => React.createElement('button', {
+    type: 'button',
+    onClick: disabled ? undefined : onClick,
+    disabled,
+    style: {
+      flex: 1, padding: '14px 12px',
+      border: selected ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+      background: selected ? tokens.colorAccentLight : tokens.colorWhite,
+      borderRadius: tokens.radiusCard,
+      cursor: disabled ? 'default' : 'pointer',
+      textAlign: 'center', outline: 'none', transition: 'all 0.2s',
+      fontFamily: fontSans, fontSize: '13px', fontWeight: 500,
+      color: selected ? tokens.colorAccent : tokens.colorBrand,
+      opacity: disabled ? 0.5 : 1,
+    },
+  }, children || label);
 
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 4, total: 4 }),
 
-    // Portrait reminder (small)
+    // Preview image with loading state when generating named version
     React.createElement('div', {
-      style: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px', padding: '16px', background: tokens.colorWhite, borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}` },
+      style: {
+        width: '100%', maxWidth: 'min(400px, 100%)', margin: '0 auto 24px', borderRadius: tokens.radiusCard,
+        overflow: 'hidden', boxShadow: '0 8px 28px rgba(0,0,0,0.10)', position: 'relative',
+      },
     },
       React.createElement('img', {
-        src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
-        style: { width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover' },
+        src: displayImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
+        style: { width: '100%', display: 'block', transition: 'opacity 0.3s' },
       }),
-      React.createElement('div', { style: { flex: 1 } },
-        React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 2px' } }, 'Your portrait'),
-        state.petName && React.createElement('p', {
-          style: { fontFamily: fontSerif, fontStyle: 'italic', fontSize: '20px', color: tokens.colorBrand, margin: 0 },
-        }, state.petName),
-      ),
+      generatingNamedPreview && React.createElement('div', {
+        style: {
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(250,248,245,0.85)', backdropFilter: 'blur(4px)',
+          fontFamily: fontSans, fontSize: '13px', fontWeight: 500, color: tokens.colorBrand,
+        },
+      }, 'Adding the name\u2026'),
     ),
 
-    // Heading
-    React.createElement('h2', { style: { ...s.serifHeading, marginBottom: '8px' } }, 'Choose your keepsake'),
-    React.createElement('p', { style: { ...s.bodyMuted, marginBottom: '24px' } }, 'Select a format to see sizes, pricing, and details.'),
-
-    // Product cards (vertical stack)
-    React.createElement('div', {
-      style: { display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '28px' },
-    },
-      PRODUCT_CATALOGUE.map((product) =>
-        React.createElement('a', {
-          key: product.handle,
-          href: product.available ? `/products/${product.handle}` : undefined,
-          onClick: product.available ? undefined : (e) => e.preventDefault(),
-          'aria-label': product.available ? `View ${product.name} options` : `${product.name} \u2014 coming soon`,
-          style: {
-            display: 'flex', alignItems: 'center', gap: '16px',
-            padding: '20px', borderRadius: tokens.radiusCard,
-            border: `1px solid ${tokens.colorBorder}`,
-            background: tokens.colorWhite,
-            cursor: product.available ? 'pointer' : 'default',
-            textDecoration: 'none', transition: 'all 0.2s',
-            opacity: product.available ? 1 : 0.55,
-            position: 'relative', overflow: 'hidden',
-          },
-        },
-          // Portrait thumbnail on the product
-          React.createElement('div', {
-            style: {
-              width: '80px', height: '80px', borderRadius: '10px', overflow: 'hidden',
-              flexShrink: 0, background: tokens.colorAccentLight,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            },
-          },
-            React.createElement('img', {
-              src: mainImage, alt: '',
-              style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-            }),
-          ),
-          // Product info
-          React.createElement('div', { style: { flex: 1 } },
-            React.createElement('p', {
-              style: { fontFamily: fontSans, fontWeight: 500, fontSize: '15px', color: tokens.colorBrand, margin: '0 0 3px' },
-            }, product.name),
-            React.createElement('p', {
-              style: { fontFamily: fontSans, fontWeight: 400, fontSize: '12px', color: tokens.colorMuted, margin: '0 0 6px', lineHeight: 1.4 },
-            }, product.sub),
-            React.createElement('p', {
-              style: { fontFamily: fontSans, fontWeight: 600, fontSize: '14px', color: product.available ? tokens.colorBrand : tokens.colorMuted, margin: 0 },
-            }, product.available ? `From ${product.fromPrice}` : product.fromPrice),
-          ),
-          // Arrow
-          product.available && React.createElement('span', {
-            style: { fontFamily: fontSans, fontSize: '18px', color: tokens.colorMuted, flexShrink: 0 },
-            'aria-hidden': true,
-          }, '\u2192'),
+    // SIZE selector
+    React.createElement('div', { style: { marginBottom: '24px' } },
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } }, 'Size'),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' } },
+        CANVAS_SIZES.map(size =>
+          optionCard(size.label, selectedSize === size.id, () => setSelectedSize(size.id),
+            React.createElement('span', null,
+              React.createElement('span', { style: { fontWeight: 600 } }, size.label),
+              React.createElement('br'),
+              React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } },
+                `$${(wantsFrame ? size.priceFramed : size.price).toFixed(2)}`
+              )
+            )
+          )
         ),
       ),
     ),
 
+    // NAME toggle
+    state.petName && React.createElement('div', { style: { marginBottom: '24px' } },
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
+        `Add "${state.petName}" to the portrait?`
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: '10px' } },
+        optionCard('Yes, include name', wantsName === true, () => handleNameToggle(true)),
+        optionCard('No, portrait only', wantsName === false, () => handleNameToggle(false)),
+      ),
+    ),
+
+    // FRAME toggle
+    React.createElement('div', { style: { marginBottom: '28px' } },
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } }, 'Add a frame?'),
+      React.createElement('div', { style: { display: 'flex', gap: '10px' } },
+        optionCard(
+          'No frame',
+          !wantsFrame,
+          () => setWantsFrame(false),
+          React.createElement('span', null,
+            React.createElement('span', { style: { fontWeight: 600 } }, 'No frame'),
+            React.createElement('br'),
+            React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } }, 'Gallery wrap'),
+          )
+        ),
+        optionCard(
+          'Framed',
+          wantsFrame,
+          () => setWantsFrame(true),
+          React.createElement('span', null,
+            React.createElement('span', { style: { fontWeight: 600 } }, 'Framed'),
+            React.createElement('br'),
+            React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } }, 'Solid wood'),
+          )
+        ),
+      ),
+    ),
+
+    // Summary + CTA
+    React.createElement('div', {
+      style: {
+        padding: '16px', borderRadius: tokens.radiusCard,
+        background: tokens.colorWhite, border: `1px solid ${tokens.colorBorder}`,
+        marginBottom: '16px',
+      },
+    },
+      React.createElement('div', {
+        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' },
+      },
+        React.createElement('span', { style: { ...s.smallCaps } }, 'Total'),
+        React.createElement('span', {
+          style: { fontFamily: fontSerif, fontStyle: 'italic', fontSize: '28px', color: tokens.colorBrand },
+        }, `$${currentPrice.toFixed(2)}`),
+      ),
+      React.createElement('p', {
+        style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted, margin: 0 },
+      },
+        `${activeSize.label} canvas${wantsFrame ? ' · Framed' : ''}${wantsName ? ' · With name' : ''}`
+      ),
+    ),
+
+    React.createElement('button', {
+      type: 'button', style: s.primaryBtn, onClick: handleContinue,
+      'aria-label': 'Continue to cart',
+    }, 'CONTINUE \u2192'),
+
     // Guarantee strip
     React.createElement('div', {
-      style: { borderTop: `1px solid ${tokens.colorBorder}`, paddingTop: '20px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' },
+      style: { borderTop: `1px solid ${tokens.colorBorder}`, marginTop: '24px', paddingTop: '20px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' },
     },
-      ['Preview before we print', "Not in love? We\u2019ll try again, free", 'Still not right? Full refund, no questions'].map((line, i) =>
-        React.createElement('p', { key: i, style: s.bodyMuted },
+      ['Preview before we print', "Free redos if you\u2019re not in love", 'Ships in 3\u20135 days'].map((line, i) =>
+        React.createElement('p', { key: i, style: { ...s.bodyMuted, fontSize: '12px' } },
           React.createElement('span', { style: { color: tokens.colorSuccess, marginRight: '10px' } }, '\u2713'),
           line,
         )
@@ -1548,10 +1615,6 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         type: 'button', style: s.secondaryLinkUnderline,
         onClick: retryFromStyle,
       }, 'Try a different style'),
-      React.createElement('button', {
-        type: 'button', style: s.secondaryLinkUnderline,
-        onClick: startFresh,
-      }, 'Start over with a new photo'),
     ),
   );
 }
