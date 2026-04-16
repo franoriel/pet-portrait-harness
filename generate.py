@@ -578,18 +578,31 @@ def save_web_preview(image: Image.Image, out_path: Path, max_width: int = 800) -
     return preview_path
 
 
-def crop_to_ratio(image: Image.Image, ratio: tuple) -> Image.Image:
-    """Centre-crop image to the given (width, height) ratio."""
+def crop_to_ratio(image: Image.Image, ratio: tuple, gravity: str = "center") -> Image.Image:
+    """Crop image to the given (width, height) ratio.
+
+    gravity:
+        "center" — classic centre crop (default)
+        "top"    — anchor to top edge, crop from bottom (preserves pet face)
+        "bottom" — anchor to bottom edge, crop from top (preserves name text)
+    """
     w, h = image.size
     target_w, target_h = ratio
     if w / h > target_w / target_h:
+        # Image is wider than target — crop sides (center horizontally)
         new_w = int(h * target_w / target_h)
         left  = (w - new_w) // 2
         return image.crop((left, 0, left + new_w, h))
     else:
+        # Image is taller than target — crop top/bottom based on gravity
         new_h = int(w * target_h / target_w)
-        top   = (h - new_h) // 2
-        return image.crop((0, top, w, top + new_h))
+        if gravity == "top":
+            return image.crop((0, 0, w, new_h))
+        elif gravity == "bottom":
+            return image.crop((0, h - new_h, w, h))
+        else:
+            top = (h - new_h) // 2
+            return image.crop((0, top, w, top + new_h))
 
 
 # ---------------------------------------------------------------------------
@@ -680,7 +693,7 @@ def generate(
     style: str = "classic",
     output_dir: Optional[Path] = None,
     style_vars: Optional[dict] = None,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, Path]:
     """
     Generate a portrait and composite the pet name onto it.
 

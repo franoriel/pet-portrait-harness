@@ -152,8 +152,8 @@ def generate_print_file(
         img = Image.open(r2_path)
         img.load()
 
-        # Crop to product aspect ratio
-        img = crop_to_ratio(img, ratio)
+        # Crop to product aspect ratio — top-weighted to keep pet's face
+        img = crop_to_ratio(img, ratio, gravity="top")
 
         # Upscale to print dimensions
         if img.width < target_w or img.height < target_h:
@@ -162,7 +162,7 @@ def generate_print_file(
         # Sharpen to recover detail lost in upscaling
         img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
-        # Re-composite pet name at the larger resolution (skip for mugs)
+        # Composite pet name AFTER cropping to correct ratio (skip for mugs)
         if not product_key.startswith("mug"):
             img = composite_name(img, pet_name)
 
@@ -178,8 +178,8 @@ def generate_print_file(
         img = Image.open(BytesIO(raw_bytes))
         img.load()
 
-        # Crop to product aspect ratio
-        img = crop_to_ratio(img, ratio)
+        # Crop to product aspect ratio — top-weighted to keep pet's face
+        img = crop_to_ratio(img, ratio, gravity="top")
 
         # Apply style-specific post-processing
         if style_key != "watercolor":
@@ -189,7 +189,7 @@ def generate_print_file(
         if img.width < target_w or img.height < target_h:
             img = img.resize((target_w, target_h), Image.LANCZOS)
 
-        # Composite pet name (skip for mugs)
+        # Composite pet name AFTER cropping (skip for mugs)
         if not product_key.startswith("mug"):
             img = composite_name(img, pet_name)
 
@@ -208,14 +208,14 @@ def _map_style_id(react_style_id: str) -> str:
     """Map the React widget's style ID to the harness PROMPTS key."""
     mapping = {
         "soft-watercolour": "watercolor",
-        "minimal-line-art": "minimal",
-        "modern-oil-paint": "classic",       # fallback until dedicated prompts exist
-        "neon-pop-art": "classic",
-        "renaissance-royalty": "classic",
-        "cozy-film-grain": "classic",
-        "rainbow-bridge": "watercolor",
-        "bold-graphic-poster": "minimal",
-        "aura-gradient": "watercolor",
+        "minimal-line-art": "minimal-line-art",
+        "modern-oil-paint": "modern-oil-paint",
+        "neon-pop-art": "neon-pop-art",
+        "renaissance-royalty": "renaissance-royalty",
+        "cozy-film-grain": "cozy-film-grain",
+        "rainbow-bridge": "rainbow-bridge",
+        "bold-graphic-poster": "bold-graphic-poster",
+        "aura-gradient": "aura-gradient",
     }
     key = mapping.get(react_style_id, react_style_id)
     if key not in PROMPTS:

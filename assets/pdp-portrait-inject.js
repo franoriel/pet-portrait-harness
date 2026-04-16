@@ -72,8 +72,23 @@
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    // Use object-position top to keep pet's face visible when cropping
+    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top;display:block;';
     frame.appendChild(portraitImg);
+
+    // Overlay pet name at bottom of frame (mimics final print)
+    if (petName) {
+      var nameOverlay = document.createElement('div');
+      nameOverlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:6% 8px 4%;text-align:center;'
+        + "font-family:'Cormorant Garamond',serif;font-size:clamp(10px,3vw,16px);letter-spacing:0.15em;"
+        + 'color:#1C1C1C;text-transform:uppercase;';
+      // Thin separator line
+      var line = document.createElement('div');
+      line.style.cssText = 'width:30%;margin:0 auto 6px;border-top:1px solid rgba(0,0,0,0.25);';
+      nameOverlay.appendChild(line);
+      nameOverlay.appendChild(document.createTextNode(petName.toUpperCase()));
+      frame.appendChild(nameOverlay);
+    }
 
     container.appendChild(frame);
 
