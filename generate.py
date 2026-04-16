@@ -74,120 +74,119 @@ def _name_integration(style_id: str, pet_name: str) -> str:
     name = pet_name.strip().title()
     name_upper = pet_name.strip().upper()
 
-    # SAFE ZONE RULES (for all styles):
-    # - Name must be placed between 70% and 88% of image height
-    # - Top boundary (70%) keeps name clearly below the pet
-    # - Bottom boundary (88%) keeps a 12% safety margin so Printful's
-    #   "sides and back" wrap zone doesn't cut off the text
+    # POSITION: name goes in the TOP white space above the pet — perfectly centered
+    # horizontally, vertically within 8%-20% of image height.
     safe_zone = (
-        "- Position: name must be placed within 70%-88% of image height "
-        "(i.e. a comfortable margin above the bottom edge — leave at least "
-        "12% empty space BELOW the name so it isn't cut off when the canvas "
-        "is wrapped around the frame edges).\n"
-        "- Horizontal margin: at least 10% from left and right edges.\n"
+        "- POSITION: Place the name in the TOP center white space ABOVE the pet.\n"
+        "- Vertical placement: name baseline between 10% and 20% of image height "
+        "(measured from top edge). Leave at least 8% margin from the top edge.\n"
+        "- Horizontal placement: PERFECTLY CENTERED horizontally on the image.\n"
+        "- Name must sit in the clean empty area above the pet — NEVER overlap the pet.\n"
+        "- CONTRAST: Use HIGH-CONTRAST color so the name is clearly legible against "
+        "the white/light background above the pet. For light backgrounds: use deep, "
+        "saturated dark colors (near-black, deep navy, rich brown, deep sepia). "
+        "Do NOT use pale, washed-out, or low-contrast colors for the name.\n"
     )
 
     integrations = {
         "watercolor": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as if hand-painted with the same watercolor brush "
-            f"and pigments as the portrait. Use a flowing, slightly imperfect calligraphic script. "
-            f"The lettering should have the same wet-on-wet bleeds and soft edges as the portrait. "
-            f"Color: a muted sepia or deep watercolor wash that complements (not matches) the palette. "
-            f"Size: moderate, roughly 5-7% of image height. Centered horizontally."
+            f"- Render the name \"{name}\" as flowing calligraphic brush script, hand-painted "
+            f"with a watercolor brush. Use a DEEP, high-contrast color (deep sepia #4a2c14, "
+            f"rich umber, or near-black with slight warmth) so it reads clearly against the "
+            f"white paper above the pet. Slight natural bleed at letter edges is okay but "
+            f"keep the lettering FULLY LEGIBLE. Size: 8-10% of image height. Centered."
         ),
         "minimal-line-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" in the exact same single-weight pen stroke as "
-            f"the portrait linework. Use a clean geometric sans-serif (Futura/Avenir feel), "
-            f"uppercase, wide letter-spacing. Black ink only, no fill, no shadow. "
-            f"Size: small and refined, 3.5-5% of image height. Centered horizontally."
+            f"- Render the name \"{name_upper}\" in clean geometric sans-serif capitals "
+            f"(Futura/Avenir feel) matching the portrait's pen-stroke weight. Wide letter-spacing. "
+            f"Solid jet black ink (#000000) for maximum contrast. No fill, no shadow, no shading. "
+            f"Size: 6-8% of image height. Centered."
         ),
         "modern-oil-paint": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as if signed into the wet oil paint with a palette "
-            f"knife. Use an elegant italic serif in warm cream or ivory, slightly imperfect, "
-            f"blended subtly into the dark painterly background. Size: 5-7% of image height. Centered."
+            f"- Render the name \"{name}\" as an elegant italic serif (Playfair Display feel), "
+            f"painted into the top of the canvas as part of the composition. Use a RICH DARK "
+            f"warm brown or deep charcoal (#3a2818 or #2a1e14) for strong legibility against "
+            f"the lighter area. Size: 8-10% of image height. Centered."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as thick bold comic-book lettering with a heavy "
-            f"black outline and a contrasting saturated pop color fill (hot pink, electric blue, "
-            f"or yellow). The lettering must feel like native pop art — Warhol/Lichtenstein style. "
-            f"Size: prominent, 7-9% of image height. Centered horizontally."
+            f"- Render the name \"{name_upper}\" as thick bold comic-book lettering with a "
+            f"HEAVY black outline (5-7% of letter height) and a solid saturated pop-color fill "
+            f"(hot pink, electric blue, or yellow). The outline guarantees legibility on any "
+            f"background. Warhol/Lichtenstein aesthetic. Size: 10-14% of image height. Centered."
         ),
         "renaissance-royalty": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as if engraved on a small ornate plaque or "
-            f"directly into the painting using Trajan-style classical Roman capitals. Aged gold "
-            f"or antique ivory color, subtle letterpress depth. Size: 4-5% of image height. Centered."
+            f"- Render the name \"{name_upper}\" in Trajan-style classical Roman capitals with "
+            f"fine serifs. Use RICH ANTIQUE GOLD (#8B7355) with subtle darker outline, OR deep "
+            f"burnt umber (#3a2414) — whichever gives the strongest contrast against the "
+            f"background. Size: 7-9% of image height. Centered. Must be CLEARLY LEGIBLE."
         ),
         "cozy-film-grain": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as if handwritten in ballpoint pen on the edge of a "
-            f"vintage photograph — a personal, slightly imperfect cursive. Warm sepia or faded "
-            f"black. Size: small and intimate, 4-5% of image height. Centered, slightly "
-            f"off-baseline as if handwritten."
+            f"- Render the name \"{name}\" as slightly imperfect handwritten cursive (ballpoint "
+            f"pen feel). Use DEEP WARM SEPIA (#2e1a0a) or deep faded black for strong contrast "
+            f"against the warm vintage tones. Size: 7-9% of image height. Centered. Fully legible."
         ),
         "rainbow-bridge": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as if written in soft luminous cursive script with the "
-            f"same ethereal glow as the portrait background. Use warm gold or soft pastel color "
-            f"with a gentle halo effect. Size: 5-7% of image height. Centered. "
-            f"Should feel heavenly and serene."
+            f"- Render the name \"{name}\" as soft luminous cursive script. Use a WARM GOLD "
+            f"(#B8860B) or rich dark rose (#9A3B4B) with a subtle darker outline so it reads "
+            f"clearly against the ethereal pastel background. Gentle glow is fine but the "
+            f"core letters must be solid and legible. Size: 8-10% of image height. Centered."
         ),
         "bold-graphic-poster": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Integrate the name \"{name_upper}\" as a core design element of the poster. "
-            f"Use an ultra-bold geometric sans-serif (Futura Black, Bebas, or Gotham Black) "
-            f"placed as a strong horizontal band within the safe zone. Use one of the flat poster "
-            f"colors already in the palette. Size: 8-12% of image height. "
-            f"Must feel like part of the poster composition."
+            f"- Render the name \"{name_upper}\" as ultra-bold geometric sans-serif (Bebas, "
+            f"Futura Black, or Gotham Black). Solid high-contrast color (jet black #000000 OR "
+            f"a bold accent color from the palette) as a STRONG horizontal banner above the pet. "
+            f"Must feel like a core poster design element. Size: 12-16% of image height. Centered."
         ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as soft luminous text that glows with the same aura "
-            f"gradient as the portrait. Use a delicate rounded sans-serif (Quicksand/Nunito feel). "
-            f"Color should blend gently with the surrounding aura. Size: 4-5% of image height. "
-            f"Centered, with a faint light bloom around the letters."
+            f"- Render the name \"{name}\" in a delicate rounded sans-serif (Quicksand feel). "
+            f"Use a DEEP PURPLE or RICH PLUM (#4a2c5a) with optional subtle light glow around "
+            f"the letters. Must be high contrast and clearly legible against the aura gradient. "
+            f"Size: 7-9% of image height. Centered."
         ),
         # Legacy ink-only styles (classic/minimal/naturalist)
         "classic": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as fine single-stroke pen lettering matching "
-            f"the portrait's line weight. Refined classical serif capitals, wide letter-spacing. "
-            f"Black ink only. Size: 3.5-4.5% of image height. Centered."
+            f"- Render the name \"{name_upper}\" as fine single-stroke pen lettering in classical "
+            f"serif capitals with wide letter-spacing. Solid black ink (#000000) for maximum "
+            f"legibility. Size: 6-8% of image height. Centered."
         ),
         "minimal": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as minimal sans-serif capitals with extreme "
-            f"letter-spacing, matching the portrait's pared-back aesthetic. Black ink only, "
-            f"very small and refined. Size: 3-4% of image height. Centered."
+            f"letter-spacing. Solid jet black (#000000) ink only. Size: 5-7% of image height. Centered."
         ),
         "naturalist": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" as Victorian field-guide lettering — classical "
-            f"serif capitals with fine hairlines, as if inscribed by a steel nib pen. Black ink only. "
-            f"Size: 3.5-4.5% of image height. Centered."
+            f"- Render the name \"{name_upper}\" as Victorian field-guide lettering with fine "
+            f"hairlines. Solid black ink (#000000) only. Size: 6-8% of image height. Centered."
         ),
     }
 
     return integrations.get(style_id, (
         f"NAME INTEGRATION — CRITICAL:\n"
         f"{safe_zone}"
-        f"- Render the name \"{name_upper}\" in small refined text matching the artwork style."
+        f"- Render the name \"{name_upper}\" in high-contrast lettering matching the artwork style."
     ))
 
 
@@ -572,6 +571,19 @@ _NO_BORDER_RULE = (
     "fill the canvas cleanly with no visible paper boundaries."
 )
 
+_COMPOSITION_RULE = (
+    "\n\nCOMPOSITION — CRITICAL:\n"
+    "- Place the pet LARGE and DOMINANT in the bottom portion of the image "
+    "(the pet should fill from roughly 30-35% of image height down to the bottom edge).\n"
+    "- The pet should take up the lower 60-70% of the image vertically.\n"
+    "- Leave the TOP 25-30% of the image as clean, uncluttered white/light negative space "
+    "where a pet name can be placed above the portrait.\n"
+    "- Do NOT put anything in the top 25% — no splashes, no extended backgrounds, "
+    "no scenery, no paint. Keep it clean and empty for name placement.\n"
+    "- The pet should be centered horizontally.\n"
+)
+
+
 
 def build_prompt_with_name(style_id: str, pet_name: str, style_vars: Optional[dict] = None) -> str:
     """Build the full prompt for a style with the pet's name integrated
@@ -579,7 +591,7 @@ def build_prompt_with_name(style_id: str, pet_name: str, style_vars: Optional[di
     base = PROMPTS[style_id](style_vars)
     base = _strip_no_text_rules(base)
     name_block = _name_integration(style_id, pet_name)
-    return base.rstrip() + "\n\n" + name_block + _NO_BORDER_RULE
+    return base.rstrip() + _COMPOSITION_RULE + "\n\n" + name_block + _NO_BORDER_RULE
 
 
 # Master registry: style → prompt builder callable
@@ -1111,7 +1123,7 @@ def call_gemini(
     if pet_name:
         prompt = build_prompt_with_name(style, pet_name, style_vars)
     else:
-        prompt = PROMPTS[style](style_vars) + _NO_BORDER_RULE
+        prompt = PROMPTS[style](style_vars) + _COMPOSITION_RULE + _NO_BORDER_RULE
 
     last_exc: Optional[Exception] = None
     for attempt in range(max_retries + 1):
