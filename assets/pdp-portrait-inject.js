@@ -92,40 +92,124 @@
     },
   };
 
-  // ── Build a client-side canvas mockup ───────────────────
-  function createClientMockup(portraitSrc, widthIn, heightIn, label) {
-    var container = document.createElement('div');
-    container.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:#f5f0eb;border-radius:16px;position:relative;';
+  // ── Build a room-scene canvas mockup ─────────────────────
+  // Renders a realistic wall scene with the portrait as a
+  // hanging canvas, including shadow, depth, and furniture hints.
 
-    // Outer frame — subtle shadow to look like a real canvas
-    var frame = document.createElement('div');
-    var aspect = heightIn / widthIn;
-    // Size the frame: max 80% of container width, maintain aspect ratio
-    frame.style.cssText = 'position:relative;width:70%;max-width:320px;background:#fff;border-radius:4px;'
-      + 'box-shadow:0 4px 24px rgba(0,0,0,0.12),0 1px 4px rgba(0,0,0,0.08);'
-      + 'padding:0;overflow:hidden;aspect-ratio:' + widthIn + '/' + heightIn + ';';
+  // Alternate between two wall/room styles for variety
+  var _mockupSceneIndex = 0;
+  var ROOM_SCENES = [
+    {
+      // Warm living room — cream wall, wooden shelf
+      wall: 'linear-gradient(180deg, #EDE8E0 0%, #E5DFD5 60%, #DDD6CA 100%)',
+      shelfColor: '#8B7355',
+      shelfTop: '78%',
+      accentItem: 'plant',   // small plant on shelf
+      accentColor: '#6B8E5A',
+    },
+    {
+      // Modern minimal — light gray wall, floating shelf
+      wall: 'linear-gradient(180deg, #EDEDED 0%, #E4E4E4 60%, #DCDCDC 100%)',
+      shelfColor: '#C4B9A8',
+      shelfTop: '80%',
+      accentItem: 'book',
+      accentColor: '#A89880',
+    },
+  ];
+
+  function createClientMockup(portraitSrc, widthIn, heightIn, label) {
+    var scene = ROOM_SCENES[_mockupSceneIndex % ROOM_SCENES.length];
+    _mockupSceneIndex++;
+
+    // Outer container — the "room" viewport
+    var room = document.createElement('div');
+    room.style.cssText = 'width:100%;aspect-ratio:4/5;border-radius:16px;overflow:hidden;position:relative;'
+      + 'background:' + scene.wall + ';';
+
+    // Subtle wall texture
+    var texture = document.createElement('div');
+    texture.style.cssText = 'position:absolute;inset:0;opacity:0.03;'
+      + "background-image:url(\"data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='%23000'/%3E%3C/svg%3E\");";
+    room.appendChild(texture);
+
+    // Canvas frame — centered on the wall, sized proportionally
+    // Canvas takes ~50-65% of room width depending on aspect ratio
+    var isSquare = widthIn === heightIn;
+    var isTall = heightIn > widthIn * 1.5;
+    var canvasWidthPct = isSquare ? 50 : isTall ? 38 : 55;
+
+    var canvas = document.createElement('div');
+    canvas.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);'
+      + 'top:8%;width:' + canvasWidthPct + '%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'border-radius:2px;overflow:hidden;'
+      // Realistic canvas depth + shadow
+      + 'box-shadow:'
+      +   '0 2px 4px rgba(0,0,0,0.08),'      // tight shadow
+      +   '0 8px 24px rgba(0,0,0,0.12),'      // medium spread
+      +   '0 20px 40px rgba(0,0,0,0.08),'     // ambient
+      +   '4px 4px 0 0 rgba(0,0,0,0.03);'     // right/bottom edge depth
+      // White canvas wrap edge
+      + 'border:3px solid #fff;';
 
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    // Use object-position top to keep pet's face visible when cropping
     portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top;display:block;';
-    frame.appendChild(portraitImg);
+    canvas.appendChild(portraitImg);
+    room.appendChild(canvas);
 
-    // No CSS name overlay — the AI-generated image already has the
-    // pet name composited by generate.py's composite_name()
+    // Floating shelf
+    var shelf = document.createElement('div');
+    shelf.style.cssText = 'position:absolute;left:10%;right:10%;top:' + scene.shelfTop + ';height:6px;'
+      + 'background:' + scene.shelfColor + ';border-radius:2px;'
+      + 'box-shadow:0 2px 8px rgba(0,0,0,0.1);';
+    room.appendChild(shelf);
 
-    container.appendChild(frame);
+    // Accent item on shelf
+    if (scene.accentItem === 'plant') {
+      var plant = document.createElement('div');
+      plant.style.cssText = 'position:absolute;right:15%;top:calc(' + scene.shelfTop + ' - 28px);'
+        + 'width:20px;height:28px;';
+      // Pot
+      var pot = document.createElement('div');
+      pot.style.cssText = 'position:absolute;bottom:0;left:3px;width:14px;height:10px;'
+        + 'background:#C4A882;border-radius:1px 1px 3px 3px;';
+      plant.appendChild(pot);
+      // Leaves (simple circles)
+      var leaf1 = document.createElement('div');
+      leaf1.style.cssText = 'position:absolute;bottom:8px;left:2px;width:8px;height:12px;'
+        + 'background:' + scene.accentColor + ';border-radius:50% 50% 50% 0;transform:rotate(-15deg);';
+      plant.appendChild(leaf1);
+      var leaf2 = document.createElement('div');
+      leaf2.style.cssText = 'position:absolute;bottom:10px;left:8px;width:8px;height:14px;'
+        + 'background:' + scene.accentColor + ';border-radius:50% 50% 0 50%;transform:rotate(10deg);opacity:0.85;';
+      plant.appendChild(leaf2);
+      room.appendChild(plant);
+    } else {
+      // Books
+      var books = document.createElement('div');
+      books.style.cssText = 'position:absolute;left:16%;top:calc(' + scene.shelfTop + ' - 18px);'
+        + 'display:flex;gap:2px;align-items:flex-end;';
+      ['16px', '20px', '14px'].forEach(function(h, i) {
+        var book = document.createElement('div');
+        var colors = ['#B8A088', '#9E8E7E', '#C4B09A'];
+        book.style.cssText = 'width:6px;height:' + h + ';background:' + colors[i] + ';border-radius:1px;';
+        books.appendChild(book);
+      });
+      room.appendChild(books);
+    }
 
-    // Size label
-    var sizeLabel = document.createElement('span');
+    // Size label — elegant pill
+    var sizeLabel = document.createElement('div');
     sizeLabel.textContent = widthIn + '" × ' + heightIn + '"';
-    sizeLabel.style.cssText = 'position:absolute;bottom:10px;right:14px;font-size:0.75rem;color:#8a8580;'
-      + "font-family:'Inter',sans-serif;background:rgba(255,255,255,0.85);padding:3px 8px;border-radius:6px;";
-    container.appendChild(sizeLabel);
+    sizeLabel.style.cssText = 'position:absolute;bottom:10px;left:50%;transform:translateX(-50%);'
+      + "font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:500;letter-spacing:0.05em;"
+      + 'color:#6B6560;background:rgba(255,255,255,0.9);padding:4px 12px;border-radius:20px;'
+      + 'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+    room.appendChild(sizeLabel);
 
-    return container;
+    return room;
   }
 
   // ── Inject portrait + mockup images into gallery ──────
