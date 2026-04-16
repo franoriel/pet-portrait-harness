@@ -1729,7 +1729,7 @@ const CANVAS_SIZES = [
   { id: '12x16', label: '12\u2033 \u00D7 16\u2033', price: 84.99,  variantId: 47267971793045, framedAvailable: false },
   { id: '16x16', label: '16\u2033 \u00D7 16\u2033', price: 99.99,  variantId: 47267971825813, framedAvailable: false },
   { id: '16x20', label: '16\u2033 \u00D7 20\u2033', price: 109.99, variantId: 47267971858581, framedAvailable: true,  priceFramed: 171.50, variantIdFramed: 47267981885589 },
-  { id: '18x24', label: '18\u2033 \u00D7 24\u2033', unframedAvailable: false, price: null, priceFramed: 197.00, variantIdFramed: 47267981918357 },
+  { id: '18x24', label: '18\u2033 \u00D7 24\u2033', unframedAvailable: false, framedAvailable: true, price: null, priceFramed: 197.00, variantIdFramed: 47267981918357 },
 ];
 
 function ProductGallery({ state, retryFromStyle, startFresh }) {
