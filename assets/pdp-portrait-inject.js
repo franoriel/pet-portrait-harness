@@ -202,6 +202,7 @@
   // ── Canvas variant sizes (inches) — matches Shopify SKUs ──
   var VARIANT_SIZES = {
     'canvas': {
+      '8x10':  { w: 8,  h: 10 },
       '12x12': { w: 12, h: 12 },
       '12x16': { w: 12, h: 16 },
       '16x16': { w: 16, h: 16 },

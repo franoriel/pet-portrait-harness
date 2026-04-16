@@ -1725,11 +1725,30 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
 // Source: Printful → Shopify product sync (accurate as of 2026-04)
 // Each size has an unframed variant; only 16x20 has both frame options; 18x24 is framed-only.
 const CANVAS_SIZES = [
-  { id: '12x12', label: '12\u2033 \u00D7 12\u2033', price: 79.99,  variantId: 47267971760277, framedAvailable: false },
-  { id: '12x16', label: '12\u2033 \u00D7 16\u2033', price: 84.99,  variantId: 47267971793045, framedAvailable: false },
-  { id: '16x16', label: '16\u2033 \u00D7 16\u2033', price: 99.99,  variantId: 47267971825813, framedAvailable: false },
-  { id: '16x20', label: '16\u2033 \u00D7 20\u2033', price: 109.99, variantId: 47267971858581, framedAvailable: true,  priceFramed: 171.50, variantIdFramed: 47267981885589 },
-  { id: '18x24', label: '18\u2033 \u00D7 24\u2033', unframedAvailable: false, framedAvailable: true, price: null, priceFramed: 197.00, variantIdFramed: 47267981918357 },
+  // 8x10 — framed only
+  { id: '8x10',  label: '8\u2033 \u00D7 10\u2033',  unframedAvailable: false, framedAvailable: true,
+    price: null, priceFramed: 96.00,
+    variantIdFramed: 47267981754517 },
+  // 12x12 — both unframed + framed
+  { id: '12x12', label: '12\u2033 \u00D7 12\u2033', unframedAvailable: true, framedAvailable: true,
+    price: 79.99,  variantId: 47267971760277,
+    priceFramed: 139.50, variantIdFramed: 47267981787285 },
+  // 12x16 — both
+  { id: '12x16', label: '12\u2033 \u00D7 16\u2033', unframedAvailable: true, framedAvailable: true,
+    price: 84.99,  variantId: 47267971793045,
+    priceFramed: 148.50, variantIdFramed: 47267981820053 },
+  // 16x16 — both
+  { id: '16x16', label: '16\u2033 \u00D7 16\u2033', unframedAvailable: true, framedAvailable: true,
+    price: 99.99,  variantId: 47267971825813,
+    priceFramed: 162.50, variantIdFramed: 47267981852821 },
+  // 16x20 — both
+  { id: '16x20', label: '16\u2033 \u00D7 20\u2033', unframedAvailable: true, framedAvailable: true,
+    price: 109.99, variantId: 47267971858581,
+    priceFramed: 171.50, variantIdFramed: 47267981885589 },
+  // 18x24 — framed only
+  { id: '18x24', label: '18\u2033 \u00D7 24\u2033', unframedAvailable: false, framedAvailable: true,
+    price: null, priceFramed: 197.00,
+    variantIdFramed: 47267981918357 },
 ];
 
 function ProductGallery({ state, retryFromStyle, startFresh }) {
@@ -1743,7 +1762,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
   // Only show sizes that exist for the current frame choice
   const availableSizes = CANVAS_SIZES.filter(s =>
-    wantsFrame ? s.framedAvailable : (s.unframedAvailable !== false)
+    wantsFrame ? s.framedAvailable === true : s.unframedAvailable === true
   );
 
   // If current selection isn't valid for the new frame choice, fall back
@@ -1853,8 +1872,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   // Live canvas mockup — updates as user changes size/frame
   // Maps size id to aspect ratio (width:height in inches)
   const sizeDims = {
-    '12x12': [12, 12], '12x16': [12, 16], '16x16': [16, 16],
-    '16x20': [16, 20], '18x24': [18, 24],
+    '8x10': [8, 10], '12x12': [12, 12], '12x16': [12, 16],
+    '16x16': [16, 16], '16x20': [16, 20], '18x24': [18, 24],
   };
   const [sizeW, sizeH] = sizeDims[selectedSize] || [10, 10];
 

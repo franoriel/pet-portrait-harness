@@ -46,22 +46,34 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 PRINT_SIZES: dict[str, tuple[int, int]] = {
-    # Canvas — matches Shopify/Printful sizes (pixels at 300 DPI)
+    # Unframed canvas (pixels at 300 DPI)
     "canvas-12x12":        (3600, 3600),
     "canvas-12x16":        (3600, 4800),
     "canvas-16x16":        (4800, 4800),
     "canvas-16x20":        (4800, 6000),
+    # Framed canvas
+    "canvas-8x10-framed":  (2400, 3000),
+    "canvas-12x12-framed": (3600, 3600),
+    "canvas-12x16-framed": (3600, 4800),
+    "canvas-16x16-framed": (4800, 4800),
     "canvas-16x20-framed": (4800, 6000),
     "canvas-18x24-framed": (5400, 7200),
+    # Poster
     "poster-default":      (3600, 4800),
 }
 
 # Aspect ratios for each product type (width:height)
 PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
+    # Unframed
     "canvas-12x12":        (1, 1),
     "canvas-12x16":        (3, 4),
     "canvas-16x16":        (1, 1),
     "canvas-16x20":        (4, 5),
+    # Framed
+    "canvas-8x10-framed":  (4, 5),
+    "canvas-12x12-framed": (1, 1),
+    "canvas-12x16-framed": (3, 4),
+    "canvas-16x16-framed": (1, 1),
     "canvas-16x20-framed": (4, 5),
     "canvas-18x24-framed": (3, 4),
     "poster-default":      (3, 4),
