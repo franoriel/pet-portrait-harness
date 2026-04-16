@@ -1,8 +1,9 @@
 /* ─────────────────────────────────────────────────────────────
    PDP Portrait Injection
    Reads the saved portrait from localStorage and injects it
-   as the hero image on product pages. Also saves portrait
-   context into hidden line item property inputs.
+   as the hero image on product pages. Generates instant
+   client-side canvas mockups per variant, with Printful
+   mockups replacing them when available.
    ───────────────────────────────────────────────────────────── */
 (function () {
   var LS_KEY = 'petPrintables_session';
@@ -26,6 +27,51 @@
   var productHandle = pathParts[pathParts.indexOf('products') + 1] || '';
   var mockups = data.mockups && data.mockups[productHandle] ? data.mockups[productHandle] : [];
 
+  // ── Canvas variant sizes (inches) ───────────────────────
+  var VARIANT_SIZES = {
+    'canvas': {
+      '10x10': { w: 10, h: 10 },
+      '10x20': { w: 10, h: 20 },
+      '12x18': { w: 12, h: 18 },
+      '12x24': { w: 12, h: 24 },
+    },
+    'poster': {
+      '12x18': { w: 12, h: 18 },
+    },
+  };
+
+  // ── Build a client-side canvas mockup ───────────────────
+  function createClientMockup(portraitSrc, widthIn, heightIn, label) {
+    var container = document.createElement('div');
+    container.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:#f5f0eb;border-radius:16px;position:relative;';
+
+    // Outer frame — subtle shadow to look like a real canvas
+    var frame = document.createElement('div');
+    var aspect = heightIn / widthIn;
+    // Size the frame: max 80% of container width, maintain aspect ratio
+    frame.style.cssText = 'position:relative;width:70%;max-width:320px;background:#fff;border-radius:4px;'
+      + 'box-shadow:0 4px 24px rgba(0,0,0,0.12),0 1px 4px rgba(0,0,0,0.08);'
+      + 'padding:0;overflow:hidden;aspect-ratio:' + widthIn + '/' + heightIn + ';';
+
+    var portraitImg = document.createElement('img');
+    portraitImg.src = portraitSrc;
+    portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
+    portraitImg.loading = 'lazy';
+    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    frame.appendChild(portraitImg);
+
+    container.appendChild(frame);
+
+    // Size label
+    var sizeLabel = document.createElement('span');
+    sizeLabel.textContent = widthIn + '" × ' + heightIn + '"';
+    sizeLabel.style.cssText = 'position:absolute;bottom:10px;right:14px;font-size:0.75rem;color:#8a8580;'
+      + "font-family:'Inter',sans-serif;background:rgba(255,255,255,0.85);padding:3px 8px;border-radius:6px;";
+    container.appendChild(sizeLabel);
+
+    return container;
+  }
+
   // ── Inject portrait + mockup images into gallery ──────
   var gallery = document.querySelector('.product-gallery__track');
   if (gallery) {
@@ -42,60 +88,85 @@
     slide.appendChild(img);
 
     // Remove generic Shopify product images FIRST (they show wrong dog)
-    // Must remove (not hide) so theme.js slide indices stay correct
     var existingSlides = Array.from(gallery.querySelectorAll('.product-gallery__slide'));
     existingSlides.forEach(function (s) { gallery.removeChild(s); });
 
     // Insert portrait slide AFTER clearing old ones
     gallery.insertBefore(slide, gallery.firstChild);
 
-    if (mockups.length > 0) {
-      // We have real mockups — inject them after the portrait
+    // Determine which sizes to use for this product
+    var sizes = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
 
-      var insertedMockupVariants = {};
-      mockups.forEach(function (mockup) {
-        if (mockup.placement !== 'default' || insertedMockupVariants[mockup.variant]) return;
-        insertedMockupVariants[mockup.variant] = true;
+    // Build mockup slides — use Printful mockups if available, otherwise client-side
+    var printfulByVariant = {};
+    mockups.forEach(function (m) {
+      if (m.placement !== 'default') return;
+      var nums = m.variant.match(/(\d+)\D+(\d+)/);
+      var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
+      if (!printfulByVariant[key]) printfulByVariant[key] = m;
+    });
 
-        var mockupSlide = document.createElement('div');
-        mockupSlide.className = 'product-gallery__slide product-gallery__slide--mockup';
-        mockupSlide.setAttribute('role', 'listitem');
-        mockupSlide.setAttribute('data-variant-size', mockup.variant);
+    Object.keys(sizes).forEach(function (sizeKey) {
+      var dim = sizes[sizeKey];
+      var mockupSlide = document.createElement('div');
+      mockupSlide.className = 'product-gallery__slide product-gallery__slide--mockup';
+      mockupSlide.setAttribute('role', 'listitem');
+      mockupSlide.setAttribute('data-variant-size', sizeKey);
 
+      if (printfulByVariant[sizeKey]) {
+        // Use real Printful mockup
         var mockupImg = document.createElement('img');
-        mockupImg.src = mockup.url;
-        mockupImg.alt = petName ? petName + ' ' + mockup.variant + ' mockup' : mockup.variant + ' mockup';
+        mockupImg.src = printfulByVariant[sizeKey].url;
+        mockupImg.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
         mockupImg.loading = 'lazy';
         mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
         mockupSlide.appendChild(mockupImg);
-
-        gallery.appendChild(mockupSlide);
-      });
-    } else {
-      // No mockups yet — only portrait slide remains
-      // If we have a filename, trigger mockup generation in background
-      var imageFilename = data.imageFilename;
-      if (imageFilename) {
-        var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-        fetch(API_BASE + '/mockups', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image_filename: imageFilename, product_type: productHandle }),
-        })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (resp) {
-          if (!resp || !resp.mockups || !resp.mockups.length) return;
-          try {
-            var session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-            if (!session.mockups) session.mockups = {};
-            session.mockups[productHandle] = resp.mockups;
-            localStorage.setItem(LS_KEY, JSON.stringify(session));
-            // Reload to show the new mockups
-            window.location.reload();
-          } catch (e) {}
-        })
-        .catch(function () {});
+      } else {
+        // Client-side canvas mockup
+        var clientMockup = createClientMockup(previewUrl, dim.w, dim.h, sizeKey);
+        mockupSlide.appendChild(clientMockup);
       }
+
+      gallery.appendChild(mockupSlide);
+    });
+
+    // Fire background Printful mockup generation if we don't have all of them yet
+    var hasPrintful = Object.keys(printfulByVariant).length;
+    var totalSizes = Object.keys(sizes).length;
+    if (hasPrintful < totalSizes && data.imageFilename) {
+      var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+      fetch(API_BASE + '/mockups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_filename: data.imageFilename, product_type: productHandle }),
+      })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (resp) {
+        if (!resp || !resp.mockups || !resp.mockups.length) return;
+        try {
+          var session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+          if (!session.mockups) session.mockups = {};
+          session.mockups[productHandle] = resp.mockups;
+          localStorage.setItem(LS_KEY, JSON.stringify(session));
+          // Replace client mockups with Printful mockups (no full reload)
+          resp.mockups.forEach(function (m) {
+            if (m.placement !== 'default') return;
+            var nums = m.variant.match(/(\d+)\D+(\d+)/);
+            var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
+            var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
+            if (slideEl) {
+              slideEl.innerHTML = '';
+              var newImg = document.createElement('img');
+              newImg.src = m.url;
+              newImg.alt = (petName || 'Portrait') + ' ' + key + ' mockup';
+              newImg.loading = 'lazy';
+              newImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
+              slideEl.appendChild(newImg);
+            }
+          });
+        } catch (e) {}
+      })
+      .catch(function () {});
     }
 
     // Store mockup variant→slide index map for variant picker
@@ -130,8 +201,8 @@
   var petNameInput = document.getElementById('PetName');
   if (petNameInput) {
     petNameInput.value = petName;
-    petNameInput.disabled = true; // Prevent duplicate submission
-    petNameInput.removeAttribute('name'); // Remove form name so it won't submit
+    petNameInput.disabled = true;
+    petNameInput.removeAttribute('name');
     var nameParent = petNameInput.closest('.variant-picker');
     if (nameParent) nameParent.style.display = 'none';
   }
@@ -180,12 +251,10 @@
   // ── Inject hidden line item properties into the product form ──
   var form = document.querySelector('.product-form, form[action*="/cart/add"]');
   if (form) {
-    // Remove any existing hidden properties to avoid duplicates
     form.querySelectorAll('input[name^="properties["]').forEach(function (el) {
       if (el.type === 'hidden') el.remove();
     });
 
-    // Use permanent R2 CDN URL if available, otherwise fall back to Railway preview
     var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
     var cdnUrls = data.previewCdnUrls || [];
     var portraitUrl = cdnUrls[data.selectedPreviewIndex || 0]
