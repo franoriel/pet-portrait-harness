@@ -1417,63 +1417,80 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 /* ── TrustBar ──────────────────────────────────────────────── */
 
 function PageHero() {
+  // Resolve asset base for example portrait images
+  var heroAssetBase = '';
+  var heroScript = document.querySelector('script[src*="portrait-flow"]');
+  if (heroScript) heroAssetBase = heroScript.src.replace(/portrait-flow[^/]*$/, '');
+
   return React.createElement('div', {
-    style: { textAlign: 'center', marginBottom: '28px', padding: '0 8px' },
+    style: { textAlign: 'center', marginBottom: '20px' },
   },
-    // Page title — clear, emotional, benefit-driven
+    // Example portraits — visual proof of quality, the FIRST thing users see
+    React.createElement('div', {
+      style: {
+        display: 'flex', justifyContent: 'center', gap: '10px',
+        marginBottom: '20px',
+      },
+      'aria-label': 'Example pet portraits',
+    },
+      [
+        { src: 'example-portrait-1.webp', label: 'Watercolour' },
+        { src: 'example-portrait-2.webp', label: 'Oil Paint' },
+        { src: 'example-portrait-3.webp', label: 'Line Art' },
+      ].map((ex, i) =>
+        React.createElement('div', {
+          key: i,
+          style: { textAlign: 'center', flex: '0 0 28%', maxWidth: '120px' },
+        },
+          React.createElement('img', {
+            src: heroAssetBase + ex.src, alt: `${ex.label} example`,
+            loading: 'eager',
+            style: {
+              width: '100%', aspectRatio: '4/5', objectFit: 'cover',
+              borderRadius: '12px', display: 'block',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+            },
+          }),
+          React.createElement('span', {
+            style: {
+              fontFamily: fontSans, fontSize: '10px', fontWeight: 600,
+              color: tokens.colorMuted, textTransform: 'uppercase',
+              letterSpacing: '0.06em', marginTop: '6px', display: 'block',
+            },
+          }, ex.label),
+        ),
+      ),
+    ),
+
+    // Page title — concise, emotional
     React.createElement('h1', {
       style: {
         fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
-        fontSize: 'clamp(28px, 7vw, 38px)', color: tokens.colorBrand,
-        margin: '0 0 8px', lineHeight: 1.15,
+        fontSize: 'clamp(26px, 7vw, 36px)', color: tokens.colorBrand,
+        margin: '0 0 6px', lineHeight: 1.15,
       },
     }, 'Turn your pet into art'),
     React.createElement('p', {
       style: {
-        fontFamily: fontSans, fontSize: '15px', color: tokens.colorMuted,
-        margin: '0 0 16px', lineHeight: 1.5,
+        fontFamily: fontSans, fontSize: '14px', color: tokens.colorMuted,
+        margin: '0 0 14px', lineHeight: 1.5,
       },
-    }, 'Upload a photo, pick a style \u2014 we\u2019ll create a one-of-a-kind portrait you can hang on your wall.'),
+    }, '9 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
 
-    // Social proof + trust — compact row
+    // Social proof — compact single line
     React.createElement('div', {
       style: {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '6px', flexWrap: 'wrap', marginBottom: '4px',
+        gap: '6px', marginBottom: '0',
       },
     },
-      // Stars
       React.createElement('span', {
-        style: { color: '#D4A84B', fontSize: '14px', letterSpacing: '1px' },
+        style: { color: '#D4A84B', fontSize: '13px', letterSpacing: '1px' },
         'aria-hidden': true,
       }, '\u2605\u2605\u2605\u2605\u2605'),
       React.createElement('span', {
-        style: { fontFamily: fontSans, fontSize: '13px', fontWeight: 500, color: tokens.colorBrand },
-      }, '4.9/5'),
-      React.createElement('span', {
-        style: { fontFamily: fontSans, fontSize: '13px', color: tokens.colorMuted },
-      }, '\u00B7 124+ happy pet parents'),
-    ),
-
-    // Trust badges — horizontal, clean
-    React.createElement('div', {
-      style: {
-        display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap',
-        marginTop: '12px',
-      },
-    },
-      ['Preview before you pay', 'Free shipping over $75', 'Satisfaction guaranteed'].map(text =>
-        React.createElement('span', {
-          key: text,
-          style: {
-            fontFamily: fontSans, fontSize: '11px', fontWeight: 500,
-            color: tokens.colorMuted, display: 'flex', alignItems: 'center', gap: '4px',
-          },
-        },
-          React.createElement('span', { style: { color: tokens.colorSuccess, fontSize: '10px' } }, '\u2713'),
-          text,
-        ),
-      ),
+        style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted },
+      }, '4.9/5 from 124+ pet parents'),
     ),
   );
 }
