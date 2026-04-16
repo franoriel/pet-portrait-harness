@@ -489,6 +489,18 @@
     initScrollReveal();
     refreshCartCount();
     new CartDrawer();
+
+    // Disable right-click save on portrait/product images
+    document.addEventListener('contextmenu', function(e) {
+      if (e.target.tagName === 'IMG' && (
+        e.target.closest('.product-gallery') ||
+        e.target.closest('.product-gallery__slide') ||
+        e.target.closest('#portrait-flow-root') ||
+        e.target.closest('.cart-item')
+      )) {
+        e.preventDefault();
+      }
+    });
     // PortraitPreview removed — React portrait-flow widget handles this
   });
 

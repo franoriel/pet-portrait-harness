@@ -821,8 +821,8 @@ def _generate_inner(
         ai_image.close()
     ai_image = processed
 
-    # Composite name
-    composited = composite_name(ai_image, pet_name)
+    # Composite name with style-specific font
+    composited = composite_name(ai_image, pet_name, style=style)
     ai_image.close()
 
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"

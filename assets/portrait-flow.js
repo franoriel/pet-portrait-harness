@@ -1554,8 +1554,8 @@ function PageHero() {
     },
       React.createElement('div', {
         style: {
-          display: 'flex', gap: '12px', width: 'max-content',
-          animation: 'pf-marquee 30s linear infinite',
+          display: 'flex', gap: '16px', width: 'max-content',
+          animation: 'pf-marquee 35s linear infinite',
         },
       },
         // Duplicate the set for seamless loop
@@ -1563,24 +1563,25 @@ function PageHero() {
           STYLES.map((style, i) =>
             React.createElement('div', {
               key: `${setIdx}-${i}`,
-              style: { textAlign: 'center', flex: '0 0 auto', width: '90px' },
+              style: { textAlign: 'center', flex: '0 0 auto', width: '100px' },
               ...(setIdx === 1 ? { 'aria-hidden': true } : {}),
             },
               React.createElement('img', {
                 src: _pfAssetBase + style.exampleImage, alt: style.name,
                 loading: 'eager',
                 style: {
-                  width: '90px', height: '112px', objectFit: 'cover',
+                  width: '100px', height: '125px', objectFit: 'cover',
                   borderRadius: '10px', display: 'block',
                   boxShadow: '0 3px 12px rgba(0,0,0,0.10)',
                 },
               }),
               React.createElement('span', {
                 style: {
-                  fontFamily: fontSans, fontSize: '9px', fontWeight: 600,
+                  fontFamily: fontSans, fontSize: '8px', fontWeight: 600,
                   color: tokens.colorMuted, textTransform: 'uppercase',
-                  letterSpacing: '0.04em', marginTop: '5px', display: 'block',
-                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.02em', marginTop: '5px', display: 'block',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  maxWidth: '100px',
                 },
               }, style.name),
             ),
