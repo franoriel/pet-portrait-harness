@@ -372,6 +372,22 @@ p { color: var(--color-ink); }
   align-items: center;
   gap: 12px;
 }
+/* Hero glass CTA button */
+.hero .btn--primary {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(255,255,255,0.15), 0 0 40px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
+}
+.hero .btn--primary:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.5);
+  box-shadow: 0 0 28px rgba(255,255,255,0.25), 0 0 56px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+}
 .hero__reassurance {
   color: rgba(255,255,255,0.65);
   font-size: 0.82rem;
