@@ -103,21 +103,21 @@
   // the actual room photographs)
   var ROOM_SCENES = [
     {
-      // Warm scandinavian — credenza + plant (has blank canvas on wall)
+      // Warm scandinavian — credenza + olive tree, blank wall
       image: 'mockup-room-1.webp',
-      // Blank canvas zone in the photo (percentages)
-      zoneTop: 13,
-      zoneLeft: 18,
-      zoneW: 64,
-      zoneH: 43,
+      // Wall zone above the credenza (percentages of image)
+      zoneTop: 5,
+      zoneLeft: 22,
+      zoneW: 55,
+      zoneH: 48,
     },
     {
-      // Modern living room — gray couch + side table (open wall)
+      // Modern living room — gray sofa + side table, blank wall
       image: 'mockup-room-2.webp',
-      zoneTop: 8,
-      zoneLeft: 20,
-      zoneW: 48,
-      zoneH: 42,
+      zoneTop: 5,
+      zoneLeft: 12,
+      zoneW: 55,
+      zoneH: 45,
     },
   ];
 
