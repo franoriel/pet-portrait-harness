@@ -60,6 +60,123 @@ WATERCOLOR_MIN_SIZE = PORTRAIT_MIN_SIZE
 
 
 # ---------------------------------------------------------------------------
+# Per-style "name integration" instructions — tells Gemini how to render the
+# pet's name as a NATIVE part of the artwork (not a sticker on top).
+# ---------------------------------------------------------------------------
+
+def _name_integration(style_id: str, pet_name: str) -> str:
+    """Returns a prompt fragment instructing Gemini how to integrate the
+    pet's name into the artwork in the style's native medium."""
+    if not pet_name or not pet_name.strip():
+        return "- Do NOT include any text, words, or letters anywhere in the image."
+
+    name = pet_name.strip().title()
+    name_upper = pet_name.strip().upper()
+
+    integrations = {
+        "watercolor": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 18% of the image, render the name \"{name}\" as if "
+            f"hand-painted with the same watercolor brush and pigments as the portrait. "
+            f"Use a flowing, slightly imperfect calligraphic script. The lettering "
+            f"should have the same wet-on-wet bleeds and soft edges as the portrait. "
+            f"Color: a muted sepia or deep watercolor wash that complements (not matches) the palette. "
+            f"Size: moderate, roughly 6-8% of image height. Centered horizontally."
+        ),
+        "minimal-line-art": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 15% of the image, render the name \"{name_upper}\" in "
+            f"the exact same single-weight pen stroke as the portrait linework. "
+            f"Use a clean geometric sans-serif (Futura/Avenir feel), uppercase, "
+            f"wide letter-spacing. Black ink only, no fill, no shadow. "
+            f"Size: small and refined, 4-5% of image height. Centered horizontally."
+        ),
+        "modern-oil-paint": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 18% of the image, render the name \"{name}\" as if "
+            f"signed into the wet oil paint with a palette knife. Use an elegant "
+            f"italic serif in warm cream or ivory, slightly imperfect, blended "
+            f"subtly into the dark painterly background. Size: 6-7% of image height. Centered."
+        ),
+        "neon-pop-art": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 18% of the image, render the name \"{name_upper}\" as "
+            f"thick bold comic-book lettering with a heavy black outline and a "
+            f"contrasting saturated pop color fill (hot pink, electric blue, or yellow). "
+            f"The lettering must feel like native pop art — Warhol/Lichtenstein style. "
+            f"Size: prominent, 8-10% of image height. Centered horizontally."
+        ),
+        "renaissance-royalty": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 18% of the image, render the name \"{name_upper}\" as "
+            f"if engraved on a small ornate plaque or directly into the painting "
+            f"using Trajan-style classical Roman capitals. Aged gold or antique ivory "
+            f"color, subtle letterpress depth. Size: 5-6% of image height. Centered."
+        ),
+        "cozy-film-grain": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 15% of the image, render the name \"{name}\" as if "
+            f"handwritten in ballpoint pen on the edge of a vintage photograph — "
+            f"a personal, slightly imperfect cursive. Warm sepia or faded black. "
+            f"Size: small and intimate, 5-6% of image height. Centered, slightly "
+            f"off-baseline as if handwritten."
+        ),
+        "rainbow-bridge": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 18% of the image, render the name \"{name}\" as if "
+            f"written in soft luminous cursive script with the same ethereal glow "
+            f"as the portrait background. Use warm gold or soft pastel color with "
+            f"a gentle halo effect. Size: 6-8% of image height. Centered. "
+            f"Should feel heavenly and serene."
+        ),
+        "bold-graphic-poster": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- Integrate the name \"{name_upper}\" as a core design element of the poster, "
+            f"not an afterthought. Use an ultra-bold geometric sans-serif (Futura Black, "
+            f"Bebas, or Gotham Black), placed either as a strong horizontal band at the "
+            f"bottom 20% OR vertically along one side. The lettering should use one of "
+            f"the flat poster colors already in the palette. Size: 10-14% of image height. "
+            f"Must feel like part of the poster composition."
+        ),
+        "aura-gradient": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 15% of the image, render the name \"{name}\" as a "
+            f"soft luminous text that glows with the same aura gradient as the "
+            f"portrait. Use a delicate rounded sans-serif (Quicksand/Nunito feel). "
+            f"Color should blend gently with the surrounding aura. Size: 5-6% of "
+            f"image height. Centered, with a faint light bloom around the letters."
+        ),
+        # Legacy ink-only styles (classic/minimal/naturalist) — small refined text
+        "classic": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 15% of the image, render the name \"{name_upper}\" as "
+            f"fine single-stroke pen lettering matching the portrait's line weight. "
+            f"Refined classical serif capitals, wide letter-spacing. Black ink only. "
+            f"Size: 4-5% of image height. Centered."
+        ),
+        "minimal": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 12% of the image, render the name \"{name_upper}\" as "
+            f"minimal sans-serif capitals with extreme letter-spacing, matching the "
+            f"portrait's pared-back aesthetic. Black ink only, very small and refined. "
+            f"Size: 3-4% of image height. Centered."
+        ),
+        "naturalist": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"- In the bottom 15% of the image, render the name \"{name_upper}\" as "
+            f"Victorian field-guide lettering — classical serif capitals with fine "
+            f"hairlines, as if inscribed by a steel nib pen. Black ink only. "
+            f"Size: 4-5% of image height. Centered."
+        ),
+    }
+
+    return integrations.get(style_id, (
+        f"- Include the name \"{name_upper}\" in small refined text in the bottom 15% "
+        f"of the image, rendered in a style that matches the artwork."
+    ))
+
+
+# ---------------------------------------------------------------------------
 # Prompt strings
 # ---------------------------------------------------------------------------
 
@@ -412,6 +529,35 @@ def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
 def _static(text: str) -> Callable[[Optional[dict]], str]:
     """Wrap a fixed prompt string as a style-vars-aware callable."""
     return lambda _vars: text
+
+
+# Regex patterns to strip "no text" restrictions from legacy prompts,
+# since we now WANT Gemini to render the pet's name as part of the art.
+_NO_TEXT_PATTERNS = [
+    re.compile(r"- *ZERO text[^\n]*\n?", re.IGNORECASE),
+    re.compile(r"- *Do NOT include any text[^\n]*\n?", re.IGNORECASE),
+    re.compile(r"- *The bottom [0-9]+%% of the image must be[^\n]+\n?", re.IGNORECASE),
+    re.compile(r"- *The bottom [0-9]+% of the image must be[^\n]+\n?", re.IGNORECASE),
+    re.compile(r"- *Bottom [0-9]+% is empty[^\n]+\n?", re.IGNORECASE),
+    re.compile(r"- *Bottom [0-9]+%% is empty[^\n]+\n?", re.IGNORECASE),
+    re.compile(r",?\s*text,?\s*watermark,?\s*border", re.IGNORECASE),
+]
+
+
+def _strip_no_text_rules(prompt: str) -> str:
+    """Remove 'no text' and 'empty bottom zone' rules from legacy prompts."""
+    for pat in _NO_TEXT_PATTERNS:
+        prompt = pat.sub("", prompt)
+    return prompt
+
+
+def build_prompt_with_name(style_id: str, pet_name: str, style_vars: Optional[dict] = None) -> str:
+    """Build the full prompt for a style with the pet's name integrated
+    into the artwork as a native design element."""
+    base = PROMPTS[style_id](style_vars)
+    base = _strip_no_text_rules(base)
+    name_block = _name_integration(style_id, pet_name)
+    return base.rstrip() + "\n\n" + name_block
 
 
 # Master registry: style → prompt builder callable
@@ -792,15 +938,23 @@ def call_gemini(
     style: str,
     style_vars: Optional[dict] = None,
     max_retries: int = 2,
+    pet_name: str = "",
 ) -> bytes:
     """Send photo + prompt to Gemini; return raw PNG/JPEG bytes of the generated image.
+
+    When pet_name is provided, the name is integrated into the artwork natively
+    (hand-painted into watercolor, engraved into renaissance, etc.) rather than
+    composited as a flat text overlay afterward.
 
     Retries transient failures with exponential backoff.
     """
     client      = _get_client()
     image_bytes = photo_path.read_bytes()
     mime_type   = MIME_MAP.get(photo_path.suffix.lower(), "image/jpeg")
-    prompt      = PROMPTS[style](style_vars)   # unified — no per-style branching
+    if pet_name:
+        prompt = build_prompt_with_name(style, pet_name, style_vars)
+    else:
+        prompt = PROMPTS[style](style_vars)
 
     last_exc: Optional[Exception] = None
     for attempt in range(max_retries + 1):
@@ -898,30 +1052,40 @@ def _generate_inner(
 
     log.info("[generate] %s  '%s'  ←  %s", style, pet_name, photo.name)
 
-    raw_bytes = call_gemini(photo, style, style_vars)
+    # Generate the NO-NAME version first (will be used as "raw" preview)
+    raw_bytes = call_gemini(photo, style, style_vars, pet_name="")
 
     # Validate image fully before writing to disk
-    ai_image = Image.open(BytesIO(raw_bytes))
-    ai_image.load()
+    ai_image_no_name = Image.open(BytesIO(raw_bytes))
+    ai_image_no_name.load()
 
     raw_path = out / f"{uid}_{style}_raw.png"
     raw_path.write_bytes(raw_bytes)
-    log.info("           raw  → %s", raw_path)
+    log.info("           raw (no name) → %s", raw_path)
 
-    # Per-style post-processing (crop, resize, colour-grade, …)
-    processed = POST_PROCESS.get(style, lambda img: img)(ai_image)
-    if processed is not ai_image:
-        ai_image.close()
-    ai_image = processed
+    # Per-style post-processing on the no-name version
+    processed_no_name = POST_PROCESS.get(style, lambda img: img)(ai_image_no_name)
+    if processed_no_name is not ai_image_no_name:
+        ai_image_no_name.close()
+    ai_image_no_name = processed_no_name
 
-    # Composite name with style-specific font
-    composited = composite_name(ai_image, pet_name, style=style)
-    ai_image.close()
+    # Now generate the WITH-NAME version (name integrated into art by Gemini)
+    if pet_name and pet_name.strip():
+        composited_bytes = call_gemini(photo, style, style_vars, pet_name=pet_name)
+        ai_image = Image.open(BytesIO(composited_bytes))
+        ai_image.load()
+        processed = POST_PROCESS.get(style, lambda img: img)(ai_image)
+        if processed is not ai_image:
+            ai_image.close()
+        composited = processed
+    else:
+        # No name provided — with-name version is just the no-name version
+        composited = ai_image_no_name
 
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
     comp_path = out / f"{uid}_{style}_{safe_name}.png"
     composited.save(comp_path, "PNG")
-    log.info("           comp → %s", comp_path)
+    log.info("           comp (with name) → %s", comp_path)
 
     # Optimized web preview (small WebP for fast frontend display)
     web_path = save_web_preview(composited, comp_path)
