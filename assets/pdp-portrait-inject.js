@@ -143,7 +143,6 @@
     productEl.style.cssText = 'width:72%;aspect-ratio:' + widthIn + '/' + heightIn + ';'
       + 'max-height:80%;overflow:hidden;position:relative;'
       + 'display:flex;align-items:center;justify-content:center;'
-      + 'background:#f5f2ed;'
       + 'box-shadow:'
       +   '0 2px 4px rgba(0,0,0,0.06),'
       +   '0 8px 16px rgba(0,0,0,0.08),'
@@ -151,12 +150,12 @@
       +   '0 32px 64px rgba(0,0,0,0.06);';
     container.appendChild(productEl);
 
-    // Portrait image — fits inside the product frame without cropping
+    // Portrait image — cover fills the frame, anchored to top to keep face visible
     var portraitImg = document.createElement('img');
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + (isCanvas ? ' canvas' : ' print');
     portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;';
     productEl.appendChild(portraitImg);
 
     // Size label
