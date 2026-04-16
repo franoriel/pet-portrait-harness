@@ -536,13 +536,29 @@ function usePortraitFlow() {
   const generatingRef = useRef(false);
 
   const generate = useCallback(async () => {
-    if (!state.photo || !state.selectedStyleId) return;
+    if ((!state.photo && !state.imageFilename) || !state.selectedStyleId) return;
     if (generatingRef.current) return; // prevent double-clicks
     generatingRef.current = true;
     update({ stage: STAGES.GENERATING, generationStatus: 'loading', generationError: null });
     try {
+      // If we don't have the File object (restored session / retry from style),
+      // fetch the image from the stored URL and create a File from it
+      let imageFile = state.photo;
+      if (!imageFile && state.imageFilename) {
+        const cdnUrls = state.previewCdnUrls || [];
+        const imgUrl = cdnUrls[0] || `${API_BASE}/preview/${state.imageFilename}`;
+        try {
+          const resp = await fetch(imgUrl);
+          const blob = await resp.blob();
+          imageFile = new File([blob], state.imageFilename, { type: blob.type || 'image/png' });
+        } catch (e) {
+          update({ stage: STAGES.PREVIEW, generationStatus: 'error', generationError: 'Could not reload your photo. Please upload it again.' });
+          generatingRef.current = false;
+          return;
+        }
+      }
       const result = await generateWithRetry({
-        imageFile: state.photo,
+        imageFile,
         styleId: state.selectedStyleId,
         petName: state.petName,
       });
@@ -600,7 +616,7 @@ function usePortraitFlow() {
     } finally {
       generatingRef.current = false;
     }
-  }, [state.photo, state.selectedStyleId, state.petName, update]);
+  }, [state.photo, state.imageFilename, state.previewCdnUrls, state.selectedStyleId, state.petName, update]);
 
   const selectPreview = useCallback((idx) => update({ selectedPreviewIndex: idx }), [update]);
   const goToStage = useCallback((stage) => update({ stage }), [update]);
