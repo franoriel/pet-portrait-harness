@@ -484,17 +484,42 @@ function CameraIcon({ size = 32 }) {
 
 /* ── usePortraitFlow hook ──────────────────────────────────── */
 
+// Check for pending PDP-initiated flow (user uploaded on PDP, needs to pick style)
+function loadPending() {
+  try {
+    const raw = localStorage.getItem('petPrintables_pending');
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.version !== 1 || !data.photoDataUrl) return null;
+    return data;
+  } catch { return null; }
+}
+
+function clearPending() {
+  try { localStorage.removeItem('petPrintables_pending'); } catch {}
+}
+
+// Convert a data URL back into a File object
+async function dataUrlToFile(dataUrl, filename, mimeType) {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], filename || 'pet-photo.jpg', { type: mimeType || blob.type || 'image/jpeg' });
+}
+
 function usePortraitFlow() {
-  // Check for saved session on mount
+  // Check for saved session first, then pending PDP upload
   const saved = loadSession();
+  const pending = !saved ? loadPending() : null;
+
   const [state, setState] = useState({
-    stage: saved ? STAGES.PREVIEW : STAGES.UPLOAD,
+    // If pending from PDP, skip to Style step with photo + name pre-filled
+    stage: saved ? STAGES.PREVIEW : (pending ? STAGES.STYLE : STAGES.UPLOAD),
     photo: null,
-    photoThumbnailUrl: null,
+    photoThumbnailUrl: pending?.photoDataUrl || null,
     photoDimensions: null,
     photoWarning: null,
     photoError: null,
-    petName: saved?.petName || '',
+    petName: saved?.petName || pending?.petName || '',
     selectedStyleId: saved?.styleId || null,
     generationStatus: saved ? 'success' : 'idle',
     previewImages: (saved?.previewDataUrls?.length ? saved.previewDataUrls : saved?.previewCdnUrls) || [],
@@ -506,7 +531,20 @@ function usePortraitFlow() {
     originalPhotoUrl: saved?.originalPhotoUrl || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
+    pendingPhoto: pending,  // hold pending for later conversion to File
   });
+
+  // If we have pending PDP data, reconstruct the File object asynchronously
+  useEffect(() => {
+    if (pending && !state.photo) {
+      dataUrlToFile(pending.photoDataUrl, pending.photoName, pending.photoType)
+        .then(file => {
+          setState(prev => ({ ...prev, photo: file }));
+          clearPending();
+        })
+        .catch(() => { /* ignore — user can re-upload */ });
+    }
+  }, []);
 
   const update = useCallback((patch) => {
     setState(prev => ({ ...prev, ...patch }));

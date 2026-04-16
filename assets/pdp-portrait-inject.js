@@ -7,20 +7,81 @@
    ───────────────────────────────────────────────────────────── */
 (function () {
   var LS_KEY = 'petPrintables_session';
+  var PENDING_KEY = 'petPrintables_pending';
   var raw;
   try { raw = localStorage.getItem(LS_KEY); } catch (e) { /* no storage access */ }
 
-  // No session — redirect to create flow instead of showing generic PDP
+  // No completed session — hijack the PDP upload form so users can
+  // start Step 1 (upload + name) here, then continue to Step 2 (style)
   if (!raw) {
-    window.location.href = '/pages/create';
+    setupPdpPreGenFlow();
     return;
   }
 
   var data;
-  try { data = JSON.parse(raw); } catch (e) { return; }
+  try { data = JSON.parse(raw); } catch (e) {}
   if (!data || data.version !== 1) {
-    window.location.href = '/pages/create';
+    setupPdpPreGenFlow();
     return;
+  }
+
+  function setupPdpPreGenFlow() {
+    // Called when user lands on PDP without a generated portrait.
+    // Let them upload + name here, save to pending, redirect to /pages/create.
+    document.addEventListener('DOMContentLoaded', function () {
+      var uploadInput = document.getElementById('PetPhotoUpload');
+      var nameInput = document.getElementById('PetName');
+      var atcBtn = document.querySelector('.atc-btn');
+      var form = document.querySelector('.product-form, form[action*="/cart/add"]');
+
+      if (!uploadInput || !nameInput || !atcBtn || !form) return;
+
+      // Rename the ATC button to lead into the flow
+      atcBtn.textContent = 'CONTINUE \u2192 PICK YOUR STYLE';
+      atcBtn.setAttribute('type', 'button');
+      atcBtn.removeAttribute('name');
+
+      // Intercept the button click — don't add to cart, instead save pending + redirect
+      atcBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        var file = uploadInput.files && uploadInput.files[0];
+        var petName = (nameInput.value || '').trim();
+
+        if (!file) {
+          alert('Please upload your pet\u2019s photo to continue.');
+          uploadInput.click();
+          return;
+        }
+        if (!petName) {
+          alert('Please enter your pet\u2019s name.');
+          nameInput.focus();
+          return;
+        }
+
+        // Save the photo as a base64 data URL in a temporary pending slot
+        // so the create flow can pick it up and start at Step 2
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var pending = {
+              version: 1,
+              petName: petName,
+              photoDataUrl: reader.result,
+              photoName: file.name,
+              photoType: file.type,
+              createdAt: new Date().toISOString(),
+            };
+            localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+          } catch (err) { /* storage quota — proceed anyway */ }
+          window.location.href = '/pages/create';
+        };
+        reader.onerror = function () {
+          alert('Could not read your photo. Please try a different image.');
+        };
+        reader.readAsDataURL(file);
+      });
+    });
   }
 
   // Accept either base64 data URLs or CDN URLs — whichever is available
