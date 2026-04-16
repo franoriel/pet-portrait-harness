@@ -124,6 +124,56 @@ p { color: var(--color-ink); }
 /* Homepage urgency banner hidden too (hero has its own urgency) — keep on other pages */
 .template-index .urgency-banner { display: none; }
 
+/* ── Urgency banner (site-wide, settings-driven) ──────────── */
+.urgency-banner {
+  background: var(--urgency-bg, #2F4A35);
+  color: var(--urgency-fg, #FFFFFF);
+  padding: 10px 16px;
+  position: relative;
+  z-index: 101;
+  overflow: hidden;
+}
+.urgency-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  text-align: center;
+}
+.urgency-banner__icon {
+  font-size: 1.05rem;
+  animation: urgency-pulse 2s ease-in-out infinite;
+  display: inline-block;
+}
+.urgency-banner__text p { margin: 0; }
+.urgency-banner__text strong { font-weight: 700; }
+.urgency-banner__cta {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.urgency-banner__cta:hover { opacity: 0.85; }
+@keyframes urgency-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+@media (max-width: 480px) {
+  .urgency-banner { padding: 8px 12px; }
+  .urgency-banner__inner { font-size: 0.78rem; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .urgency-banner__icon { animation: none; }
+}
+
 /* ── Header ───────────────────────────────────────────────── */
 .site-header {
   position: sticky;

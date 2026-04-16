@@ -51,6 +51,18 @@
     ]
   },
   {
+    "name": "Urgency Banner",
+    "settings": [
+      { "type": "checkbox", "id": "urgency_banner_show", "label": "Show urgency banner", "default": true, "info": "Displays site-wide (hidden on homepage)." },
+      { "type": "text", "id": "urgency_banner_icon", "label": "Icon (emoji)", "default": "✨" },
+      { "type": "richtext", "id": "urgency_banner_text", "label": "Banner text", "default": "<p><strong>Every portrait is one-of-a-kind</strong> — once it's gone, we can't recreate it</p>" },
+      { "type": "text", "id": "urgency_banner_cta_label", "label": "CTA label (optional)", "default": "Create yours" },
+      { "type": "url", "id": "urgency_banner_cta_url", "label": "CTA URL" },
+      { "type": "color", "id": "urgency_banner_bg", "label": "Background color", "default": "#2F4A35" },
+      { "type": "color", "id": "urgency_banner_fg", "label": "Text color", "default": "#FFFFFF" }
+    ]
+  },
+  {
     "name": "SEO & Metadata",
     "settings": [
       { "type": "text", "id": "seo_title_suffix", "label": "Page title suffix", "default": "Pet Printables — Custom Pet Portraits Canada" },

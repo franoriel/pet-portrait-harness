@@ -31,7 +31,20 @@
 
 <body class="template-{{ template.name }}{% if template.suffix %} template-{{ template.name }}-{{ template.suffix }}{% endif %}">
 
-  {%- section 'urgency-banner' -%}
+  {%- if settings.urgency_banner_show and template.name != 'index' -%}
+    <aside class="urgency-banner" role="region" aria-label="Promotion"
+           style="--urgency-bg: {{ settings.urgency_banner_bg | default: '#2F4A35' }}; --urgency-fg: {{ settings.urgency_banner_fg | default: '#FFFFFF' }};">
+      <div class="urgency-banner__inner">
+        {%- if settings.urgency_banner_icon != blank -%}
+          <span class="urgency-banner__icon" aria-hidden="true">{{ settings.urgency_banner_icon }}</span>
+        {%- endif -%}
+        <span class="urgency-banner__text">{{ settings.urgency_banner_text }}</span>
+        {%- if settings.urgency_banner_cta_label != blank and settings.urgency_banner_cta_url != blank -%}
+          <a href="{{ settings.urgency_banner_cta_url }}" class="urgency-banner__cta">{{ settings.urgency_banner_cta_label }} →</a>
+        {%- endif -%}
+      </div>
+    </aside>
+  {%- endif -%}
   {%- section 'announcement-bar' -%}
   {%- section 'header' -%}
 
