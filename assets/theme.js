@@ -488,7 +488,6 @@
     initStickyCta();
     initScrollReveal();
     refreshCartCount();
-    updatePrice();
     new CartDrawer();
     // PortraitPreview removed — React portrait-flow widget handles this
   });
