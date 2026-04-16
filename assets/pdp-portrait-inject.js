@@ -107,6 +107,15 @@
 
   console.log('[PetPrintables] Session found, showing completed portrait flow');
 
+  // Wait for DOM to be parsed before injecting
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runInjection);
+  } else {
+    runInjection();
+  }
+
+  function runInjection() {
+
   // Accept either base64 data URLs or CDN URLs — whichever is available
   var previewUrls = (data.previewDataUrls && data.previewDataUrls.length)
     ? data.previewDataUrls
@@ -508,4 +517,6 @@
       form.appendChild(input);
     });
   }
+
+  } // end runInjection
 })();
