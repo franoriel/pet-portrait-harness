@@ -71,8 +71,15 @@ def _name_integration(style_id: str, pet_name: str) -> str:
     if not pet_name or not pet_name.strip():
         return "- Do NOT include any text, words, or letters anywhere in the image."
 
-    name = pet_name.strip().title()
-    name_upper = pet_name.strip().upper()
+    # Defense in depth: strip any chars that could break out of prompt strings
+    # (quotes, braces, brackets, backslashes, backticks, newlines). Only allow
+    # letters, numbers, spaces, hyphens, apostrophes, periods. Max 30 chars.
+    safe = re.sub(r"[^A-Za-z0-9\s\-'\u2019.]", "", pet_name.strip())[:30].strip()
+    if not safe:
+        return "- Do NOT include any text, words, or letters anywhere in the image."
+
+    name = safe.title()
+    name_upper = safe.upper()
 
     # POSITION: name goes in the TOP white space above the pet — perfectly centered
     # horizontally, vertically within 8%-20% of image height.

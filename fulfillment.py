@@ -84,19 +84,28 @@ PRINTFUL_VARIANT_MAP: dict[str, int] = {
 # ---------------------------------------------------------------------------
 
 def verify_shopify_webhook(data: bytes, hmac_header: str) -> bool:
-    """Verify the Shopify webhook HMAC-SHA256 signature."""
+    """Verify the Shopify webhook HMAC-SHA256 signature.
+    In production SHOPIFY_WEBHOOK_SECRET must be set. If missing,
+    this function returns False (fail-closed) to prevent accepting
+    unverified webhooks in production."""
     secret = os.environ.get("SHOPIFY_WEBHOOK_SECRET", "")
     if not secret:
-        log.warning("SHOPIFY_WEBHOOK_SECRET not set — skipping verification")
-        return True
+        # Allow bypass only in explicit dev mode
+        if os.environ.get("ALLOW_UNVERIFIED_WEBHOOKS") == "1":
+            log.warning("SHOPIFY_WEBHOOK_SECRET not set — bypassing verification (DEV MODE)")
+            return True
+        log.error("SHOPIFY_WEBHOOK_SECRET not set — rejecting webhook")
+        return False
 
-    digest = hmac.new(
-        secret.encode("utf-8"),
-        data,
-        hashlib.sha256,
-    ).hexdigest()
+    if not hmac_header:
+        return False
 
-    return hmac.compare_digest(digest, hmac_header)
+    # Shopify sends base64-encoded HMAC — compare apples to apples
+    import base64 as _b64
+    digest_bytes = hmac.new(secret.encode("utf-8"), data, hashlib.sha256).digest()
+    expected = _b64.b64encode(digest_bytes).decode()
+
+    return hmac.compare_digest(expected, hmac_header)
 
 
 # ---------------------------------------------------------------------------
