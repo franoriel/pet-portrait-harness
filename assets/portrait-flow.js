@@ -633,7 +633,7 @@ function usePortraitFlow() {
     state, setPhoto, selectStyle, generate, selectPreview, goToStage,
     retryFromUpload, retryFromStyle, startFresh, update,
     canContinueFromUpload: state.photo && !state.photoError,
-    canGenerate: state.photo && state.selectedStyleId,
+    canGenerate: (state.photo || state.imageFilename) && state.selectedStyleId,
   };
 }
 
@@ -927,7 +927,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
 
 /* ── StyleStep ─────────────────────────────────────────────── */
 
-function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
+function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack }) {
   // Preload all style fonts so they're ready by preview step
   useEffect(() => {
     STYLES.forEach(style => { if (style.available) loadGoogleFont(style.id); });
@@ -1026,7 +1026,54 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
       }),
     ),
 
-    React.createElement('div', { style: { marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '10px' } },
+    // Name font preview + size selector (only when style is selected)
+    state.selectedStyleId && state.petName && React.createElement('div', {
+      style: {
+        marginTop: '20px', padding: '16px', background: tokens.colorWhite,
+        borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+        textAlign: 'center',
+      },
+    },
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 6px', fontSize: '10px' } }, 'Name preview'),
+      React.createElement('p', {
+        style: {
+          fontFamily: (STYLE_FONTS[state.selectedStyleId] || {}).css || fontSerif,
+          fontWeight: 700,
+          fontSize: `${Math.round(24 * (FONT_SIZES.find(f => f.id === (state.fontSize || 'medium')) || FONT_SIZES[1]).scale)}px`,
+          color: tokens.colorBrand, margin: '0 0 10px',
+          letterSpacing: '0.04em', transition: 'all 0.3s ease',
+        },
+      }, state.petName),
+      React.createElement('div', {
+        style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
+        role: 'group', 'aria-label': 'Name size',
+      },
+        React.createElement('span', {
+          style: { fontFamily: fontSans, fontSize: '10px', color: tokens.colorMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: '2px' },
+        }, 'Size'),
+        FONT_SIZES.map(size =>
+          React.createElement('button', {
+            key: size.id, type: 'button',
+            'aria-pressed': state.fontSize === size.id,
+            onClick: () => {
+              update({ fontSize: size.id });
+              saveSession({ ...state, fontSize: size.id });
+            },
+            style: {
+              width: '32px', height: '32px', borderRadius: '8px',
+              border: state.fontSize === size.id ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+              background: state.fontSize === size.id ? tokens.colorAccentLight : tokens.colorWhite,
+              color: state.fontSize === size.id ? tokens.colorAccent : tokens.colorMuted,
+              fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
+              cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            },
+          }, size.label)
+        ),
+      ),
+    ),
+
+    React.createElement('div', { style: { marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' } },
       React.createElement('button', {
         type: 'button',
         style: primaryBtnStyle(canGenerate),
@@ -1037,7 +1084,7 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
         type: 'button',
         style: { ...s.secondaryLink, textAlign: 'center', width: '100%' },
         onClick: onBack,
-      }, '\u2190 Back to photo'),
+      }, '\u2190 Back'),
     ),
   );
 }
@@ -1305,50 +1352,22 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       }, state.petName),
     ),
 
-    // Font size selector
-    state.petName && React.createElement('div', {
-      style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' },
-      role: 'group', 'aria-label': 'Name size',
-    },
-      React.createElement('span', {
-        style: { fontFamily: fontSans, fontSize: '11px', color: tokens.colorMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginRight: '4px' },
-      }, 'Name size'),
-      FONT_SIZES.map(size =>
-        React.createElement('button', {
-          key: size.id, type: 'button',
-          'aria-label': `${size.id} name size`,
-          'aria-pressed': state.fontSize === size.id,
-          onClick: () => {
-            update({ fontSize: size.id });
-            saveSession({ ...state, fontSize: size.id });
-          },
-          style: {
-            width: '36px', height: '36px', borderRadius: '8px',
-            border: state.fontSize === size.id ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
-            background: state.fontSize === size.id ? tokens.colorAccentLight : tokens.colorWhite,
-            color: state.fontSize === size.id ? tokens.colorAccent : tokens.colorMuted,
-            fontFamily: fontSans, fontWeight: 600, fontSize: '13px',
-            cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          },
-        }, size.label)
-      ),
-    ),
-
     // Actions
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
       React.createElement('button', {
         type: 'button', style: s.primaryBtn, onClick: onContinue,
-        'aria-label': 'Choose format',
-      }, 'CHOOSE FORMAT'),
-      React.createElement('button', {
-        type: 'button', style: s.secondaryLinkUnderline,
-        onClick: retryFromUpload,
-      }, 'Not quite right? Try another photo'),
-      React.createElement('button', {
-        type: 'button', style: s.secondaryLinkUnderline,
-        onClick: retryFromStyle,
-      }, 'Try a different style'),
+        'aria-label': 'Choose size',
+      }, 'CHOOSE SIZE \u2192'),
+      React.createElement('div', { style: { display: 'flex', gap: '16px' } },
+        React.createElement('button', {
+          type: 'button', style: s.secondaryLinkUnderline,
+          onClick: retryFromStyle,
+        }, '\u2190 Change style'),
+        React.createElement('button', {
+          type: 'button', style: s.secondaryLinkUnderline,
+          onClick: retryFromUpload,
+        }, 'New photo'),
+      ),
     ),
   );
 }
@@ -1562,7 +1581,7 @@ function PortraitFlow() {
       }); break;
     case STAGES.STYLE:
       content = React.createElement(StyleStep, {
-        state, selectStyle: flow.selectStyle, onGenerate: flow.generate,
+        state, update: flow.update, selectStyle: flow.selectStyle, onGenerate: flow.generate,
         canGenerate: flow.canGenerate, onBack: () => flow.goToStage(STAGES.UPLOAD),
       }); break;
     case STAGES.GENERATING:
