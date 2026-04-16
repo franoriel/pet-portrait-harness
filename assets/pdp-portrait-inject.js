@@ -8,12 +8,20 @@
 (function () {
   var LS_KEY = 'petPrintables_session';
   var raw;
-  try { raw = localStorage.getItem(LS_KEY); } catch (e) { return; }
-  if (!raw) return;
+  try { raw = localStorage.getItem(LS_KEY); } catch (e) { /* no storage access */ }
+
+  // No session — redirect to create flow instead of showing generic PDP
+  if (!raw) {
+    window.location.href = '/pages/create';
+    return;
+  }
 
   var data;
   try { data = JSON.parse(raw); } catch (e) { return; }
-  if (!data || data.version !== 1) return;
+  if (!data || data.version !== 1) {
+    window.location.href = '/pages/create';
+    return;
+  }
 
   // Accept either base64 data URLs or CDN URLs — whichever is available
   var previewUrls = (data.previewDataUrls && data.previewDataUrls.length)
