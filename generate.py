@@ -622,9 +622,6 @@ def composite_name(
     text_x      = (w - text_w) // 2
     text_y      = zone_center - text_h // 2
 
-    line_y = text_y - 16
-    margin = (w - int(w * 0.30)) // 2
-    draw.line([(margin, line_y), (w - margin, line_y)], fill=line_color, width=1)
     draw.text((text_x, text_y), spaced, fill=text_color, font=font)
 
     return img
