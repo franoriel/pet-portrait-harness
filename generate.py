@@ -608,7 +608,7 @@ def composite_name(
     line_color = text_color  # simplified — use same color with lower opacity via thin width
 
     scale = FONT_SIZE_SCALE.get(font_size_key, 1.0)
-    spaced   = "  ".join(pet_name.upper())
+    spaced   = pet_name.strip().title()
     base_size = max(20, int(w * 0.045))
     font_size = max(16, int(base_size * scale))
     font      = get_font(font_size, style=style)
