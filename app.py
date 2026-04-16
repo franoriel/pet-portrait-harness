@@ -13,7 +13,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_file
 
-from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate
+from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate, generate_with_name_on_demand
 from fulfillment import (
     fulfill_order_item,
     parse_order_items,
@@ -265,6 +265,58 @@ def debug_mockup_raw():
         raw_response=resp.json() if resp.ok else resp.text[:1000],
         payload_sent=payload,
     )
+
+
+@app.route("/add-name", methods=["POST", "OPTIONS"])
+def add_name():
+    """Generate the with-name version of an existing portrait on-demand.
+    Called at add-to-cart time to save Gemini cost during preview.
+
+    Body: { image_url: str, pet_name: str, style: str }
+    Returns: { composited_url, composited_png_cdn, filename }
+    """
+    if request.method == "OPTIONS":
+        return "", 204
+
+    data = request.get_json(silent=True) or {}
+    image_url = data.get("image_url", "")
+    pet_name = (data.get("pet_name") or "").strip()
+    style = data.get("style", "watercolor")
+
+    if not image_url or not pet_name:
+        return jsonify(error="image_url and pet_name required"), 400
+
+    try:
+        # Fetch the no-name image
+        import requests as _req
+        resp = _req.get(image_url, timeout=30)
+        if not resp.ok:
+            return jsonify(error=f"Could not fetch image: {resp.status_code}"), 400
+        no_name_bytes = resp.content
+
+        comp_path, web_path = generate_with_name_on_demand(
+            no_name_image_bytes=no_name_bytes,
+            pet_name=pet_name,
+            style=style,
+        )
+
+        # Upload both to R2 for fast CDN delivery
+        comp_cdn = upload_portrait(comp_path)
+        web_cdn = upload_portrait(web_path)
+
+        return jsonify(
+            composited=web_cdn or f"/preview/{web_path.name}",
+            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",
+            filename=comp_path.name,
+        )
+    except RuntimeError as e:
+        if str(e) == "BUSY":
+            return jsonify(error="Servers are busy, please try again"), 503
+        log.exception("add-name failed")
+        return jsonify(error=str(e)), 500
+    except Exception as e:
+        log.exception("add-name failed")
+        return jsonify(error=str(e)), 500
 
 
 @app.route("/mockups", methods=["POST", "OPTIONS"])

@@ -552,13 +552,20 @@ def _strip_no_text_rules(prompt: str) -> str:
     return prompt
 
 
+_NO_BORDER_RULE = (
+    "\n\nCRITICAL: The image must have NO paper edges, NO torn paper effect, "
+    "NO deckled edges, NO frames, NO borders of any kind. The artwork should "
+    "fill the canvas cleanly with no visible paper boundaries."
+)
+
+
 def build_prompt_with_name(style_id: str, pet_name: str, style_vars: Optional[dict] = None) -> str:
     """Build the full prompt for a style with the pet's name integrated
     into the artwork as a native design element."""
     base = PROMPTS[style_id](style_vars)
     base = _strip_no_text_rules(base)
     name_block = _name_integration(style_id, pet_name)
-    return base.rstrip() + "\n\n" + name_block
+    return base.rstrip() + "\n\n" + name_block + _NO_BORDER_RULE
 
 
 # Master registry: style → prompt builder callable
@@ -934,6 +941,68 @@ def _get_client() -> genai.Client:
 # Gemini API call
 # ---------------------------------------------------------------------------
 
+def add_name_to_image(
+    image_bytes: bytes,
+    style: str,
+    pet_name: str,
+    max_retries: int = 2,
+) -> bytes:
+    """Take an already-generated portrait and ask Gemini to add the pet's name
+    into the existing artwork — preserving every detail of the original image.
+
+    This avoids the problem of two separate Gemini calls producing two different
+    artworks when we want "same image with/without name".
+    """
+    client = _get_client()
+    name_block = _name_integration(style, pet_name)
+    prompt = (
+        "Take this existing artwork and add the pet's name integrated into it. "
+        "KEEP THE ORIGINAL ARTWORK EXACTLY AS IT IS — do NOT redraw, reimagine, "
+        "or change any part of the existing image. Only ADD the pet's name text "
+        "as a native part of the art. The original composition, pose, colors, "
+        "brushstrokes, and details must remain 100% identical.\n\n"
+        + name_block +
+        "\n\nIMPORTANT: No paper edges, no deckled borders, no torn-paper effects. "
+        "The image should have a clean edge, not look like a piece of paper."
+    )
+
+    last_exc: Optional[Exception] = None
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.1-flash-image-preview",
+                contents=[
+                    types.Content(
+                        role="user",
+                        parts=[
+                            types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
+                            types.Part.from_text(text=prompt),
+                        ],
+                    )
+                ],
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                ),
+            )
+            for candidate in response.candidates:
+                for part in candidate.content.parts:
+                    if part.inline_data is not None:
+                        data = part.inline_data.data
+                        if isinstance(data, str):
+                            data = base64.b64decode(data)
+                        return data
+            raise RuntimeError("Gemini returned no image when adding name")
+        except Exception as exc:
+            last_exc = exc
+            err_str = str(exc).lower()
+            is_transient = any(k in err_str for k in ("429", "500", "503", "overloaded", "timeout"))
+            if is_transient and attempt < max_retries:
+                time.sleep((attempt + 1) * 3)
+                continue
+            raise
+    raise last_exc  # type: ignore[misc]
+
+
 def call_gemini(
     photo_path: Path,
     style: str,
@@ -955,7 +1024,7 @@ def call_gemini(
     if pet_name:
         prompt = build_prompt_with_name(style, pet_name, style_vars)
     else:
-        prompt = PROMPTS[style](style_vars)
+        prompt = PROMPTS[style](style_vars) + _NO_BORDER_RULE
 
     last_exc: Optional[Exception] = None
     for attempt in range(max_retries + 1):
@@ -1053,37 +1122,30 @@ def _generate_inner(
 
     log.info("[generate] %s  '%s'  ←  %s", style, pet_name, photo.name)
 
-    # Generate the NO-NAME version first (will be used as "raw" preview)
+    # Preview generation: ONE Gemini call — no-name version only.
+    # The with-name version is generated lazily by add_name_endpoint
+    # when the user adds to cart (halves per-portrait Gemini cost).
     raw_bytes = call_gemini(photo, style, style_vars, pet_name="")
 
-    # Validate image fully before writing to disk
     ai_image_no_name = Image.open(BytesIO(raw_bytes))
     ai_image_no_name.load()
 
-    # Per-style post-processing on the no-name version (upscales to print size)
+    # Per-style post-processing (crop + upscale to print size)
     processed_no_name = POST_PROCESS.get(style, lambda img: img)(ai_image_no_name)
     if processed_no_name is not ai_image_no_name:
         ai_image_no_name.close()
     ai_image_no_name = processed_no_name
 
-    # Save the hi-res no-name version with 300 DPI metadata
+    # Save the hi-res no-name version (same file used for both paths)
     raw_path = out / f"{uid}_{style}_raw.png"
     ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
     log.info("           raw (no name) → %s (%dx%d @ 300 DPI)",
              raw_path, ai_image_no_name.width, ai_image_no_name.height)
 
-    # Now generate the WITH-NAME version (name integrated into art by Gemini)
-    if pet_name and pet_name.strip():
-        composited_bytes = call_gemini(photo, style, style_vars, pet_name=pet_name)
-        ai_image = Image.open(BytesIO(composited_bytes))
-        ai_image.load()
-        processed = POST_PROCESS.get(style, lambda img: img)(ai_image)
-        if processed is not ai_image:
-            ai_image.close()
-        composited = processed
-    else:
-        # No name provided — with-name version is just the no-name version
-        composited = ai_image_no_name
+    # For preview purposes, the "composited" (with-name) version is
+    # initially the SAME as the no-name version. It'll be upgraded
+    # by generate_with_name_on_demand() when user adds to cart.
+    composited = ai_image_no_name
 
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
     comp_path = out / f"{uid}_{style}_{safe_name}.png"
@@ -1097,6 +1159,55 @@ def _generate_inner(
     composited.close()
 
     return raw_path, comp_path, web_path
+
+
+# ---------------------------------------------------------------------------
+# On-demand: add name to an already-generated portrait
+# ---------------------------------------------------------------------------
+
+def generate_with_name_on_demand(
+    no_name_image_bytes: bytes,
+    pet_name: str,
+    style: str,
+    output_dir: Optional[Path] = None,
+) -> tuple[Path, Path]:
+    """Add the pet's name to an already-generated no-name portrait.
+    Called at add-to-cart time to halve the up-front Gemini cost.
+
+    Returns: (comp_path, web_preview_path)
+    """
+    if not _generation_semaphore.acquire(timeout=2):
+        raise RuntimeError("BUSY")
+
+    try:
+        out = output_dir or OUTPUT_DIR
+        out.mkdir(parents=True, exist_ok=True)
+
+        import uuid as _uuid
+        uid = _uuid.uuid4().hex[:10]
+
+        log.info("[generate_with_name] %s '%s' (on-demand)", style, pet_name)
+
+        composited_bytes = add_name_to_image(no_name_image_bytes, style, pet_name)
+
+        ai_image = Image.open(BytesIO(composited_bytes))
+        ai_image.load()
+        processed = POST_PROCESS.get(style, lambda img: img)(ai_image)
+        if processed is not ai_image:
+            ai_image.close()
+        composited = processed
+
+        safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
+        comp_path = out / f"{uid}_{style}_{safe_name}_named.png"
+        composited.save(comp_path, "PNG", dpi=(300, 300))
+        log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
+                 comp_path, composited.width, composited.height)
+
+        web_path = save_web_preview(composited, comp_path)
+        composited.close()
+        return comp_path, web_path
+    finally:
+        _generation_semaphore.release()
 
 
 # ---------------------------------------------------------------------------

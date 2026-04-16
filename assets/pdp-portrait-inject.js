@@ -606,6 +606,59 @@
       input.value = props[key];
       form.appendChild(input);
     });
+
+    // ── Lazy generation: call /add-name on ATC click ─────────
+    // The "with name" portrait is only generated when the user commits
+    // to buying — cuts Gemini cost in half during preview phase.
+    var atcBtn = document.querySelector('.atc-btn');
+    var showNameInput = function () { return document.querySelector('input[name="properties[_Show Name]"]'); };
+    if (atcBtn && !atcBtn.hasAttribute('data-lazy-hooked')) {
+      atcBtn.setAttribute('data-lazy-hooked', '1');
+      atcBtn.addEventListener('click', function (e) {
+        // Only intercept if user wants the name on the portrait
+        var wantsName = (showNameInput() && showNameInput().value === 'Yes');
+        if (!wantsName) return; // skip — no name needed
+        // Skip if we already generated the with-name version
+        if (atcBtn.hasAttribute('data-named-generated')) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        var originalLabel = atcBtn.textContent;
+        atcBtn.disabled = true;
+        atcBtn.textContent = 'Preparing your portrait…';
+
+        var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+        fetch(API_BASE + '/add-name', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: printFileUrl,
+            pet_name: petName,
+            style: data.styleId || '',
+          }),
+        })
+        .then(function (r) { return r.ok ? r.json() : r.json().then(function(d){ throw new Error(d.error||'Failed'); }); })
+        .then(function (resp) {
+          // Update cart properties with the new with-name hi-res URL
+          var printInput = form.querySelector('input[name="properties[_Print File URL]"]');
+          var portraitInput = form.querySelector('input[name="properties[_Portrait URL]"]');
+          if (printInput && resp.composited_png_cdn) printInput.value = resp.composited_png_cdn;
+          if (portraitInput && resp.composited) portraitInput.value = resp.composited;
+
+          // Mark as done and submit the form
+          atcBtn.setAttribute('data-named-generated', '1');
+          atcBtn.disabled = false;
+          atcBtn.textContent = originalLabel;
+          form.submit();
+        })
+        .catch(function (err) {
+          atcBtn.disabled = false;
+          atcBtn.textContent = originalLabel;
+          alert('Something went wrong preparing your portrait: ' + (err.message || err) + '. Please try again.');
+        });
+      }, true); // capture phase so we beat Shopify's submit handler
+    }
   }
 
   } // end runInjection
