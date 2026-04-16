@@ -1,0 +1,50 @@
+<section class="upsell-section" aria-labelledby="UpsellHeading">
+  <div class="container">
+    <h2 id="UpsellHeading">{{ section.settings.heading | default: 'Customers Also Ordered' }}</h2>
+    <div class="product-showcase__grid" role="list">
+      {%- for block in section.blocks -%}
+        {%- assign upsell_product = all_products[block.settings.product] -%}
+        {%- if upsell_product != blank -%}
+          <div class="product-card" role="listitem" {{ block.shopify_attributes }}>
+            <div class="product-card__img">
+              {%- if upsell_product.featured_image -%}
+                {{- upsell_product.featured_image | image_url: width: 480 | image_tag:
+                  loading: 'lazy',
+                  alt: upsell_product.title,
+                  widths: '240, 480',
+                  sizes: '220px'
+                -}}
+              {%- else -%}
+                {{ 'product-2' | placeholder_svg_tag }}
+              {%- endif -%}
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__title">{{ upsell_product.title }}</p>
+              <p class="product-card__price">{{ upsell_product.price_min | money }} CAD</p>
+              <a class="product-card__cta" href="{{ upsell_product.url }}">Add This Too →</a>
+            </div>
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Upsell Products",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Section heading", "default": "Customers Also Ordered" }
+  ],
+  "blocks": [
+    {
+      "type": "upsell_product",
+      "name": "Upsell Product",
+      "settings": [
+        { "type": "product", "id": "product", "label": "Product" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Upsell Products" }]
+}
+{% endschema %}

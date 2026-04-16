@@ -1,0 +1,49 @@
+<article class="article-page" itemscope itemtype="https://schema.org/Article">
+  <meta itemprop="headline" content="{{ article.title | escape }}">
+  <meta itemprop="datePublished" content="{{ article.published_at | date: '%Y-%m-%d' }}">
+
+  {%- if article.image -%}
+    <div class="article-hero">
+      {{- article.image | image_url: width: 1600 | image_tag:
+        loading: 'eager',
+        fetchpriority: 'high',
+        alt: article.image.alt | default: article.title,
+        widths: '750, 1100, 1600',
+        sizes: '100vw',
+        itemprop: 'image'
+      -}}
+    </div>
+  {%- endif -%}
+
+  <div class="container container--narrow">
+    {%- render 'breadcrumbs' -%}
+
+    <header class="article-header">
+      {%- if article.tags.size > 0 -%}
+        <div class="article-tags">
+          {%- for tag in article.tags -%}
+            <a href="{{ blog.url }}/tagged/{{ tag | handleize }}" class="article-tag">{{ tag }}</a>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+      <h1 class="article-header__title" itemprop="name">{{ article.title }}</h1>
+      <p class="article-header__meta text-muted">
+        <time datetime="{{ article.published_at | date: '%Y-%m-%d' }}">
+          {{- article.published_at | date: '%B %-d, %Y' -}}
+        </time>
+        {%- if article.author -%}
+          · By {{ article.author }}
+        {%- endif -%}
+      </p>
+    </header>
+
+    <div class="article-body rte" itemprop="articleBody">
+      {{ article.content }}
+    </div>
+
+    <footer class="article-footer">
+      <a href="{{ blog.url }}" class="btn btn--outline">← Back to {{ blog.title }}</a>
+    </footer>
+  </div>
+</article>
+{% schema %}{ "name": "Article Content" }{% endschema %}

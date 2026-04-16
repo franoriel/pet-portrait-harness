@@ -1,0 +1,66 @@
+<section class="hiw section-padding" aria-labelledby="HiwHeading">
+  <div class="container text-center">
+    <span class="eyebrow">{{ section.settings.eyebrow | default: 'Simple Process' }}</span>
+    <h2 id="HiwHeading">{{ section.settings.heading | default: 'The Transformation' }}</h2>
+    <p class="text-muted" style="margin-top:10px;max-width:480px;margin-left:auto;margin-right:auto;">
+      {{ section.settings.subheading | default: 'From photo to art.' }}
+    </p>
+
+    <div class="hiw__steps" role="list">
+      {%- for block in section.blocks -%}
+        <div class="hiw__step" role="listitem" data-reveal {{ block.shopify_attributes }}>
+          <div class="hiw__step-num" aria-label="Step {{ forloop.index }}">{{ forloop.index }}</div>
+          <h3>{{ block.settings.title }}</h3>
+          <p>{{ block.settings.description }}</p>
+        </div>
+      {%- else -%}
+        <div class="hiw__step" role="listitem">
+          <div class="hiw__step-num">1</div>
+          <h3>Upload your photo</h3>
+          <p>Any clear photo from your camera roll works. A front-facing shot with good lighting gets the best result.</p>
+        </div>
+        <div class="hiw__step" role="listitem">
+          <div class="hiw__step-num">2</div>
+          <h3>Preview your portrait</h3>
+          <p>Watch your pet transform into a custom portrait in about 30 seconds. See it before you commit to anything.</p>
+        </div>
+        <div class="hiw__step" role="listitem">
+          <div class="hiw__step-num">3</div>
+          <h3>We print and ship</h3>
+          <p>Choose your canvas size, check out, and your portrait ships in 1–2 business days, ready to hang.</p>
+        </div>
+      {%- endfor -%}
+    </div>
+
+    {%- if section.settings.cta_label != blank -%}
+      <div style="margin-top:40px;">
+        <a href="{{ section.settings.cta_url }}" class="btn btn--primary">{{ section.settings.cta_label }}</a>
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "How It Works",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow text", "default": "Simple Process" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "The Transformation" },
+    { "type": "text", "id": "subheading", "label": "Subheading" },
+    { "type": "text", "id": "cta_label", "label": "CTA label" },
+    { "type": "url", "id": "cta_url", "label": "CTA URL" }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "Step",
+      "settings": [
+        { "type": "text", "id": "icon", "label": "Emoji icon", "default": "📸" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Upload Your Photo" },
+        { "type": "textarea", "id": "description", "label": "Description", "default": "Share a clear photo of your beloved pet." }
+      ]
+    }
+  ],
+  "presets": [{ "name": "How It Works" }]
+}
+{% endschema %}

@@ -1,0 +1,39 @@
+<div class="customer-page section-padding">
+  <div class="container" style="max-width:480px;">
+    <div class="customer-card">
+      <div class="customer-card__header text-center">
+        <span style="font-size:2rem;">✦</span>
+        <h1>Create account</h1>
+        <p class="text-muted">Join thousands of Canadian pet parents.</p>
+      </div>
+      {%- form 'create_customer' -%}
+        {%- if form.errors -%}
+          <div class="form-errors" role="alert">{{ form.errors | default_errors }}</div>
+        {%- endif -%}
+        <div class="form-field-row">
+          <div class="form-field">
+            <label class="form-label" for="FirstName">First name</label>
+            <input type="text" id="FirstName" name="customer[first_name]" autocomplete="given-name" class="form-input" required>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="LastName">Last name</label>
+            <input type="text" id="LastName" name="customer[last_name]" autocomplete="family-name" class="form-input" required>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="RegisterEmail">Email</label>
+          <input type="email" id="RegisterEmail" name="customer[email]" autocomplete="email" autocapitalize="off" class="form-input" required>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="RegisterPassword">Password</label>
+          <input type="password" id="RegisterPassword" name="customer[password]" autocomplete="new-password" class="form-input" required minlength="5">
+        </div>
+        <button type="submit" class="btn btn--primary btn--full btn--large">Create Account</button>
+      {%- endform -%}
+      <p class="customer-card__footer text-muted">
+        Already have an account? <a href="{{ routes.root_url }}account/login" style="color:var(--color-primary);">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% schema %}{ "name": "Customer Register" }{% endschema %}

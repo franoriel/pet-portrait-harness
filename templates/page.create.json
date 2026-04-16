@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "main": {
+      "type": "portrait-flow",
+      "settings": {}
+    }
+  },
+  "order": ["main"]
+}

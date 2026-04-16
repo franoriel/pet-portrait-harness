@@ -1,0 +1,35 @@
+{% comment %}Breadcrumbs snippet{% endcomment %}
+{%- unless template.name == 'index' -%}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumbs__list">
+    <li class="breadcrumbs__item">
+      <a href="{{ routes.root_url }}" class="breadcrumbs__link">Home</a>
+    </li>
+    {%- if template.name == 'product' -%}
+      {%- if collection -%}
+        <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+        <li class="breadcrumbs__item"><a href="{{ collection.url }}" class="breadcrumbs__link">{{ collection.title }}</a></li>
+      {%- endif -%}
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ product.title | truncate: 40 }}</li>
+    {%- elsif template.name == 'collection' -%}
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ collection.title }}</li>
+    {%- elsif template.name == 'article' -%}
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item"><a href="{{ blog.url }}" class="breadcrumbs__link">{{ blog.title }}</a></li>
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ article.title | truncate: 40 }}</li>
+    {%- elsif template.name == 'blog' -%}
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ blog.title }}</li>
+    {%- elsif template.name == 'page' -%}
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ page.title }}</li>
+    {%- elsif template.name == 'cart' -%}
+      <li class="breadcrumbs__item" aria-hidden="true"><span class="breadcrumbs__sep">›</span></li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">Cart</li>
+    {%- endif -%}
+  </ol>
+</nav>
+{%- endunless -%}

@@ -1,0 +1,41 @@
+<div class="customer-page section-padding">
+  <div class="container container--mid">
+    <a href="{{ routes.root_url }}account" class="text-link" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:24px;font-size:0.9rem;">← Back to account</a>
+    <h1>Your Addresses</h1>
+
+    <div class="addresses-grid">
+      {%- for address in customer.addresses -%}
+        <div class="address-card {% if address == customer.default_address %}address-card--default{% endif %}">
+          {%- if address == customer.default_address -%}
+            <span class="address-card__badge">Default</span>
+          {%- endif -%}
+          <address style="font-style:normal;line-height:1.7;">
+            <strong>{{ address.name }}</strong><br>
+            {{ address.address1 }}<br>
+            {%- if address.address2 != blank -%}{{ address.address2 }}<br>{%- endif -%}
+            {{ address.city }}, {{ address.province_code }} {{ address.zip }}<br>
+            {{ address.country }}
+            {%- if address.phone != blank -%}<br>{{ address.phone }}{%- endif -%}
+          </address>
+          <div class="address-card__actions">
+            <button class="text-link" onclick="Shopify.CustomerAddress.toggleForm('{{ address.id }}')">Edit</button>
+            <button class="text-link" style="color:var(--color-danger,#c0392b);"
+              onclick="Shopify.CustomerAddress.destroy('{{ address.id }}', '{{ 'Are you sure?' | escape }}')">
+              Delete
+            </button>
+            {%- unless address == customer.default_address -%}
+              {%- form 'customer_address', address -%}
+                <input type="hidden" name="_method" value="put">
+                <input type="hidden" name="address[default]" value="true">
+                <button type="submit" class="text-link">Set default</button>
+              {%- endform -%}
+            {%- endunless -%}
+          </div>
+        </div>
+      {%- else -%}
+        <p class="text-muted">No saved addresses yet.</p>
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+{% schema %}{ "name": "Customer Addresses" }{% endschema %}

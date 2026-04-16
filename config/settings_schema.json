@@ -1,0 +1,59 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Pet Printables",
+    "theme_author": "Pet Printables",
+    "theme_version": "1.0.0",
+    "theme_documentation_url": "https://petprintables.ca",
+    "theme_support_url": "https://petprintables.ca/pages/contact"
+  },
+  {
+    "name": "Colours",
+    "settings": [
+      { "type": "color", "id": "color_bg", "label": "Background colour", "default": "#FAF8F5" },
+      { "type": "color", "id": "color_primary", "label": "Primary", "default": "#2F2F2A" },
+      { "type": "color", "id": "color_accent", "label": "Accent", "default": "#8B7D6B" },
+      { "type": "color", "id": "color_ink", "label": "Text (ink)", "default": "#1C1C1C" },
+      { "type": "color", "id": "color_muted", "label": "Muted text", "default": "#8A8A82" },
+      { "type": "color", "id": "color_border", "label": "Border", "default": "#E4DDD4" },
+      { "type": "color", "id": "color_surface", "label": "Card surface", "default": "#FFFFFF" }
+    ]
+  },
+  {
+    "name": "Typography",
+    "settings": [
+      { "type": "font_picker", "id": "font_heading", "label": "Heading font", "default": "cormorant_n4" },
+      { "type": "font_picker", "id": "font_body", "label": "Body font", "default": "inter_n4" },
+      { "type": "range", "id": "font_size_base", "label": "Base font size (px)", "min": 14, "max": 18, "step": 1, "default": 16 }
+    ]
+  },
+  {
+    "name": "Layout",
+    "settings": [
+      { "type": "range", "id": "border_radius", "label": "Border radius (px)", "min": 0, "max": 24, "step": 2, "default": 12 },
+      { "type": "checkbox", "id": "enable_animations", "label": "Enable scroll animations", "default": true }
+    ]
+  },
+  {
+    "name": "Social Media",
+    "settings": [
+      { "type": "url", "id": "social_instagram", "label": "Instagram URL" },
+      { "type": "url", "id": "social_tiktok", "label": "TikTok URL" },
+      { "type": "url", "id": "social_pinterest", "label": "Pinterest URL" },
+      { "type": "url", "id": "social_facebook", "label": "Facebook URL" }
+    ]
+  },
+  {
+    "name": "Portrait Preview API",
+    "settings": [
+      { "type": "text", "id": "portrait_api_url", "label": "Portrait API base URL", "default": "https://web-production-a392e.up.railway.app", "info": "The URL of the pet-portrait-harness Flask app. Use http://localhost:5001 for local testing." }
+    ]
+  },
+  {
+    "name": "SEO & Metadata",
+    "settings": [
+      { "type": "text", "id": "seo_title_suffix", "label": "Page title suffix", "default": "Pet Printables — Custom Pet Portraits Canada" },
+      { "type": "textarea", "id": "seo_description", "label": "Default meta description", "default": "Custom AI-powered pet portraits in 9 artistic styles — watercolour, oil paint, line art, pop art and more. Upload a photo, preview your portrait, and we ship it to your door. Made in Canada." }
+    ]
+  }
+]

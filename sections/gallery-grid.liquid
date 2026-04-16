@@ -1,0 +1,89 @@
+<section class="gallery-page" aria-labelledby="GalleryHeading">
+  <div class="container">
+    <div class="text-center" style="margin-bottom:32px;">
+      <span class="eyebrow">{{ section.settings.eyebrow | default: 'Our Work' }}</span>
+      <h1 id="GalleryHeading">{{ section.settings.heading | default: 'Portrait Gallery' }}</h1>
+      <p class="text-muted" style="margin-top:8px;">{{ section.settings.subheading | default: 'Every portrait is as unique as the pet it celebrates.' }}</p>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="gallery-filter" role="group" aria-label="Filter gallery by pet type">
+      <button class="filter-btn is-active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="dogs">Dogs</button>
+      <button class="filter-btn" data-filter="cats">Cats</button>
+      <button class="filter-btn" data-filter="other">Other</button>
+    </div>
+
+    <div class="gallery-grid" role="list" aria-label="Pet portrait gallery">
+      {%- for block in section.blocks -%}
+        <div
+          class="gallery-item"
+          role="listitem"
+          data-category="{{ block.settings.category }}"
+          {{ block.shopify_attributes }}
+        >
+          {%- if block.settings.image != blank -%}
+            {{- block.settings.image | image_url: width: 600 | image_tag:
+              loading: 'lazy',
+              alt: block.settings.caption | default: 'Pet portrait',
+              widths: '300, 600',
+              sizes: '(min-width:1024px) 33vw, 50vw'
+            -}}
+          {%- else -%}
+            {{ 'image' | placeholder_svg_tag }}
+          {%- endif -%}
+          {%- if block.settings.caption != blank -%}
+            <p style="font-size:0.78rem;color:var(--color-muted);padding:6px 8px;text-align:center;">{{ block.settings.caption }}</p>
+          {%- endif -%}
+        </div>
+      {%- else -%}
+        {%- for i in (1..6) -%}
+          <div class="gallery-item" role="listitem" data-category="dogs">
+            {{ 'image' | placeholder_svg_tag }}
+          </div>
+        {%- endfor -%}
+      {%- endfor -%}
+    </div>
+
+    {%- if section.settings.cta_label != blank -%}
+      <div class="text-center" style="margin-top:48px;">
+        <a href="{{ section.settings.cta_url }}" class="btn btn--primary btn--large">{{ section.settings.cta_label }}</a>
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Gallery Grid",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Our Work" },
+    { "type": "text", "id": "heading", "label": "Page heading", "default": "Portrait Gallery" },
+    { "type": "text", "id": "subheading", "label": "Subheading" },
+    { "type": "text", "id": "cta_label", "label": "CTA label" },
+    { "type": "url", "id": "cta_url", "label": "CTA URL" }
+  ],
+  "blocks": [
+    {
+      "type": "gallery_item",
+      "name": "Gallery Item",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Portrait image" },
+        { "type": "text", "id": "caption", "label": "Caption (pet name)", "default": "Biscuit the Golden" },
+        {
+          "type": "select",
+          "id": "category",
+          "label": "Category",
+          "options": [
+            { "value": "dogs", "label": "Dogs" },
+            { "value": "cats", "label": "Cats" },
+            { "value": "other", "label": "Other" }
+          ],
+          "default": "dogs"
+        }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Gallery Grid" }]
+}
+{% endschema %}

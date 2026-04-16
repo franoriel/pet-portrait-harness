@@ -1,0 +1,24 @@
+<div class="page-404">
+  <div class="container text-center">
+    <div class="page-404__paw" aria-hidden="true">✦</div>
+    <h1 class="page-404__title">Whoops — lost the leash</h1>
+    <p class="page-404__desc text-muted">
+      The page you're looking for doesn't exist or may have moved.<br>
+      Don't worry — your pet's portrait awaits.
+    </p>
+    <div class="page-404__actions">
+      <a href="{{ routes.root_url }}" class="btn btn--primary btn--large">Go Home</a>
+      <a href="{{ routes.all_products_collection_url }}" class="btn btn--outline btn--large">Shop Portraits</a>
+    </div>
+    <div class="page-404__search">
+      <p class="text-muted" style="margin-bottom:12px;font-size:0.9rem;">Or search for what you need:</p>
+      {%- form 'search' -%}
+        <div class="search-bar">
+          <input type="search" name="q" placeholder="Search…" class="search-bar__input" autocomplete="off">
+          <button type="submit" class="search-bar__btn btn btn--primary" aria-label="Search">Search</button>
+        </div>
+      {%- endform -%}
+    </div>
+  </div>
+</div>
+{% schema %}{ "name": "404 Page" }{% endschema %}

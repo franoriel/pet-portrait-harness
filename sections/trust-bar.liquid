@@ -1,0 +1,34 @@
+<div class="trust-bar" aria-label="Trust signals">
+  <div class="trust-bar__inner">
+    {%- for block in section.blocks -%}
+      <div class="trust-bar__item" {{ block.shopify_attributes }}>
+        {%- if block.settings.icon != blank -%}<span aria-hidden="true">{{ block.settings.icon }}</span>{%- endif -%}
+        {{ block.settings.text }}
+      </div>
+    {%- else -%}
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Preview before you pay</div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Ships to Canada & the US</div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Satisfaction guaranteed</div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> 9 artistic styles</div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Canadian business</div>
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Trust Bar",
+  "max_blocks": 8,
+  "blocks": [
+    {
+      "type": "item",
+      "name": "Trust item",
+      "settings": [
+        { "type": "text", "id": "icon", "label": "Icon", "default": "✦" },
+        { "type": "text", "id": "text", "label": "Text", "default": "Proudly Canadian" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Trust Bar" }]
+}
+{% endschema %}

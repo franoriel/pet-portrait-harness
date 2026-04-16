@@ -1,0 +1,99 @@
+<footer class="site-footer" role="contentinfo">
+  <div class="site-footer__grid">
+
+    <!-- Brand column -->
+    <div>
+      <div class="site-footer__brand-logo">
+        {%- if section.settings.logo != blank -%}
+          {{- section.settings.logo | image_url: width: 160 | image_tag: alt: shop.name, loading: 'lazy' -}}
+        {%- else -%}
+          {{ shop.name }}
+        {%- endif -%}
+      </div>
+      <p class="site-footer__tagline">{{ section.settings.tagline | default: 'Custom pet portraits, made in Canada.' }}</p>
+      <div class="site-footer__social" aria-label="Social media links">
+        {%- if section.settings.instagram != blank -%}
+          <a href="{{ section.settings.instagram }}" aria-label="Instagram" rel="noopener noreferrer" target="_blank">📸</a>
+        {%- endif -%}
+        {%- if section.settings.tiktok != blank -%}
+          <a href="{{ section.settings.tiktok }}" aria-label="TikTok" rel="noopener noreferrer" target="_blank">🎵</a>
+        {%- endif -%}
+        {%- if section.settings.pinterest != blank -%}
+          <a href="{{ section.settings.pinterest }}" aria-label="Pinterest" rel="noopener noreferrer" target="_blank">📌</a>
+        {%- endif -%}
+        {%- if section.settings.facebook != blank -%}
+          <a href="{{ section.settings.facebook }}" aria-label="Facebook" rel="noopener noreferrer" target="_blank">👥</a>
+        {%- endif -%}
+      </div>
+    </div>
+
+    <!-- Link columns -->
+    {%- for block in section.blocks -%}
+      <div {{ block.shopify_attributes }}>
+        <p class="site-footer__heading">{{ block.settings.heading }}</p>
+        <nav class="site-footer__links" aria-label="{{ block.settings.heading }}">
+          {%- for link in block.settings.menu.links -%}
+            <a href="{{ link.url }}">{{ link.title }}</a>
+          {%- endfor -%}
+        </nav>
+      </div>
+    {%- else -%}
+      <div>
+        <p class="site-footer__heading">Shop</p>
+        <nav class="site-footer__links">
+          <a href="/collections/all">All Products</a>
+          <a href="/pages/gallery">Gallery</a>
+          <a href="/pages/how-it-works">How It Works</a>
+        </nav>
+      </div>
+      <div>
+        <p class="site-footer__heading">Help</p>
+        <nav class="site-footer__links">
+          <a href="/pages/faq">FAQ</a>
+          <a href="/pages/contact">Contact</a>
+          <a href="/pages/shipping">Shipping &amp; Returns</a>
+          <a href="/pages/about">About</a>
+          <a href="/policies/privacy-policy">Privacy</a>
+        </nav>
+      </div>
+    {%- endfor -%}
+
+  </div>
+
+  <div class="site-footer__bottom">
+    <p>🇨🇦 © {{ 'now' | date: '%Y' }} {{ shop.name }}. Vancouver, BC, Canada.</p>
+    <div class="payment-icons" aria-label="Accepted payment methods">
+      <span class="payment-icon">Visa</span>
+      <span class="payment-icon">MC</span>
+      <span class="payment-icon">Amex</span>
+      <span class="payment-icon">Apple Pay</span>
+      <span class="payment-icon">G Pay</span>
+      <span class="payment-icon">Shop Pay</span>
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Footer",
+  "settings": [
+    { "type": "image_picker", "id": "logo", "label": "Logo" },
+    { "type": "text", "id": "tagline", "label": "Tagline", "default": "A modern tribute to unconditional love." },
+    { "type": "url", "id": "instagram", "label": "Instagram URL" },
+    { "type": "url", "id": "tiktok", "label": "TikTok URL" },
+    { "type": "url", "id": "pinterest", "label": "Pinterest URL" },
+    { "type": "url", "id": "facebook", "label": "Facebook URL" }
+  ],
+  "blocks": [
+    {
+      "type": "link_column",
+      "name": "Link Column",
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Column heading" },
+        { "type": "link_list", "id": "menu", "label": "Navigation menu" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Footer" }]
+}
+{% endschema %}

@@ -1,0 +1,46 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "general": {
+    "currency": "CAD",
+    "currency_symbol": "$",
+    "skip_to_content": "Skip to content"
+  },
+  "products": {
+    "add_to_cart": "Add to Cart",
+    "sold_out": "Sold Out",
+    "unavailable": "Unavailable",
+    "from": "From",
+    "sale": "Sale"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is currently empty.",
+    "checkout": "Checkout",
+    "continue_shopping": "Continue Shopping",
+    "item_count": {
+      "one": "{{ count }} item",
+      "other": "{{ count }} items"
+    }
+  },
+  "accessibility": {
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
+    "loading": "Loading...",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "trust": {
+    "canadian": "Proudly Canadian",
+    "shipping": "Ships Across Canada",
+    "currency": "Prices in CAD",
+    "guarantee": "Satisfaction Guaranteed"
+  }
+}

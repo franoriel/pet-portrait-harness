@@ -1,0 +1,16 @@
+{% comment %}
+  Renders star rating.
+  Usage: {% render 'review-stars', rating: 4.9, count: 124 %}
+{% endcomment %}
+{%- assign r = rating | default: 4.9 | times: 1.0 -%}
+{%- assign c = count | default: 0 | plus: 0 -%}
+<div class="star-rating" aria-label="{{ r }} out of 5 stars">
+  {%- for i in (1..5) -%}
+    {%- assign r_ceil = r | ceil -%}
+    {%- assign r_floor = r | floor -%}
+    {%- if i <= r -%}★{%- elsif i == r_ceil and r_floor != r_ceil -%}½{%- else -%}☆{%- endif -%}
+  {%- endfor -%}
+</div>
+{%- if c > 0 -%}
+  <span class="review-count">({{ c }} reviews)</span>
+{%- endif -%}

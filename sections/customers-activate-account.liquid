@@ -1,0 +1,26 @@
+<div class="customer-page section-padding">
+  <div class="container" style="max-width:480px;">
+    <div class="customer-card">
+      <div class="customer-card__header text-center">
+        <span style="font-size:2rem;">✦</span>
+        <h1>Activate your account</h1>
+        <p class="text-muted">Set a password to get started.</p>
+      </div>
+      {%- form 'activate_customer_password' -%}
+        {%- if form.errors -%}
+          <div class="form-errors" role="alert">{{ form.errors | default_errors }}</div>
+        {%- endif -%}
+        <div class="form-field">
+          <label class="form-label" for="ActivatePassword">Password</label>
+          <input type="password" id="ActivatePassword" name="customer[password]" autocomplete="new-password" class="form-input" required minlength="5">
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="ActivatePasswordConfirm">Confirm password</label>
+          <input type="password" id="ActivatePasswordConfirm" name="customer[password_confirmation]" autocomplete="new-password" class="form-input" required minlength="5">
+        </div>
+        <button type="submit" class="btn btn--primary btn--full btn--large">Activate Account</button>
+      {%- endform -%}
+    </div>
+  </div>
+</div>
+{% schema %}{ "name": "Activate Account" }{% endschema %}

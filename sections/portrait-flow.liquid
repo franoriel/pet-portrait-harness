@@ -1,0 +1,24 @@
+<style>
+  .portrait-flow-section [role="listbox"] { scrollbar-width: none; }
+  .portrait-flow-section [role="listbox"]::-webkit-scrollbar { display: none; }
+</style>
+<section class="portrait-flow-section section-padding" aria-label="Create your portrait">
+  <div id="portrait-flow-root"
+       data-shipping-date="{{ section.settings.shipping_date }}"
+       data-occasion="{{ section.settings.occasion }}"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin defer></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin defer></script>
+  <script src="{{ 'portrait-flow.js' | asset_url }}" defer></script>
+</section>
+
+{% schema %}
+{
+  "name": "Portrait Flow",
+  "settings": [
+    { "type": "text", "id": "shipping_date", "label": "Order-by date", "default": "Dec 15" },
+    { "type": "text", "id": "occasion", "label": "Occasion", "default": "Christmas" }
+  ],
+  "presets": [{ "name": "Portrait Flow" }]
+}
+{% endschema %}

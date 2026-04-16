@@ -1,0 +1,12 @@
+<div class="page-content-wrap">
+  <div class="container container--narrow">
+    {%- render 'breadcrumbs' -%}
+    <article class="page-content">
+      <h1 class="page-content__title">{{ page.title }}</h1>
+      <div class="page-content__body rte">
+        {{ page.content }}
+      </div>
+    </article>
+  </div>
+</div>
+{% schema %}{ "name": "Page Content" }{% endschema %}

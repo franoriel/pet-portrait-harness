@@ -1,0 +1,27 @@
+<section class="final-cta" aria-labelledby="FinalCtaHeading">
+  <div class="container--mid container">
+    <span class="eyebrow" style="color:var(--color-primary);">{{ section.settings.eyebrow | default: 'Ready?' }}</span>
+    <h2 id="FinalCtaHeading">{{ section.settings.heading | default: "The portrait they'll never take down." }}</h2>
+    <p>{{ section.settings.subheading | default: "Start with a photo. We'll handle the painting, printing, and shipping." }}</p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--primary btn--large">
+        {{ section.settings.cta_label | default: 'Create My Portrait' }}
+      </a>
+      <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);">Made in Canada · Satisfaction guaranteed</p>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Final CTA",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Ready?" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "The portrait they will never take down." },
+    { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "Start with a photo. We'll handle the painting, printing, and shipping." },
+    { "type": "text", "id": "cta_label", "label": "CTA label", "default": "Create My Portrait" },
+    { "type": "url", "id": "cta_url", "label": "CTA URL" }
+  ],
+  "presets": [{ "name": "Final CTA" }]
+}
+{% endschema %}

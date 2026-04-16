@@ -1,0 +1,59 @@
+<div class="collection-page">
+  <div class="container">
+    {%- render 'breadcrumbs' -%}
+
+    <header class="collection-header">
+      <span class="eyebrow">Shop</span>
+      <h1>{{ collection.title }}</h1>
+      {%- if collection.description != blank -%}
+        <p class="collection-header__desc text-muted">{{ collection.description }}</p>
+      {%- endif -%}
+    </header>
+
+    <div class="collection-toolbar">
+      <p class="collection-toolbar__count text-muted">
+        {{ collection.products_count }} product{% if collection.products_count != 1 %}s{% endif %}
+      </p>
+      <div class="collection-toolbar__sort">
+        <label for="CollectionSort" class="visually-hidden">Sort by</label>
+        <select id="CollectionSort" class="sort-select" onchange="window.location.href=this.value">
+          {%- for option in collection.sort_options -%}
+            <option value="{{ collection.url }}?sort_by={{ option.value }}"
+              {% if collection.sort_by == option.value %}selected{% endif %}>
+              {{ option.name }}
+            </option>
+          {%- endfor -%}
+        </select>
+      </div>
+    </div>
+
+    {%- paginate collection.products by section.settings.products_per_page -%}
+      {%- if collection.products.size > 0 -%}
+        <div class="collection-grid">
+          {%- for product in collection.products -%}
+            {%- render 'product-card', product: product -%}
+          {%- endfor -%}
+        </div>
+        {%- render 'pagination', paginate: paginate -%}
+      {%- else -%}
+        <div class="collection-empty">
+          <p class="collection-empty__icon">✦</p>
+          <h2>No products here yet</h2>
+          <p class="text-muted">Check back soon or browse all our portraits below.</p>
+          <a href="{{ routes.all_products_collection_url }}" class="btn btn--primary" style="margin-top:20px;">
+            Browse All
+          </a>
+        </div>
+      {%- endif -%}
+    {%- endpaginate -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Collection Grid",
+  "settings": [
+    { "type": "range", "id": "products_per_page", "label": "Products per page", "min": 8, "max": 48, "step": 4, "default": 16 }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,45 @@
+<div class="blog-page section-padding">
+  <div class="container">
+    {%- render 'breadcrumbs' -%}
+    <header class="section-header text-center" style="margin-bottom:48px;">
+      <span class="eyebrow">Journal</span>
+      <h1>{{ blog.title }}</h1>
+    </header>
+
+    {%- paginate blog.articles by 12 -%}
+      <div class="blog-grid">
+        {%- for article in blog.articles -%}
+          <article class="article-card">
+            {%- if article.image -%}
+              <a href="{{ article.url }}" class="article-card__media" tabindex="-1" aria-hidden="true">
+                {{- article.image | image_url: width: 800 | image_tag:
+                  loading: 'lazy',
+                  alt: article.image.alt | default: article.title,
+                  widths: '400, 800',
+                  sizes: '(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw'
+                -}}
+              </a>
+            {%- endif -%}
+            <div class="article-card__body">
+              <p class="article-card__meta text-muted">
+                <time datetime="{{ article.published_at | date: '%Y-%m-%d' }}">
+                  {{- article.published_at | date: '%B %-d, %Y' -}}
+                </time>
+                {%- if article.tags.size > 0 -%}
+                  <span class="article-card__tag">{{ article.tags | first }}</span>
+                {%- endif -%}
+              </p>
+              <h2 class="article-card__title">
+                <a href="{{ article.url }}">{{ article.title }}</a>
+              </h2>
+              <p class="article-card__excerpt text-muted">{{ article.excerpt_or_content | strip_html | truncate: 120 }}</p>
+              <a href="{{ article.url }}" class="article-card__read-more">Read more →</a>
+            </div>
+          </article>
+        {%- endfor -%}
+      </div>
+      {%- render 'pagination', paginate: paginate -%}
+    {%- endpaginate -%}
+  </div>
+</div>
+{% schema %}{ "name": "Blog Posts" }{% endschema %}

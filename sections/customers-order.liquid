@@ -1,0 +1,61 @@
+<div class="customer-page section-padding">
+  <div class="container container--mid">
+    <a href="{{ routes.root_url }}account" class="text-link" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:24px;font-size:0.9rem;">← Back to account</a>
+    <h1>Order {{ order.name }}</h1>
+    <p class="text-muted" style="margin-bottom:32px;">Placed on {{ order.created_at | date: '%B %-d, %Y' }}</p>
+
+    <div class="order-layout">
+      <div class="order-items">
+        {%- for line_item in order.line_items -%}
+          <div class="order-item">
+            <div class="order-item__img">
+              {%- if line_item.image -%}
+                {{- line_item.image | image_url: width: 120 | image_tag: loading: 'lazy', alt: line_item.title -}}
+              {%- endif -%}
+            </div>
+            <div class="order-item__info">
+              <p class="order-item__title">{{ line_item.product.title }}</p>
+              {%- unless line_item.variant.title == 'Default Title' -%}
+                <p class="text-muted" style="font-size:0.85rem;">{{ line_item.variant.title }}</p>
+              {%- endunless -%}
+              {%- for property in line_item.properties -%}
+                {%- unless property.last == blank -%}
+                  <p class="text-muted" style="font-size:0.8rem;"><strong>{{ property.first }}:</strong> {{ property.last }}</p>
+                {%- endunless -%}
+              {%- endfor -%}
+              <p class="text-muted" style="font-size:0.85rem;">Qty: {{ line_item.quantity }}</p>
+            </div>
+            <span class="order-item__price">{{ line_item.final_line_price | money }} CAD</span>
+          </div>
+        {%- endfor -%}
+      </div>
+
+      <aside class="order-summary-aside">
+        <div class="order-summary-box">
+          <div class="cart-summary__row"><span>Subtotal</span><span>{{ order.subtotal_price | money }}</span></div>
+          {%- for shipping_method in order.shipping_methods -%}
+            <div class="cart-summary__row"><span>{{ shipping_method.title }}</span><span>{{ shipping_method.price | money }}</span></div>
+          {%- endfor -%}
+          {%- for tax_line in order.tax_lines -%}
+            <div class="cart-summary__row"><span>{{ tax_line.title }} ({{ tax_line.rate | times: 100 }}%)</span><span>{{ tax_line.price | money }}</span></div>
+          {%- endfor -%}
+          <div class="cart-summary__row" style="font-weight:700;border-top:1px solid var(--color-border);padding-top:12px;margin-top:4px;">
+            <span>Total</span><span>{{ order.total_price | money }} CAD</span>
+          </div>
+        </div>
+
+        <div class="order-fulfillment">
+          <h3>Fulfilment Status</h3>
+          {%- if order.fulfillment_status == 'fulfilled' -%}
+            <p class="order-status order-status--paid">Shipped</p>
+          {%- elsif order.fulfillment_status == 'partial' -%}
+            <p class="order-status order-status--pending">Partially shipped</p>
+          {%- else -%}
+            <p class="order-status order-status--pending">Processing</p>
+          {%- endif -%}
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+{% schema %}{ "name": "Customer Order" }{% endschema %}

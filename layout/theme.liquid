@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-height">
+  <meta name="theme-color" content="#2F2F2A">
+  <title>{{ page_title }}{% unless page_title == shop.name %} – {{ shop.name }}{% endunless %}</title>
+
+  {%- if page_description -%}
+    <meta name="description" content="{{ page_description | escape }}">
+  {%- endif -%}
+  <link rel="canonical" href="{{ canonical_url }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+
+  {{ content_for_header }}
+  {{ 'base.css' | asset_url | stylesheet_tag }}
+
+  <script>
+    window.petPrintables = {
+      moneyFormat: {{ shop.money_format | json }},
+      shopCurrency: "CAD",
+      cartUrl: "{{ routes.cart_url }}",
+      previewApi: "{{ settings.portrait_api_url | default: 'https://web-production-a392e.up.railway.app' }}"
+    };
+  </script>
+</head>
+
+<body class="template-{{ template.name }}{% if template.suffix %} template-{{ template.name }}-{{ template.suffix }}{% endif %}">
+
+  {%- section 'announcement-bar' -%}
+  {%- section 'header' -%}
+
+  <main id="MainContent" role="main" tabindex="-1">
+    {{ content_for_layout }}
+  </main>
+
+  {%- section 'footer' -%}
+
+  <!-- ── Sticky mobile CTA bar ──────────────────────────────── -->
+  {%- if template.name == 'index' or template.name == 'product' -%}
+    <div class="sticky-cta-bar" id="StickyCta" aria-hidden="true">
+      {%- if template.name == 'product' -%}
+        <button class="sticky-cta-bar__btn btn btn--primary" id="StickyAddToCart">
+          Add to Cart — <span id="StickyPrice"></span>
+        </button>
+      {%- else -%}
+        <a href="/pages/create" class="sticky-cta-bar__btn btn btn--primary" style="text-decoration:none;">
+          BEGIN THE PROCESS
+        </a>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+
+  <!-- ── Cart Drawer ─────────────────────────────────────────── -->
+  <div id="CartDrawer" class="cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
+    <div class="cart-drawer__overlay" data-cart-overlay></div>
+    <div class="cart-drawer__panel">
+      <div class="cart-drawer__header">
+        <h2 class="cart-drawer__title">Your Cart</h2>
+        <button class="cart-drawer__close" data-cart-close aria-label="Close cart">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="cart-drawer__body" data-cart-body></div>
+      <div class="cart-drawer__footer" data-cart-footer></div>
+    </div>
+  </div>
+
+  <!-- Legacy PortraitModal removed — replaced by React portrait-flow widget -->
+
+  <!-- EXIT INTENT PLACEHOLDER: inject exit popup trigger here -->
+
+  {{ 'theme.js' | asset_url | script_tag }}
+</body>
+</html>

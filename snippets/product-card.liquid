@@ -1,0 +1,39 @@
+{% comment %}
+  Reusable product card snippet.
+  Usage: {% render 'product-card', product: product %}
+{% endcomment %}
+<article class="product-card" aria-label="{{ product.title | escape }}">
+  <a href="{{ product.url }}" class="product-card__media-link" tabindex="-1" aria-hidden="true">
+    <div class="product-card__media">
+      {%- if product.featured_media -%}
+        {{- product.featured_media | image_url: width: 600 | image_tag:
+          loading: 'lazy',
+          alt: product.featured_media.alt | default: product.title,
+          widths: '300, 600',
+          sizes: '(min-width:1024px) 20vw, (min-width:640px) 33vw, 50vw',
+          class: 'product-card__img'
+        -}}
+      {%- else -%}
+        <div class="product-card__img-placeholder">{{ 'product-1' | placeholder_svg_tag }}</div>
+      {%- endif -%}
+      {%- if product.compare_at_price > product.price -%}
+        <span class="product-card__badge">Sale</span>
+      {%- endif -%}
+    </div>
+  </a>
+  <div class="product-card__body">
+    <p class="product-card__type text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">
+      {{- product.type | default: 'Pet Portrait' -}}
+    </p>
+    <h3 class="product-card__title">
+      <a href="{{ product.url }}">{{ product.title }}</a>
+    </h3>
+    <div class="product-card__price-row">
+      <span class="product-card__price">{{ product.price_min | money }} <span style="font-size:0.75em;font-weight:400;color:var(--color-muted)">CAD</span></span>
+      {%- if product.compare_at_price > product.price -%}
+        <span class="product-card__compare">{{ product.compare_at_price | money }}</span>
+      {%- endif -%}
+    </div>
+    <a href="{{ product.url }}" class="product-card__cta">View →</a>
+  </div>
+</article>

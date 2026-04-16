@@ -1,0 +1,56 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "current": {
+    "color_bg": "#FAF8F5",
+    "color_primary": "#2F2F2A",
+    "color_accent": "#8B7D6B",
+    "color_ink": "#1C1C1C",
+    "color_muted": "#8A8A82",
+    "color_border": "#E4DDD4",
+    "color_surface": "#FFFFFF",
+    "font_heading": "cormorant_n4",
+    "font_body": "inter_n4",
+    "font_size_base": 16,
+    "border_radius": 12,
+    "enable_animations": true,
+    "seo_title_suffix": "Pet Printables — Custom Pet Portraits Canada",
+    "seo_description": "Custom AI-powered pet portraits in 9 artistic styles — watercolour, oil paint, line art, pop art and more. Upload a photo, preview it instantly, and we ship to your door. 🍁",
+    "sections": {
+      "announcement-bar": {
+        "type": "announcement-bar",
+        "settings": {
+          "show_bar": true,
+          "text": "<p>Free shipping on orders over $75 CAD — Made in Canada, shipped to your door</p>",
+          "link": ""
+        }
+      },
+      "header": {
+        "type": "header",
+        "settings": {
+          "logo": "shopify://shop_images/Pet_Printables_Logo_Affinity_Black.svg",
+          "menu": "main-menu"
+        }
+      },
+      "footer": {
+        "type": "footer",
+        "settings": {
+          "tagline": "A modern tribute to unconditional love.",
+          "instagram": "",
+          "tiktok": "",
+          "pinterest": "",
+          "facebook": ""
+        }
+      }
+    },
+    "content_for_index": []
+  },
+  "presets": {}
+}

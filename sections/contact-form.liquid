@@ -1,0 +1,91 @@
+<div class="contact-page section-padding">
+  <div class="container container--narrow">
+    {%- render 'breadcrumbs' -%}
+
+    <div class="section-header text-center">
+      <span class="eyebrow">Get in Touch</span>
+      <h1>{{ page.title | default: 'Contact Us' }}</h1>
+      <p class="text-muted" style="max-width:480px;margin:0 auto;">We're a small Canadian team and we read every message. We'll get back to you within 1 business day.</p>
+    </div>
+
+    <div class="contact-layout">
+      <div class="contact-form-wrap">
+        {%- form 'contact', id: 'ContactForm' -%}
+          {%- if form.posted_successfully? -%}
+            <div class="form-success" role="status">
+              <span style="font-size:1.5rem;">✦</span>
+              <p>Thanks for reaching out! We'll reply within 1 business day.</p>
+            </div>
+          {%- endif -%}
+
+          {%- if form.errors -%}
+            <div class="form-errors" role="alert">
+              <p>Please fix the following errors:</p>
+              <ul>
+                {%- for field in form.errors -%}
+                  <li>{{ form.errors.messages[field] }}</li>
+                {%- endfor -%}
+              </ul>
+            </div>
+          {%- endif -%}
+
+          <div class="form-field">
+            <label class="form-label" for="ContactName">Your name</label>
+            <input type="text" id="ContactName" name="contact[name]"
+              value="{{ form.name }}" autocomplete="name" required
+              class="form-input" placeholder="Jane Smith">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="ContactEmail">Email address</label>
+            <input type="email" id="ContactEmail" name="contact[email]"
+              value="{{ form.email }}" autocomplete="email" required
+              class="form-input" placeholder="jane@example.com">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="ContactSubject">Subject</label>
+            <select id="ContactSubject" name="contact[subject]" class="form-input">
+              <option>Order question</option>
+              <option>Portrait quality</option>
+              <option>Refund request</option>
+              <option>Partnership enquiry</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="ContactMessage">Message</label>
+            <textarea id="ContactMessage" name="contact[body]" rows="5"
+              class="form-input" placeholder="Tell us how we can help…" required>{{ form.body }}</textarea>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--full btn--large">
+            Send Message →
+          </button>
+        {%- endform -%}
+      </div>
+
+      <aside class="contact-info">
+        <div class="contact-info__card">
+          <h3>Based in Canada</h3>
+          <p class="text-muted">Vancouver, BC — serving pet parents across Canada and the US.</p>
+        </div>
+        <div class="contact-info__card">
+          <h3>Response time</h3>
+          <p class="text-muted">We reply within 1 business day, usually much faster.</p>
+        </div>
+        <div class="contact-info__card">
+          <h3>Order support</h3>
+          <p class="text-muted">Have your order number ready and we'll sort you out quickly.</p>
+        </div>
+        <div class="contact-info__card">
+          <h3>Social</h3>
+          <p class="text-muted">DM us on Instagram or TikTok — we love seeing your pet portraits!</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+{% schema %}{ "name": "Contact Form" }{% endschema %}

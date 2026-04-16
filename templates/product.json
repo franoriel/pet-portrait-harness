@@ -1,0 +1,31 @@
+{
+  "sections": {
+    "product-upload": {
+      "type": "product-upload",
+      "settings": {
+        "show_upload": true,
+        "inventory_threshold": 0,
+        "rating_value": "4.9",
+        "review_count": "124"
+      }
+    },
+    "social-proof-ticker": {
+      "type": "social-proof-ticker",
+      "settings": {}
+    },
+    "upsell": {
+      "type": "upsell",
+      "settings": {
+        "heading": "Customers also ordered"
+      }
+    },
+    "faq": {
+      "type": "faq",
+      "settings": {
+        "eyebrow": "Questions",
+        "heading": "A few questions people usually ask"
+      }
+    }
+  },
+  "order": ["product-upload", "social-proof-ticker", "upsell", "faq"]
+}

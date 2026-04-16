@@ -1,0 +1,166 @@
+<div class="cart-page">
+  <div class="container container--mid">
+    {%- render 'breadcrumbs' -%}
+    <h1 class="cart-page__title">Your Cart</h1>
+
+    {%- if cart.item_count > 0 -%}
+      <div class="cart-page__layout">
+        <div class="cart-page__items">
+          {%- for item in cart.items -%}
+            <div class="cart-page__item" data-cart-item="{{ item.key }}">
+              <div class="cart-page__item-img">
+                {%- assign portrait_url = nil -%}
+                {%- for property in item.properties -%}
+                  {%- if property.first == '_Portrait URL' and property.last != blank -%}
+                    {%- assign portrait_url = property.last -%}
+                  {%- endif -%}
+                {%- endfor -%}
+                {%- if portrait_url -%}
+                  <img src="{{ portrait_url }}" alt="{{ item.title }}" loading="lazy" style="width:100%;border-radius:8px;object-fit:cover;">
+                {%- elsif item.image -%}
+                  {{- item.image | image_url: width: 200 | image_tag: loading: 'lazy', alt: item.title -}}
+                {%- endif -%}
+              </div>
+              <div class="cart-page__item-info">
+                <div class="cart-page__item-header">
+                  <div>
+                    <a href="{{ item.url }}" class="cart-page__item-title">{{ item.product.title }}</a>
+                    {%- unless item.variant.title == 'Default Title' -%}
+                      <p class="cart-page__item-variant text-muted">{{ item.variant.title }}</p>
+                    {%- endunless -%}
+                    {%- for property in item.properties -%}
+                      {%- unless property.last == blank -%}
+                        {%- assign prop_first_char = property.first | slice: 0 -%}
+                        {%- unless prop_first_char == '_' -%}
+                          <p class="cart-page__item-prop text-muted" style="font-size:0.85rem;">
+                            {{ property.first }}: {{ property.last }}
+                          </p>
+                        {%- endunless -%}
+                      {%- endunless -%}
+                    {%- endfor -%}
+                  </div>
+                  <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity=0"
+                     class="cart-page__remove" aria-label="Remove {{ item.title | escape }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </a>
+                </div>
+                <div class="cart-page__item-footer">
+                  <div class="cart-qty">
+                    <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity={{ item.quantity | minus: 1 }}" class="cart-qty__btn" aria-label="Decrease quantity">−</a>
+                    <span class="cart-qty__num">{{ item.quantity }}</span>
+                    <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity={{ item.quantity | plus: 1 }}" class="cart-qty__btn" aria-label="Increase quantity">+</a>
+                  </div>
+                  <span class="cart-page__item-price">{{ item.final_line_price | money }} CAD</span>
+                </div>
+              </div>
+            </div>
+          {%- endfor -%}
+        </div>
+
+        <aside class="cart-page__summary">
+          <div class="cart-summary">
+            <h2 class="cart-summary__title">Order Summary</h2>
+            <div class="cart-summary__row">
+              <span>Subtotal ({{ cart.item_count }} item{% if cart.item_count != 1 %}s{% endif %})</span>
+              <span>{{ cart.total_price | money }} CAD</span>
+            </div>
+            {%- if cart.total_discounts > 0 -%}
+              <div class="cart-summary__row cart-summary__row--discount">
+                <span>Discounts</span>
+                <span>−{{ cart.total_discounts | money }}</span>
+              </div>
+            {%- endif -%}
+            <div class="cart-summary__shipping">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/>
+              </svg>
+              Taxes & shipping at checkout
+            </div>
+
+            <!-- Gift message -->
+            <div class="cart-gift">
+              <label style="display:flex;align-items:center;gap:10px;font-size:0.88rem;cursor:pointer;margin-bottom:16px;">
+                <input type="checkbox" id="CartGiftMessage" style="width:18px;height:18px;accent-color:var(--color-primary);">
+                This is a gift
+              </label>
+              <div id="GiftMessageField" style="display:none;margin-bottom:16px;">
+                <textarea placeholder="Add a gift message…" rows="3"
+                  style="width:100%;padding:10px 12px;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:0.9rem;resize:vertical;"
+                  name="attributes[Gift Message]"></textarea>
+              </div>
+            </div>
+
+            <a href="{{ routes.checkout }}" class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
+              Checkout → <span style="font-size:0.85em;opacity:0.85;">{{ cart.total_price | money }} CAD</span>
+            </a>
+            <a href="{{ routes.all_products_collection_url }}" class="btn btn--outline btn--full">
+              Continue Shopping
+            </a>
+            <div class="cart-summary__trust">
+              <span>✦ Secure checkout</span>
+              <span>✦ Canadian business</span>
+              <span>✦ Satisfaction guaranteed</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    {%- else -%}
+      <div class="cart-empty">
+        <div class="cart-empty__icon">✦</div>
+        <h2>Your cart is empty</h2>
+        <p class="text-muted">Looks like you haven't added any portraits yet. Your pet deserves to be immortalised!</p>
+        <a href="{{ routes.all_products_collection_url }}" class="btn btn--primary btn--large" style="margin-top:24px;">
+          Start Creating
+        </a>
+      </div>
+    {%- endif -%}
+  </div>
+</div>
+
+<script>
+  const giftToggle = document.getElementById('CartGiftMessage');
+  const giftField  = document.getElementById('GiftMessageField');
+  if (giftToggle && giftField) {
+    giftToggle.addEventListener('change', () => {
+      giftField.style.display = giftToggle.checked ? 'block' : 'none';
+    });
+  }
+
+  /* Replace cart thumbnails with the actual generated portrait from localStorage */
+  (function () {
+    try {
+      var raw = localStorage.getItem('petPrintables_session');
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (!data) return;
+
+      // Prefer CDN URLs, then data URLs (base64)
+      var cdnUrls = data.previewCdnUrls || [];
+      var dataUrls = data.previewDataUrls || [];
+      var idx = data.selectedPreviewIndex || 0;
+      var portraitSrc = cdnUrls[idx] || cdnUrls[0] || dataUrls[idx] || dataUrls[0];
+      if (!portraitSrc) return;
+
+      document.querySelectorAll('.cart-page__item-img img').forEach(function (img) {
+        img.src = portraitSrc;
+        img.srcset = '';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+
+        // If CDN URL fails to load, fall back to base64 data URL
+        img.onerror = function () {
+          var fallback = dataUrls[idx] || dataUrls[0];
+          if (fallback && img.src !== fallback) {
+            img.src = fallback;
+          }
+        };
+      });
+    } catch (e) {}
+  })();
+</script>
+
+{% schema %}
+{ "name": "Cart Items" }
+{% endschema %}

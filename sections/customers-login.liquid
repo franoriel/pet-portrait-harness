@@ -1,0 +1,32 @@
+<div class="customer-page section-padding">
+  <div class="container" style="max-width:480px;">
+    <div class="customer-card">
+      <div class="customer-card__header text-center">
+        <span style="font-size:2rem;">✦</span>
+        <h1>Welcome back</h1>
+        <p class="text-muted">Sign in to view your orders and portraits.</p>
+      </div>
+      {%- form 'customer_login' -%}
+        {%- if form.errors -%}
+          <div class="form-errors" role="alert">{{ form.errors | default_errors }}</div>
+        {%- endif -%}
+        <div class="form-field">
+          <label class="form-label" for="CustomerEmail">Email</label>
+          <input type="email" id="CustomerEmail" name="customer[email]" autocomplete="email" autocapitalize="off" class="form-input" required placeholder="you@example.com">
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="CustomerPassword">
+            Password
+            <a href="{{ routes.root_url }}account/login#recover" class="form-label__link">Forgot?</a>
+          </label>
+          <input type="password" id="CustomerPassword" name="customer[password]" autocomplete="current-password" class="form-input" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn--primary btn--full btn--large">Sign In</button>
+      {%- endform -%}
+      <p class="customer-card__footer text-muted">
+        New here? <a href="{{ routes.root_url }}account/register" style="color:var(--color-primary);">Create an account</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% schema %}{ "name": "Customer Login" }{% endschema %}

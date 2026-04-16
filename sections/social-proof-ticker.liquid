@@ -1,0 +1,39 @@
+<div class="review-ticker" aria-label="Customer reviews" role="region">
+  <div class="review-ticker__track" aria-hidden="true">
+    {%- comment -%}Duplicate items for seamless loop{%- endcomment -%}
+    {%- assign reviews = section.blocks -%}
+    {%- for i in (1..2) -%}
+      {%- for block in reviews -%}
+        <div class="review-ticker__item" {{ block.shopify_attributes }}>
+          <span class="review-ticker__stars">★★★★★</span>
+          <span>{{ block.settings.text }}</span>
+        </div>
+      {%- else -%}
+        {%- assign default_reviews = '"Biscuit has been on the wall for two weeks and everyone asks about it." — Sarah M.|"Got one for my mum. She cried. Best gift I have ever given." — James T.|"Did all three of our cats. They are hanging in the hallway now." — Priya K.|"The preview looked good but the canvas in person is even better." — Michelle R.|"Ordered Sunday, got it Thursday. Genuinely impressed." — Danielle P.' | split: '|' -%}
+        {%- for review in default_reviews -%}
+          <div class="review-ticker__item">
+            <span class="review-ticker__stars">★★★★★</span>
+            <span>{{ review }}</span>
+          </div>
+        {%- endfor -%}
+      {%- endfor -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Review Ticker",
+  "max_blocks": 10,
+  "blocks": [
+    {
+      "type": "review",
+      "name": "Review",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Review text", "default": "\"My golden retriever Biscuit looks incredible!\" — Sarah M." }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Review Ticker" }]
+}
+{% endschema %}
