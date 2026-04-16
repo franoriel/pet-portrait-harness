@@ -795,7 +795,7 @@ const primaryBtnStyle = (enabled) => ({ ...s.primaryBtn, ...(enabled ? {} : s.pr
 
 /* ── StepIndicator ─────────────────────────────────────────── */
 
-const STEP_LABELS = ['Upload', 'Style', 'Preview', 'Size'];
+const STEP_LABELS = ['Upload', 'Style', 'Preview', 'Customize'];
 
 function StepIndicator({ current, total = 4 }) {
   return React.createElement('div', {
@@ -816,7 +816,7 @@ function StepIndicator({ current, total = 4 }) {
       // Connecting line (behind dots)
       React.createElement('div', {
         style: {
-          position: 'absolute', top: '10px', left: '24px', right: '24px',
+          position: 'absolute', top: '13px', left: '30px', right: '30px',
           height: '2px', background: tokens.colorBorder, zIndex: 0,
         },
       },
@@ -843,19 +843,36 @@ function StepIndicator({ current, total = 4 }) {
             position: 'relative', zIndex: 1, flex: '0 0 auto',
           },
         },
-          // Circle
+          // Paw icon
           React.createElement('div', {
             style: {
-              width: '22px', height: '22px', borderRadius: '50%',
+              width: '28px', height: '28px', borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '11px', fontWeight: 600, fontFamily: fontSans,
               transition: 'all 0.3s ease',
-              background: isComplete ? tokens.colorAccent : isCurrent ? tokens.colorAccent : tokens.colorWhite,
-              color: isComplete || isCurrent ? tokens.colorWhite : tokens.colorMuted,
-              border: isFuture ? `2px solid ${tokens.colorBorder}` : `2px solid ${tokens.colorAccent}`,
+              background: isComplete || isCurrent ? tokens.colorAccent : tokens.colorWhite,
+              border: isFuture ? `1.5px solid ${tokens.colorBorder}` : `1.5px solid ${tokens.colorAccent}`,
               boxSizing: 'border-box',
             },
-          }, isComplete ? '\u2713' : stepNum),
+          },
+            // Paw print SVG
+            React.createElement('svg', {
+              width: '16', height: '16', viewBox: '0 0 24 24',
+              fill: isComplete || isCurrent ? tokens.colorWhite : tokens.colorMuted,
+              xmlns: 'http://www.w3.org/2000/svg',
+              'aria-hidden': true,
+            },
+              // Pad (main heel)
+              React.createElement('ellipse', { cx: '12', cy: '17', rx: '5', ry: '4' }),
+              // Upper left toe
+              React.createElement('ellipse', { cx: '6.5', cy: '10.5', rx: '2', ry: '2.6' }),
+              // Upper right toe
+              React.createElement('ellipse', { cx: '17.5', cy: '10.5', rx: '2', ry: '2.6' }),
+              // Top left toe
+              React.createElement('ellipse', { cx: '9.5', cy: '6.5', rx: '1.8', ry: '2.4' }),
+              // Top right toe
+              React.createElement('ellipse', { cx: '14.5', cy: '6.5', rx: '1.8', ry: '2.4' }),
+            ),
+          ),
           // Label
           React.createElement('span', {
             style: {
@@ -1510,27 +1527,102 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
     },
   }, children || label);
 
+  // Live canvas mockup — updates as user changes size/frame
+  // Maps size id to aspect ratio (width:height in inches)
+  const sizeDims = { '10x10': [10, 10], '12x18': [12, 18], '10x20': [10, 20], '12x24': [12, 24] };
+  const [sizeW, sizeH] = sizeDims[selectedSize] || [10, 10];
+
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 4, total: 4 }),
 
-    // Preview image with loading state when generating named version
+    // LIVE MOCKUP — reflects size + frame choices
     React.createElement('div', {
       style: {
-        width: '100%', maxWidth: 'min(400px, 100%)', margin: '0 auto 24px', borderRadius: tokens.radiusCard,
-        overflow: 'hidden', boxShadow: '0 8px 28px rgba(0,0,0,0.10)', position: 'relative',
+        width: '100%', maxWidth: 'min(400px, 100%)', margin: '0 auto 24px',
+        aspectRatio: '1/1', borderRadius: tokens.radiusCard,
+        overflow: 'hidden', position: 'relative',
+        backgroundImage: `url(${_pfAssetBase}linen-texture.webp)`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       },
     },
-      React.createElement('img', {
-        src: displayImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
-        style: { width: '100%', display: 'block', transition: 'opacity 0.3s' },
+      // Directional light
+      React.createElement('div', {
+        style: {
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at 30% 20%, rgba(255,250,240,0.18) 0%, transparent 60%)',
+        },
       }),
+      // Canvas product (scales to aspect ratio)
+      React.createElement('div', {
+        style: {
+          position: 'relative',
+          width: sizeH >= sizeW ? `${(sizeW / sizeH) * 72}%` : '72%',
+          height: sizeH >= sizeW ? '72%' : `${(sizeH / sizeW) * 72}%`,
+          maxWidth: '72%', maxHeight: '72%',
+          boxShadow: wantsFrame
+            ? '0 4px 8px rgba(0,0,0,0.14), 0 12px 24px rgba(0,0,0,0.12), 0 24px 48px rgba(0,0,0,0.08)'
+            : '0 2px 4px rgba(0,0,0,0.06), 0 6px 12px rgba(0,0,0,0.08), 0 14px 28px rgba(0,0,0,0.10)',
+          padding: wantsFrame ? '3%' : 0,
+          background: wantsFrame
+            ? 'linear-gradient(145deg, #3a2e22 0%, #1f180f 50%, #2a2018 100%)'  // frame wood
+            : 'transparent',
+          transition: 'all 0.3s ease',
+        },
+      },
+        // Canvas face with portrait
+        React.createElement('div', {
+          style: {
+            position: 'relative', width: '100%', height: '100%',
+            background: '#fefdfb', overflow: 'hidden',
+            boxShadow: wantsFrame ? 'inset 0 0 0 1px rgba(0,0,0,0.15)' : 'none',
+          },
+        },
+          React.createElement('img', {
+            src: displayImage,
+            alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
+            style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', display: 'block' },
+          }),
+          // Canvas weave texture
+          React.createElement('div', {
+            style: {
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              mixBlendMode: 'multiply', opacity: 0.08,
+              backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\")",
+            },
+          }),
+          // Edge highlight
+          React.createElement('div', {
+            style: {
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.05)',
+            },
+          }),
+        ),
+      ),
+      // Loading overlay when fetching named version
       generatingNamedPreview && React.createElement('div', {
         style: {
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'rgba(250,248,245,0.85)', backdropFilter: 'blur(4px)',
-          fontFamily: fontSans, fontSize: '13px', fontWeight: 500, color: tokens.colorBrand,
+          fontFamily: fontSans, fontSize: '13px', fontWeight: 500, color: tokens.colorBrand, zIndex: 5,
         },
       }, 'Adding the name\u2026'),
+      // Size + frame label (bottom right, glass pill)
+      React.createElement('div', {
+        style: {
+          position: 'absolute', bottom: '12px', right: '14px',
+          fontFamily: fontSans, fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.04em',
+          color: '#3a3530', background: 'rgba(255,255,255,0.55)', padding: '6px 12px', borderRadius: '999px',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
+          backdropFilter: 'blur(10px) saturate(120%)', zIndex: 3,
+        },
+      },
+        React.createElement('strong', { style: { fontWeight: 600 } }, `${sizeW}\u2033 \u00D7 ${sizeH}\u2033`),
+        React.createElement('span', { style: { color: '#a09890', margin: '0 6px' } }, '\u00B7'),
+        React.createElement('span', { style: { color: '#7a7369' } }, wantsFrame ? 'Framed' : '1.25\u2033 deep'),
+      ),
     ),
 
     // SIZE selector
