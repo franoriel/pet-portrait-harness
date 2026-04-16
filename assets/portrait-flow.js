@@ -705,7 +705,7 @@ const primaryBtnStyle = (enabled) => ({ ...s.primaryBtn, ...(enabled ? {} : s.pr
 
 /* ── StepIndicator ─────────────────────────────────────────── */
 
-const STEP_LABELS = ['Upload', 'Style', 'Preview', 'Format'];
+const STEP_LABELS = ['Upload', 'Style', 'Preview', 'Size'];
 
 function StepIndicator({ current, total = 4 }) {
   return React.createElement('div', {
