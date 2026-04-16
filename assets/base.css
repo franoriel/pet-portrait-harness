@@ -48,16 +48,16 @@ input, select, textarea { font-family: var(--font-body); }
 
 /* ── Typography ───────────────────────────────────────────── */
 h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: 400; font-style: italic; line-height: 1.2; color: var(--color-ink); }
-h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
-h2 { font-size: clamp(1.5rem, 3.5vw, 2.5rem); }
-h3 { font-size: clamp(1.2rem, 2.5vw, 1.75rem); }
-h4 { font-size: 1.1rem; }
+h1 { font-size: clamp(2.5rem, 6vw, 4rem); }
+h2 { font-size: clamp(2rem, 4.5vw, 3rem); }
+h3 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+h4 { font-size: 1.25rem; }
 p { color: var(--color-ink); }
 .text-muted { color: var(--color-muted); }
 .text-center { text-align: center; }
 .eyebrow {
   font-family: var(--font-body);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -354,8 +354,8 @@ p { color: var(--color-ink); }
 }
 .hero__sub {
   color: rgba(255,255,255,0.88);
-  font-size: 1.05rem;
-  max-width: 480px;
+  font-size: 1.15rem;
+  max-width: 520px;
   margin: 0 auto 32px;
 }
 .hero__cta-group {
@@ -444,9 +444,9 @@ p { color: var(--color-ink); }
   justify-content: center;
   margin-bottom: 16px;
 }
-.hiw__step-icon { font-size: 2rem; margin-bottom: 12px; }
-.hiw__step h3 { font-size: 1.05rem; margin-bottom: 8px; }
-.hiw__step p { font-size: 0.88rem; color: var(--color-muted); line-height: 1.5; }
+.hiw__step-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.hiw__step h3 { font-size: 1.3rem; margin-bottom: 8px; }
+.hiw__step p { font-size: 0.95rem; color: var(--color-muted); line-height: 1.6; }
 
 /* ── Product showcase ─────────────────────────────────────── */
 .product-showcase { background: var(--color-bg); }
@@ -566,14 +566,14 @@ p { color: var(--color-ink); }
   justify-content: space-between;
   width: 100%;
   text-align: left;
-  padding: 20px 0;
+  padding: 24px 0;
   font-family: var(--font-heading);
-  font-size: 1.05rem;
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   font-weight: 400;
   font-style: italic;
   color: var(--color-ink);
   gap: 16px;
-  min-height: 64px;
+  min-height: 72px;
 }
 .faq__question svg {
   flex-shrink: 0;
