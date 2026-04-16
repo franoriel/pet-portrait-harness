@@ -16,13 +16,6 @@
 
   <!-- Content overlay — bottom-aligned -->
   <div class="hero__content container">
-    {%- if section.settings.show_rating -%}
-      <div class="hero__rating" data-reveal>
-        <span aria-hidden="true" style="color:#D4A84B;letter-spacing:1px;">★★★★★</span>
-        <span>{{ section.settings.rating_text | default: '4.9 from 124+ pet parents' }}</span>
-      </div>
-    {%- endif -%}
-
     <h1 class="hero__title" data-reveal>{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
     <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Upload a photo. Choose from 9 artistic styles. Get a stunning portrait on canvas, shipped to your door.' }}</p>
 
