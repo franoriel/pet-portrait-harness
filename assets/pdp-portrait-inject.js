@@ -314,6 +314,79 @@
     insertTarget.parentNode.insertBefore(strip, insertTarget);
   }
 
+  // ── "With name / Without name" toggle ─────────────────────
+  var withTextUrl = previewUrls[0] || previewUrl;
+  var noTextUrl = previewUrls[1] || previewUrls[0] || previewUrl;
+  var showName = true; // default: with name
+
+  if (previewUrls.length >= 2 && petName) {
+    var toggleWrap = document.createElement('div');
+    toggleWrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;'
+      + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;background:var(--color-surface, #faf9f7);';
+
+    var toggleLabel = document.createElement('span');
+    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;";
+    toggleLabel.textContent = 'Show name on portrait';
+    toggleWrap.appendChild(toggleLabel);
+
+    // Toggle buttons
+    var btnGroup = document.createElement('div');
+    btnGroup.style.cssText = 'display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--color-border, #e5e0db);';
+
+    function makeToggleBtn(text, isActive) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = text;
+      btn.style.cssText = "font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:600;"
+        + 'padding:8px 16px;border:none;cursor:pointer;transition:all 0.2s;min-width:52px;'
+        + (isActive
+          ? 'background:var(--color-ink, #1C1C1C);color:#fff;'
+          : 'background:var(--color-surface, #faf9f7);color:var(--color-muted, #8a8580);');
+      return btn;
+    }
+
+    var yesBtn = makeToggleBtn('Yes', true);
+    var noBtn = makeToggleBtn('No', false);
+    btnGroup.appendChild(yesBtn);
+    btnGroup.appendChild(noBtn);
+    toggleWrap.appendChild(btnGroup);
+
+    function updateTextToggle(withText) {
+      showName = withText;
+      var activeUrl = withText ? withTextUrl : noTextUrl;
+
+      // Update toggle button styles
+      yesBtn.style.background = withText ? 'var(--color-ink, #1C1C1C)' : 'var(--color-surface, #faf9f7)';
+      yesBtn.style.color = withText ? '#fff' : 'var(--color-muted, #8a8580)';
+      noBtn.style.background = withText ? 'var(--color-surface, #faf9f7)' : 'var(--color-ink, #1C1C1C)';
+      noBtn.style.color = withText ? 'var(--color-muted, #8a8580)' : '#fff';
+
+      // Update main portrait slide
+      var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
+      if (mainImg) mainImg.src = activeUrl;
+
+      // Update strip thumbnail
+      if (thumb) thumb.src = activeUrl;
+
+      // Update all client mockup images
+      gallery.querySelectorAll('.product-gallery__slide--mockup img').forEach(function (mImg) {
+        mImg.src = activeUrl;
+      });
+
+      // Update hidden form property
+      var showNameInput = document.querySelector('input[name="properties[_Show Name]"]');
+      if (showNameInput) showNameInput.value = withText ? 'Yes' : 'No';
+    }
+
+    yesBtn.addEventListener('click', function () { updateTextToggle(true); });
+    noBtn.addEventListener('click', function () { updateTextToggle(false); });
+
+    // Insert after the portrait strip
+    if (insertTarget && insertTarget.parentNode) {
+      insertTarget.parentNode.insertBefore(toggleWrap, insertTarget);
+    }
+  }
+
   // ── Inject hidden line item properties into the product form ──
   var form = document.querySelector('.product-form, form[action*="/cart/add"]');
   if (form) {
@@ -331,6 +404,7 @@
       'Pet Name': petName,
       '_Style': data.styleId || '',
       '_Font Size': fontSize,
+      '_Show Name': 'Yes',
       '_Job ID': data.jobId || '',
       '_Portrait URL': portraitUrl,
     };
