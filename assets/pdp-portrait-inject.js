@@ -202,6 +202,12 @@
   // ── Canvas variant sizes (inches) — matches Shopify SKUs ──
   var VARIANT_SIZES = {
     'canvas': {
+      '12x12': { w: 12, h: 12 },
+      '12x16': { w: 12, h: 16 },
+      '16x16': { w: 16, h: 16 },
+      '16x20': { w: 16, h: 20 },
+    },
+    'framed-canvas': {
       '8x10':  { w: 8,  h: 10 },
       '12x12': { w: 12, h: 12 },
       '12x16': { w: 12, h: 16 },
@@ -213,6 +219,9 @@
       '12x18': { w: 12, h: 18 },
     },
   };
+
+  // Detect framed product from the URL handle
+  var isFramedProduct = productHandle === 'framed-canvas';
 
   // Resolve asset base URL for the linen texture
   var _assetBase = '';
@@ -258,21 +267,60 @@
       + 'max-width:72%;max-height:72%;';
     container.appendChild(canvasWrap);
 
-    // Soft ground shadow beneath the canvas
+    // Deeper ground shadow if framed (heavier object)
     var groundShadow = document.createElement('div');
     groundShadow.style.cssText = 'position:absolute;inset:0;'
-      + 'box-shadow:4px 6px 12px rgba(60,45,30,0.12),'
-      +           '8px 12px 32px rgba(60,45,30,0.10),'
-      +           '12px 20px 48px rgba(60,45,30,0.06);'
+      + (isFramedProduct
+        ? 'box-shadow:6px 8px 16px rgba(40,28,18,0.18),'
+          +          '12px 18px 40px rgba(40,28,18,0.14),'
+          +          '18px 26px 56px rgba(40,28,18,0.10);'
+        : 'box-shadow:4px 6px 12px rgba(60,45,30,0.12),'
+          +          '8px 12px 32px rgba(60,45,30,0.10),'
+          +          '12px 20px 48px rgba(60,45,30,0.06);')
       + 'border-radius:1px;';
     canvasWrap.appendChild(groundShadow);
 
-    // Canvas face (white surface with weave texture)
-    var canvasFace = document.createElement('div');
-    canvasFace.style.cssText = 'position:absolute;inset:0;overflow:hidden;'
-      + 'background:#fefdfb;'
-      + 'border-radius:1px;';
-    canvasWrap.appendChild(canvasFace);
+    // If framed: wood frame border wrapping the canvas face
+    // If unframed: just the canvas face
+    var canvasFace;
+    if (isFramedProduct) {
+      // Outer frame (dark walnut wood)
+      var frame = document.createElement('div');
+      frame.style.cssText = 'position:absolute;inset:0;padding:6%;box-sizing:border-box;'
+        // Wood grain gradient — layered for depth
+        + 'background:'
+        +   'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, transparent 50%),'
+        +   'linear-gradient(90deg, #2a1d10 0%, #3a2818 30%, #4a3422 50%, #3a2818 70%, #2a1d10 100%);'
+        + 'border-radius:1px;'
+        // Inner bevel shadow
+        + 'box-shadow:'
+        +   'inset 0 1px 0 rgba(255,255,255,0.12),'
+        +   'inset 0 -1px 0 rgba(0,0,0,0.25),'
+        +   'inset 2px 2px 4px rgba(255,255,255,0.04),'
+        +   'inset -2px -2px 4px rgba(0,0,0,0.30);';
+      canvasWrap.appendChild(frame);
+
+      // Fine subtle wood grain lines (horizontal)
+      var woodGrain = document.createElement('div');
+      woodGrain.style.cssText = 'position:absolute;inset:0;pointer-events:none;opacity:0.12;'
+        + "background-image:repeating-linear-gradient(90deg, transparent 0 3px, rgba(0,0,0,0.4) 3px 3.5px, transparent 3.5px 8px);";
+      frame.appendChild(woodGrain);
+
+      // Inner mat / inset shadow recess where canvas sits
+      canvasFace = document.createElement('div');
+      canvasFace.style.cssText = 'position:absolute;inset:6%;overflow:hidden;'
+        + 'background:#fefdfb;'
+        + 'box-shadow:inset 0 2px 6px rgba(0,0,0,0.30),'
+        +           'inset 0 -1px 2px rgba(0,0,0,0.15);';
+      canvasWrap.appendChild(canvasFace);
+    } else {
+      // Unframed — canvas face fills the wrap
+      canvasFace = document.createElement('div');
+      canvasFace.style.cssText = 'position:absolute;inset:0;overflow:hidden;'
+        + 'background:#fefdfb;'
+        + 'border-radius:1px;';
+      canvasWrap.appendChild(canvasFace);
+    }
 
     // Portrait image (the user's pet)
     var portraitImg = document.createElement('img');
@@ -320,10 +368,10 @@
     sep.textContent = '\u00B7';
     sizeLabel.appendChild(sep);
 
-    // Depth (gallery-wrapped canvases are 1.25")
+    // Depth / frame indicator
     var dimDepth = document.createElement('span');
     dimDepth.style.cssText = 'color:#7a7369;';
-    dimDepth.textContent = '1.25\u2033 deep';
+    dimDepth.textContent = isFramedProduct ? 'Framed' : '1.25\u2033 deep';
     sizeLabel.appendChild(dimDepth);
 
     container.appendChild(sizeLabel);
