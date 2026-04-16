@@ -197,7 +197,7 @@
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top;display:block;';
+    portraitImg.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;background:#faf8f5;';
     canvasEl.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise)
