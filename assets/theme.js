@@ -443,7 +443,24 @@
         </div>`).join('');
 
       if (footer) {
+        const FREE_SHIP_CENTS = 8500;
+        const remainingCents = FREE_SHIP_CENTS - cart.total_price;
+        const progressPct = Math.min(100, (cart.total_price / FREE_SHIP_CENTS) * 100);
+        const shipTracker = remainingCents > 0
+          ? `<div class="cart-drawer__ship-tracker">
+               <div class="cart-drawer__ship-msg">
+                 <span aria-hidden="true">🚚</span>
+                 You're <strong>${this.fmt(remainingCents)}</strong> from free shipping
+               </div>
+               <div class="cart-drawer__ship-bar"><div style="width:${progressPct}%"></div></div>
+               <a href="/pages/create" class="cart-drawer__ship-cta">+ Add another portrait</a>
+             </div>`
+          : `<div class="cart-drawer__ship-tracker cart-drawer__ship-tracker--achieved">
+               <span aria-hidden="true">🎉</span> You've unlocked <strong>free shipping</strong>!
+             </div>`;
+
         footer.innerHTML = `
+          ${shipTracker}
           <div class="cart-subtotal">
             <span>Subtotal</span>
             <span>${this.fmt(cart.total_price)} CAD</span>
