@@ -29,7 +29,7 @@ Because portraits are personalized to your photo and your pet's name, we cannot 
 - The artistic interpretation of the AI (see Section 5 of our Terms of Service — style, fur markings, background, or pose variations are a creative feature of generative AI, not a defect).
 - Dissatisfaction with a photo you uploaded that was low-resolution, blurry, or partially obstructed — we show a warning if we detect a quality issue, but the final choice to proceed is yours.
 - Incorrect shipping address entered by you at checkout. (We can re-ship at your cost if the parcel is returned to us.)
-- A pet name misspelled by you at checkout. (We will offer a 40% discount on a reprint as a one-time courtesy.)
+- A pet name misspelled by you at checkout. If this happens, email [SUPPORT_EMAIL] — we review typo reprints case-by-case and may offer a courtesy discount at our discretion, but we do not guarantee a free reprint.
 
 ## 3. Cancellations before production
 
