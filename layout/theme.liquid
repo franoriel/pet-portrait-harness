@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
   {{ content_for_header }}
@@ -26,6 +27,20 @@
       previewApi: "{{ settings.portrait_api_url | default: 'https://web-production-a392e.up.railway.app' }}",
       turnstileSiteKey: "{{ settings.turnstile_site_key }}"
     };
+  </script>
+
+  {%- comment -%} Google Analytics 4 (gtag.js) — storefront pageviews only.
+    Shopify's hosted checkout runs on a separate domain, so this tag does
+    NOT fire during /checkout. For full purchase/conversion tracking,
+    enable the "Google & YouTube" Shopify sales channel and paste the
+    same Measurement ID (G-7JB4WNCP8Q) there.
+  {%- endcomment -%}
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7JB4WNCP8Q"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-7JB4WNCP8Q');
   </script>
 </head>
 
