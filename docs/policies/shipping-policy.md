@@ -2,15 +2,14 @@
 
 **Effective date:** [DATE_EFFECTIVE]
 
-Pet Printables ships through our print partner **Printful**, which operates fulfilment centres in the United States and Europe. Every portrait is printed to order, so total delivery time = **production time + transit time**.
+Pet Printables ships through our print partner **Printful**, which operates North American fulfilment centres. Every portrait is printed to order, so total delivery time = **production time + transit time**.
 
 ## 1. Where we ship
 
 - **Canada** — all provinces and territories.
-- **United States** — all 50 states.
-- **International** — currently **not available**; please email [SUPPORT_EMAIL] if you'd like to be notified when we add your country.
+- **International & United States** — currently **not available**. We may expand in the future; email [SUPPORT_EMAIL] if you would like to be notified when we open shipping to your country.
 
-Shipping destinations outside Canada may be subject to import duties, taxes, or customs fees levied by the destination country. These are the recipient's responsibility and are not included in our prices.
+Because all parcels are delivered within Canada, you will not encounter import duties or customs fees. Any applicable Canadian federal and provincial taxes are calculated and shown at checkout.
 
 ## 2. Processing time
 
@@ -24,9 +23,9 @@ Orders placed on weekends or statutory holidays begin production on the next bus
 |---|---|---|
 | Canada (BC, AB) | 3–5 business days | Canada Post / UPS |
 | Canada (other provinces) | 5–8 business days | Canada Post / UPS |
-| United States | 4–7 business days | USPS / UPS |
+| Canada (territories — YT, NT, NU) | 7–12 business days | Canada Post |
 
-Total delivery time is typically **6–13 business days** from order to doorstep. Framed canvas may take 1–3 additional days due to framing and extra packaging.
+Total delivery time is typically **6–13 business days** from order to doorstep. Framed canvas may take 1–3 additional days due to framing and extra packaging. Shipments to the territories and remote postal codes may take longer due to carrier schedules.
 
 ## 4. Shipping rates
 
