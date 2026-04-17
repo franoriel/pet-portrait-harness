@@ -375,12 +375,15 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt }
     body: formData,
   });
 
-  if (submitRes.status === 503 || submitRes.status === 429) {
-    throw new Error('BUSY');
+  if (submitRes.status === 503) {
+    const e = new Error('BUSY'); e.status = submitRes.status; throw e;
   }
   if (!submitRes.ok && submitRes.status !== 202) {
     const err = await submitRes.json().catch(() => ({}));
-    throw new Error(err.error || 'Generation failed');
+    const e = new Error(err.error || 'Generation failed');
+    e.code = err.code || '';
+    e.status = submitRes.status;
+    throw e;
   }
 
   const submitData = await submitRes.json();
@@ -394,13 +397,16 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt }
     return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '' };
   }
 
-  // Step 2: Poll /status/<job_id> until complete
-  const POLL_INTERVAL = 2000;  // 2s between polls
+  // Step 2: Poll /status/<job_id> until complete.
+  // Poll every 1s for the first 10s (when most jobs finish) then back off to
+  // 2s. Rate limit on /status is 300/10min, so this stays well within budget.
   const MAX_POLL_TIME = 120000; // 120s total timeout
   const start = Date.now();
 
   while (Date.now() - start < MAX_POLL_TIME) {
-    await new Promise(r => setTimeout(r, POLL_INTERVAL));
+    const elapsed = Date.now() - start;
+    const interval = elapsed < 10000 ? 1000 : 2000;
+    await new Promise(r => setTimeout(r, interval));
 
     const pollRes = await fetch(`${API_BASE}/status/${jobId}`);
     if (!pollRes.ok) throw new Error('Failed to check generation status');
@@ -420,7 +426,9 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt }
     }
 
     if (status.status === 'failed') {
-      throw new Error(status.error || 'Generation failed');
+      const e = new Error(status.error || 'Generation failed');
+      e.code = status.code || 'worker_failed';
+      throw e;
     }
     // else queued or processing — keep polling
   }
@@ -551,7 +559,7 @@ function readImageDimensions(file) {
   });
 }
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const MIN_DIMENSION = 800;
 
@@ -652,23 +660,75 @@ function usePortraitFlow() {
 
   const setPhoto = useCallback(async (file) => {
     if (!file) return;
-    const clearPhoto = (error) => {
+    const clearPhoto = (error, errorTips) => {
       setState(prev => {
         if (prev.photoThumbnailUrl) URL.revokeObjectURL(prev.photoThumbnailUrl);
-        return { ...prev, photo: null, photoThumbnailUrl: null, photoDimensions: null, photoError: error, photoWarning: null };
+        return {
+          ...prev, photo: null, photoThumbnailUrl: null, photoDimensions: null,
+          photoError: error, photoErrorTips: errorTips || null,
+          photoWarning: null, photoWarningTips: null,
+        };
       });
     };
-    if (!ACCEPTED_TYPES.includes(file.type)) { clearPhoto('Please upload a JPG or PNG file.'); return; }
-    if (file.size > MAX_FILE_SIZE) { clearPhoto('This file is over 15 MB. Please use a smaller photo.'); return; }
+    const name = (file.name || '').toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    const isHeic = type === 'image/heic' || type === 'image/heif'
+      || name.endsWith('.heic') || name.endsWith('.heif');
+    if (isHeic) {
+      clearPhoto(
+        'HEIC photos from iPhone aren\u2019t supported yet.',
+        [
+          'On iPhone: open the photo, tap Share \u2192 Mail \u2014 iOS converts it to JPG.',
+          'Or change Settings \u2192 Camera \u2192 Formats \u2192 Most Compatible, then retake.',
+        ],
+      );
+      return;
+    }
+    if (!ACCEPTED_TYPES.includes(type)) {
+      clearPhoto(
+        'Please upload a JPG, PNG, or WebP file.',
+        ['Most photo apps can export as JPG or PNG \u2014 look for \u201cShare\u201d or \u201cExport As\u201d.'],
+      );
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      clearPhoto(
+        'This file is over 15 MB. Please use a smaller photo.',
+        [
+          'On iPhone, when emailing, choose \u201cMedium\u201d size.',
+          'Or take a screenshot of the photo to shrink the file.',
+        ],
+      );
+      return;
+    }
     const dims = await readImageDimensions(file);
+    if (!dims) {
+      clearPhoto(
+        'We couldn\u2019t open this photo. The file may be damaged.',
+        [
+          'Try opening it in your Photos app, re-saving, and uploading again.',
+          'Or choose a different photo.',
+        ],
+      );
+      return;
+    }
     const thumbUrl = URL.createObjectURL(file);
     let warning = null;
-    if (dims && (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION)) {
+    let warningTips = null;
+    if (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION) {
       warning = "This photo might work, but a clearer one usually gives a better result. Want to try another?";
+      warningTips = [
+        'Use the original photo rather than a screenshot or download.',
+        'Pick a photo where your pet fills most of the frame.',
+      ];
     }
     setState(prev => {
       if (prev.photoThumbnailUrl) URL.revokeObjectURL(prev.photoThumbnailUrl);
-      return { ...prev, photo: file, photoThumbnailUrl: thumbUrl, photoDimensions: dims, photoWarning: warning, photoError: null };
+      return {
+        ...prev, photo: file, photoThumbnailUrl: thumbUrl, photoDimensions: dims,
+        photoWarning: warning, photoWarningTips: warningTips,
+        photoError: null, photoErrorTips: null,
+      };
     });
   }, []);
 
@@ -683,7 +743,7 @@ function usePortraitFlow() {
     if ((!state.photo && !state.imageFilename) || !state.selectedStyleId) return;
     if (generatingRef.current) return; // prevent double-clicks
     generatingRef.current = true;
-    update({ stage: STAGES.GENERATING, generationStatus: 'loading', generationError: null });
+    update({ stage: STAGES.GENERATING, generationStatus: 'loading', generationError: null, generationErrorTips: null });
     try {
       // If we don't have the File object (restored session / retry from style),
       // fetch the image from the stored URL and create a File from it
@@ -698,7 +758,11 @@ function usePortraitFlow() {
           const blob = await resp.blob();
           imageFile = new File([blob], 'pet-photo.jpg', { type: blob.type || 'image/jpeg' });
         } catch (e) {
-          update({ stage: STAGES.STYLE, generationStatus: 'idle', generationError: 'Could not reload your photo. Please upload it again.' });
+          update({
+            stage: STAGES.STYLE, generationStatus: 'idle',
+            generationError: 'Could not reload your photo.',
+            generationErrorTips: ['Please upload it again, then pick your style.'],
+          });
           generatingRef.current = false;
           return;
         }
@@ -721,7 +785,7 @@ function usePortraitFlow() {
         originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
         printFileUrl: result.printFileUrl || '',  // hi-res PNG for Printful
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
-        imageFilename: result.filename, generationError: null,
+        imageFilename: result.filename, generationError: null, generationErrorTips: null,
       };
       update(newState);
       saveSession({ ...state, ...newState });
@@ -759,17 +823,58 @@ function usePortraitFlow() {
       }
     } catch (err) {
       const msg = err.message || '';
-      let userError = 'Something went wrong. Please try again.';
+      const code = err.code || '';
+      const status = err.status || 0;
+      let userError = 'Something went wrong on our end.';
+      let userTips = ['Your photo and style are saved — try again in a moment.'];
       let sendToUpload = false;
-      if (msg === 'TIMEOUT') userError = 'This is taking longer than usual. Please try again — it usually works on the second attempt.';
-      else if (msg === 'BUSY') userError = 'Our servers are busy right now. Please wait a moment and try again.';
-      else if (/only create portraits of pets/i.test(msg) || /verify your photo/i.test(msg)) {
-        userError = msg; // pass through pet-verification rejection
+
+      if (msg === 'TIMEOUT') {
+        userError = 'This is taking longer than usual.';
+        userTips = ['Please try again — it usually works on the second attempt.'];
+      } else if (msg === 'BUSY' || status === 503) {
+        userError = 'Our servers are busy right now.';
+        userTips = ['Please wait a moment, then try again.'];
+      } else if (code === 'rate_limited' || status === 429) {
+        userError = msg || 'Too many tries in a row.';
+        userTips = ['Please wait a minute before generating again.'];
+      } else if (code === 'turnstile_failed') {
+        userError = 'We couldn\u2019t verify you\u2019re human.';
+        userTips = ['Please complete the verification challenge, then try again.'];
+      } else if (code === 'terms_stale' || code === 'terms_required' || code === 'terms_invalid') {
+        userError = 'The photo-terms acceptance didn\u2019t go through.';
+        userTips = ['Please re-check the terms box on the upload step, then try again.'];
         sendToUpload = true;
+      } else if (/only create portraits of pets/i.test(msg)) {
+        userError = msg;
+        userTips = ['Please upload a clear photo of your pet — face visible and well-lit.'];
+        sendToUpload = true;
+      } else if (/verify your photo/i.test(msg)) {
+        userError = msg;
+        userTips = ['Try a different photo — one with your pet clearly in focus.'];
+        sendToUpload = true;
+      } else if (/unsupported file type|real jpg|real png|real webp|content-type/i.test(msg)) {
+        userError = msg || 'That file isn\u2019t a supported image.';
+        userTips = ['Please upload a JPG, PNG, or WebP photo.'];
+        sendToUpload = true;
+      } else if (/pet name/i.test(msg)) {
+        userError = msg;
+        userTips = ['Use 1\u201320 letters, numbers, spaces, hyphens, periods, or apostrophes.'];
+        sendToUpload = true;
+      } else if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('Load failed') || /network/i.test(msg)) {
+        userError = 'We couldn\u2019t reach our servers.';
+        userTips = ['Check your internet connection, then try again.'];
+      } else if (msg && msg !== 'Generation failed') {
+        // Pass through a specific backend message (e.g. worker-level failure)
+        userError = msg;
+        userTips = ['Your photo and style are saved — try again in a moment.'];
       }
+
       update({
         stage: sendToUpload ? STAGES.UPLOAD : STAGES.PREVIEW,
-        generationStatus: 'error', generationError: userError,
+        generationStatus: 'error',
+        generationError: userError,
+        generationErrorTips: userTips,
       });
     } finally {
       generatingRef.current = false;
@@ -1217,12 +1322,42 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
     React.createElement(HiddenFileInput, { inputRef: fileRef, onChange: handleFile }),
 
     // Warning / error
-    state.photoWarning && React.createElement('p', {
-      style: { ...s.bodyMuted, color: tokens.colorWarning, marginBottom: '12px' }, role: 'alert',
-    }, state.photoWarning),
-    state.photoError && React.createElement('p', {
-      style: { ...s.bodyMuted, color: tokens.colorError, marginTop: '10px' }, role: 'alert',
-    }, state.photoError),
+    state.photoWarning && React.createElement('div', {
+      role: 'alert', style: { marginBottom: '12px' },
+    },
+      React.createElement('p', {
+        style: { ...s.bodyMuted, color: tokens.colorWarning, margin: 0 },
+      }, state.photoWarning),
+      state.photoWarningTips && state.photoWarningTips.length > 0 &&
+        React.createElement('ul', {
+          style: {
+            ...s.bodyMuted, color: tokens.colorWarning,
+            margin: '6px 0 0', paddingLeft: '18px',
+          },
+        },
+          state.photoWarningTips.map((tip, i) =>
+            React.createElement('li', { key: i, style: { marginBottom: '2px' } }, tip),
+          ),
+        ),
+    ),
+    state.photoError && React.createElement('div', {
+      role: 'alert', style: { marginTop: '10px' },
+    },
+      React.createElement('p', {
+        style: { ...s.bodyMuted, color: tokens.colorError, margin: 0 },
+      }, state.photoError),
+      state.photoErrorTips && state.photoErrorTips.length > 0 &&
+        React.createElement('ul', {
+          style: {
+            ...s.bodyMuted, color: tokens.colorError,
+            margin: '6px 0 0', paddingLeft: '18px',
+          },
+        },
+          state.photoErrorTips.map((tip, i) =>
+            React.createElement('li', { key: i, style: { marginBottom: '2px' } }, tip),
+          ),
+        ),
+    ),
 
     // Photo tips — inline, compact
     React.createElement('div', {
@@ -1753,13 +1888,30 @@ function UrgencyBanner({ generatedAt }) {
 
 function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload, retryFromStyle, generate }) {
   if (state.generationStatus === 'error') {
+    const reason = state.generationError || 'Something went off-leash.';
+    const tips = state.generationErrorTips && state.generationErrorTips.length
+      ? state.generationErrorTips
+      : ['Your photo and style are saved \u2014 just try again.'];
     return React.createElement('div', { style: { ...s.sectionWrap, textAlign: 'center', padding: '48px 16px' } },
       React.createElement('h2', {
-        style: { ...s.serifItalic, fontSize: '22px', marginBottom: '8px' },
+        style: { ...s.serifItalic, fontSize: '22px', marginBottom: '10px' },
       }, 'Something went off-leash'),
       React.createElement('p', {
-        style: { ...s.bodyMuted, fontSize: '14px', marginBottom: '28px' },
-      }, "It happens. Your photo and style are saved \u2014 just try again."),
+        style: {
+          fontFamily: fontSans, fontSize: '15px', lineHeight: 1.5,
+          color: tokens.colorBrand, margin: '0 auto 10px', maxWidth: '440px',
+        },
+        role: 'alert',
+      }, reason),
+      React.createElement('ul', {
+        style: {
+          ...s.bodyMuted, fontSize: '14px', textAlign: 'left',
+          listStyle: 'disc', margin: '0 auto 28px', padding: '0 0 0 20px',
+          maxWidth: '400px',
+        },
+      },
+        tips.map((tip, i) => React.createElement('li', { key: i, style: { marginBottom: '4px' } }, tip)),
+      ),
       React.createElement('button', {
         type: 'button', style: { ...s.primaryBtn, marginBottom: '14px' },
         onClick: generate, 'aria-label': 'Try generating the portrait again',

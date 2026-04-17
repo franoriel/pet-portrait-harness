@@ -71,6 +71,37 @@
           return;
         }
 
+        // Validate the file — mirrors portrait-flow.js so users learn why early.
+        var fileName = (file.name || '').toLowerCase();
+        var fileType = (file.type || '').toLowerCase();
+        var ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
+        var MAX_SIZE = 15 * 1024 * 1024;
+        var isHeic = fileType === 'image/heic' || fileType === 'image/heif'
+          || fileName.endsWith('.heic') || fileName.endsWith('.heif');
+        if (isHeic) {
+          alert(
+            'HEIC photos from iPhone aren\u2019t supported yet.\n\n' +
+            '\u2022 On iPhone: open the photo, tap Share \u2192 Mail \u2014 iOS converts it to JPG.\n' +
+            '\u2022 Or change Settings \u2192 Camera \u2192 Formats \u2192 Most Compatible, then retake.'
+          );
+          return;
+        }
+        if (ACCEPTED.indexOf(fileType) === -1) {
+          alert(
+            'Please upload a JPG, PNG, or WebP file.\n\n' +
+            '\u2022 Most photo apps can export as JPG or PNG \u2014 look for \u201cShare\u201d or \u201cExport As\u201d.'
+          );
+          return;
+        }
+        if (file.size > MAX_SIZE) {
+          alert(
+            'This file is over 15 MB. Please use a smaller photo.\n\n' +
+            '\u2022 On iPhone, when emailing, choose \u201cMedium\u201d size.\n' +
+            '\u2022 Or take a screenshot of the photo to shrink the file.'
+          );
+          return;
+        }
+
         var reader = new FileReader();
         reader.onload = function () {
           try {
@@ -87,7 +118,11 @@
           window.location.href = '/pages/create';
         };
         reader.onerror = function () {
-          alert('Could not read your photo. Please try a different image.');
+          alert(
+            'We couldn\u2019t open this photo. The file may be damaged.\n\n' +
+            '\u2022 Try opening it in your Photos app, re-saving, and uploading again.\n' +
+            '\u2022 Or choose a different photo.'
+          );
         };
         reader.readAsDataURL(file);
       }

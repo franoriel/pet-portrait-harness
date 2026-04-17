@@ -184,11 +184,43 @@
               </label>
             </div>
 
-            <div class="cart-summary__shipping">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/>
-              </svg>
-              Taxes & shipping at checkout
+            {%- comment -%}
+              Shipping estimator — user enters a postal code, we call
+              Shopify's /cart/shipping_rates.json (same carrier rates
+              the checkout uses). It's an estimate only — discounts and
+              final addresses may change the amount at checkout.
+            {%- endcomment -%}
+            <div class="cart-summary__estimator" data-shipping-estimator style="margin:14px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);">
+              <label for="ShippingEstPostal" style="display:block;font-family:var(--font-body);font-size:0.9rem;font-weight:600;color:var(--color-ink);margin-bottom:8px;">
+                Estimate shipping
+              </label>
+              <div style="display:flex;gap:8px;">
+                <input
+                  id="ShippingEstPostal"
+                  type="text"
+                  inputmode="text"
+                  autocomplete="postal-code"
+                  placeholder="Postal code (e.g. K1A 0B1)"
+                  aria-describedby="ShippingEstNote"
+                  style="flex:1;min-width:0;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;font-family:var(--font-body);font-size:0.9rem;background:#fff;color:var(--color-ink);"
+                >
+                <button
+                  type="button"
+                  data-shipping-estimate-btn
+                  style="padding:9px 16px;border:1px solid var(--color-ink);background:var(--color-ink);color:#fff;border-radius:8px;font-family:var(--font-body);font-size:0.85rem;font-weight:500;cursor:pointer;white-space:nowrap;"
+                >
+                  Estimate
+                </button>
+              </div>
+              <div
+                data-shipping-result
+                role="status"
+                aria-live="polite"
+                style="display:none;margin-top:10px;font-size:0.88rem;line-height:1.45;"
+              ></div>
+              <p id="ShippingEstNote" style="margin:10px 0 0;font-size:0.75rem;color:var(--color-muted);line-height:1.45;">
+                This is an estimate for your reference only. Final shipping is calculated at checkout and may be different.
+              </p>
             </div>
 
             <a href="{{ routes.checkout }}" class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
@@ -318,6 +350,127 @@
             setStatus('Could not remove Priority Order. Please try again.', true);
           });
       }
+    });
+  })();
+
+  /* Shipping estimator ─────────────────────────────────────────
+     Calls Shopify's /cart/shipping_rates.json with the entered
+     postal code. Same carrier rates as checkout, so the estimate
+     is accurate — differences at checkout come from discounts,
+     final addresses, or carrier updates. */
+  (function () {
+    var wrap = document.querySelector('[data-shipping-estimator]');
+    if (!wrap) return;
+    var input = wrap.querySelector('#ShippingEstPostal');
+    var btn = wrap.querySelector('[data-shipping-estimate-btn]');
+    var resultEl = wrap.querySelector('[data-shipping-result]');
+    if (!input || !btn || !resultEl) return;
+
+    var SHOP_CURRENCY = {{ cart.currency.iso_code | json }};
+
+    function formatMoneyFromDollars(dollarStr) {
+      var n = parseFloat(dollarStr);
+      if (!isFinite(n)) return dollarStr;
+      try {
+        return new Intl.NumberFormat('en-CA', {
+          style: 'currency', currency: SHOP_CURRENCY || 'CAD',
+          minimumFractionDigits: 2,
+        }).format(n);
+      } catch (e) {
+        return '$' + n.toFixed(2);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function showResult(html, isError) {
+      resultEl.innerHTML = html;
+      resultEl.style.display = 'block';
+      resultEl.style.color = isError ? '#B00020' : 'var(--color-ink)';
+    }
+
+    // Guess the country from the postal pattern. CA uses "A1A 1A1",
+    // US uses 5 digits (optionally 5-4). Default to Canada.
+    function guessCountry(zip) {
+      var bare = zip.replace(/\s+/g, '').toUpperCase();
+      if (/^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(bare)) return 'Canada';
+      if (/^\d{5}(-\d{4})?$/.test(bare)) return 'United States';
+      return 'Canada';
+    }
+
+    function fetchRates(zip, country) {
+      var params = new URLSearchParams();
+      params.append('shipping_address[zip]', zip);
+      params.append('shipping_address[country]', country);
+      return fetch('/cart/shipping_rates.json?' + params.toString(), {
+        headers: { 'Accept': 'application/json' },
+      }).then(function (r) {
+        if (r.status === 422) {
+          return r.json().then(function () { throw new Error('INVALID_POSTAL'); })
+            .catch(function () { throw new Error('INVALID_POSTAL'); });
+        }
+        if (!r.ok) throw new Error('REQUEST_FAILED');
+        return r.json();
+      });
+    }
+
+    function runEstimate() {
+      var zip = (input.value || '').trim().toUpperCase();
+      if (!zip) {
+        showResult('Please enter a postal code.', true);
+        input.focus();
+        return;
+      }
+      var country = guessCountry(zip);
+      btn.disabled = true;
+      showResult('Getting an estimate\u2026', false);
+      fetchRates(zip, country)
+        .then(function (data) {
+          btn.disabled = false;
+          var rates = (data && data.shipping_rates) || [];
+          if (!rates.length) {
+            showResult(
+              'No shipping options found for <strong>' + escapeHtml(zip) + '</strong>. '
+              + 'Double-check the postal code, or see final shipping at checkout.',
+              true
+            );
+            return;
+          }
+          // Show all rates sorted cheapest → most expensive.
+          var sorted = rates.slice().sort(function (a, b) {
+            return parseFloat(a.price) - parseFloat(b.price);
+          });
+          var rows = sorted.map(function (r) {
+            var label = escapeHtml(r.presentment_name || r.name || 'Shipping');
+            var price = formatMoneyFromDollars(r.price);
+            return '<li style="display:flex;justify-content:space-between;gap:12px;padding:3px 0;">'
+              + '<span>' + label + '</span>'
+              + '<strong>' + escapeHtml(price) + '</strong>'
+              + '</li>';
+          }).join('');
+          showResult(
+            '<div style="font-weight:600;margin-bottom:4px;">Estimated shipping to ' + escapeHtml(zip) + ':</div>'
+            + '<ul style="list-style:none;margin:0;padding:0;">' + rows + '</ul>',
+            false
+          );
+        })
+        .catch(function (err) {
+          btn.disabled = false;
+          if (err && err.message === 'INVALID_POSTAL') {
+            showResult("That postal code didn\u2019t look right. Please check it and try again.", true);
+          } else {
+            showResult("Couldn\u2019t fetch an estimate right now. You can see shipping at checkout.", true);
+          }
+        });
+    }
+
+    btn.addEventListener('click', runEstimate);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); runEstimate(); }
     });
   })();
 

@@ -700,9 +700,11 @@ def add_name():
             style=style,
         )
 
-        # Upload both to R2 for fast CDN delivery
-        comp_cdn = upload_portrait(comp_path)
-        web_cdn = upload_portrait(web_path)
+        # Upload both to R2 for fast CDN delivery — parallelized to cut latency.
+        comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
+        web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
+        comp_cdn = comp_fut.result()
+        web_cdn = web_fut.result()
 
         return jsonify(
             composited=web_cdn or f"/preview/{web_path.name}",
@@ -929,17 +931,25 @@ def _process_job(job: dict):
         if _active_generations > _peak_generations:
             _peak_generations = _active_generations
 
+    # We own the local upload file and must clean it up — unless we hand it
+    # off to the deferred-original task below, which takes over cleanup.
+    file_owned = True
     try:
         raw_path, comp_path, web_path = generate(str(upload_path), job["pet_name"], job["style"])
 
-        # Upload original photo to R2 for future fulfillment (avoids re-generating via Gemini)
-        original_cdn = upload_portrait(upload_path, key=f"originals/{job_id}{upload_path.suffix}")
+        # In the no-name preview path, raw_path and comp_path are byte-identical
+        # (same PIL image saved to two filenames). Upload the comp PNG once and
+        # alias the URL for raw_cdn — saves one full-size PNG round-trip to R2.
+        # Upload comp + web in parallel to cut ~1-3s off the total wait.
+        comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
+        web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
+        comp_cdn = comp_fut.result()
+        web_cdn = web_fut.result()
+        raw_cdn = comp_cdn  # same bytes on disk
 
-        # Upload generated images to R2 for permanent CDN URLs
-        raw_cdn = upload_portrait(raw_path)
-        comp_cdn = upload_portrait(comp_path)
-        web_cdn = upload_portrait(web_path)
-
+        # Mark complete as soon as the preview URLs are ready. The original
+        # photo (used only by fulfillment at order time) uploads in the
+        # background — the customer sees the preview several seconds sooner.
         update_job(
             job_id,
             status="complete",
@@ -949,9 +959,26 @@ def _process_job(job: dict):
             download=f"/download/{comp_path.name}",  # full-res PNG for download
             filename=comp_path.name,
             cdn="1" if comp_cdn else "0",
-            original_cdn=original_cdn or "",
         )
         log.info("Job %s complete: %s", job_id, comp_path.name)
+
+        # Hand off the upload file to a background task: upload to R2 for
+        # fulfillment, then delete. Fulfillment reads original_cdn from the
+        # job record; if a Printful order arrives before upload finishes,
+        # the order handler will see an empty original_cdn and retry later.
+        _orig_path = upload_path
+        _orig_suffix = upload_path.suffix
+        def _defer_original():
+            try:
+                cdn = upload_portrait(_orig_path, key=f"originals/{job_id}{_orig_suffix}")
+                if cdn:
+                    update_job(job_id, original_cdn=cdn)
+            except Exception:
+                log.exception("Deferred original upload failed for job %s", job_id)
+            finally:
+                _orig_path.unlink(missing_ok=True)
+        _fulfillment_pool.submit(_defer_original)
+        file_owned = False  # deferred task will clean up
 
     except Exception as exc:
         log.exception("Job %s failed", job_id)
@@ -959,7 +986,8 @@ def _process_job(job: dict):
     finally:
         with _active_lock:
             _active_generations -= 1
-        upload_path.unlink(missing_ok=True)
+        if file_owned:
+            upload_path.unlink(missing_ok=True)
 
 
 def _worker_loop():
