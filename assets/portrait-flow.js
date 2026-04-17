@@ -1035,17 +1035,20 @@ function StepIndicator({ current, total = 4 }) {
           // Paw icon
           React.createElement('div', {
             style: {
-              width: '28px', height: '28px', borderRadius: '50%',
+              width: isCurrent ? '36px' : '32px',
+              height: isCurrent ? '36px' : '32px',
+              borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.3s ease',
               background: isComplete || isCurrent ? tokens.colorAccent : tokens.colorWhite,
-              border: isFuture ? `1.5px solid ${tokens.colorBorder}` : `1.5px solid ${tokens.colorAccent}`,
+              border: isFuture ? `1.5px solid ${tokens.colorBorder}` : `2px solid ${tokens.colorAccent}`,
               boxSizing: 'border-box',
+              boxShadow: isCurrent ? `0 0 0 4px ${tokens.colorAccent}26` : 'none',
             },
           },
             // Paw print SVG
             React.createElement('svg', {
-              width: '16', height: '16', viewBox: '0 0 24 24',
+              width: isCurrent ? '20' : '18', height: isCurrent ? '20' : '18', viewBox: '0 0 24 24',
               fill: isComplete || isCurrent ? tokens.colorWhite : tokens.colorMuted,
               xmlns: 'http://www.w3.org/2000/svg',
               'aria-hidden': true,
@@ -1065,11 +1068,11 @@ function StepIndicator({ current, total = 4 }) {
           // Label
           React.createElement('span', {
             style: {
-              fontFamily: fontSans, fontSize: '10px', fontWeight: isCurrent ? 700 : 500,
+              fontFamily: fontSans, fontSize: '12px', fontWeight: isCurrent ? 700 : 500,
               color: isCurrent ? tokens.colorBrand : tokens.colorMuted,
-              marginTop: '5px', textTransform: 'uppercase', letterSpacing: '0.04em',
+              marginTop: '7px', textTransform: 'uppercase', letterSpacing: '0.06em',
             },
-          }, label),
+          }, `${i + 1}. ${label}`),
         );
       }),
     ),
@@ -1516,11 +1519,11 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             },
               React.createElement('span', {
                 style: {
-                  ...s.smallCaps, fontSize: '10px',
-                  color: tokens.colorMuted, background: 'rgba(255,255,255,0.85)',
-                  borderRadius: '4px', padding: '4px 10px',
+                  ...s.smallCaps, fontSize: '12px', fontWeight: 700,
+                  color: tokens.colorBrand, background: 'rgba(255,255,255,0.95)',
+                  borderRadius: '4px', padding: '6px 12px',
                 },
-              }, 'Available soon'),
+              }, 'Coming soon'),
             ),
           ),
           // Card body — style name + font preview

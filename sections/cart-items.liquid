@@ -86,7 +86,7 @@
           {%- endfor -%}
 
           <!-- Add another portrait CTA -->
-          <a href="/pages/create" class="cart-add-another" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;margin-top:12px;border:1.5px dashed var(--color-border);border-radius:var(--radius-card);background:var(--color-surface);text-decoration:none;color:var(--color-ink);font-family:var(--font-body);font-size:0.95rem;font-weight:500;transition:all 0.2s;">
+          <a href="/pages/create" class="cart-add-another" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;margin-top:12px;border:1.5px solid var(--color-ink);border-radius:var(--radius-card);background:var(--color-surface);text-decoration:none;color:var(--color-ink);font-family:var(--font-body);font-size:1rem;font-weight:600;transition:all 0.2s;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-8-8h16"/>
             </svg>
@@ -117,7 +117,7 @@
             {%- if remaining_cents > 0 -%}
               {%- assign progress_pct = cart.total_price | times: 100.0 | divided_by: free_ship_cents -%}
               <div class="free-ship-tracker" style="margin:14px 0;padding:14px;background:var(--color-surface);border-radius:var(--radius-card);border:1px solid var(--color-border);">
-                <div style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--color-ink);margin-bottom:10px;line-height:1.4;">
+                <div style="display:flex;align-items:center;gap:8px;font-size:0.95rem;color:var(--color-ink);margin-bottom:10px;line-height:1.4;">
                   <span aria-hidden="true" style="font-size:1.1em;">🚚</span>
                   <span>You're <strong style="font-weight:700;color:var(--color-primary);">{{ remaining_cents | money }}</strong> away from free shipping</span>
                 </div>
@@ -171,8 +171,8 @@
                       style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
                     ></span>
                   </span>
-                  <span style="display:block;font-size:0.82rem;color:var(--color-muted);margin-top:3px;">
-                    Skip to the front of the line — yours gets made first
+                  <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                    Made within 2 business days instead of the usual 5–7
                   </span>
                   <span
                     data-priority-status
@@ -207,9 +207,9 @@
                 <button
                   type="button"
                   data-shipping-estimate-btn
-                  style="padding:9px 16px;border:1px solid var(--color-ink);background:var(--color-ink);color:#fff;border-radius:8px;font-family:var(--font-body);font-size:0.85rem;font-weight:500;cursor:pointer;white-space:nowrap;"
+                  style="padding:10px 18px;border:1px solid var(--color-ink);background:var(--color-ink);color:#fff;border-radius:8px;font-family:var(--font-body);font-size:0.95rem;font-weight:600;cursor:pointer;white-space:nowrap;min-height:44px;"
                 >
-                  Estimate
+                  Get Estimate
                 </button>
               </div>
               <div
@@ -218,7 +218,7 @@
                 aria-live="polite"
                 style="display:none;margin-top:10px;font-size:0.88rem;line-height:1.45;"
               ></div>
-              <p id="ShippingEstNote" style="margin:10px 0 0;font-size:0.75rem;color:var(--color-muted);line-height:1.45;">
+              <p id="ShippingEstNote" style="margin:10px 0 0;font-size:0.85rem;color:var(--color-muted);line-height:1.45;">
                 This is an estimate for your reference only. Final shipping is calculated at checkout and may be different.
               </p>
             </div>
@@ -242,8 +242,8 @@
         <div class="cart-empty__icon">✦</div>
         <h2>Your cart is empty</h2>
         <p class="text-muted">Looks like you haven't added any portraits yet. Your pet deserves to be immortalised!</p>
-        <a href="{{ routes.all_products_collection_url }}" class="btn btn--primary btn--large" style="margin-top:24px;">
-          Start Creating
+        <a href="/pages/create" class="btn btn--primary btn--large" style="margin-top:24px;">
+          Create Your First Portrait →
         </a>
       </div>
     {%- endif -%}

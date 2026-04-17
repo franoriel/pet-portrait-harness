@@ -10,7 +10,7 @@
   --color-primary-dk: #3D3D36;
   --color-accent:   #8B7D6B;
   --color-ink:      #1C1C1C;
-  --color-muted:    #8A8A82;
+  --color-muted:    #6B6B63;
   --color-surface:  #FFFFFF;
   --color-border:   #E4DDD4;
   --color-success:  #5C7A5E;
@@ -43,6 +43,15 @@ body {
 img, video { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; border: none; background: none; font-family: var(--font-body); }
+
+/* Keyboard-accessible focus ring — applies to interactive elements when
+   navigating via keyboard (not mouse). Helps older/keyboard-only users
+   track where they are on the page. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 ul, ol { list-style: none; }
 input, select, textarea { font-family: var(--font-body); }
 
@@ -57,7 +66,7 @@ p { color: var(--color-ink); }
 .text-center { text-align: center; }
 .eyebrow {
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -86,9 +95,9 @@ p { color: var(--color-ink); }
   padding: 14px 28px;
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   transition: background var(--transition), color var(--transition), transform var(--transition);
   min-height: 52px;
@@ -106,7 +115,7 @@ p { color: var(--color-ink); }
   border: 1.5px solid var(--color-accent);
 }
 .btn--outline:hover { background: var(--color-accent); color: #fff; }
-.btn--large { padding: 18px 36px; font-size: 1.05rem; min-height: 60px; }
+.btn--large { padding: 18px 36px; font-size: 1.15rem; min-height: 60px; }
 .btn--full { width: 100%; }
 
 /* ── Announcement bar ─────────────────────────────────────── */
@@ -115,7 +124,7 @@ p { color: var(--color-ink); }
   color: #fff;
   text-align: center;
   padding: 10px var(--gutter);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   letter-spacing: 0.04em;
 }
 .announcement-bar a { color: var(--color-primary); text-decoration: underline; }
@@ -140,7 +149,7 @@ p { color: var(--color-ink); }
   gap: 10px;
   flex-wrap: wrap;
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   max-width: var(--max-width);
@@ -168,7 +177,7 @@ p { color: var(--color-ink); }
 }
 @media (max-width: 480px) {
   .urgency-banner { padding: 8px 12px; }
-  .urgency-banner__inner { font-size: 0.78rem; gap: 8px; }
+  .urgency-banner__inner { font-size: 0.88rem; gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .urgency-banner__icon { animation: none; }
@@ -528,8 +537,8 @@ p { color: var(--color-ink); }
   transform: translateY(-1px);
 }
 .hero__reassurance {
-  color: rgba(255,255,255,0.6);
-  font-size: clamp(0.7rem, 2vw, 0.82rem);
+  color: rgba(255,255,255,0.85);
+  font-size: clamp(0.9rem, 2.2vw, 1rem);
   margin-top: 10px;
   letter-spacing: 0.02em;
 }
@@ -1016,7 +1025,7 @@ p { color: var(--color-ink); }
 }
 .upload-widget__icon { font-size: 2.5rem; margin-bottom: 12px; }
 .upload-widget__title { font-family: var(--font-heading); font-size: 1.05rem; margin-bottom: 6px; }
-.upload-widget__sub { font-size: 0.82rem; color: var(--color-muted); }
+.upload-widget__sub { font-size: 0.9rem; color: var(--color-muted); }
 .upload-widget__preview {
   display: none;
   margin-top: 16px;
@@ -1453,7 +1462,7 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .cart-page__item-header { display: flex; justify-content: space-between; gap: 12px; }
 .cart-page__item-title { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; }
 .cart-page__item-title:hover { color: var(--color-primary); }
-.cart-page__item-variant,.cart-page__item-prop { font-size: 0.82rem; color: var(--color-muted); }
+.cart-page__item-variant,.cart-page__item-prop { font-size: 0.9rem; color: var(--color-muted); }
 .cart-page__remove { color: var(--color-muted); transition: color var(--transition); flex-shrink: 0; }
 .cart-page__remove:hover { color: var(--color-ink); }
 .cart-page__item-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 8px; }
@@ -1530,7 +1539,7 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .cart-empty-state .btn { margin-top: 20px; }
 .cart-item__qty { display: flex; align-items: center; gap: 8px; }
 .cart-item__qty-num { min-width: 24px; text-align: center; font-weight: 600; font-size: 0.9rem; }
-.cart-drawer__shipping { font-size: 0.75rem; color: var(--color-muted); text-align: center; margin-bottom: 14px; }
+.cart-drawer__shipping { font-size: 0.85rem; color: var(--color-muted); text-align: center; margin-bottom: 14px; }
 .cart-drawer__ship-tracker {
   padding: 12px;
   background: var(--color-surface);
@@ -1796,7 +1805,7 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .portrait-dropzone__idle { text-align: center; padding: 28px 20px; }
 .portrait-dropzone__icon { color: var(--color-muted); margin-bottom: 10px; }
 .portrait-dropzone__title { font-family: var(--font-heading); font-size: 1rem; margin-bottom: 4px; }
-.portrait-dropzone__sub { font-size: 0.82rem; color: var(--color-muted); }
+.portrait-dropzone__sub { font-size: 0.9rem; color: var(--color-muted); }
 .portrait-dropzone__preview {
   display: none;
   width: 100%; position: relative;
