@@ -584,6 +584,65 @@ function CameraIcon({ size = 32 }) {
   );
 }
 
+/* ── Inline CTA icons — universally-readable symbols for accessibility.
+ *   All use stroke="currentColor" so they inherit each button's text color,
+ *   which keeps them legible on both dark primary buttons and secondary
+ *   links without per-button styling. Stroke weight matches the thin,
+ *   editorial line-art feel of CameraIcon above.
+ * ────────────────────────────────────────────────────────────── */
+function CtaIcon({ paths, size = 16, strokeWidth = 1.75 }) {
+  return React.createElement('svg', {
+    xmlns: 'http://www.w3.org/2000/svg',
+    width: size, height: size, viewBox: '0 0 24 24',
+    fill: 'none', stroke: 'currentColor',
+    strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round',
+    'aria-hidden': true,
+    style: { flexShrink: 0 },
+  },
+    ...paths.map((d, i) => React.createElement('path', { key: i, d })),
+  );
+}
+
+function ArrowRightIcon(props) {
+  return React.createElement(CtaIcon, {
+    ...props, paths: ['M5 12h14', 'M13 6l6 6-6 6'],
+  });
+}
+
+function ArrowLeftIcon(props) {
+  return React.createElement(CtaIcon, {
+    ...props, paths: ['M19 12H5', 'M11 18l-6-6 6-6'],
+  });
+}
+
+function RefreshIcon(props) {
+  return React.createElement(CtaIcon, {
+    ...props, paths: [
+      'M3 12a9 9 0 0 1 15.5-6.3L21 8',
+      'M21 3v5h-5',
+      'M21 12a9 9 0 0 1-15.5 6.3L3 16',
+      'M3 21v-5h5',
+    ],
+  });
+}
+
+// Wraps a button's content with inline-flex so the icon and text label
+// align cleanly (neither primaryBtn nor secondaryLink style sets flex
+// themselves). Accepts any React element for the icon.
+function iconLabel(icon, label, iconPosition) {
+  const pos = iconPosition || 'left';
+  return React.createElement('span', {
+    style: {
+      display: 'inline-flex', alignItems: 'center',
+      gap: '8px', justifyContent: 'center',
+    },
+  },
+    pos === 'left' ? icon : null,
+    React.createElement('span', null, label),
+    pos === 'right' ? icon : null,
+  );
+}
+
 /* ── usePortraitFlow hook ──────────────────────────────────── */
 
 // Check for pending PDP-initiated flow (user uploaded on PDP, needs to pick style)
@@ -895,15 +954,31 @@ function usePortraitFlow() {
     update({ stage: STAGES.STYLE, selectedStyleId: null, ...GENERATION_RESET });
   }, [update]);
 
+  // Start Over — clear the in-flight session from localStorage AND reset every
+  // piece of flow state back to initial. The library (petPrintables_library,
+  // different key) is intentionally left alone so previous portraits remain
+  // accessible via "Your Saved Portraits". Also clears the pending PDP
+  // handoff so a refresh doesn't re-hydrate the just-cleared photo.
   const startFresh = useCallback(() => {
     clearSession();
+    clearPending();
     setState(prev => {
       if (prev.photoThumbnailUrl) URL.revokeObjectURL(prev.photoThumbnailUrl);
       return {
-        stage: STAGES.UPLOAD, photo: null, photoThumbnailUrl: null, photoDimensions: null,
-        photoWarning: null, photoError: null, petName: '', selectedStyleId: null,
-        generationStatus: 'idle', previewImages: [], previewDataUrls: [], selectedPreviewIndex: 0,
+        stage: STAGES.UPLOAD,
+        photo: null, photoThumbnailUrl: null, photoDimensions: null,
+        photoWarning: null, photoWarningTips: null,
+        photoError: null, photoErrorTips: null,
+        petName: '', selectedStyleId: null,
+        generationStatus: 'idle',
+        generationError: null, generationErrorTips: null,
+        previewImages: [], previewDataUrls: [], previewCdnUrls: [],
+        selectedPreviewIndex: 0,
+        fontSize: 'medium',
+        imageFilename: '', originalPhotoUrl: '', printFileUrl: '',
         jobId: null, restoredSession: false,
+        pendingPhoto: null,
+        termsAccepted: false, termsAcceptedAt: null,
       };
     });
   }, []);
@@ -1394,7 +1469,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
       'aria-label': 'Continue to style selection',
     },
       canContinue
-        ? 'CHOOSE YOUR STYLE \u2192'
+        ? iconLabel(React.createElement(ArrowRightIcon), 'CHOOSE YOUR STYLE', 'right')
         : (!state.photo
             ? 'ADD PHOTO & NAME TO CONTINUE'
             : (!state.termsAccepted
@@ -1889,7 +1964,7 @@ function UrgencyBanner({ generatedAt }) {
   );
 }
 
-function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload, retryFromStyle, generate }) {
+function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload, retryFromStyle, startFresh, generate }) {
   if (state.generationStatus === 'error') {
     const reason = state.generationError || 'Something went off-leash.';
     const tips = state.generationErrorTips && state.generationErrorTips.length
@@ -1918,11 +1993,12 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       React.createElement('button', {
         type: 'button', style: { ...s.primaryBtn, marginBottom: '14px' },
         onClick: generate, 'aria-label': 'Try generating the portrait again',
-      }, 'TRY AGAIN'),
+      }, iconLabel(React.createElement(RefreshIcon), 'TRY AGAIN')),
       React.createElement('button', {
         type: 'button', style: { ...s.secondaryLink, width: '100%', textAlign: 'center' },
-        onClick: retryFromUpload,
-      }, 'Try another photo'),
+        onClick: startFresh,
+        'aria-label': 'Start over — clear this portrait and begin a new one',
+      }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Start Over')),
     );
   }
 
@@ -1958,17 +2034,19 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
       React.createElement('button', {
         type: 'button', style: s.primaryBtn, onClick: onContinue,
-        'aria-label': 'Choose size',
-      }, 'CONTINUE \u2192'),
+        'aria-label': 'Continue to choose size',
+      }, iconLabel(React.createElement(ArrowRightIcon), 'CONTINUE', 'right')),
       React.createElement('div', { style: { display: 'flex', gap: '16px' } },
         React.createElement('button', {
           type: 'button', style: s.secondaryLinkUnderline,
           onClick: retryFromStyle,
-        }, '\u2190 Change style'),
+          'aria-label': 'Go back to change the art style',
+        }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
         React.createElement('button', {
           type: 'button', style: s.secondaryLinkUnderline,
-          onClick: retryFromUpload,
-        }, 'New photo'),
+          onClick: startFresh,
+          'aria-label': 'Start over — clear this portrait and begin a new one',
+        }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Start Over')),
       ),
     ),
   );
@@ -2395,7 +2473,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
     React.createElement('button', {
       type: 'button', style: s.primaryBtn, onClick: handleContinue,
       'aria-label': 'Continue to cart',
-    }, 'CONTINUE \u2192'),
+    }, iconLabel(React.createElement(ArrowRightIcon), 'CONTINUE', 'right')),
 
     // Guarantee strip
     React.createElement('div', {
@@ -2534,6 +2612,7 @@ function PortraitFlow() {
         state, update: flow.update, selectPreview: flow.selectPreview,
         onContinue: () => flow.goToStage(STAGES.GALLERY),
         retryFromUpload: flow.retryFromUpload, retryFromStyle: flow.retryFromStyle,
+        startFresh: flow.startFresh,
         generate: flow.generate,
       }); break;
     case STAGES.GALLERY:
