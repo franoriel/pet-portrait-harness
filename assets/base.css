@@ -807,9 +807,18 @@ p { color: var(--color-ink); }
 /* ── Footer ───────────────────────────────────────────────── */
 .site-footer {
   background: var(--color-ink);
-  color: rgba(255,255,255,0.75);
+  color: rgba(255,255,255,0.85);
   padding: 56px var(--gutter) 32px;
 }
+/* Override the global `p { color: var(--color-ink) }` rule — on the dark
+   footer we need light text, not near-black on near-black. */
+.site-footer p,
+.site-footer a,
+.site-footer li,
+.site-footer span:not(.payment-icon) {
+  color: rgba(255,255,255,0.85);
+}
+.site-footer a:hover { color: #fff; }
 .site-footer__grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -848,7 +857,7 @@ p { color: var(--color-ink); }
 }
 .site-footer__social a:hover { background: var(--color-primary); }
 .site-footer__bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255,255,255,0.15);
   margin-top: 40px;
   padding-top: 24px;
   max-width: var(--max-width);
@@ -857,7 +866,11 @@ p { color: var(--color-ink); }
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+}
+.site-footer__bottom p {
+  color: rgba(255,255,255,0.85);
+  margin: 0;
 }
 .payment-icons { display: flex; gap: 8px; flex-wrap: wrap; }
 .payment-icon {
