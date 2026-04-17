@@ -650,19 +650,30 @@
   }
 
   // ── "With name / Without name" toggle ─────────────────────
-  var withTextUrl = previewUrls[0] || previewUrl;
-  var noTextUrl = previewUrls[1] || previewUrls[0] || previewUrl;
-  var showName = true; // default: with name
+  // withTextUrl is generated on-demand by /add-name when the user clicks Yes.
+  // If Step 4 already produced a named preview (data.namedPreviewUrl), we
+  // use it directly so the toggle swap is instant.
+  var noTextUrl   = previewUrls[0] || previewUrls[1] || previewUrl;
+  var withTextUrl = data.namedPreviewUrl || previewUrls[1] || null; // may be null until Yes is clicked
+  var showName = !!withTextUrl; // default to Yes if we already have the named version
 
-  if (previewUrls.length >= 2 && petName) {
+  if (petName) {
     var toggleWrap = document.createElement('div');
     toggleWrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;'
       + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;background:var(--color-surface, #faf9f7);';
 
     var toggleLabel = document.createElement('span');
-    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;";
-    toggleLabel.textContent = 'Show name on portrait';
+    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;display:inline-flex;align-items:center;gap:10px;";
+    toggleLabel.innerHTML = '<span>Show name on portrait</span><span data-name-loading style="display:none;font-size:0.76rem;color:var(--color-muted, #8a8580);font-weight:500;align-items:center;gap:6px;"></span>';
     toggleWrap.appendChild(toggleLabel);
+
+    // Inject spinner keyframe once per page
+    if (!document.getElementById('pdp-toggle-spin-kf')) {
+      var kf = document.createElement('style');
+      kf.id = 'pdp-toggle-spin-kf';
+      kf.textContent = '@keyframes pdpToggleSpin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(kf);
+    }
 
     // Toggle buttons
     var btnGroup = document.createElement('div');
@@ -680,45 +691,152 @@
       return btn;
     }
 
-    var yesBtn = makeToggleBtn('Yes', true);
-    var noBtn = makeToggleBtn('No', false);
+    var yesBtn = makeToggleBtn('Yes', showName);
+    var noBtn  = makeToggleBtn('No', !showName);
     btnGroup.appendChild(yesBtn);
     btnGroup.appendChild(noBtn);
     toggleWrap.appendChild(btnGroup);
 
+    var nameLoadingEl = toggleLabel.querySelector('[data-name-loading]');
+    var cycler = null;
+    function setLoading(on, initialText) {
+      if (!nameLoadingEl) return;
+      if (on) {
+        nameLoadingEl.style.display = 'inline-flex';
+        nameLoadingEl.innerHTML = '<span aria-hidden="true" style="width:12px;height:12px;border:2px solid var(--color-border,#e5e0db);'
+          + 'border-top-color:var(--color-ink,#1C1C1C);border-radius:50%;animation:pdpToggleSpin 0.9s linear infinite;display:inline-block;"></span>'
+          + '<span data-phase>' + (initialText || 'Adding the name\u2026') + '</span>';
+        nameLoadingEl.setAttribute('role', 'status');
+        nameLoadingEl.setAttribute('aria-live', 'polite');
+      } else {
+        nameLoadingEl.style.display = 'none';
+        nameLoadingEl.innerHTML = '';
+        if (cycler) { clearInterval(cycler); cycler = null; }
+      }
+    }
+
+    function setButtonsDisabled(disabled) {
+      [yesBtn, noBtn].forEach(function (b) {
+        b.disabled = disabled;
+        b.style.opacity = disabled ? '0.6' : '1';
+        b.style.cursor = disabled ? 'wait' : 'pointer';
+      });
+    }
+
+    function renderActiveImage(url) {
+      var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
+      if (mainImg) mainImg.src = url;
+      if (thumb) thumb.src = url;
+      gallery.querySelectorAll('.product-gallery__slide--mockup img').forEach(function (mImg) {
+        mImg.src = url;
+      });
+    }
+
+    function updateHiddenProps(withText, printUrl, portraitUrl) {
+      var form = document.querySelector('.product-form, form[action*="/cart/add"]');
+      if (!form) return;
+      var showNameInput = form.querySelector('input[name="properties[_Show Name]"]');
+      if (showNameInput) showNameInput.value = withText ? 'Yes' : 'No';
+      if (withText && printUrl) {
+        var printInput = form.querySelector('input[name="properties[_Print File URL]"]');
+        if (printInput) printInput.value = printUrl;
+      }
+      if (withText && portraitUrl) {
+        var portraitInput = form.querySelector('input[name="properties[_Portrait URL]"]');
+        if (portraitInput) portraitInput.value = portraitUrl;
+      }
+    }
+
     function updateTextToggle(withText) {
       showName = withText;
-      var activeUrl = withText ? withTextUrl : noTextUrl;
-
-      // Update toggle button styles
+      // Toggle button styles
       yesBtn.style.background = withText ? 'var(--color-ink, #1C1C1C)' : 'var(--color-surface, #faf9f7)';
-      yesBtn.style.color = withText ? '#fff' : 'var(--color-muted, #8a8580)';
-      noBtn.style.background = withText ? 'var(--color-surface, #faf9f7)' : 'var(--color-ink, #1C1C1C)';
-      noBtn.style.color = withText ? 'var(--color-muted, #8a8580)' : '#fff';
+      yesBtn.style.color      = withText ? '#fff' : 'var(--color-muted, #8a8580)';
+      noBtn.style.background  = withText ? 'var(--color-surface, #faf9f7)' : 'var(--color-ink, #1C1C1C)';
+      noBtn.style.color       = withText ? 'var(--color-muted, #8a8580)' : '#fff';
 
-      // Update main portrait slide
-      var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
-      if (mainImg) mainImg.src = activeUrl;
+      if (!withText) {
+        renderActiveImage(noTextUrl);
+        updateHiddenProps(false);
+        return;
+      }
 
-      // Update strip thumbnail
-      if (thumb) thumb.src = activeUrl;
+      // User wants name. If we already generated the named version, swap instantly.
+      if (withTextUrl) {
+        renderActiveImage(withTextUrl);
+        updateHiddenProps(true, withTextUrl, withTextUrl);
+        return;
+      }
 
-      // Update all client mockup images
-      gallery.querySelectorAll('.product-gallery__slide--mockup img').forEach(function (mImg) {
-        mImg.src = activeUrl;
+      // Otherwise fetch /add-name in the background with a toggle-local spinner.
+      setLoading(true, 'Adding the name\u2026');
+      setButtonsDisabled(true);
+
+      var PHRASES = ['Adding the name\u2026', 'Painting the letters\u2026', 'Blending it in\u2026', 'Almost done\u2026'];
+      var idx = 0;
+      cycler = setInterval(function () {
+        idx = Math.min(idx + 1, PHRASES.length - 1);
+        var p = nameLoadingEl && nameLoadingEl.querySelector('[data-phase]');
+        if (p) p.textContent = PHRASES[idx];
+      }, 3500);
+
+      var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+      fetch(API_BASE + '/add-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: noTextUrl,
+          pet_name: petName,
+          style: data.styleId || '',
+        }),
+      })
+      .then(function (r) { return r.ok ? r.json() : r.json().then(function (d) { throw new Error(d.error || 'Failed'); }); })
+      .then(function (resp) {
+        var newUrl = resp.composited_png_cdn || resp.composited;
+        if (!newUrl) throw new Error('No image URL returned');
+        withTextUrl = newUrl;
+
+        // Persist for future PDP loads so we don't re-fetch on refresh
+        try {
+          var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+          sess.namedPreviewUrl = newUrl;
+          sess.printFileUrl = resp.composited_png_cdn || sess.printFileUrl;
+          localStorage.setItem(LS_KEY, JSON.stringify(sess));
+        } catch (_) {}
+
+        renderActiveImage(newUrl);
+        updateHiddenProps(true, resp.composited_png_cdn || newUrl, newUrl);
+        setLoading(false);
+        setButtonsDisabled(false);
+      })
+      .catch(function (err) {
+        setLoading(false);
+        setButtonsDisabled(false);
+        if (nameLoadingEl) {
+          nameLoadingEl.style.display = 'inline-flex';
+          nameLoadingEl.style.color = '#B00020';
+          nameLoadingEl.textContent = 'Could not add name — try again';
+          setTimeout(function () { setLoading(false); nameLoadingEl.style.color = ''; }, 3000);
+        }
+        // Revert toggle state
+        updateTextToggle(false);
       });
-
-      // Update hidden form property
-      var showNameInput = document.querySelector('input[name="properties[_Show Name]"]');
-      if (showNameInput) showNameInput.value = withText ? 'Yes' : 'No';
     }
 
     yesBtn.addEventListener('click', function () { updateTextToggle(true); });
-    noBtn.addEventListener('click', function () { updateTextToggle(false); });
+    noBtn.addEventListener('click',  function () { updateTextToggle(false); });
 
     // Insert after the portrait strip
     if (insertTarget && insertTarget.parentNode) {
       insertTarget.parentNode.insertBefore(toggleWrap, insertTarget);
+    }
+
+    // If we landed with showName=true but no namedPreviewUrl, proactively
+    // trigger the /add-name call so the customer doesn't click Yes on load
+    // only to be stuck waiting.
+    if (showName && !withTextUrl) {
+      // No-op: user must explicitly click Yes to opt in, so we don't auto-fire
+      // a Gemini call on every PDP visit.
     }
   }
 
@@ -788,108 +906,11 @@
       if (hiddenId) hiddenId.value = urlVariantId;
     }
 
-    // ── Lazy generation: call /add-name on ATC click ─────────
-    // The "with name" portrait is only generated when the user commits
-    // to buying — cuts Gemini cost in half during preview phase.
-    var atcBtn = document.querySelector('.atc-btn');
-    var showNameInput = function () { return document.querySelector('input[name="properties[_Show Name]"]'); };
-    if (atcBtn && !atcBtn.hasAttribute('data-lazy-hooked')) {
-      atcBtn.setAttribute('data-lazy-hooked', '1');
-      atcBtn.addEventListener('click', function (e) {
-        // Only intercept if user wants the name on the portrait
-        var wantsNameAtCart = (showNameInput() && showNameInput().value === 'Yes');
-        if (!wantsNameAtCart) return; // skip — no name needed
-        // Skip if we already generated the with-name version
-        if (atcBtn.hasAttribute('data-named-generated')) return;
-        // Skip if the named preview was already generated on step 4
-        if (data.namedPreviewUrl) {
-          atcBtn.setAttribute('data-named-generated', '1');
-          return; // let the form submit normally with existing URLs
-        }
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Inject the spinner keyframe once per page
-        if (!document.getElementById('pdp-addname-spin-kf')) {
-          var kf = document.createElement('style');
-          kf.id = 'pdp-addname-spin-kf';
-          kf.textContent = '@keyframes pdpAddNameSpin{to{transform:rotate(360deg)}}';
-          document.head.appendChild(kf);
-        }
-
-        var originalLabel = atcBtn.innerHTML;
-        atcBtn.disabled = true;
-        atcBtn.style.pointerEvents = 'none';
-        atcBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:10px;justify-content:center;">'
-          + '<span aria-hidden="true" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.35);'
-          + 'border-top-color:#fff;border-radius:50%;animation:pdpAddNameSpin 0.9s linear infinite;display:inline-block;"></span>'
-          + '<span data-addname-label>Adding the name\u2026</span>'
-          + '</span>';
-
-        // Progressive reassurance: cycle button sub-label + show a hint row
-        // below the button so the customer knows we are actively working.
-        var hint = document.createElement('p');
-        hint.setAttribute('role', 'status');
-        hint.setAttribute('aria-live', 'polite');
-        hint.id = 'pdp-addname-hint';
-        hint.style.cssText = 'margin:10px 0 0;font-size:0.8rem;color:var(--color-muted,#8c8578);text-align:center;line-height:1.4;';
-        hint.textContent = 'This takes about 10 seconds. Please don\u2019t refresh the page.';
-        if (atcBtn.parentNode) atcBtn.parentNode.insertBefore(hint, atcBtn.nextSibling);
-
-        var PHRASES = [
-          'Adding the name\u2026',
-          'Painting the letters\u2026',
-          'Finding the right spot\u2026',
-          'Almost done\u2026',
-        ];
-        var phaseIdx = 0;
-        var cycler = setInterval(function () {
-          phaseIdx = Math.min(phaseIdx + 1, PHRASES.length - 1);
-          var lbl = atcBtn.querySelector('[data-addname-label]');
-          if (lbl) lbl.textContent = PHRASES[phaseIdx];
-        }, 3500);
-
-        function cleanupLoadingUI() {
-          clearInterval(cycler);
-          if (hint && hint.parentNode) hint.parentNode.removeChild(hint);
-        }
-
-        var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-        fetch(API_BASE + '/add-name', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image_url: printFileUrl,
-            pet_name: petName,
-            style: data.styleId || '',
-          }),
-        })
-        .then(function (r) { return r.ok ? r.json() : r.json().then(function(d){ throw new Error(d.error||'Failed'); }); })
-        .then(function (resp) {
-          // Update cart properties with the new with-name hi-res URL
-          var printInput = form.querySelector('input[name="properties[_Print File URL]"]');
-          var portraitInput = form.querySelector('input[name="properties[_Portrait URL]"]');
-          if (printInput && resp.composited_png_cdn) printInput.value = resp.composited_png_cdn;
-          if (portraitInput && resp.composited) portraitInput.value = resp.composited;
-
-          // Mark as done and submit the form
-          atcBtn.setAttribute('data-named-generated', '1');
-          cleanupLoadingUI();
-          atcBtn.disabled = false;
-          atcBtn.style.pointerEvents = '';
-          atcBtn.innerHTML = originalLabel;
-          form.submit();
-        })
-        .catch(function (err) {
-          cleanupLoadingUI();
-          atcBtn.disabled = false;
-          atcBtn.style.pointerEvents = '';
-          atcBtn.innerHTML = originalLabel;
-          alert('Something went wrong preparing your portrait: ' + (err.message || err) + '. Please try again.');
-        });
-      }, true); // capture phase so we beat Shopify's submit handler
-    }
+    // The /add-name call is now handled by the "Show name on portrait"
+    // toggle (see updateTextToggle above), so by the time the customer
+    // clicks Add to Cart the named preview URL is already present in
+    // properties[_Print File URL] and the form can submit cleanly.
+    // The ATC button stays "Add to Cart" throughout — no loading hijack.
   }
 
   } // end runInjection
