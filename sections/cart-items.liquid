@@ -124,12 +124,6 @@
                 <div style="height:6px;background:var(--color-border);border-radius:99px;overflow:hidden;">
                   <div style="height:100%;width:{{ progress_pct }}%;background:linear-gradient(90deg,var(--color-primary),var(--color-accent));border-radius:99px;transition:width 0.5s ease;"></div>
                 </div>
-                <a href="/pages/create" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:0.82rem;font-weight:600;color:var(--color-primary);text-decoration:none;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-8-8h16"/>
-                  </svg>
-                  Add another portrait to qualify
-                </a>
               </div>
             {%- else -%}
               <div class="free-ship-tracker free-ship-tracker--achieved" style="margin:14px 0;padding:14px;background:#E8F5E9;border-radius:var(--radius-card);border:1px solid #81C784;">
@@ -139,6 +133,56 @@
                 </div>
               </div>
             {%- endif -%}
+
+            {%- comment -%}
+              Priority Order upsell — toggle that adds/removes the
+              priority-order line item via AJAX. Product page is not
+              linked anywhere; this is add-to-cart only.
+            {%- endcomment -%}
+            {%- assign priority_in_cart = false -%}
+            {%- assign priority_line_key = '' -%}
+            {%- for item in cart.items -%}
+              {%- if item.product.handle == 'priority-order' -%}
+                {%- assign priority_in_cart = true -%}
+                {%- assign priority_line_key = item.key -%}
+              {%- endif -%}
+            {%- endfor -%}
+
+            <div
+              class="priority-upsell"
+              data-priority-upsell
+              data-in-cart="{{ priority_in_cart }}"
+              data-line-key="{{ priority_line_key }}"
+              style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
+            >
+              <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
+                <input
+                  type="checkbox"
+                  id="PriorityUpsellToggle"
+                  {% if priority_in_cart %}checked{% endif %}
+                  style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
+                >
+                <span style="flex:1;line-height:1.45;">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);">
+                    <span aria-hidden="true">⚡</span>
+                    Priority Order
+                    <span
+                      data-priority-price
+                      style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
+                    ></span>
+                  </span>
+                  <span style="display:block;font-size:0.82rem;color:var(--color-muted);margin-top:3px;">
+                    Skip to the front of the line — yours gets made first
+                  </span>
+                  <span
+                    data-priority-status
+                    role="status"
+                    aria-live="polite"
+                    style="display:none;font-size:0.78rem;color:var(--color-muted);margin-top:4px;"
+                  ></span>
+                </span>
+              </label>
+            </div>
 
             <div class="cart-summary__shipping">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -175,6 +219,108 @@
 </div>
 
 <script>
+  /* Priority Order upsell toggle ────────────────────────────────
+     Fetches the priority-order product JSON once to get variant_id +
+     price, renders the price, then wires the checkbox to POST to
+     /cart/add.js (when checked) or /cart/change.js (when unchecked).
+     No link to the product page exists — the JSON endpoint is used
+     purely to resolve the variant. */
+  (function () {
+    var wrap = document.querySelector('[data-priority-upsell]');
+    if (!wrap) return;
+    var toggle = wrap.querySelector('#PriorityUpsellToggle');
+    var priceEl = wrap.querySelector('[data-priority-price]');
+    var statusEl = wrap.querySelector('[data-priority-status]');
+    if (!toggle) return;
+
+    var variantId = null;
+    var pendingRequest = false;
+
+    function formatMoney(cents) {
+      try {
+        return new Intl.NumberFormat('en-CA', {
+          style: 'currency', currency: 'Cart.currency' === 'Cart.currency' ? 'CAD' : 'CAD',
+          minimumFractionDigits: 2,
+        }).format((cents || 0) / 100);
+      } catch (e) {
+        return '$' + (((cents || 0) / 100).toFixed(2));
+      }
+    }
+
+    function setStatus(msg, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.style.display = msg ? 'block' : 'none';
+      statusEl.style.color = isError ? '#B00020' : 'var(--color-muted)';
+    }
+
+    function setBusy(busy) {
+      pendingRequest = busy;
+      toggle.disabled = busy;
+      wrap.style.opacity = busy ? '0.65' : '1';
+    }
+
+    // Load variant id + price up front
+    fetch('/products/priority-order.js', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('NOT_FOUND'); return r.json(); })
+      .then(function (p) {
+        var v = (p.variants && p.variants[0]) || null;
+        if (!v) throw new Error('NO_VARIANT');
+        variantId = v.id;
+        if (priceEl) priceEl.textContent = '+' + formatMoney(v.price);
+      })
+      .catch(function () {
+        // Product missing or draft — hide the upsell entirely so we
+        // don't render a broken-looking toggle in production.
+        wrap.style.display = 'none';
+      });
+
+    toggle.addEventListener('change', function () {
+      if (pendingRequest) return;
+      var wantOn = toggle.checked;
+
+      if (wantOn) {
+        if (!variantId) {
+          toggle.checked = false;
+          setStatus('Priority Order is temporarily unavailable.', true);
+          return;
+        }
+        setBusy(true);
+        setStatus('Adding priority to your order…');
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: variantId, quantity: 1 }),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('ADD_FAILED'); return r.json(); })
+          .then(function () { window.location.reload(); })
+          .catch(function () {
+            setBusy(false);
+            toggle.checked = false;
+            setStatus('Could not add Priority Order. Please try again.', true);
+          });
+      } else {
+        // Remove by line key captured from the server-rendered attribute
+        var lineKey = wrap.getAttribute('data-line-key') || '';
+        if (!lineKey) { window.location.reload(); return; }
+        setBusy(true);
+        setStatus('Removing priority…');
+        fetch('/cart/change.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: lineKey, quantity: 0 }),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('REMOVE_FAILED'); return r.json(); })
+          .then(function () { window.location.reload(); })
+          .catch(function () {
+            setBusy(false);
+            toggle.checked = true;
+            setStatus('Could not remove Priority Order. Please try again.', true);
+          });
+      }
+    });
+  })();
+
   /* Replace cart thumbnails with the actual generated portrait from localStorage */
   (function () {
     try {
