@@ -84,24 +84,33 @@ def _name_integration(style_id: str, pet_name: str) -> str:
     name_upper = safe.upper()
 
     # POSITION & SAFETY ENVELOPE
-    # The source image is 4:5. Customers can order 1:1 (square canvas), 3:4, or
-    # 4:5. When a client/Printful mockup crops 4:5 → 1:1 with top-anchored
-    # gravity, the TOP 80% of the 4:5 source survives. We therefore MUST place
-    # the name inside that top envelope — and push it even higher (above 20%
-    # of source height) so it's nowhere near the crop boundary. Gemini is
-    # inconsistent about placement, so the instruction is intentionally
-    # emphatic and repeated.
+    # The source image is 4:5. Customers can order 1:1 (square canvas), 3:4,
+    # or 4:5. A center-crop from 4:5 → 1:1 removes the top 10% and bottom 10%
+    # of source height. To guarantee the name stays visible on EVERY aspect
+    # ratio AND leaves a proper top margin above it on the visible face, the
+    # name's vertical center must sit between 18% and 24% of source height:
+    #   - On 4:5 orders: name at 18-24% of print → visible with generous top margin.
+    #   - On 1:1 orders (center crop): name ends up at 10-17.5% of the square
+    #     crop — still with clear top margin, not touching the edge.
+    #   - On 3:4 orders (horizontal crop only): name position unchanged.
+    # The pet's face stays at 50% of source so it lands at the visual center
+    # of the visible face on every variant.
     safe_zone = (
-        "- POSITION — CRITICAL: The name MUST be placed in the TOP portion of "
-        "the image, well ABOVE the pet. This is the most important rule: if "
-        "the name is not in the top 20% of the image, the print will fail.\n"
+        "- POSITION — CRITICAL: Place the name in the upper portion of the "
+        "image, clearly ABOVE the pet, with a visible margin of empty "
+        "background between the top edge of the image and the name.\n"
         "- The name is rendered as part of the artwork's own background or "
         "atmosphere (NOT a separate white strip or solid panel).\n"
-        "- Vertical placement: the name's vertical center MUST be between 10% "
-        "and 18% of image height from the TOP edge. Never lower than 20%.\n"
+        "- Vertical placement: the name's vertical CENTER must sit between "
+        "18% and 24% of the image height, measured from the TOP edge. "
+        "Leave a clear top margin of at least 12% of image height above the "
+        "top of the name letters so the canvas never feels crowded at the "
+        "top and the name is safely inside the printed canvas face on every "
+        "product size (square, 3:4, and 4:5).\n"
         "- NEVER place the name at the bottom, below the pet, near the pet's "
-        "paws, or anywhere in the bottom half of the image. The bottom portion "
-        "gets cropped on square canvas orders and the name would be lost.\n"
+        "paws, or anywhere in the bottom half of the image. Never place the "
+        "name in the top 10% of the image (too close to edge — wraps on "
+        "gallery-wrap canvas).\n"
         "- Horizontal placement: PERFECTLY CENTERED horizontally on the image.\n"
         "- SINGLE LINE ONLY — never wrap, break, or stack the name across two lines.\n"
         "- WIDTH CONSTRAINT: the name must fit within the CENTER 70% of the image "

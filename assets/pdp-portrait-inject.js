@@ -362,11 +362,14 @@
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    // Anchor the crop to the top so square canvases don't slice the pet's
-     // name — our AI prompt places it in the top ~20% of the 4:5 source,
-     // which survives only if we preserve the top during the cover-crop.
+    // object-fit:cover with center gravity mirrors what Printful does when
+     // cropping the 4:5 source down to square (1:1) or other aspect ratios —
+     // the mockup and the printed canvas stay visually consistent. The
+     // Gemini prompt places the pet's name low enough in the 4:5 source
+     // (~18-24% from top) that a center-crop to 1:1 still leaves a visible
+     // top margin above the name.
     portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
-      + 'object-fit:cover;object-position:center top;display:block;';
+      + 'object-fit:cover;object-position:center center;display:block;';
     canvasFace.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
