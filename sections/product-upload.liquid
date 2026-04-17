@@ -140,14 +140,6 @@
         </div>
       {%- endif -%}
 
-      <!-- Gift message -->
-      <div style="margin-bottom:16px;">
-        <label style="display:flex;align-items:center;gap:10px;font-size:0.88rem;cursor:pointer;">
-          <input type="checkbox" name="properties[Gift Message]" value="Yes" style="width:18px;height:18px;accent-color:var(--color-primary);">
-          This is a gift — add a gift message at checkout
-        </label>
-      </div>
-
       <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
 
       <button

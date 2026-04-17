@@ -637,11 +637,13 @@
     document.head.appendChild(kf);
   }
 
-  // Insert strip where upload widget was (before gift message)
-  var giftMsg = document.querySelector('input[name="properties[Gift Message]"]');
-  var insertTarget = giftMsg ? giftMsg.closest('div[style]') : null;
+  // Insert urgency banner + portrait strip directly above the Add-to-Cart
+  // submit button (previously anchored to the gift-message input, which has
+  // been removed). Falls back to the hidden variant input if needed.
+  var atcBtn = document.querySelector('button[name="add"], form[action*="/cart/add"] [type="submit"]');
+  var insertTarget = atcBtn
+    || document.querySelector('input[name="id"][type="hidden"]');
   if (insertTarget && insertTarget.parentNode) {
-    // Urgency banner sits ABOVE the portrait strip
     var urgencyBanner = buildUrgencyBanner();
     insertTarget.parentNode.insertBefore(urgencyBanner, insertTarget);
     insertTarget.parentNode.insertBefore(strip, insertTarget);

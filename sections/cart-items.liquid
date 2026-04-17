@@ -147,19 +147,6 @@
               Taxes & shipping at checkout
             </div>
 
-            <!-- Gift message -->
-            <div class="cart-gift">
-              <label style="display:flex;align-items:center;gap:10px;font-size:0.88rem;cursor:pointer;margin-bottom:16px;">
-                <input type="checkbox" id="CartGiftMessage" style="width:18px;height:18px;accent-color:var(--color-primary);">
-                This is a gift
-              </label>
-              <div id="GiftMessageField" style="display:none;margin-bottom:16px;">
-                <textarea placeholder="Add a gift message…" rows="3"
-                  style="width:100%;padding:10px 12px;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:0.9rem;resize:vertical;"
-                  name="attributes[Gift Message]"></textarea>
-              </div>
-            </div>
-
             <a href="{{ routes.checkout }}" class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
               Checkout → <span style="font-size:0.85em;opacity:0.85;">{{ cart.total_price | money }} CAD</span>
             </a>
@@ -188,14 +175,6 @@
 </div>
 
 <script>
-  const giftToggle = document.getElementById('CartGiftMessage');
-  const giftField  = document.getElementById('GiftMessageField');
-  if (giftToggle && giftField) {
-    giftToggle.addEventListener('change', () => {
-      giftField.style.display = giftToggle.checked ? 'block' : 'none';
-    });
-  }
-
   /* Replace cart thumbnails with the actual generated portrait from localStorage */
   (function () {
     try {
