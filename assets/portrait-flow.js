@@ -1951,8 +1951,8 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       }),
     ),
 
-    // Urgency banner — session countdown + unique-art scarcity
-    React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
+    // Urgency banner — countdown timer hidden for now. Uncomment to re-enable.
+    // React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
 
     // Actions
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
@@ -2153,8 +2153,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 4, total: 4 }),
 
-    // Urgency banner — countdown follows user through checkout decision
-    React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
+    // Urgency banner — countdown timer hidden for now. Uncomment to re-enable.
+    // React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
 
     // LIVE MOCKUP — reflects size + frame choices
     React.createElement('div', {

@@ -679,8 +679,9 @@
   var insertTarget = atcBtn
     || document.querySelector('input[name="id"][type="hidden"]');
   if (insertTarget && insertTarget.parentNode) {
-    var urgencyBanner = buildUrgencyBanner();
-    insertTarget.parentNode.insertBefore(urgencyBanner, insertTarget);
+    // Countdown timer hidden for now. Uncomment to re-enable:
+    // var urgencyBanner = buildUrgencyBanner();
+    // insertTarget.parentNode.insertBefore(urgencyBanner, insertTarget);
     insertTarget.parentNode.insertBefore(strip, insertTarget);
   }
 
