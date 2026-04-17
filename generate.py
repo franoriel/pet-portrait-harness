@@ -73,23 +73,36 @@ def _name_integration(style_id: str, pet_name: str) -> str:
 
     # Defense in depth: strip any chars that could break out of prompt strings
     # (quotes, braces, brackets, backslashes, backticks, newlines). Only allow
-    # letters, numbers, spaces, hyphens, apostrophes, periods. Max 30 chars.
-    safe = re.sub(r"[^A-Za-z0-9\s\-'\u2019.]", "", pet_name.strip())[:30].strip()
+    # letters, numbers, spaces, hyphens, apostrophes, periods. Max 20 chars so
+    # it fits comfortably on a single line without needing a microscopic font
+    # or wrapping off the canvas edge.
+    safe = re.sub(r"[^A-Za-z0-9\s\-'\u2019.]", "", pet_name.strip())[:20].strip()
     if not safe:
         return "- Do NOT include any text, words, or letters anywhere in the image."
 
     name = safe.title()
     name_upper = safe.upper()
 
-    # POSITION: name goes in the TOP white space above the pet — perfectly centered
-    # horizontally, vertically within 8%-20% of image height.
+    # POSITION & SAFETY ENVELOPE
+    # The source image is 4:5. Customers can order 1:1 (square canvas), 3:4, or
+    # 4:5. A 4:5 → 1:1 crop with center gravity removes ~10% from top + bottom,
+    # so the safe-zone top boundary is pushed down to 18% and the bottom to 26%
+    # — that way a centered name at 22% of source lands at ~15% of the square
+    # crop, safely inside. Single-line only, bounded width.
     safe_zone = (
         "- POSITION: Place the name in the TOP center region ABOVE the pet, "
         "integrated into the artwork's own background/atmosphere (NOT a separate "
         "white strip or solid panel).\n"
-        "- Vertical placement: name baseline between 10% and 20% of image height "
-        "(measured from top edge). Leave at least 8% margin from the top edge.\n"
+        "- Vertical placement: name baseline between 18% and 26% of image height "
+        "(measured from top edge). Leave at least 12% clear margin from the top edge "
+        "so a square-canvas crop from the 4:5 source cannot slice the name.\n"
         "- Horizontal placement: PERFECTLY CENTERED horizontally on the image.\n"
+        "- SINGLE LINE ONLY — never wrap, break, or stack the name across two lines.\n"
+        "- WIDTH CONSTRAINT: the name must fit within the CENTER 70% of the image "
+        "width. If the letters would exceed this width at the specified font size, "
+        "reduce the font size until the whole name fits — never bleed past the "
+        "70% width envelope.\n"
+        "- Leave at least 15% clear horizontal margin on the LEFT and RIGHT sides.\n"
         "- Name must sit above the pet's head — NEVER overlap the pet.\n"
         "- CONTRAST: Use HIGH-CONTRAST color so the name is clearly legible. "
         "For light backgrounds use deep saturated dark colors (near-black, deep "

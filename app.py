@@ -100,9 +100,15 @@ def check_rate_limit(ip: str, endpoint: str = "generate") -> tuple[bool, str]:
 import re as _re
 
 # Allow letters, numbers, spaces, apostrophes, hyphens, periods.
-# Max 30 chars. Rejects quotes, braces, brackets, backslashes, backticks,
-# newlines, and anything else that could break out of a prompt string.
-_PET_NAME_PATTERN = _re.compile(r"^[A-Za-z0-9\s\-\u2019'.]{1,30}$", _re.UNICODE)
+# Max 20 chars — keeps the name on a single line and prevents the AI from
+# cramming a tiny font that gets cut off by a square crop. Rejects quotes,
+# braces, brackets, backslashes, backticks, newlines, and anything else that
+# could break out of a prompt string.
+PET_NAME_MAX = 20
+_PET_NAME_PATTERN = _re.compile(
+    r"^[A-Za-z0-9\s\-\u2019'.]{1," + str(PET_NAME_MAX) + r"}$",
+    _re.UNICODE,
+)
 
 def sanitize_pet_name(raw: str) -> tuple[bool, str]:
     """Returns (is_valid, clean_value). Strips + validates against whitelist."""
@@ -111,7 +117,7 @@ def sanitize_pet_name(raw: str) -> tuple[bool, str]:
     name = raw.strip()
     if not name:
         return False, ""
-    if len(name) > 30:
+    if len(name) > PET_NAME_MAX:
         return False, ""
     if not _PET_NAME_PATTERN.match(name):
         return False, ""
@@ -401,7 +407,7 @@ def generate_route():
     ok_name, pet_name = sanitize_pet_name(request.form.get("pet_name", ""))
     if not ok_name:
         return jsonify(
-            error="Pet name must be 1–30 characters using only letters, numbers, spaces, hyphens, periods, or apostrophes."
+            error="Pet name must be 1–20 characters using only letters, numbers, spaces, hyphens, periods, or apostrophes."
         ), 400
 
     # Whitelist style + map React IDs (soft-watercolour → watercolor)
