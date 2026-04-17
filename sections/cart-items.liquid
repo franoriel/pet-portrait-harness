@@ -321,6 +321,22 @@
     });
   })();
 
+  /* Free-shipping celebration — trigger on cart page load when the
+     current cart is over the $85 threshold and this session hasn't
+     celebrated yet. theme.js defines window.petPrintables.maybeCelebrateFreeShipping
+     and handles session-scoped de-dupe. */
+  (function () {
+    function fire() {
+      var fn = window.petPrintables && window.petPrintables.maybeCelebrateFreeShipping;
+      if (typeof fn === 'function') fn({{ cart.total_price }});
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fire);
+    } else {
+      fire();
+    }
+  })();
+
   /* Replace cart thumbnails with the actual generated portrait from localStorage */
   (function () {
     try {

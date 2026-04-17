@@ -370,6 +370,129 @@
       .catch(err => console.error('[CartCount]', err));
   }
 
+  /* ── Free-shipping celebration ─────────────────────────────
+     Fires a one-shot confetti toast the first time a session's
+     cart crosses the $85 threshold. Session-scoped so a refresh
+     doesn't re-fire; resets automatically if the cart drops back
+     below the threshold, so removing and re-adding items can
+     trigger a new celebration. */
+  const FREE_SHIP_CENTS = 8500;
+  const CELEBRATE_KEY   = 'pf_free_ship_celebrated';
+
+  function injectFreeShipStyles() {
+    if (document.getElementById('pf-freeship-toast-styles')) return;
+    const st = document.createElement('style');
+    st.id = 'pf-freeship-toast-styles';
+    st.textContent = `
+      @keyframes pf-toast-in {
+        0%   { transform: translate(-50%, -24px); opacity: 0; }
+        100% { transform: translate(-50%, 0);     opacity: 1; }
+      }
+      @keyframes pf-toast-out {
+        0%   { transform: translate(-50%, 0);     opacity: 1; }
+        100% { transform: translate(-50%, -24px); opacity: 0; }
+      }
+      @keyframes pf-confetti-fall {
+        0%   { transform: translate(var(--pf-x, 0), -10vh) rotate(0deg); opacity: 1; }
+        100% { transform: translate(var(--pf-x, 0), 110vh) rotate(720deg); opacity: 0.2; }
+      }
+      .pf-freeship-toast {
+        position: fixed; top: 24px; left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+        color: #fff;
+        padding: 14px 22px;
+        border-radius: 999px;
+        font-family: var(--font-body, system-ui, sans-serif);
+        font-size: 0.95rem; font-weight: 600;
+        line-height: 1.35;
+        box-shadow: 0 10px 30px -8px rgba(27,94,32,0.55);
+        display: flex; align-items: center; gap: 12px;
+        max-width: min(90vw, 440px);
+        animation: pf-toast-in 0.4s cubic-bezier(0.2,0.9,0.3,1.2);
+      }
+      .pf-freeship-toast.is-leaving { animation: pf-toast-out 0.35s ease-in forwards; }
+      .pf-freeship-toast__emoji { font-size: 1.35rem; line-height: 1; flex-shrink: 0; }
+      .pf-freeship-toast__text strong { font-weight: 700; }
+      .pf-freeship-toast__sub { display: block; font-weight: 400; opacity: 0.85; font-size: 0.82rem; margin-top: 2px; }
+      .pf-confetti-piece {
+        position: fixed; top: 0; z-index: 9998; pointer-events: none;
+        width: 10px; height: 14px; border-radius: 2px;
+        animation: pf-confetti-fall 2.4s cubic-bezier(0.25,0.5,0.5,1) forwards;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pf-freeship-toast { animation: none; }
+        .pf-confetti-piece { display: none; }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function launchConfetti() {
+    // Respect reduced motion
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#FFC107', '#FF7043', '#66BB6A', '#42A5F5', '#EC407A', '#AB47BC', '#26C6DA'];
+    for (let i = 0; i < 40; i++) {
+      const piece = document.createElement('span');
+      piece.className = 'pf-confetti-piece';
+      const x = (Math.random() * 100).toFixed(2);
+      const drift = ((Math.random() - 0.5) * 30).toFixed(2);
+      piece.style.left = x + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.setProperty('--pf-x', drift + 'vw');
+      piece.style.animationDelay = (Math.random() * 0.3).toFixed(2) + 's';
+      piece.style.animationDuration = (2 + Math.random() * 1.2).toFixed(2) + 's';
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 4000);
+    }
+  }
+
+  function showFreeShippingToast() {
+    injectFreeShipStyles();
+    // If a toast is already on-screen, don't double up
+    if (document.querySelector('.pf-freeship-toast')) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'pf-freeship-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.innerHTML = `
+      <span class="pf-freeship-toast__emoji" aria-hidden="true">🎉</span>
+      <span class="pf-freeship-toast__text">
+        <strong>Free shipping unlocked!</strong>
+        <span class="pf-freeship-toast__sub">Nice — your order ships on us.</span>
+      </span>`;
+    document.body.appendChild(toast);
+    launchConfetti();
+
+    const dismiss = () => {
+      toast.classList.add('is-leaving');
+      setTimeout(() => toast.remove(), 400);
+    };
+    toast.addEventListener('click', dismiss);
+    setTimeout(dismiss, 4200);
+  }
+
+  function maybeCelebrateFreeShipping(cartTotal) {
+    if (typeof cartTotal !== 'number') return;
+    let celebrated = false;
+    try { celebrated = sessionStorage.getItem(CELEBRATE_KEY) === '1'; } catch {}
+    if (cartTotal < FREE_SHIP_CENTS) {
+      // Reset so they can celebrate again if they remove items and re-cross
+      try { sessionStorage.removeItem(CELEBRATE_KEY); } catch {}
+      return;
+    }
+    if (!celebrated) {
+      try { sessionStorage.setItem(CELEBRATE_KEY, '1'); } catch {}
+      showFreeShippingToast();
+    }
+  }
+
+  // Expose for cart-items.liquid (page-level script)
+  window.petPrintables = window.petPrintables || {};
+  window.petPrintables.maybeCelebrateFreeShipping = maybeCelebrateFreeShipping;
+
   /* ── Cart Drawer ───────────────────────────────────────── */
   class CartDrawer {
     constructor() {
@@ -442,8 +565,11 @@
           </div>
         </div>`).join('');
 
+      // Fire one-shot celebration toast the first time the cart crosses
+      // the $85 free-shipping threshold during this session.
+      maybeCelebrateFreeShipping(cart.total_price);
+
       if (footer) {
-        const FREE_SHIP_CENTS = 8500;
         const remainingCents = FREE_SHIP_CENTS - cart.total_price;
         const progressPct = Math.min(100, (cart.total_price / FREE_SHIP_CENTS) * 100);
         const shipTracker = remainingCents > 0
