@@ -54,7 +54,13 @@ def _get_redis():
 
 # ── Job operations ────────────────────────────────────────────────────────────
 
-def create_job(pet_name: str, style: str, upload_path: str) -> dict:
+def create_job(
+    pet_name: str,
+    style: str,
+    upload_path: str,
+    terms_accepted_at: str = "",
+    client_ip: str = "",
+) -> dict:
     """Create a job, enqueue it, and return the job dict."""
     job_id = uuid.uuid4().hex[:12]
     now = time.time()
@@ -73,6 +79,11 @@ def create_job(pet_name: str, style: str, upload_path: str) -> dict:
         "filename": "",
         "cdn": False,
         "error": "",
+        # Photo-licence audit trail — when the customer ticked the checkbox
+        # and from which IP. Persisted with the job so it survives into
+        # Printful fulfillment logs.
+        "terms_accepted_at": terms_accepted_at or "",
+        "accept_ip": client_ip or "",
     }
 
     r = _get_redis()

@@ -413,6 +413,35 @@ def generate_route():
     if style not in PROMPTS:
         return jsonify(error="Invalid style."), 400
 
+    # ── Photo-license consent (audit trail) ──────────────────────────────────
+    # Frontend checkbox sends an ISO-8601 timestamp when the customer ticks
+    # "I own rights to this photo and grant a licence to reproduce/modify/print".
+    # We require it to be present, within a plausible window, and log it with
+    # the IP so we have a defensible record if a dispute arises.
+    terms_accepted_at = (request.form.get("terms_accepted_at") or "").strip()[:40]
+    if not terms_accepted_at:
+        return jsonify(
+            error="You must accept the photo upload terms before generating.",
+            code="terms_required",
+        ), 400
+    try:
+        from datetime import datetime, timezone, timedelta
+        # Normalise trailing Z → +00:00 for fromisoformat
+        _ts_iso = terms_accepted_at.replace("Z", "+00:00")
+        _accepted = datetime.fromisoformat(_ts_iso)
+        if _accepted.tzinfo is None:
+            _accepted = _accepted.replace(tzinfo=timezone.utc)
+        _now = datetime.now(timezone.utc)
+        # Accept only timestamps within the last 24h and not from the future
+        # (beyond a 2-minute clock-skew tolerance).
+        if _accepted > _now + timedelta(minutes=2) or _accepted < _now - timedelta(hours=24):
+            return jsonify(error="Photo terms acceptance is stale. Please re-check the box.",
+                           code="terms_stale"), 400
+    except Exception:
+        return jsonify(error="Invalid terms acceptance timestamp.",
+                       code="terms_invalid"), 400
+    log.info("PHOTO_LICENCE_ACCEPTED ip=%s ts=%s style=%s", ip, terms_accepted_at, style)
+
     # Validate file by magic bytes (not just extension)
     ok_file, file_reason = validate_image_file(file)
     if not ok_file:
@@ -451,7 +480,13 @@ def generate_route():
         ), 400
 
     # ── Enqueue job and return immediately ────────────────────────────────────
-    job = create_job(pet_name=pet_name, style=style, upload_path=str(upload_path))
+    job = create_job(
+        pet_name=pet_name,
+        style=style,
+        upload_path=str(upload_path),
+        terms_accepted_at=terms_accepted_at,
+        client_ip=ip,
+    )
     depth = queue_depth()
 
     return jsonify(

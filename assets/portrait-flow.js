@@ -357,12 +357,17 @@ function getTurnstileToken() {
   return '';
 }
 
-async function generatePortrait({ imageFile, styleId, petName }) {
+async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt }) {
   const formData = new FormData();
   formData.append('photo', imageFile);
   formData.append('pet_name', petName || 'Pet');
   formData.append('style', STYLE_MAP[styleId] || 'classic');
   formData.append('turnstile_token', getTurnstileToken());
+  // Photo-license audit trail — ISO timestamp of when the customer
+  // accepted the upload terms. Backend logs this with the job.
+  if (termsAcceptedAt) {
+    formData.append('terms_accepted_at', termsAcceptedAt);
+  }
 
   // Step 1: Submit the job
   const submitRes = await fetch(`${API_BASE}/generate`, {
@@ -622,6 +627,11 @@ function usePortraitFlow() {
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
     pendingPhoto: pending,  // hold pending for later conversion to File
+
+    // Photo-license + Terms acceptance — legally required before generating.
+    // We record the timestamp so the backend can log it as an audit trail.
+    termsAccepted: false,
+    termsAcceptedAt: null,
   });
 
   // If we have pending PDP data, reconstruct the File object asynchronously
@@ -697,6 +707,7 @@ function usePortraitFlow() {
         imageFile,
         styleId: state.selectedStyleId,
         petName: state.petName,
+        termsAcceptedAt: state.termsAcceptedAt,
       });
       // Try to convert preview URLs to base64 for localStorage,
       // but always keep the original URLs as fallback
@@ -795,7 +806,7 @@ function usePortraitFlow() {
   return {
     state, setPhoto, selectStyle, generate, selectPreview, goToStage,
     retryFromUpload, retryFromStyle, startFresh, update,
-    canContinueFromUpload: state.photo && !state.photoError,
+    canContinueFromUpload: state.photo && !state.photoError && state.termsAccepted,
     canGenerate: (state.photo || state.imageFilename) && state.selectedStyleId,
   };
 }
@@ -1196,13 +1207,70 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
       ),
     ),
 
+    // Photo license + Terms acceptance — required before generating
+    React.createElement(PhotoLicenseConsent, {
+      accepted: state.termsAccepted,
+      onChange: (checked) => update({
+        termsAccepted: checked,
+        termsAcceptedAt: checked ? new Date().toISOString() : null,
+      }),
+    }),
+
     // Continue button — always visible, disabled state communicates what's needed
     React.createElement('button', {
       type: 'button',
       style: primaryBtnStyle(canContinue),
       disabled: !canContinue, onClick: onContinue,
       'aria-label': 'Continue to style selection',
-    }, canContinue ? 'CHOOSE YOUR STYLE \u2192' : 'ADD PHOTO & NAME TO CONTINUE'),
+    },
+      canContinue
+        ? 'CHOOSE YOUR STYLE \u2192'
+        : (!state.photo
+            ? 'ADD PHOTO & NAME TO CONTINUE'
+            : (!state.termsAccepted
+                ? 'ACCEPT PHOTO TERMS TO CONTINUE'
+                : 'ADD PHOTO & NAME TO CONTINUE'))
+    ),
+  );
+}
+
+/* ── PhotoLicenseConsent ───────────────────────────────────── */
+
+function PhotoLicenseConsent({ accepted, onChange }) {
+  return React.createElement('label', {
+    htmlFor: 'pf-terms-accept',
+    style: {
+      display: 'flex', alignItems: 'flex-start', gap: '10px',
+      padding: '12px 14px', margin: '0 0 18px',
+      background: tokens.colorWhite,
+      border: `1px solid ${accepted ? tokens.colorBrand : tokens.colorBorder}`,
+      borderRadius: tokens.radiusCard, cursor: 'pointer',
+      transition: 'border-color 0.15s ease',
+    },
+  },
+    React.createElement('input', {
+      id: 'pf-terms-accept', type: 'checkbox',
+      checked: !!accepted,
+      onChange: (e) => onChange(e.target.checked),
+      style: { marginTop: '3px', width: '16px', height: '16px',
+               accentColor: tokens.colorBrand, flexShrink: 0 },
+      'aria-describedby': 'pf-terms-text',
+    }),
+    React.createElement('span', {
+      id: 'pf-terms-text',
+      style: { fontFamily: fontSans, fontSize: '12px', lineHeight: 1.5,
+               color: tokens.colorMuted },
+    },
+      'I confirm I own all rights to this photo (or have permission from the ' +
+      'owner), and I grant Pet Printables a non-exclusive licence to reproduce, ' +
+      'modify, and print it solely to fulfil my order. ',
+      React.createElement('a', {
+        href: '/policies/terms-of-service', target: '_blank', rel: 'noopener',
+        style: { color: tokens.colorBrand, textDecoration: 'underline' },
+        onClick: (e) => e.stopPropagation(),
+      }, 'Read full terms'),
+      '.',
+    ),
   );
 }
 
