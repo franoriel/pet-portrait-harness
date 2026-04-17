@@ -84,15 +84,19 @@ def _name_integration(style_id: str, pet_name: str) -> str:
     # POSITION: name goes in the TOP white space above the pet — perfectly centered
     # horizontally, vertically within 8%-20% of image height.
     safe_zone = (
-        "- POSITION: Place the name in the TOP center white space ABOVE the pet.\n"
+        "- POSITION: Place the name in the TOP center region ABOVE the pet, "
+        "integrated into the artwork's own background/atmosphere (NOT a separate "
+        "white strip or solid panel).\n"
         "- Vertical placement: name baseline between 10% and 20% of image height "
         "(measured from top edge). Leave at least 8% margin from the top edge.\n"
         "- Horizontal placement: PERFECTLY CENTERED horizontally on the image.\n"
-        "- Name must sit in the clean empty area above the pet — NEVER overlap the pet.\n"
-        "- CONTRAST: Use HIGH-CONTRAST color so the name is clearly legible against "
-        "the white/light background above the pet. For light backgrounds: use deep, "
-        "saturated dark colors (near-black, deep navy, rich brown, deep sepia). "
-        "Do NOT use pale, washed-out, or low-contrast colors for the name.\n"
+        "- Name must sit above the pet's head — NEVER overlap the pet.\n"
+        "- CONTRAST: Use HIGH-CONTRAST color so the name is clearly legible. "
+        "For light backgrounds use deep saturated dark colors (near-black, deep "
+        "navy, rich brown, deep sepia). For DARK backgrounds (moody drapery, "
+        "oil paint shadow, dark graphic poster) use LIGHT colors (warm ivory, "
+        "antique gold, pale cream) so the name reads clearly against the dark area. "
+        "Do NOT use washed-out or low-contrast colors.\n"
     )
 
     # AESTHETIC PRINCIPLE: The name is a SMALL, REFINED accent — never
@@ -206,7 +210,8 @@ STRICT RULES:
 - Black ink lines ONLY — no gray, no shading, no fill, no wash, no halftone
 - No crosshatching, no stippling, no hatching of any kind
 - ZERO text, letters, words, signatures, watermarks, or symbols anywhere
-- The bottom 25% of the image must be COMPLETELY EMPTY white space
+- NO solid color blocks, bars, panels, or rectangles anywhere in the image
+- Background must be uniform white from edge to edge — no separate bottom panel
 
 STYLE:
 - Elegant continuous contour line drawing, as if drawn by a skilled illustrator \
@@ -218,7 +223,7 @@ with a fine-tip pen in a single sitting
 COMPOSITION:
 - Chest up, centered horizontally, three-quarter angle, direct gaze
 - Head occupies 40-50% of image height
-- Bottom 25% is empty white space for text — do NOT generate any text\
+- Pure white background fills the entire canvas edge-to-edge\
 """
 
 _MINIMAL_PROMPT = """\
@@ -229,7 +234,8 @@ STRICT RULES:
 - Pure white background (#FFFFFF), no texture, no gradient, no paper grain
 - Black ink lines ONLY — no gray, no shading, no fill, no wash, no halftone
 - ZERO text, letters, words, signatures, watermarks, or symbols anywhere
-- The bottom 25% of the image must be COMPLETELY EMPTY white space
+- NO solid color blocks, bars, panels, or rectangles anywhere in the image
+- Background must be uniform white from edge to edge — no separate bottom panel
 
 STYLE:
 - Minimal, confident strokes — each line counts
@@ -239,7 +245,7 @@ STYLE:
 COMPOSITION:
 - Chest up, centered horizontally
 - Head occupies 40-50% of image height
-- Bottom 25% is empty white space for text — do NOT generate any text\
+- Pure white background fills the entire canvas edge-to-edge\
 """
 
 _NATURALIST_PROMPT = """\
@@ -251,7 +257,8 @@ STRICT RULES:
 - Steel nib dip pen quality: precise, fine lines
 - Fine parallel hatching on body for volume — face must remain clean contour only
 - ZERO text, letters, words, signatures, watermarks, or symbols anywhere
-- The bottom 25% of the image must be COMPLETELY EMPTY white space
+- NO solid color blocks, bars, panels, or rectangles anywhere in the image
+- Background must be uniform white from edge to edge — no separate bottom panel
 
 STYLE:
 - Victorian natural history illustration quality
@@ -261,7 +268,7 @@ STYLE:
 COMPOSITION:
 - Chest up, centered horizontally, three-quarter angle, direct gaze
 - Head occupies 40-50% of image height
-- Bottom 25% is empty white space for text — do NOT generate any text\
+- Pure white background fills the entire canvas edge-to-edge\
 """
 
 _MINIMAL_LINE_ART_TEMPLATE = """\
@@ -284,12 +291,13 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, direct or three-quarter gaze
-- The bottom 20%% of the image must be left as clean off-white space — \
-completely free of the animal — reserved for a name label
+- The artwork must fill the entire canvas edge-to-edge — no reserved panels, \
+bars, color blocks, or empty bands at the top or bottom
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, cartoon, anime, 3D render, gray shading, \
-crosshatching, stippling, color fills, text, watermark, border.\
+crosshatching, stippling, color fills, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _MODERN_OIL_PAINT_TEMPLATE = """\
@@ -315,12 +323,13 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, noble three-quarter angle, direct gaze
-- The bottom 20%% of the image must be a softly darkened area — \
-completely free of the animal — reserved for a name label
+- The artwork must fill the entire canvas edge-to-edge — no reserved panels, \
+bars, color blocks, or empty bands at the top or bottom
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, flat digital art, cartoon, anime, 3D render, \
-harsh shadows, neon colors, pixelation, blurry, text, watermark, border.\
+harsh shadows, neon colors, pixelation, blurry, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _NEON_POP_ART_TEMPLATE = """\
@@ -345,12 +354,13 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, facing forward with personality and attitude
-- The bottom 20%% of the image must be a bold solid color block — \
-completely free of the animal — reserved for a name label
+- The artwork must fill the entire canvas edge-to-edge — no reserved panels, \
+bars, color blocks, or empty bands at the top or bottom
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
-oil paint, 3D render, blurry, low resolution, text, watermark, border.\
+oil paint, 3D render, blurry, low resolution, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _RENAISSANCE_ROYALTY_TEMPLATE = """\
@@ -377,12 +387,14 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and upper body in regal pose, noble and dignified
 - Dark moody background with subtle drapery or classical column
-- The bottom 20%% of the image must be a dark toned area — \
-completely free of the animal — reserved for a name label
+- The artwork must fill the entire canvas edge-to-edge — the moody background and \
+classical drapery/column extend naturally all the way to the bottom and top \
+edges. No reserved panels, bars, color blocks, or empty bands anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, bright neon colors, cartoon, anime, 3D render, \
-modern clothing, contemporary objects, text, watermark, border.\
+modern clothing, contemporary objects, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _COZY_FILM_GRAIN_TEMPLATE = """\
@@ -408,12 +420,14 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, natural relaxed pose, soft eye contact
 - Shallow depth of field feel — soft blurred warm background
-- The bottom 20%% of the image must be a softly blurred warm-toned area — \
-completely free of the animal — reserved for a name label
+- The artwork must fill the entire canvas edge-to-edge — the warm blurred \
+background extends naturally to every edge. No reserved panels, bars, \
+color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: harsh digital sharpness, oversaturation, cold blue tones, high contrast, \
-cartoon, anime, 3D render, pixelation, text, watermark, border.\
+cartoon, anime, 3D render, pixelation, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _RAINBOW_BRIDGE_TEMPLATE = """\
@@ -440,12 +454,14 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, peaceful expression, gentle eye contact
 - Soft light emanating from behind/around the pet
-- The bottom 20%% of the image must be soft clouds or gentle mist — \
-completely free of the animal — reserved for a name label
+- The artwork must fill the entire canvas edge-to-edge — soft clouds and \
+ethereal mist extend naturally to every edge. No reserved panels, bars, \
+color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, dark/morbid imagery, tears, sadness, harsh shadows, \
-cartoon, anime, 3D render, pixelation, text, watermark, border.\
+cartoon, anime, 3D render, pixelation, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
@@ -471,12 +487,14 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
 - Clean negative space around the subject
-- The bottom 20%% of the image must be a solid color block — \
-completely free of the animal — reserved for a name label
+- The background is a single solid flat color that fills the entire canvas \
+edge-to-edge behind the pet — one continuous color, NOT split into panels \
+or bands. No reserved color blocks, bars, or rectangles anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, soft edges, gradients, watercolor, painterly strokes, \
-3D render, blurry, detailed fur texture, text, watermark, border.\
+3D render, blurry, detailed fur texture, text, watermark, border, \
+solid color bars or panels at image edges, horizontal color-band splits.\
 """
 
 _AURA_GRADIENT_TEMPLATE = """\
@@ -503,12 +521,13 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, serene expression, gentle eye contact
 - Aura radiates symmetrically from the pet outward to the edges
-- The bottom 20%% of the image must be a smooth gradient wash — \
-completely free of the animal — reserved for a name label
+- The aura gradient fills the entire canvas edge-to-edge as one continuous \
+smooth wash. No reserved panels, bars, color blocks, or empty bands anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, harsh edges, flat colors, cartoon, anime, 3D render, \
-dark/moody atmosphere, pixelation, blurry, text, watermark, border.\
+dark/moody atmosphere, pixelation, blurry, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 _WATERCOLOR_TEMPLATE = """\
@@ -532,8 +551,8 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The bottom 20%% of the image must be left as lightly tinted white wash — \
-completely free of the animal — reserved for a name label
+- The watercolor wash and natural bleed edges extend to every edge of the \
+canvas. No reserved panels, bars, color blocks, or empty bands anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
@@ -577,14 +596,20 @@ _NO_BORDER_RULE = (
 
 _COMPOSITION_RULE = (
     "\n\nCOMPOSITION — CRITICAL:\n"
-    "- Place the pet LARGE and DOMINANT in the bottom portion of the image "
-    "(the pet should fill from roughly 30-35% of image height down to the bottom edge).\n"
-    "- The pet should take up the lower 60-70% of the image vertically.\n"
-    "- Leave the TOP 25-30% of the image as clean, uncluttered white/light negative space "
-    "where a pet name can be placed above the portrait.\n"
-    "- Do NOT put anything in the top 25% — no splashes, no extended backgrounds, "
-    "no scenery, no paint. Keep it clean and empty for name placement.\n"
-    "- The pet should be centered horizontally.\n"
+    "- The pet is the focal subject, centered horizontally. Head and upper chest.\n"
+    "- The pet's head/face should sit roughly in the VERTICAL CENTER of the image, "
+    "with the body extending downward. Leave enough uncluttered space above the "
+    "pet's head (roughly the top 8-20% of the image) so a small name label can "
+    "sit there cleanly — but that space should be the SAME style/background as "
+    "the rest of the artwork, not a separate solid panel.\n"
+    "- The artwork's background, palette, and atmosphere must fill the ENTIRE "
+    "canvas from top edge to bottom edge. No solid color bars, no reserved "
+    "panels, no empty rectangles or bands at the top or bottom.\n"
+    "- If the style has a dark moody background (e.g. Renaissance, oil paint), "
+    "that dark atmosphere extends uniformly to all four edges — the top area "
+    "above the pet should still feel like continuous scenery (drapery, shadow, "
+    "wall), just slightly more open so a name reads clearly.\n"
+    "- The pet should NOT be pushed to the bottom edge. Natural portrait framing.\n"
 )
 
 
