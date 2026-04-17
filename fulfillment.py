@@ -198,8 +198,11 @@ def generate_print_file(
         img = Image.open(r2_path)
         img.load()
 
-        # Crop to product aspect ratio — top-weighted to keep pet's face
-        # Use center gravity to preserve both the pet (top) and the name (bottom)
+        # Crop to product aspect ratio with center gravity. The Pillow
+        # composite_name() step below overlays the pet name at ~82% of the
+        # CROPPED image, so the name always lands safely inside the frame
+        # regardless of the source aspect. Gemini-integrated names (top
+        # safe-zone) also survive this crop.
         img = crop_to_ratio(img, ratio, gravity="center")
 
         # Upscale to print dimensions
@@ -226,8 +229,11 @@ def generate_print_file(
         img = Image.open(BytesIO(raw_bytes))
         img.load()
 
-        # Crop to product aspect ratio — top-weighted to keep pet's face
-        # Use center gravity to preserve both the pet (top) and the name (bottom)
+        # Crop to product aspect ratio with center gravity. The Pillow
+        # composite_name() step below overlays the pet name at ~82% of the
+        # CROPPED image, so the name always lands safely inside the frame
+        # regardless of the source aspect. Gemini-integrated names (top
+        # safe-zone) also survive this crop.
         img = crop_to_ratio(img, ratio, gravity="center")
 
         # Apply style-specific post-processing

@@ -362,8 +362,11 @@
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
+    // Anchor the crop to the top so square canvases don't slice the pet's
+     // name — our AI prompt places it in the top ~20% of the 4:5 source,
+     // which survives only if we preserve the top during the cover-crop.
     portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
-      + 'object-fit:cover;display:block;';
+      + 'object-fit:cover;object-position:center top;display:block;';
     canvasFace.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)

@@ -85,17 +85,23 @@ def _name_integration(style_id: str, pet_name: str) -> str:
 
     # POSITION & SAFETY ENVELOPE
     # The source image is 4:5. Customers can order 1:1 (square canvas), 3:4, or
-    # 4:5. A 4:5 → 1:1 crop with center gravity removes ~10% from top + bottom,
-    # so the safe-zone top boundary is pushed down to 18% and the bottom to 26%
-    # — that way a centered name at 22% of source lands at ~15% of the square
-    # crop, safely inside. Single-line only, bounded width.
+    # 4:5. When a client/Printful mockup crops 4:5 → 1:1 with top-anchored
+    # gravity, the TOP 80% of the 4:5 source survives. We therefore MUST place
+    # the name inside that top envelope — and push it even higher (above 20%
+    # of source height) so it's nowhere near the crop boundary. Gemini is
+    # inconsistent about placement, so the instruction is intentionally
+    # emphatic and repeated.
     safe_zone = (
-        "- POSITION: Place the name in the TOP center region ABOVE the pet, "
-        "integrated into the artwork's own background/atmosphere (NOT a separate "
-        "white strip or solid panel).\n"
-        "- Vertical placement: name baseline between 18% and 26% of image height "
-        "(measured from top edge). Leave at least 12% clear margin from the top edge "
-        "so a square-canvas crop from the 4:5 source cannot slice the name.\n"
+        "- POSITION — CRITICAL: The name MUST be placed in the TOP portion of "
+        "the image, well ABOVE the pet. This is the most important rule: if "
+        "the name is not in the top 20% of the image, the print will fail.\n"
+        "- The name is rendered as part of the artwork's own background or "
+        "atmosphere (NOT a separate white strip or solid panel).\n"
+        "- Vertical placement: the name's vertical center MUST be between 10% "
+        "and 18% of image height from the TOP edge. Never lower than 20%.\n"
+        "- NEVER place the name at the bottom, below the pet, near the pet's "
+        "paws, or anywhere in the bottom half of the image. The bottom portion "
+        "gets cropped on square canvas orders and the name would be lost.\n"
         "- Horizontal placement: PERFECTLY CENTERED horizontally on the image.\n"
         "- SINGLE LINE ONLY — never wrap, break, or stack the name across two lines.\n"
         "- WIDTH CONSTRAINT: the name must fit within the CENTER 70% of the image "
