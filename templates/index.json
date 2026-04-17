@@ -12,11 +12,11 @@
     "hero": {
       "type": "hero",
       "settings": {
-        "image": "shopify://shop_images/resized_image_2_1.webp",
+        "image": "shopify://shop_images/Apr_Hero_Banner.png",
         "heading": "They deserve a spot on the wall.",
         "subheading": "Upload a photo of your pet. Choose from 9 artistic styles. Get a stunning portrait printed on canvas or paper, shipped to your door.",
         "show_rating": true,
-        "rating_text": "4.9 stars from 2,000+ pet parents",
+        "rating_text": "",
         "cta_label": "Create My Portrait",
         "cta_url": "",
         "secondary_cta_label": "",
