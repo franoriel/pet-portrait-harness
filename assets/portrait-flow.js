@@ -996,16 +996,48 @@ function HiddenFileInput({ inputRef, onChange, capture }) {
   });
 }
 
+const PET_NAME_MAX = 20;
+
 function PetNameInput({ id, value, onChange }) {
+  const len = (value || '').length;
+  const nearLimit = len >= PET_NAME_MAX - 3;
   return React.createElement('div', { style: { marginBottom: '28px' } },
     React.createElement('label', {
       htmlFor: id,
-      style: { ...s.smallCaps, display: 'block', marginBottom: '4px' },
-    }, "Your pet\u2019s name"),
+      style: {
+        ...s.smallCaps, display: 'flex', alignItems: 'baseline',
+        justifyContent: 'space-between', marginBottom: '4px',
+      },
+    },
+      React.createElement('span', null, "Your pet\u2019s name"),
+      React.createElement('span', {
+        'aria-live': 'polite',
+        style: {
+          fontFamily: fontSans, fontSize: '11px', letterSpacing: 0,
+          textTransform: 'none', fontWeight: 500,
+          color: nearLimit ? tokens.colorWarning : tokens.colorMuted,
+        },
+      }, `${len}/${PET_NAME_MAX}`),
+    ),
     React.createElement('input', {
       id, type: 'text', placeholder: 'e.g. Biscuit',
-      value, onChange, maxLength: 40, style: s.input,
+      value,
+      onChange: (e) => {
+        // Enforce the cap even on paste — slice before calling the upstream
+        // change handler so state never holds a value > PET_NAME_MAX.
+        if (e.target.value.length > PET_NAME_MAX) {
+          e.target.value = e.target.value.slice(0, PET_NAME_MAX);
+        }
+        onChange(e);
+      },
+      maxLength: PET_NAME_MAX,
+      style: s.input,
     }),
+    React.createElement('p', {
+      style: {
+        ...s.bodyMuted, fontSize: '11px', marginTop: '6px', marginBottom: 0,
+      },
+    }, `Short names print the clearest — up to ${PET_NAME_MAX} characters fit on the canvas.`),
   );
 }
 

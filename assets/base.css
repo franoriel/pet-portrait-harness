@@ -232,6 +232,7 @@ p { color: var(--color-ink); }
   border-bottom: 1px solid var(--color-border) !important;
 }
 .site-header__inner {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -239,13 +240,31 @@ p { color: var(--color-ink); }
   max-width: var(--max-width);
   margin: 0 auto;
 }
+/* Pin the logo to the geometric centre of the header so left/right flank
+   widths (hamburger vs cart + CTA) can never push it off-centre. The
+   max-width guard leaves breathing room for the flanking icons on narrow
+   viewports. */
 .site-header__logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   font-family: var(--font-heading);
   font-size: 1.35rem;
   font-weight: 700;
   color: var(--color-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: calc(100% - 120px);
+  pointer-events: auto;
 }
-.site-header__logo img { height: 40px; width: auto; }
+.site-header__logo img {
+  height: 40px;
+  width: auto;
+  max-width: 100%;
+  display: block;
+}
 .site-header__nav {
   display: none;
   gap: 28px;

@@ -126,17 +126,22 @@
 
         <!-- Pet name line art property -->
         <div class="variant-picker" style="margin-bottom:20px;">
-          <label class="variant-picker__label" for="PetName">Step 2 — Your pet's name (for the portrait)</label>
+          <label class="variant-picker__label" for="PetName" style="display:flex;align-items:baseline;justify-content:space-between;">
+            <span>Step 2 — Your pet's name (for the portrait)</span>
+            <span id="PetNameCounter" aria-live="polite" style="font-size:0.78rem;font-weight:500;color:var(--color-muted);letter-spacing:0;text-transform:none;">0/20</span>
+          </label>
           <input
             type="text"
             id="PetName"
             name="properties[Pet Name]"
             placeholder="e.g. Biscuit"
-            maxlength="30"
+            maxlength="20"
             style="width:100%;padding:12px 14px;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-size:0.95rem;background:var(--color-surface);color:var(--color-ink);font-family:var(--font-body);outline:none;transition:border-color 0.2s;"
             onfocus="this.style.borderColor='var(--color-primary)'"
             onblur="this.style.borderColor='var(--color-border)'"
+            oninput="var c=document.getElementById('PetNameCounter');if(c){c.textContent=this.value.length+'/20';c.style.color=this.value.length>=17?'var(--color-warning,#c78b00)':'var(--color-muted)';}"
           >
+          <p style="margin:6px 0 0;font-size:0.75rem;color:var(--color-muted);">Short names print the clearest — up to 20 characters fit on the canvas.</p>
         </div>
       {%- endif -%}
 
