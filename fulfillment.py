@@ -446,6 +446,25 @@ def fulfill_order_item(
 # Parse Shopify order webhook into fulfillment tasks
 # ---------------------------------------------------------------------------
 
+import re
+
+# Match W×H / WxH / 16"x20" / 16″×20″ with optional inch marks + whitespace.
+_SIZE_RE = re.compile(
+    r"(\d{1,2})\s*[\"'\u2032\u2033]?\s*[x\u00d7]\s*(\d{1,2})",
+    re.IGNORECASE,
+)
+
+
+def _extract_size_from_variant(li: dict) -> Optional[str]:
+    """Parse W×H size out of a Shopify line item's variant/title fields."""
+    for field in ("variant_title", "name", "title", "sku"):
+        text = li.get(field) or ""
+        m = _SIZE_RE.search(text)
+        if m:
+            return f"{m.group(1)}x{m.group(2)}"
+    return None
+
+
 def parse_order_items(order: dict) -> list[dict]:
     """
     Extract portrait line items from a Shopify order payload.
@@ -460,28 +479,58 @@ def parse_order_items(order: dict) -> list[dict]:
         for p in li.get("properties", []):
             props[p["name"]] = p["value"]
 
-        # Skip line items that aren't portrait orders (no Job ID property)
-        job_id = props.get("Job ID")
+        # Frontend writes `_Job ID` (underscored = hidden prop in Shopify UI);
+        # accept the unprefixed form for legacy/test data too.
+        job_id = props.get("_Job ID") or props.get("Job ID")
         if not job_id:
             continue
 
-        # Derive product_type — prefer explicit Shopify product handle,
-        # append "-framed" if user chose framed on the configurator
-        base_product = props.get("Product type", "canvas")
-        frame_pref = props.get("_Frame", props.get("Frame", "No frame"))
-        is_framed = "framed" in frame_pref.lower()
-        product_type = f"{base_product}-framed" if is_framed else base_product
+        # Derive product_type. Frontend doesn't send "Product type" today —
+        # default to canvas, then switch to canvas-framed when _Frame says so
+        # OR the line item's product handle is framed-canvas.
+        base_product = props.get("Product type", props.get("_Product type", "canvas"))
+        frame_pref = props.get("_Frame", props.get("Frame", "")) or ""
+        handle = (li.get("handle") or "").lower()
+        is_framed = (
+            "framed" in frame_pref.lower()
+            or handle == "framed-canvas"
+        )
+        product_type = (
+            f"{base_product}-framed"
+            if is_framed and not base_product.endswith("-framed")
+            else base_product
+        )
+
+        # Size precedence: explicit prop → variant_title parse → warn + default.
+        size = props.get("Size") or props.get("_Size")
+        if not size:
+            size = _extract_size_from_variant(li)
+        if not size:
+            log.warning(
+                "Order line %s: could not determine size from props or variant; defaulting to 16x20",
+                li.get("id"),
+            )
+            size = "16x20"
+
+        # Prefer the hi-res print file URL the cart captured over the preview.
+        preview_url = (
+            props.get("_Print File URL")
+            or props.get("Print File URL")
+            or props.get("Preview URL")
+            or props.get("_Portrait URL")
+            or ""
+        )
 
         items.append({
-            "pet_name": props.get("Pet name", props.get("Pet Name", "Pet")),
+            "pet_name": props.get("Pet Name", props.get("Pet name", "Pet")),
             "style": props.get("Style", props.get("_Style", "soft-watercolour")),
             "font_size": props.get("Font Size", props.get("_Font Size", "medium")),
             "show_name": props.get("_Show Name", "Yes"),
             "job_id": job_id,
-            "preview_url": props.get("Preview URL", props.get("_Portrait URL", "")),
-            "print_file_url": props.get("_Print File URL", ""),  # hi-res 300 DPI PNG
+            "preview_url": preview_url,
+            "print_file_url": props.get("_Print File URL", ""),
             "product_type": product_type,
-            "size": props.get("Size", "12x16"),
+            "size": size,
             "quantity": li.get("quantity", 1),
         })
 
