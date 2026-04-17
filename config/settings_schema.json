@@ -66,7 +66,7 @@
     "name": "SEO & Metadata",
     "settings": [
       { "type": "text", "id": "seo_title_suffix", "label": "Page title suffix", "default": "Pet Printables — Custom Pet Portraits" },
-      { "type": "textarea", "id": "seo_description", "label": "Default meta description", "default": "Custom AI-powered pet portraits in 9 artistic styles — watercolour, oil paint, line art, pop art and more. Upload a photo, preview your portrait, and we ship it to your door across North America." }
+      { "type": "textarea", "id": "seo_description", "label": "Default meta description", "default": "Custom AI-powered pet portraits in 9 artistic styles — watercolour, oil paint, line art, pop art and more. Upload a photo, preview your portrait, and we print and ship it to your door." }
     ]
   }
 ]
