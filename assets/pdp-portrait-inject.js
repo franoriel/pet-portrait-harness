@@ -810,9 +810,50 @@
         e.preventDefault();
         e.stopPropagation();
 
-        var originalLabel = atcBtn.textContent;
+        // Inject the spinner keyframe once per page
+        if (!document.getElementById('pdp-addname-spin-kf')) {
+          var kf = document.createElement('style');
+          kf.id = 'pdp-addname-spin-kf';
+          kf.textContent = '@keyframes pdpAddNameSpin{to{transform:rotate(360deg)}}';
+          document.head.appendChild(kf);
+        }
+
+        var originalLabel = atcBtn.innerHTML;
         atcBtn.disabled = true;
-        atcBtn.textContent = 'Preparing your portrait…';
+        atcBtn.style.pointerEvents = 'none';
+        atcBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:10px;justify-content:center;">'
+          + '<span aria-hidden="true" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.35);'
+          + 'border-top-color:#fff;border-radius:50%;animation:pdpAddNameSpin 0.9s linear infinite;display:inline-block;"></span>'
+          + '<span data-addname-label>Adding the name\u2026</span>'
+          + '</span>';
+
+        // Progressive reassurance: cycle button sub-label + show a hint row
+        // below the button so the customer knows we are actively working.
+        var hint = document.createElement('p');
+        hint.setAttribute('role', 'status');
+        hint.setAttribute('aria-live', 'polite');
+        hint.id = 'pdp-addname-hint';
+        hint.style.cssText = 'margin:10px 0 0;font-size:0.8rem;color:var(--color-muted,#8c8578);text-align:center;line-height:1.4;';
+        hint.textContent = 'This takes about 10 seconds. Please don\u2019t refresh the page.';
+        if (atcBtn.parentNode) atcBtn.parentNode.insertBefore(hint, atcBtn.nextSibling);
+
+        var PHRASES = [
+          'Adding the name\u2026',
+          'Painting the letters\u2026',
+          'Finding the right spot\u2026',
+          'Almost done\u2026',
+        ];
+        var phaseIdx = 0;
+        var cycler = setInterval(function () {
+          phaseIdx = Math.min(phaseIdx + 1, PHRASES.length - 1);
+          var lbl = atcBtn.querySelector('[data-addname-label]');
+          if (lbl) lbl.textContent = PHRASES[phaseIdx];
+        }, 3500);
+
+        function cleanupLoadingUI() {
+          clearInterval(cycler);
+          if (hint && hint.parentNode) hint.parentNode.removeChild(hint);
+        }
 
         var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
         fetch(API_BASE + '/add-name', {
@@ -834,13 +875,17 @@
 
           // Mark as done and submit the form
           atcBtn.setAttribute('data-named-generated', '1');
+          cleanupLoadingUI();
           atcBtn.disabled = false;
-          atcBtn.textContent = originalLabel;
+          atcBtn.style.pointerEvents = '';
+          atcBtn.innerHTML = originalLabel;
           form.submit();
         })
         .catch(function (err) {
+          cleanupLoadingUI();
           atcBtn.disabled = false;
-          atcBtn.textContent = originalLabel;
+          atcBtn.style.pointerEvents = '';
+          atcBtn.innerHTML = originalLabel;
           alert('Something went wrong preparing your portrait: ' + (err.message || err) + '. Please try again.');
         });
       }, true); // capture phase so we beat Shopify's submit handler

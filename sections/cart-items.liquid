@@ -444,8 +444,39 @@
             var sourceUrl = itemEl.dataset.noNameUrl || itemEl.dataset.portraitUrl;
             if (!sourceUrl) return;
 
-            btn.disabled = true;
-            if (statusEl) { statusEl.textContent = 'Adding name…'; statusEl.style.display = 'inline'; }
+            // Inject spinner keyframe once per page
+            if (!document.getElementById('cart-addname-spin-kf')) {
+              var kf = document.createElement('style');
+              kf.id = 'cart-addname-spin-kf';
+              kf.textContent = '@keyframes cartAddNameSpin{to{transform:rotate(360deg)}}';
+              document.head.appendChild(kf);
+            }
+
+            // Disable BOTH toggle buttons and show spinner + progressive copy
+            buttons.forEach(function(b){ b.disabled = true; b.style.opacity = '0.6'; b.style.cursor = 'wait'; });
+            if (statusEl) {
+              statusEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;">'
+                + '<span aria-hidden="true" style="width:12px;height:12px;border:2px solid var(--color-border,#e5e0db);'
+                + 'border-top-color:var(--color-primary,#c4903e);border-radius:50%;animation:cartAddNameSpin 0.9s linear infinite;display:inline-block;"></span>'
+                + '<span data-addname-cart-label>Adding the name\u2026</span>'
+                + '</span>';
+              statusEl.style.display = 'inline-flex';
+              statusEl.setAttribute('role', 'status');
+              statusEl.setAttribute('aria-live', 'polite');
+            }
+
+            var PHRASES = ['Adding the name\u2026', 'Painting the letters\u2026', 'Blending it in\u2026', 'Almost done\u2026'];
+            var phaseIdx = 0;
+            var cycler = setInterval(function () {
+              phaseIdx = Math.min(phaseIdx + 1, PHRASES.length - 1);
+              var lbl = statusEl && statusEl.querySelector('[data-addname-cart-label]');
+              if (lbl) lbl.textContent = PHRASES[phaseIdx];
+            }, 3500);
+
+            function finishLoadingUI() {
+              clearInterval(cycler);
+              buttons.forEach(function(b){ b.disabled = false; b.style.opacity = ''; b.style.cursor = ''; });
+            }
 
             fetch(API_BASE + '/add-name', {
               method: 'POST',
@@ -469,13 +500,21 @@
                 itemEl.dataset.portraitUrl = newUrl;
                 itemEl.dataset.noNameUrl = sourceUrl;
                 updateButtonStyles('Yes');
-                btn.disabled = false;
-                if (statusEl) { statusEl.textContent = 'Updated'; setTimeout(function(){statusEl.style.display='none';}, 2000); }
+                finishLoadingUI();
+                if (statusEl) {
+                  statusEl.textContent = 'Updated';
+                  statusEl.style.display = 'inline';
+                  setTimeout(function(){statusEl.style.display='none';}, 2000);
+                }
               });
             })
             .catch(function (err) {
-              btn.disabled = false;
-              if (statusEl) { statusEl.textContent = 'Error — ' + (err.message || err); setTimeout(function(){statusEl.style.display='none';}, 3000); }
+              finishLoadingUI();
+              if (statusEl) {
+                statusEl.textContent = 'Error — ' + (err.message || err);
+                statusEl.style.display = 'inline';
+                setTimeout(function(){statusEl.style.display='none';}, 3000);
+              }
             });
           }
         });

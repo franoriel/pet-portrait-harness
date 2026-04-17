@@ -1859,6 +1859,23 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
   const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
   const [nameError, setNameError] = useState(null);
+  const [loadingPhaseIdx, setLoadingPhaseIdx] = useState(0);
+
+  // Progressive loading copy — cycles so a 10-15s /add-name call feels
+  // alive rather than frozen. Each phrase holds ~3.5s.
+  const LOADING_PHRASES = [
+    'Painting the letters\u2026',
+    'Finding the right spot\u2026',
+    'Blending into the artwork\u2026',
+    'Just a few more seconds\u2026',
+  ];
+  useEffect(() => {
+    if (!generatingNamedPreview) { setLoadingPhaseIdx(0); return; }
+    const t = setInterval(() => {
+      setLoadingPhaseIdx(i => Math.min(i + 1, LOADING_PHRASES.length - 1));
+    }, 3500);
+    return () => clearInterval(t);
+  }, [generatingNamedPreview]);
 
   // Only show sizes that exist for the current frame choice
   const availableSizes = CANVAS_SIZES.filter(s =>
@@ -2049,14 +2066,49 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           }),
         ),
       ),
-      // Loading overlay when fetching named version
+      // Loading overlay when fetching named version — spinner + progressive copy
       generatingNamedPreview && React.createElement('div', {
         style: {
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(250,248,245,0.85)', backdropFilter: 'blur(4px)',
-          fontFamily: fontSans, fontSize: '13px', fontWeight: 500, color: tokens.colorBrand, zIndex: 5,
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '14px',
+          background: 'rgba(250,248,245,0.88)',
+          backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)',
+          fontFamily: fontSans, color: tokens.colorBrand, zIndex: 5,
+          animation: 'pfNameFadeIn 0.25s ease-out',
         },
-      }, 'Adding the name\u2026'),
+        role: 'status', 'aria-live': 'polite',
+      },
+        // Spinner
+        React.createElement('span', {
+          'aria-hidden': 'true',
+          style: {
+            width: '36px', height: '36px',
+            border: `3px solid ${tokens.colorBorder}`,
+            borderTopColor: tokens.colorBrand,
+            borderRadius: '50%',
+            animation: 'pfNameSpin 0.9s linear infinite',
+          },
+        }),
+        // Active phase message
+        React.createElement('span', {
+          style: {
+            fontSize: '13px', fontWeight: 600, letterSpacing: '0.02em',
+          },
+        }, LOADING_PHRASES[loadingPhaseIdx]),
+        // Subtext — reassurance
+        React.createElement('span', {
+          style: {
+            fontSize: '11px', fontWeight: 400, color: tokens.colorMuted,
+            maxWidth: '240px', textAlign: 'center', lineHeight: 1.4,
+          },
+        }, 'This takes about 10 seconds. Don\u2019t refresh the page.'),
+      ),
+      // Keyframes injected once per render cycle (React de-dupes by id)
+      generatingNamedPreview && React.createElement('style', null,
+        '@keyframes pfNameSpin{to{transform:rotate(360deg)}}' +
+        '@keyframes pfNameFadeIn{from{opacity:0}to{opacity:1}}'
+      ),
       // Size + frame label (bottom right, glass pill)
       React.createElement('div', {
         style: {
@@ -2133,7 +2185,22 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, include name',
           wantsName === true,
           () => handleNameToggle(true),
-          null,
+          generatingNamedPreview && wantsName
+            ? React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '8px' } },
+                React.createElement('span', {
+                  'aria-hidden': 'true',
+                  style: {
+                    width: '13px', height: '13px',
+                    border: `2px solid ${tokens.colorBorder}`,
+                    borderTopColor: tokens.colorBrand,
+                    borderRadius: '50%',
+                    animation: 'pfNameSpin 0.9s linear infinite',
+                    display: 'inline-block',
+                  },
+                }),
+                React.createElement('span', { style: { fontWeight: 600 } }, 'Adding name\u2026'),
+              )
+            : null,
           generatingNamedPreview,
         ),
         optionCard('No, portrait only', wantsName === false, () => handleNameToggle(false)),
