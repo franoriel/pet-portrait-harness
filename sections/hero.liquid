@@ -1,4 +1,8 @@
-<section class="hero" aria-label="Hero">
+{%- assign parallax_on = section.settings.enable_parallax -%}
+{%- assign parallax_strength = section.settings.parallax_strength | default: 0.35 -%}
+<section class="hero{% if parallax_on %} hero--parallax{% endif %}"
+         aria-label="Hero"
+         {% if parallax_on %}data-parallax="true" data-parallax-strength="{{ parallax_strength }}"{% endif %}>
   <!-- Full-bleed hero image -->
   <div class="hero__media">
     {%- if section.settings.image != blank -%}
@@ -34,12 +38,42 @@
   </div>
 </section>
 
+{%- if parallax_on -%}
+<script>
+  (function () {
+    var hero = document.querySelector('.hero[data-parallax="true"]');
+    if (!hero) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var img = hero.querySelector('.hero__media img, .hero__media svg');
+    if (!img) return;
+    var strength = parseFloat(hero.dataset.parallaxStrength) || 0.35;
+    var visible = true, ticking = false;
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; }, { threshold: 0 });
+      io.observe(hero);
+    }
+    function update() {
+      ticking = false;
+      if (!visible) return;
+      var offset = -hero.getBoundingClientRect().top * strength;
+      img.style.transform = 'translate3d(0,' + offset + 'px,0) scale(1.18)';
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    update();
+  })();
+</script>
+{%- endif -%}
+
 {% schema %}
 {
   "name": "Hero",
   "tag": "section",
   "settings": [
     { "type": "image_picker", "id": "image", "label": "Hero image" },
+    { "type": "checkbox", "id": "enable_parallax", "label": "Enable parallax effect", "default": true },
+    { "type": "range", "id": "parallax_strength", "label": "Parallax strength", "min": 0.1, "max": 0.6, "step": 0.1, "default": 0.3 },
     { "type": "text", "id": "heading", "label": "Heading", "default": "They deserve a spot on the wall." },
     { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "Upload a photo. Choose from 9 artistic styles. Get a stunning portrait on canvas, shipped to your door." },
     { "type": "checkbox", "id": "show_rating", "label": "Show rating badge", "default": false },
