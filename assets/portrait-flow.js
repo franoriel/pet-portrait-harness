@@ -382,6 +382,7 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt }
     const err = await submitRes.json().catch(() => ({}));
     const e = new Error(err.error || 'Generation failed');
     e.code = err.code || '';
+    e.detail = err.detail || '';
     e.status = submitRes.status;
     throw e;
   }
@@ -883,6 +884,7 @@ function usePortraitFlow() {
     } catch (err) {
       const msg = err.message || '';
       const code = err.code || '';
+      const detail = (err.detail || '').toString();
       const status = err.status || 0;
       let userError = 'Something went wrong on our end.';
       let userTips = ['Your photo and style are saved — try again in a moment.'];
@@ -905,16 +907,81 @@ function usePortraitFlow() {
         userTips = ['Please re-check the terms box on the upload step, then try again.'];
         sendToUpload = true;
       } else if (/only create portraits of pets/i.test(msg)) {
-        userError = msg;
-        userTips = ['Please upload a clear photo of your pet — face visible and well-lit.'];
+        // Gemini classifier returned is_pet=false. Inspect the free-text
+        // `detail` it returned and map it to a specific, actionable message
+        // so the user understands exactly why their photo was rejected.
+        const d = detail.toLowerCase();
+        if (/human|person|people|man|woman|child|baby|selfie|face of a/.test(d)) {
+          userError = 'This looks like a photo of a person, not a pet.';
+          userTips = [
+            'Upload a clear photo where your dog, cat, or other pet is the main subject.',
+            'If your pet is in the photo with you, try a crop that shows just your pet.',
+          ];
+        } else if (/screenshot|screen\s?shot|app|website|browser|meme/.test(d)) {
+          userError = 'This looks like a screenshot or meme, not an original photo.';
+          userTips = [
+            'Upload the original photo from your camera roll instead of a screenshot.',
+            'Screenshots are usually low-resolution and won\u2019t print well.',
+          ];
+        } else if (/cartoon|drawing|illustration|painting|sketch|animated|ai[-\s]?generated|stuffed|plush|toy/.test(d)) {
+          userError = 'This looks like a drawing, cartoon, or toy — we need a real photograph.';
+          userTips = [
+            'Please upload an actual photo of your real pet taken with your camera.',
+            'AI-generated or cartoon images won\u2019t work with our process.',
+          ];
+        } else if (/logo|text|sign|document|book|poster/.test(d)) {
+          userError = 'We couldn\u2019t find a pet in this image.';
+          userTips = [
+            'Make sure your pet is the main subject, with their face clearly visible.',
+            'Avoid photos that are mostly text, logos, or documents.',
+          ];
+        } else if (/landscape|scenery|building|car|food|object|plant|flower/.test(d)) {
+          userError = 'We couldn\u2019t find a pet in this photo.';
+          userTips = [
+            'Upload a photo where your pet is the main subject and clearly in frame.',
+            'Avoid photos of objects, landscapes, or food.',
+          ];
+        } else if (/wild|lion|tiger|bear|dolphin|elephant|giraffe|zoo/.test(d)) {
+          userError = 'We only create portraits of domesticated pets.';
+          userTips = ['Try a photo of your dog, cat, rabbit, bird, or other household pet.'];
+        } else if (/blank|solid|color|black|white|empty|unidentifiable|unclear/.test(d)) {
+          userError = 'We couldn\u2019t identify anything in this image.';
+          userTips = [
+            'The photo may be blank, too dark, or corrupted — please try a different one.',
+            'Make sure the photo opens normally in your Photos app before uploading.',
+          ];
+        } else if (/nsfw|violent|inappropriate|offensive/.test(d)) {
+          userError = 'That image can\u2019t be used.';
+          userTips = ['Please upload a normal photo of your pet.'];
+        } else if (detail) {
+          // Fallback: surface Gemini\u2019s free-text reason verbatim so the user
+          // still gets context, even if our keyword rules didn\u2019t match.
+          userError = 'We couldn\u2019t use this photo: ' + detail;
+          userTips = [
+            'Upload a clear, well-lit photo where your pet\u2019s face is visible.',
+            'Use the original photo from your camera roll — not a screenshot or download.',
+          ];
+        } else {
+          userError = msg;
+          userTips = [
+            'Upload a clear, front-facing photo of your dog, cat, or other pet.',
+            'Good lighting and a visible face give the best results.',
+          ];
+        }
         sendToUpload = true;
       } else if (/verify your photo/i.test(msg)) {
-        userError = msg;
-        userTips = ['Try a different photo — one with your pet clearly in focus.'];
+        userError = 'We couldn\u2019t read this photo.';
+        userTips = [
+          'The file may be damaged or in an unsupported format.',
+          'Re-save the photo as JPG or PNG in your Photos app, then try again.',
+        ];
         sendToUpload = true;
       } else if (/unsupported file type|real jpg|real png|real webp|content-type/i.test(msg)) {
-        userError = msg || 'That file isn\u2019t a supported image.';
-        userTips = ['Please upload a JPG, PNG, or WebP photo.'];
+        userError = 'We can only accept JPG, PNG, or WebP photos.';
+        userTips = [
+          'iPhone HEIC photos: open in Photos, tap Share \u2192 Mail to convert to JPG.',
+          'Most photo apps can export as JPG or PNG under \u201cShare\u201d or \u201cExport As\u201d.',
+        ];
         sendToUpload = true;
       } else if (/pet name/i.test(msg)) {
         userError = msg;
@@ -929,8 +996,20 @@ function usePortraitFlow() {
         userTips = ['Your photo and style are saved — try again in a moment.'];
       }
 
+      // PDP-initiated flows skip the UPLOAD step, so bouncing them to
+      // UPLOAD on a terms/validation error can create a confusing loop.
+      // If the user never accepted terms yet (i.e. never went through
+      // UPLOAD in this session), route terms errors back to STYLE so
+      // they see the inline PhotoLicenseConsent there instead.
+      let nextStage;
+      if (sendToUpload) {
+        const termsErr = code === 'terms_required' || code === 'terms_stale' || code === 'terms_invalid';
+        nextStage = (termsErr && !state.termsAccepted) ? STAGES.STYLE : STAGES.UPLOAD;
+      } else {
+        nextStage = STAGES.PREVIEW;
+      }
       update({
-        stage: sendToUpload ? STAGES.UPLOAD : STAGES.PREVIEW,
+        stage: nextStage,
         generationStatus: 'error',
         generationError: userError,
         generationErrorTips: userTips,
@@ -1530,6 +1609,37 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
   return React.createElement('div', { style: s.sectionWrap },
     React.createElement(StepIndicator, { current: 2 }),
     React.createElement('h2', { style: s.serifHeading }, 'Choose your artistic finish'),
+
+    // Inline error banner — shown when a previous generation attempt
+    // failed for a reason we want the user to act on from this step
+    // (e.g. terms not accepted, photo rejected by the pet classifier).
+    state.generationError && React.createElement('div', {
+      role: 'alert',
+      style: {
+        margin: '14px 0 18px', padding: '14px 16px',
+        background: '#FEF3F2', border: '1px solid #FDA29B',
+        borderRadius: tokens.radiusCard,
+      },
+    },
+      React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontWeight: 600, fontSize: '14px',
+          color: '#912018', margin: '0 0 6px', lineHeight: 1.4,
+        },
+      }, state.generationError),
+      state.generationErrorTips && state.generationErrorTips.length > 0 &&
+        React.createElement('ul', {
+          style: {
+            margin: 0, paddingLeft: '18px',
+            fontFamily: fontSans, fontSize: '13px',
+            color: '#7A271A', lineHeight: 1.5,
+          },
+        },
+          state.generationErrorTips.map((tip, i) =>
+            React.createElement('li', { key: i }, tip)
+          ),
+        ),
+    ),
 
     React.createElement('div', {
       style: {
