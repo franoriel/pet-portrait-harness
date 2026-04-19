@@ -987,7 +987,7 @@ function usePortraitFlow() {
     state, setPhoto, selectStyle, generate, selectPreview, goToStage,
     retryFromUpload, retryFromStyle, startFresh, update,
     canContinueFromUpload: state.photo && !state.photoError && state.termsAccepted,
-    canGenerate: (state.photo || state.imageFilename) && state.selectedStyleId,
+    canGenerate: (state.photo || state.imageFilename) && state.selectedStyleId && state.termsAccepted,
   };
 }
 
@@ -1672,13 +1672,34 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       ),
     ),
 
+    // Photo license + Terms acceptance — required before generating.
+    // Shown here for users who entered the flow from a PDP (skipping the
+    // Upload step where this consent normally lives).
+    !state.termsAccepted && React.createElement('div', { style: { marginTop: '20px' } },
+      React.createElement(PhotoLicenseConsent, {
+        accepted: state.termsAccepted,
+        onChange: (checked) => update({
+          termsAccepted: checked,
+          termsAcceptedAt: checked ? new Date().toISOString() : null,
+        }),
+      }),
+    ),
+
     React.createElement('div', { style: { marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' } },
       React.createElement('button', {
         type: 'button',
         style: primaryBtnStyle(canGenerate),
         disabled: !canGenerate, onClick: onGenerate,
         'aria-label': 'Create my portrait',
-      }, 'CREATE MY PORTRAIT'),
+      },
+        canGenerate
+          ? 'CREATE MY PORTRAIT'
+          : (!state.selectedStyleId
+              ? 'PICK A STYLE TO CONTINUE'
+              : (!state.termsAccepted
+                  ? 'ACCEPT PHOTO TERMS TO CONTINUE'
+                  : 'CREATE MY PORTRAIT'))
+      ),
       React.createElement('button', {
         type: 'button',
         style: { ...s.secondaryLink, textAlign: 'center', width: '100%' },
