@@ -468,6 +468,17 @@ p { color: var(--color-ink); }
   object-position: center 30%;
   display: block;
 }
+.hero--parallax .hero__media img {
+  will-change: transform;
+  transform: translate3d(0, 0, 0) scale(1.18);
+  transform-origin: center center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero--parallax .hero__media img {
+    transform: none;
+    will-change: auto;
+  }
+}
 /* Bottom gradient — attached to the hero, not the content */
 .hero::after {
   content: '';
