@@ -548,6 +548,20 @@
       return 'Canada';
     }
 
+    // Shopify's rates endpoint is strict about postal format.
+    // Canadian codes must be "A1A 1A1" (space required). US codes must
+    // be 5 digits or 5-4. Normalize before sending to avoid false 422s.
+    function normalizeZip(zip, country) {
+      var bare = zip.replace(/\s+/g, '').toUpperCase();
+      if (country === 'Canada' && /^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(bare)) {
+        return bare.slice(0, 3) + ' ' + bare.slice(3);
+      }
+      if (country === 'United States' && /^\d{9}$/.test(bare)) {
+        return bare.slice(0, 5) + '-' + bare.slice(5);
+      }
+      return bare;
+    }
+
     function fetchRates(zip, country) {
       var params = new URLSearchParams();
       params.append('shipping_address[zip]', zip);
@@ -556,8 +570,33 @@
         headers: { 'Accept': 'application/json' },
       }).then(function (r) {
         if (r.status === 422) {
-          return r.json().then(function () { throw new Error('INVALID_POSTAL'); })
-            .catch(function () { throw new Error('INVALID_POSTAL'); });
+          // Shopify returns a structured error body. Parse it so we can
+          // distinguish a bad postal code from other failures (e.g. no
+          // shippable items in the cart, or address not reachable).
+          return r.json().then(function (body) {
+            var detail = '';
+            try {
+              if (body && typeof body === 'object') {
+                // Typical shape: { "shipping_address": ["message1", ...] }
+                for (var k in body) {
+                  if (!body.hasOwnProperty(k)) continue;
+                  var v = body[k];
+                  if (Array.isArray(v)) detail = v.join(' ');
+                  else if (typeof v === 'string') detail = v;
+                  if (detail) break;
+                }
+              }
+            } catch (e) { /* ignore — generic fallback */ }
+            var err = new Error(detail || 'INVALID_ADDRESS');
+            err.code = 'SHOPIFY_422';
+            err.detail = detail;
+            throw err;
+          }).catch(function (e) {
+            if (e && e.code === 'SHOPIFY_422') throw e;
+            var fallback = new Error('INVALID_ADDRESS');
+            fallback.code = 'SHOPIFY_422';
+            throw fallback;
+          });
         }
         if (!r.ok) throw new Error('REQUEST_FAILED');
         return r.json();
@@ -572,6 +611,7 @@
         return;
       }
       var country = guessCountry(zip);
+      zip = normalizeZip(zip, country);
       btn.disabled = true;
       showResult('Getting an estimate\u2026', false);
       fetchRates(zip, country)
@@ -606,8 +646,31 @@
         })
         .catch(function (err) {
           btn.disabled = false;
-          if (err && err.message === 'INVALID_POSTAL') {
-            showResult("That postal code didn\u2019t look right. Please check it and try again.", true);
+          var detail = (err && err.detail) || (err && err.message) || '';
+          if (err && err.code === 'SHOPIFY_422') {
+            // Route Shopify's specific 422 reasons to clear user messages.
+            if (/zip|postal/i.test(detail)) {
+              showResult(
+                "That postal code didn\u2019t look right for <strong>" + escapeHtml(country) + "</strong>. "
+                + "Canadian codes look like <code>V6Z 2A9</code>; US codes are 5 digits.",
+                true
+              );
+            } else if (/no\s+shipping|no\s+rates|not\s+shippable|cannot\s+be\s+shipped|no\s+shippable/i.test(detail)) {
+              showResult(
+                "No shipping needed \u2014 the items in your cart are digital-only. "
+                + "You\u2019ll get them by email after checkout.",
+                false
+              );
+            } else if (/country/i.test(detail)) {
+              showResult(
+                "We can\u2019t ship to that country yet. We currently ship within Canada only.",
+                true
+              );
+            } else if (detail) {
+              showResult("Couldn\u2019t estimate shipping: " + escapeHtml(detail), true);
+            } else {
+              showResult("That address didn\u2019t work. Please check the postal code and try again.", true);
+            }
           } else {
             showResult("Couldn\u2019t fetch an estimate right now. You can see shipping at checkout.", true);
           }
