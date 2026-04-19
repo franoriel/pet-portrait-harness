@@ -185,6 +185,56 @@
             </div>
 
             {%- comment -%}
+              Digital Files upsell — adds the digital-files product as a
+              line item so customers can download high-res files sized
+              for Instagram and Facebook sharing after checkout.
+            {%- endcomment -%}
+            {%- assign digital_in_cart = false -%}
+            {%- assign digital_line_key = '' -%}
+            {%- for item in cart.items -%}
+              {%- if item.product.handle == 'digital-files' -%}
+                {%- assign digital_in_cart = true -%}
+                {%- assign digital_line_key = item.key -%}
+              {%- endif -%}
+            {%- endfor -%}
+
+            <div
+              class="digital-files-upsell"
+              data-digital-files-upsell
+              data-in-cart="{{ digital_in_cart }}"
+              data-line-key="{{ digital_line_key }}"
+              style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
+            >
+              <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
+                <input
+                  type="checkbox"
+                  id="DigitalFilesUpsellToggle"
+                  {% if digital_in_cart %}checked{% endif %}
+                  style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
+                >
+                <span style="flex:1;line-height:1.45;">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);">
+                    <span aria-hidden="true">📱</span>
+                    Digital Files for Sharing
+                    <span
+                      data-digital-files-price
+                      style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
+                    ></span>
+                  </span>
+                  <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                    Get high-res files sized for Instagram &amp; Facebook — Story (9:16), Square (1:1), Portrait (4:5), plus the full-resolution original. Emailed within 24h for personal use.
+                  </span>
+                  <span
+                    data-digital-files-status
+                    role="status"
+                    aria-live="polite"
+                    style="display:none;font-size:0.78rem;color:var(--color-muted);margin-top:4px;"
+                  ></span>
+                </span>
+              </label>
+            </div>
+
+            {%- comment -%}
               Shipping estimator — user enters a postal code, we call
               Shopify's /cart/shipping_rates.json (same carrier rates
               the checkout uses). It's an estimate only — discounts and
@@ -348,6 +398,102 @@
             setBusy(false);
             toggle.checked = true;
             setStatus('Could not remove Priority Order. Please try again.', true);
+          });
+      }
+    });
+  })();
+
+  /* Digital Files upsell toggle ─────────────────────────────────
+     Same pattern as Priority Order: fetch the product's variant +
+     price once, then POST to /cart/add.js or /cart/change.js when
+     the user toggles. Hides itself if the product is missing/draft. */
+  (function () {
+    var wrap = document.querySelector('[data-digital-files-upsell]');
+    if (!wrap) return;
+    var toggle = wrap.querySelector('#DigitalFilesUpsellToggle');
+    var priceEl = wrap.querySelector('[data-digital-files-price]');
+    var statusEl = wrap.querySelector('[data-digital-files-status]');
+    if (!toggle) return;
+
+    var variantId = null;
+    var pendingRequest = false;
+
+    function formatMoney(cents) {
+      try {
+        return new Intl.NumberFormat('en-CA', {
+          style: 'currency', currency: 'CAD',
+          minimumFractionDigits: 2,
+        }).format((cents || 0) / 100);
+      } catch (e) {
+        return '$' + (((cents || 0) / 100).toFixed(2));
+      }
+    }
+
+    function setStatus(msg, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.style.display = msg ? 'block' : 'none';
+      statusEl.style.color = isError ? '#B00020' : 'var(--color-muted)';
+    }
+
+    function setBusy(busy) {
+      pendingRequest = busy;
+      toggle.disabled = busy;
+      wrap.style.opacity = busy ? '0.65' : '1';
+    }
+
+    fetch('/products/digital-files.js', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('NOT_FOUND'); return r.json(); })
+      .then(function (p) {
+        var v = (p.variants && p.variants[0]) || null;
+        if (!v) throw new Error('NO_VARIANT');
+        variantId = v.id;
+        if (priceEl) priceEl.textContent = '+' + formatMoney(v.price);
+      })
+      .catch(function () {
+        wrap.style.display = 'none';
+      });
+
+    toggle.addEventListener('change', function () {
+      if (pendingRequest) return;
+      var wantOn = toggle.checked;
+
+      if (wantOn) {
+        if (!variantId) {
+          toggle.checked = false;
+          setStatus('Digital Files are temporarily unavailable.', true);
+          return;
+        }
+        setBusy(true);
+        setStatus('Adding digital files\u2026');
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: variantId, quantity: 1 }),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('ADD_FAILED'); return r.json(); })
+          .then(function () { window.location.reload(); })
+          .catch(function () {
+            setBusy(false);
+            toggle.checked = false;
+            setStatus('Could not add digital files. Please try again.', true);
+          });
+      } else {
+        var lineKey = wrap.getAttribute('data-line-key') || '';
+        if (!lineKey) { window.location.reload(); return; }
+        setBusy(true);
+        setStatus('Removing digital files\u2026');
+        fetch('/cart/change.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: lineKey, quantity: 0 }),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('REMOVE_FAILED'); return r.json(); })
+          .then(function () { window.location.reload(); })
+          .catch(function () {
+            setBusy(false);
+            toggle.checked = true;
+            setStatus('Could not remove digital files. Please try again.', true);
           });
       }
     });
