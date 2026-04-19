@@ -12,10 +12,10 @@
     "hero": {
       "type": "hero",
       "settings": {
-        "image": "shopify://shop_images/Apr_Hero_Banner.png",
+        "image": "shopify://shop_images/resized_image_2_1.webp",
         "heading": "They deserve a spot on the wall.",
         "subheading": "Upload a photo of your pet. Choose from 9 artistic styles. Get a stunning portrait printed on canvas or paper, shipped to your door.",
-        "show_rating": true,
+        "show_rating": false,
         "rating_text": "",
         "cta_label": "Create My Portrait",
         "cta_url": "",
@@ -31,7 +31,7 @@
           "type": "item",
           "settings": {
             "icon": "✦",
-            "text": "Each portrait 1-of-1"
+            "text": "Made in Canada"
           }
         },
         "b2": {
@@ -45,7 +45,7 @@
           "type": "item",
           "settings": {
             "icon": "✦",
-            "text": "4 Easy Steps"
+            "text": "Free redos if you're not happy"
           }
         },
         "b4": {
@@ -91,8 +91,8 @@
           "type": "step",
           "settings": {
             "icon": "3",
-            "title": "Pick a product, we ship it",
-            "description": "Printed on museum-grade materials and shipped Canada-wide in 3–5 days."
+            "title": "Pick a format, we ship it",
+            "description": "Canvas, poster, or both. Printed on museum-grade materials and shipped Canada-wide in 3–5 days."
           }
         }
       },
@@ -108,10 +108,6 @@
         "cta_label": "Start My Portrait",
         "cta_url": "/pages/create"
       }
-    },
-    "review-ticker": {
-      "type": "social-proof-ticker",
-      "settings": {}
     },
     "before-after": {
       "type": "before-after",
@@ -148,7 +144,6 @@
     "trust-bar",
     "style-carousel",
     "how-it-works",
-    "review-ticker",
     "before-after",
     "faq",
     "final-cta"

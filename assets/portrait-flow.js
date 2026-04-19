@@ -2520,22 +2520,6 @@ function PageHero() {
       },
     }, '9 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
 
-    // Social proof
-    React.createElement('div', {
-      style: {
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '6px', marginBottom: '18px',
-      },
-    },
-      React.createElement('span', {
-        style: { color: '#D4A84B', fontSize: '13px', letterSpacing: '1px' },
-        'aria-hidden': true,
-      }, '\u2605\u2605\u2605\u2605\u2605'),
-      React.createElement('span', {
-        style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted },
-      }, '4.9/5 from 124+ pet parents'),
-    ),
-
     // Marquee — all 9 styles scrolling continuously
     React.createElement('div', {
       style: {

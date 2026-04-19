@@ -1,17 +1,20 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "sections": {
     "product-upload": {
       "type": "product-upload",
       "settings": {
         "show_upload": true,
-        "inventory_threshold": 0,
-        "rating_value": "4.9",
-        "review_count": "124"
+        "inventory_threshold": 0
       }
-    },
-    "social-proof-ticker": {
-      "type": "social-proof-ticker",
-      "settings": {}
     },
     "upsell": {
       "type": "upsell",
@@ -27,5 +30,9 @@
       }
     }
   },
-  "order": ["product-upload", "social-proof-ticker", "upsell", "faq"]
+  "order": [
+    "product-upload",
+    "upsell",
+    "faq"
+  ]
 }

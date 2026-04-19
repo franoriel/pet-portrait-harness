@@ -60,16 +60,6 @@
     <p class="eyebrow">{{ product.type | default: 'Custom Pet Portrait' }}</p>
     <h1 class="product-info__title" itemprop="name">{{ product.title }}</h1>
 
-    <!-- Rating schema -->
-    <div itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating" style="display:none">
-      <meta itemprop="ratingValue" content="{{ section.settings.rating_value | default: '4.9' }}">
-      <meta itemprop="reviewCount" content="{{ section.settings.review_count | default: '124' }}">
-    </div>
-
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
-      {%- render 'review-stars', rating: section.settings.rating_value, count: section.settings.review_count -%}
-    </div>
-
     <div class="product-info__price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
       <meta itemprop="priceCurrency" content="CAD">
       <meta itemprop="price" content="{{ product.price | divided_by: 100.0 }}">
@@ -276,9 +266,7 @@
   "name": "Product Upload Form",
   "settings": [
     { "type": "checkbox", "id": "show_upload", "label": "Show photo upload widget", "default": true },
-    { "type": "range", "id": "inventory_threshold", "label": "Show scarcity when stock below", "min": 0, "max": 20, "step": 1, "default": 5 },
-    { "type": "text", "id": "rating_value", "label": "Star rating (for schema)", "default": "4.9" },
-    { "type": "text", "id": "review_count", "label": "Review count (for schema)", "default": "124" }
+    { "type": "range", "id": "inventory_threshold", "label": "Show scarcity when stock below", "min": 0, "max": 20, "step": 1, "default": 5 }
   ]
 }
 {% endschema %}
