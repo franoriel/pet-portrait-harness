@@ -562,10 +562,30 @@
       return bare;
     }
 
+    // Shopify's rates endpoint also requires a province/state for
+    // Canadian and US addresses. Derive it from the postal code so the
+    // user doesn't need to pick one.
+    //   Canadian FSA first letter → province (Canada Post mapping).
+    //   US ZIP range → state (first 3 digits).
+    var CA_PROVINCE_BY_FSA = {
+      A: 'NL', B: 'NS', C: 'PE', E: 'NB', G: 'QC', H: 'QC', J: 'QC',
+      K: 'ON', L: 'ON', M: 'ON', N: 'ON', P: 'ON',
+      R: 'MB', S: 'SK', T: 'AB', V: 'BC', X: 'NT', Y: 'YT',
+    };
+    function guessProvinceOrState(zip, country) {
+      var bare = zip.replace(/\s+/g, '').toUpperCase();
+      if (country === 'Canada') {
+        return CA_PROVINCE_BY_FSA[bare.charAt(0)] || '';
+      }
+      return ''; // US state lookup by ZIP is large; leave blank for now.
+    }
+
     function fetchRates(zip, country) {
       var params = new URLSearchParams();
       params.append('shipping_address[zip]', zip);
       params.append('shipping_address[country]', country);
+      var province = guessProvinceOrState(zip, country);
+      if (province) params.append('shipping_address[province]', province);
       return fetch('/cart/shipping_rates.json?' + params.toString(), {
         headers: { 'Accept': 'application/json' },
       }).then(function (r) {
@@ -649,7 +669,13 @@
           var detail = (err && err.detail) || (err && err.message) || '';
           if (err && err.code === 'SHOPIFY_422') {
             // Route Shopify's specific 422 reasons to clear user messages.
-            if (/zip|postal/i.test(detail)) {
+            if (/province|state/i.test(detail)) {
+              showResult(
+                "We couldn\u2019t figure out the province from that postal code. "
+                + "Please double-check the postal code and try again.",
+                true
+              );
+            } else if (/zip|postal/i.test(detail)) {
               showResult(
                 "That postal code didn\u2019t look right for <strong>" + escapeHtml(country) + "</strong>. "
                 + "Canadian codes look like <code>V6Z 2A9</code>; US codes are 5 digits.",
