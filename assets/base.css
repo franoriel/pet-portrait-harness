@@ -692,6 +692,50 @@ p { color: var(--color-ink); }
 .hiw__step h3 { font-size: 1.3rem; margin-bottom: 8px; }
 .hiw__step p { font-size: 0.95rem; color: var(--color-muted); line-height: 1.6; }
 
+/* Vertical timeline layout — used on the dedicated How It Works page.
+   Stacks steps with a connecting line down the left, number circle on
+   the left, content on the right. Centred within a narrow column. */
+.hiw--vertical .hiw__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: visible;
+  max-width: 640px;
+  margin: 40px auto 0;
+  padding: 0;
+  position: relative;
+}
+.hiw--vertical .hiw__steps::before {
+  content: '';
+  position: absolute;
+  left: 21px;
+  top: 22px;
+  bottom: 22px;
+  width: 2px;
+  background: var(--color-border);
+  z-index: 0;
+}
+.hiw--vertical .hiw__step {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: none;
+  text-align: left;
+  position: relative;
+  z-index: 1;
+}
+.hiw--vertical .hiw__step-num {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.hiw--vertical .hiw__step-body { flex: 1 1 auto; min-width: 0; }
+.hiw--vertical .hiw__step h3 { margin-top: 4px; }
+
 /* ── Product showcase ─────────────────────────────────────── */
 .product-showcase { background: var(--color-bg); }
 .product-showcase__grid {
