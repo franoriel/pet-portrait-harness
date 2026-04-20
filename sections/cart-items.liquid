@@ -192,6 +192,108 @@
             </div>
 
             {%- comment -%}
+              Magnet upsell — offers a matching fridge magnet using the
+              same portrait already in the cart. Only surfaces when at
+              least one portrait line item exists (i.e. a line item with
+              a _Portrait URL property). When toggled on, the magnet is
+              added with the portrait's properties copied over so
+              fulfillment knows which design to print on the magnet.
+            {%- endcomment -%}
+            {%- assign magnet_in_cart = false -%}
+            {%- assign magnet_line_key = '' -%}
+            {%- assign source_portrait_url = '' -%}
+            {%- assign source_print_url = '' -%}
+            {%- assign source_no_name_url = '' -%}
+            {%- assign source_pet_name = '' -%}
+            {%- assign source_style = '' -%}
+            {%- assign source_job_id = '' -%}
+            {%- assign source_show_name = 'Yes' -%}
+            {%- for item in cart.items -%}
+              {%- if item.product.handle == 'magnet' -%}
+                {%- assign magnet_in_cart = true -%}
+                {%- assign magnet_line_key = item.key -%}
+              {%- endif -%}
+              {%- if source_portrait_url == '' -%}
+                {%- for property in item.properties -%}
+                  {%- if property.first == '_Portrait URL' and property.last != blank -%}
+                    {%- assign source_portrait_url = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == '_Print File URL' and property.last != blank -%}
+                    {%- assign source_print_url = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == '_No Name URL' and property.last != blank -%}
+                    {%- assign source_no_name_url = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == 'Pet Name' -%}
+                    {%- assign source_pet_name = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == '_Style' -%}
+                    {%- assign source_style = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == '_Job ID' -%}
+                    {%- assign source_job_id = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == '_Show Name' -%}
+                    {%- assign source_show_name = property.last -%}
+                  {%- endif -%}
+                {%- endfor -%}
+              {%- endif -%}
+            {%- endfor -%}
+
+            {%- if source_portrait_url != '' -%}
+            <div
+              class="magnet-upsell"
+              data-magnet-upsell
+              data-in-cart="{{ magnet_in_cart }}"
+              data-line-key="{{ magnet_line_key }}"
+              data-portrait-url="{{ source_portrait_url | escape }}"
+              data-print-url="{{ source_print_url | escape }}"
+              data-no-name-url="{{ source_no_name_url | escape }}"
+              data-pet-name="{{ source_pet_name | escape }}"
+              data-style="{{ source_style | escape }}"
+              data-job-id="{{ source_job_id | escape }}"
+              data-show-name="{{ source_show_name | escape }}"
+              style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
+            >
+              <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
+                <input
+                  type="checkbox"
+                  id="MagnetUpsellToggle"
+                  {% if magnet_in_cart %}checked{% endif %}
+                  style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
+                >
+                <span style="flex:1;line-height:1.45;display:flex;gap:10px;align-items:center;">
+                  <img
+                    src="{{ source_portrait_url }}"
+                    alt="{{ source_pet_name | default: 'Pet portrait' | escape }} preview"
+                    loading="lazy"
+                    style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--color-border);"
+                  >
+                  <span style="flex:1;">
+                    <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);">
+                      <span aria-hidden="true">🧲</span>
+                      Matching fridge magnet{%- if source_pet_name != '' %} of {{ source_pet_name }}{%- endif -%}
+                      <span
+                        data-magnet-price
+                        style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
+                      ></span>
+                    </span>
+                    <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                      Same portrait, printed on a flexible fridge magnet. Ships with your order.
+                    </span>
+                    <span
+                      data-magnet-status
+                      role="status"
+                      aria-live="polite"
+                      style="display:none;font-size:0.78rem;color:var(--color-muted);margin-top:4px;"
+                    ></span>
+                  </span>
+                </span>
+              </label>
+            </div>
+            {%- endif -%}
+
+            {%- comment -%}
               Shipping estimator — user enters a postal code, we call
               Shopify's /cart/shipping_rates.json (same carrier rates
               the checkout uses). It's an estimate only — discounts and
@@ -451,6 +553,119 @@
             setBusy(false);
             toggle.checked = true;
             setStatus('Could not remove digital files. Please try again.', true);
+          });
+      }
+    });
+  })();
+
+  /* Magnet upsell toggle ────────────────────────────────────────
+     Adds a magnet line item that carries the same portrait
+     properties as the existing portrait in cart — so the backend
+     fulfillment pipeline can print the same design on the magnet.
+     Hides itself if the magnet product is missing/draft or if the
+     cart has no portrait to source the design from. */
+  (function () {
+    var wrap = document.querySelector('[data-magnet-upsell]');
+    if (!wrap) return;
+    var toggle = wrap.querySelector('#MagnetUpsellToggle');
+    var priceEl = wrap.querySelector('[data-magnet-price]');
+    var statusEl = wrap.querySelector('[data-magnet-status]');
+    if (!toggle) return;
+
+    var variantId = null;
+    var pendingRequest = false;
+
+    function formatMoney(cents) {
+      try {
+        return new Intl.NumberFormat('en-CA', {
+          style: 'currency', currency: 'CAD',
+          minimumFractionDigits: 2,
+        }).format((cents || 0) / 100);
+      } catch (e) {
+        return '$' + (((cents || 0) / 100).toFixed(2));
+      }
+    }
+
+    function setStatus(msg, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.style.display = msg ? 'block' : 'none';
+      statusEl.style.color = isError ? '#B00020' : 'var(--color-muted)';
+    }
+
+    function setBusy(busy) {
+      pendingRequest = busy;
+      toggle.disabled = busy;
+      wrap.style.opacity = busy ? '0.65' : '1';
+    }
+
+    // Copy the source portrait's line-item properties onto the magnet
+    // so the Printful fulfillment pipeline knows which design to print.
+    function buildProperties() {
+      var d = wrap.dataset;
+      var props = {};
+      if (d.petName) props['Pet Name'] = d.petName;
+      if (d.style) props['_Style'] = d.style;
+      if (d.jobId) props['_Job ID'] = d.jobId;
+      if (d.showName) props['_Show Name'] = d.showName;
+      if (d.portraitUrl) props['_Portrait URL'] = d.portraitUrl;
+      if (d.printUrl) props['_Print File URL'] = d.printUrl;
+      if (d.noNameUrl) props['_No Name URL'] = d.noNameUrl;
+      return props;
+    }
+
+    fetch('/products/magnet.js', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('NOT_FOUND'); return r.json(); })
+      .then(function (p) {
+        var v = (p.variants && p.variants[0]) || null;
+        if (!v) throw new Error('NO_VARIANT');
+        variantId = v.id;
+        if (priceEl) priceEl.textContent = '+' + formatMoney(v.price);
+      })
+      .catch(function () {
+        wrap.style.display = 'none';
+      });
+
+    toggle.addEventListener('change', function () {
+      if (pendingRequest) return;
+      var wantOn = toggle.checked;
+
+      if (wantOn) {
+        if (!variantId) {
+          toggle.checked = false;
+          setStatus('Magnets are temporarily unavailable.', true);
+          return;
+        }
+        setBusy(true);
+        setStatus('Adding magnet to your order\u2026');
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: variantId, quantity: 1, properties: buildProperties() }),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('ADD_FAILED'); return r.json(); })
+          .then(function () { window.location.reload(); })
+          .catch(function () {
+            setBusy(false);
+            toggle.checked = false;
+            setStatus('Could not add the magnet. Please try again.', true);
+          });
+      } else {
+        var lineKey = wrap.getAttribute('data-line-key') || '';
+        if (!lineKey) { window.location.reload(); return; }
+        setBusy(true);
+        setStatus('Removing magnet\u2026');
+        fetch('/cart/change.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: lineKey, quantity: 0 }),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('REMOVE_FAILED'); return r.json(); })
+          .then(function () { window.location.reload(); })
+          .catch(function () {
+            setBusy(false);
+            toggle.checked = true;
+            setStatus('Could not remove the magnet. Please try again.', true);
           });
       }
     });
