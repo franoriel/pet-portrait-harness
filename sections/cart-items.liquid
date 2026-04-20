@@ -135,54 +135,11 @@
             {%- endif -%}
 
             {%- comment -%}
-              Priority Order upsell — toggle that adds/removes the
-              priority-order line item via AJAX. Product page is not
-              linked anywhere; this is add-to-cart only.
+              Priority Order upsell — markup removed pending reliable
+              2-business-day fulfillment. The JS handler further down
+              safely no-ops when [data-priority-upsell] is absent, so
+              restoring this is: paste the toggle markup back and ship.
             {%- endcomment -%}
-            {%- assign priority_in_cart = false -%}
-            {%- assign priority_line_key = '' -%}
-            {%- for item in cart.items -%}
-              {%- if item.product.handle == 'priority-order' -%}
-                {%- assign priority_in_cart = true -%}
-                {%- assign priority_line_key = item.key -%}
-              {%- endif -%}
-            {%- endfor -%}
-
-            <div
-              class="priority-upsell"
-              data-priority-upsell
-              data-in-cart="{{ priority_in_cart }}"
-              data-line-key="{{ priority_line_key }}"
-              style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
-            >
-              <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
-                <input
-                  type="checkbox"
-                  id="PriorityUpsellToggle"
-                  {% if priority_in_cart %}checked{% endif %}
-                  style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
-                >
-                <span style="flex:1;line-height:1.45;">
-                  <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);">
-                    <span aria-hidden="true">⚡</span>
-                    Priority Order
-                    <span
-                      data-priority-price
-                      style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
-                    ></span>
-                  </span>
-                  <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
-                    Made within 2 business days instead of the usual 5–7
-                  </span>
-                  <span
-                    data-priority-status
-                    role="status"
-                    aria-live="polite"
-                    style="display:none;font-size:0.78rem;color:var(--color-muted);margin-top:4px;"
-                  ></span>
-                </span>
-              </label>
-            </div>
 
             {%- comment -%}
               Digital Files upsell — adds the digital-files product as a
@@ -222,7 +179,7 @@
                     ></span>
                   </span>
                   <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
-                    Get high-res files sized for Instagram &amp; Facebook — Story (9:16), Square (1:1), Portrait (4:5), plus the full-resolution original. Emailed within 24h for personal use.
+                    Get high-res files sized for Instagram &amp; Facebook — Story (9:16), Square (1:1), Portrait (4:5), plus the full-resolution original.
                   </span>
                   <span
                     data-digital-files-status
