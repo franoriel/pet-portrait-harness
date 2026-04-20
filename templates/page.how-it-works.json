@@ -11,60 +11,25 @@
   "sections": {
     "hiw-hero": {
       "type": "how-it-works",
-      "blocks": {
-        "s1": {
-          "type": "step",
-          "settings": {
-            "icon": "1",
-            "title": "Upload a Clear Photo",
-            "description": "Use a front-facing, well-lit photo of your pet. The better the photo, the more stunning your portrait."
-          }
-        },
-        "s2": {
-          "type": "step",
-          "settings": {
-            "icon": "2",
-            "title": "AI Creates Your Portrait",
-            "description": "Choose from 9 artistic styles. Our AI analyses your pet's unique features and creates a hand-crafted-style portrait in seconds."
-          }
-        },
-        "s3": {
-          "type": "step",
-          "settings": {
-            "icon": "3",
-            "title": "We Personalise It",
-            "description": "Your pet's name is elegantly added in a serif font — ready for framing or gifting."
-          }
-        },
-        "s4": {
-          "type": "step",
-          "settings": {
-            "icon": "4",
-            "title": "We Print & Ship",
-            "description": "Choose your product and we handle the rest. Ships across Canada via Canada Post or Purolator."
-          }
-        }
-      },
-      "block_order": [
-        "s1",
-        "s2",
-        "s3",
-        "s4"
-      ],
       "settings": {
         "eyebrow": "The Process",
         "heading": "How It Works",
         "subheading": "Creating your custom pet portrait is simple, fast, and fun.",
+        "layout": "vertical",
         "cta_label": "Start My Portrait →",
         "cta_url": "/pages/create"
-      }
+      },
+      "blocks": {
+        "s1": { "type": "step", "settings": { "icon": "1", "title": "Upload a Clear Photo", "description": "Use a front-facing, well-lit photo of your pet. The better the photo, the more stunning your portrait." } },
+        "s2": { "type": "step", "settings": { "icon": "2", "title": "AI Creates Your Portrait", "description": "Choose from 9 artistic styles. Our AI analyses your pet's unique features and creates a hand-crafted-style portrait in seconds." } },
+        "s3": { "type": "step", "settings": { "icon": "3", "title": "We Personalise It", "description": "Your pet's name is elegantly added in a serif font — ready for framing or gifting." } },
+        "s4": { "type": "step", "settings": { "icon": "4", "title": "We Print & Ship", "description": "Choose your product and we handle the rest. Ships across Canada via Canada Post or Purolator." } }
+      },
+      "block_order": ["s1","s2","s3","s4"]
     },
     "faq": {
       "type": "faq",
-      "settings": {
-        "eyebrow": "Questions",
-        "heading": "Still Have Questions?"
-      }
+      "settings": { "eyebrow": "Questions", "heading": "Still Have Questions?" }
     },
     "final-cta": {
       "type": "final-cta",
@@ -75,9 +40,5 @@
       }
     }
   },
-  "order": [
-    "hiw-hero",
-    "faq",
-    "final-cta"
-  ]
+  "order": ["hiw-hero","faq","final-cta"]
 }
