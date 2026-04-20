@@ -302,17 +302,20 @@ COMPOSITION:
 _MINIMAL_LINE_ART_TEMPLATE = """\
 Transform this photo into a minimal line art pet portrait.
 
-COLOR ACCURACY — THIS IS CRITICAL:
-- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
-lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
-must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
-- Match the animal's actual eye color from the photo.
+MONOCHROME — THIS IS CRITICAL:
+- The artwork MUST be strictly BLACK AND WHITE ONLY. Pure black ink (#000000) \
+lines on a warm off-white (#FAF8F5) background. Absolutely NO color anywhere \
+in the image — not in the pet, not in the eyes, not in the background, not \
+anywhere. Ignore the original coat color; render everything as black linework.
+- Use the pet's coat markings/patches/patterns as a guide for WHERE lines go, \
+but DO NOT color-fill them. All markings are expressed purely through line \
+placement and density, not tonal or color variation.
 
 STYLE:
-- Clean, confident single-weight ink lines on a warm off-white (#FAF8F5) background
-- High contrast — bold black linework against the light background
+- Clean, confident single-weight ink lines on the warm off-white background
+- High contrast — bold pure-black linework against the light background
 - Minimal detail: capture the essence of the pet in as few strokes as possible
-- No shading, no fills, no gradients — pure linework only
+- No shading, no fills, no gradients, no gray tones — pure linework only
 - Suggest fur direction with sparse, deliberate strokes
 - Fine art illustration quality, high resolution 300dpi, print-ready
 
@@ -323,9 +326,10 @@ COMPOSITION:
 bars, color blocks, or empty bands at the top or bottom
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
-Avoid: photography, photorealism, cartoon, anime, 3D render, gray shading, \
-crosshatching, stippling, color fills, text, watermark, border, \
-solid color bars or panels at image edges.\
+Avoid: ANY color whatsoever, colored ink, colored background, colored eyes, \
+colored fur, sepia, tinted, duotone, photography, photorealism, cartoon, \
+anime, 3D render, gray shading, crosshatching, stippling, color fills, text, \
+watermark, border, solid color bars or panels at image edges.\
 """
 
 _MODERN_OIL_PAINT_TEMPLATE = """\

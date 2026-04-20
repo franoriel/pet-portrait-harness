@@ -92,6 +92,7 @@ CATALOG_PRODUCTS = {
     "canvas":        3,    # unframed canvas
     "canvas-framed": 12,   # TODO: verify the real Printful product ID for framed canvas
     "poster":        1,
+    "magnet":        358,  # TODO: verify — 358 = "Kiss-Cut Magnet" on the current Printful catalog
 }
 
 # Printful uses unicode: 12″×12″ (U+2033 double prime, U+00D7 multiplication sign)
@@ -113,6 +114,9 @@ VARIANT_SIZE_MAP = {
     },
     "poster": {
         "default": None,  # single variant poster
+    },
+    "magnet": {
+        "default": '4\u2033\u00d74\u2033',  # 4"x4" — update if we pick a different size
     },
 }
 

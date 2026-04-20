@@ -60,6 +60,9 @@ PRINT_SIZES: dict[str, tuple[int, int]] = {
     "canvas-18x24-framed": (5400, 7200),
     # Poster
     "poster-default":      (3600, 4800),
+    # Magnet (Printful Kiss-Cut Magnet, 4"x4" default — update if we
+    # pick a different Printful size. 300 DPI + 1/8" bleed each side.)
+    "magnet-default":      (1275, 1275),
 }
 
 # Aspect ratios for each product type (width:height)
@@ -77,6 +80,7 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "canvas-16x20-framed": (4, 5),
     "canvas-18x24-framed": (3, 4),
     "poster-default":      (3, 4),
+    "magnet-default":      (1, 1),
 }
 
 # Printful catalog variant IDs are resolved DYNAMICALLY at runtime via
@@ -497,26 +501,39 @@ def parse_order_items(order: dict) -> list[dict]:
         base_product = props.get("Product type", props.get("_Product type", "canvas"))
         frame_pref = props.get("_Frame", props.get("Frame", "")) or ""
         handle = (li.get("handle") or "").lower()
+        # Magnet upsell is a separate Shopify product (handle=magnet). It
+        # carries the portrait properties copied from the source line item.
+        is_magnet = handle == "magnet" or base_product == "magnet"
         is_framed = (
-            "framed" in frame_pref.lower()
-            or handle == "framed-canvas"
+            not is_magnet
+            and (
+                "framed" in frame_pref.lower()
+                or handle == "framed-canvas"
+            )
         )
-        product_type = (
-            f"{base_product}-framed"
-            if is_framed and not base_product.endswith("-framed")
-            else base_product
-        )
+        if is_magnet:
+            product_type = "magnet"
+        else:
+            product_type = (
+                f"{base_product}-framed"
+                if is_framed and not base_product.endswith("-framed")
+                else base_product
+            )
 
         # Size precedence: explicit prop → variant_title parse → warn + default.
-        size = props.get("Size") or props.get("_Size")
-        if not size:
-            size = _extract_size_from_variant(li)
-        if not size:
-            log.warning(
-                "Order line %s: could not determine size from props or variant; defaulting to 16x20",
-                li.get("id"),
-            )
-            size = "16x20"
+        if is_magnet:
+            # Magnet is single-variant for now. Size is fixed.
+            size = "default"
+        else:
+            size = props.get("Size") or props.get("_Size")
+            if not size:
+                size = _extract_size_from_variant(li)
+            if not size:
+                log.warning(
+                    "Order line %s: could not determine size from props or variant; defaulting to 16x20",
+                    li.get("id"),
+                )
+                size = "16x20"
 
         # Prefer the hi-res print file URL the cart captured over the preview.
         preview_url = (
