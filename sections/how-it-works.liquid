@@ -1,19 +1,23 @@
 {%- comment -%}
   Layout resolution order:
   1. Explicit section setting (when the editor/schema picks it up)
-  2. Template suffix — any page.<suffix> template where suffix starts
-     with "how-it-works" (e.g. /pages/how-it-works) gets vertical by default
+  2. `template` string (e.g. "page.how-it-works") or current page handle —
+     the dedicated How It Works page stacks vertically
   3. Fall back to horizontal (used on the homepage card layout)
 {%- endcomment -%}
 {%- assign hiw_layout = section.settings.layout -%}
 {%- if hiw_layout == blank -%}
-  {%- if template.suffix contains 'how-it-works' or request.page.handle == 'how-it-works' -%}
+  {%- assign _tpl = template | append: '' -%}
+  {%- if _tpl contains 'how-it-works' or page.handle == 'how-it-works' -%}
     {%- assign hiw_layout = 'vertical' -%}
   {%- else -%}
     {%- assign hiw_layout = 'horizontal' -%}
   {%- endif -%}
 {%- endif -%}
-<section class="hiw hiw--{{ hiw_layout }} section-padding" aria-labelledby="HiwHeading">
+<section class="hiw hiw--{{ hiw_layout }} section-padding"
+         data-hiw-debug-template="{{ template }}"
+         data-hiw-debug-handle="{{ page.handle }}"
+         aria-labelledby="HiwHeading">
   <div class="container text-center">
     <span class="eyebrow">{{ section.settings.eyebrow | default: 'Simple Process' }}</span>
     <h2 id="HiwHeading">{{ section.settings.heading | default: 'The Transformation' }}</h2>
