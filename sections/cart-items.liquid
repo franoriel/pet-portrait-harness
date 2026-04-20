@@ -617,10 +617,15 @@
     fetch('/products/magnet.js', { headers: { 'Accept': 'application/json' } })
       .then(function (r) { if (!r.ok) throw new Error('NOT_FOUND'); return r.json(); })
       .then(function (p) {
-        var v = (p.variants && p.variants[0]) || null;
-        if (!v) throw new Error('NO_VARIANT');
-        variantId = v.id;
-        if (priceEl) priceEl.textContent = '+' + formatMoney(v.price);
+        var variants = (p.variants || []).filter(function (v) { return v.available; });
+        if (!variants.length) throw new Error('NO_VARIANT');
+        // Prefer the 4"x4" size — best balance of visibility and price.
+        // Fall back to the first available variant if 4"x4" isn't published.
+        var preferred = variants.find(function (v) {
+          return /4.{1,2}[x\u00d7].{0,2}4/i.test(v.title || '');
+        }) || variants[0];
+        variantId = preferred.id;
+        if (priceEl) priceEl.textContent = '+' + formatMoney(preferred.price);
       })
       .catch(function () {
         wrap.style.display = 'none';
