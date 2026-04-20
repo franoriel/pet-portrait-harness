@@ -693,9 +693,13 @@ p { color: var(--color-ink); }
 .hiw__step p { font-size: 0.95rem; color: var(--color-muted); line-height: 1.6; }
 
 /* Vertical timeline layout — used on the dedicated How It Works page.
+   Matches via either:
+     .hiw--vertical (section setting)          — explicit opt-in
+     body.template-page-how-it-works .hiw      — scoped to that page template
    Stacks steps with a connecting line down the left, number circle on
    the left, content on the right. Centred within a narrow column. */
-.hiw--vertical .hiw__steps {
+.hiw--vertical .hiw__steps,
+.template-page-how-it-works .hiw .hiw__steps {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -705,7 +709,8 @@ p { color: var(--color-ink); }
   padding: 0;
   position: relative;
 }
-.hiw--vertical .hiw__steps::before {
+.hiw--vertical .hiw__steps::before,
+.template-page-how-it-works .hiw .hiw__steps::before {
   content: '';
   position: absolute;
   left: 21px;
@@ -715,7 +720,8 @@ p { color: var(--color-ink); }
   background: var(--color-border);
   z-index: 0;
 }
-.hiw--vertical .hiw__step {
+.hiw--vertical .hiw__step,
+.template-page-how-it-works .hiw .hiw__step {
   flex: 1 1 auto;
   display: flex;
   align-items: flex-start;
@@ -729,12 +735,15 @@ p { color: var(--color-ink); }
   position: relative;
   z-index: 1;
 }
-.hiw--vertical .hiw__step-num {
+.hiw--vertical .hiw__step-num,
+.template-page-how-it-works .hiw .hiw__step-num {
   flex: 0 0 auto;
   margin: 0;
 }
-.hiw--vertical .hiw__step-body { flex: 1 1 auto; min-width: 0; }
-.hiw--vertical .hiw__step h3 { margin-top: 4px; }
+.hiw--vertical .hiw__step-body,
+.template-page-how-it-works .hiw .hiw__step-body { flex: 1 1 auto; min-width: 0; }
+.hiw--vertical .hiw__step h3,
+.template-page-how-it-works .hiw .hiw__step h3 { margin-top: 4px; }
 
 /* ── Product showcase ─────────────────────────────────────── */
 .product-showcase { background: var(--color-bg); }
@@ -1260,6 +1269,15 @@ p { color: var(--color-ink); }
     justify-content: center;
   }
   .hiw__step { flex: 0 0 calc(33.333% - 14px); }
+  /* Vertical layout wins over desktop 3-column flex */
+  .hiw--vertical .hiw__step,
+  .template-page-how-it-works .hiw .hiw__step {
+    flex: 1 1 auto;
+  }
+  .hiw--vertical .hiw__steps,
+  .template-page-how-it-works .hiw .hiw__steps {
+    justify-content: flex-start;
+  }
 
   .product-showcase__grid { overflow: visible; flex-wrap: wrap; justify-content: center; }
   .product-card { flex: 0 0 calc(20% - 13px); }

@@ -14,10 +14,7 @@
     {%- assign hiw_layout = 'horizontal' -%}
   {%- endif -%}
 {%- endif -%}
-<section class="hiw hiw--{{ hiw_layout }} section-padding"
-         data-hiw-debug-template="{{ template }}"
-         data-hiw-debug-handle="{{ page.handle }}"
-         aria-labelledby="HiwHeading">
+<section class="hiw hiw--{{ hiw_layout }} section-padding" aria-labelledby="HiwHeading">
   <div class="container text-center">
     <span class="eyebrow">{{ section.settings.eyebrow | default: 'Simple Process' }}</span>
     <h2 id="HiwHeading">{{ section.settings.heading | default: 'The Transformation' }}</h2>
