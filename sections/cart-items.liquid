@@ -201,6 +201,7 @@
             {%- endcomment -%}
             {%- assign magnet_in_cart = false -%}
             {%- assign magnet_line_key = '' -%}
+            {%- assign magnet_current_variant_id = 0 -%}
             {%- assign source_portrait_url = '' -%}
             {%- assign source_print_url = '' -%}
             {%- assign source_no_name_url = '' -%}
@@ -212,6 +213,7 @@
               {%- if item.product.handle == 'magnet' -%}
                 {%- assign magnet_in_cart = true -%}
                 {%- assign magnet_line_key = item.key -%}
+                {%- assign magnet_current_variant_id = item.variant.id -%}
               {%- endif -%}
               {%- if source_portrait_url == '' -%}
                 {%- for property in item.properties -%}
@@ -246,6 +248,7 @@
               data-magnet-upsell
               data-in-cart="{{ magnet_in_cart }}"
               data-line-key="{{ magnet_line_key }}"
+              data-current-variant-id="{{ magnet_current_variant_id }}"
               data-portrait-url="{{ source_portrait_url | escape }}"
               data-print-url="{{ source_print_url | escape }}"
               data-no-name-url="{{ source_no_name_url | escape }}"
@@ -290,6 +293,18 @@
                   </span>
                 </span>
               </label>
+
+              {%- comment -%}
+                Size picker — populated at runtime from /products/magnet.js
+                so prices stay in sync with Shopify without a template
+                redeploy. Hidden until the variants load.
+              {%- endcomment -%}
+              <div
+                data-magnet-sizes
+                role="radiogroup"
+                aria-label="Magnet size"
+                style="display:none;flex-wrap:wrap;gap:8px;margin-top:12px;padding-left:30px;"
+              ></div>
             </div>
             {%- endif -%}
 
@@ -558,21 +573,24 @@
     });
   })();
 
-  /* Magnet upsell toggle ────────────────────────────────────────
-     Adds a magnet line item that carries the same portrait
-     properties as the existing portrait in cart — so the backend
-     fulfillment pipeline can print the same design on the magnet.
-     Hides itself if the magnet product is missing/draft or if the
-     cart has no portrait to source the design from. */
+  /* Magnet upsell toggle + size picker ──────────────────────────
+     Renders size chips populated from /products/magnet.js so the
+     prices stay in sync with Shopify. Toggle checkbox adds/removes
+     the selected variant. Changing size while in cart swaps the
+     variant (remove old → add new). All magnet line items carry
+     the source portrait's properties so fulfillment prints the
+     same design. Hides itself if the product is missing/draft. */
   (function () {
     var wrap = document.querySelector('[data-magnet-upsell]');
     if (!wrap) return;
     var toggle = wrap.querySelector('#MagnetUpsellToggle');
     var priceEl = wrap.querySelector('[data-magnet-price]');
     var statusEl = wrap.querySelector('[data-magnet-status]');
-    if (!toggle) return;
+    var sizesEl = wrap.querySelector('[data-magnet-sizes]');
+    if (!toggle || !sizesEl) return;
 
-    var variantId = null;
+    var variants = [];
+    var selectedVariantId = null;
     var pendingRequest = false;
 
     function formatMoney(cents) {
@@ -596,11 +614,10 @@
     function setBusy(busy) {
       pendingRequest = busy;
       toggle.disabled = busy;
+      sizesEl.querySelectorAll('button').forEach(function (b) { b.disabled = busy; });
       wrap.style.opacity = busy ? '0.65' : '1';
     }
 
-    // Copy the source portrait's line-item properties onto the magnet
-    // so the Printful fulfillment pipeline knows which design to print.
     function buildProperties() {
       var d = wrap.dataset;
       var props = {};
@@ -614,18 +631,93 @@
       return props;
     }
 
+    // Normalize labels like 3″×3″ / 4"x4" to a compact "3\u00d73".
+    function shortSizeLabel(title) {
+      if (!title) return '';
+      var t = String(title).replace(/["'\u2032\u2033\u00b4]/g, '').replace(/\s+/g, '');
+      var m = t.match(/(\d+)[x\u00d7](\d+)/i);
+      return m ? m[1] + '\u00d7' + m[2] : title;
+    }
+
+    function renderHeaderPrice() {
+      if (!priceEl) return;
+      var v = variants.find(function (x) { return x.id === selectedVariantId; });
+      priceEl.textContent = v ? '+' + formatMoney(v.price) : '';
+    }
+
+    function renderSizes() {
+      sizesEl.innerHTML = '';
+      variants.forEach(function (v) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('role', 'radio');
+        btn.setAttribute('data-variant-id', v.id);
+        var selected = v.id === selectedVariantId;
+        btn.setAttribute('aria-checked', selected ? 'true' : 'false');
+        btn.style.cssText =
+          'padding:6px 12px;border-radius:999px;cursor:pointer;' +
+          'font-family:var(--font-body);font-size:0.82rem;font-weight:500;' +
+          'transition:all 0.15s ease;min-height:32px;' +
+          (selected
+            ? 'background:var(--color-ink);color:#fff;border:1px solid var(--color-ink);'
+            : 'background:transparent;color:var(--color-ink);border:1px solid var(--color-border);');
+        btn.innerHTML =
+          '<span style="font-weight:600;">' + shortSizeLabel(v.title) + '</span>' +
+          '<span style="margin-left:6px;opacity:0.75;font-size:0.78rem;">' + formatMoney(v.price) + '</span>';
+        btn.addEventListener('click', function () { onSizeClick(v.id); });
+        sizesEl.appendChild(btn);
+      });
+      sizesEl.style.display = variants.length > 1 ? 'flex' : 'none';
+      renderHeaderPrice();
+    }
+
+    function onSizeClick(newVariantId) {
+      if (pendingRequest) return;
+      if (newVariantId === selectedVariantId) return;
+      var wasInCart = toggle.checked;
+      var oldLineKey = wrap.getAttribute('data-line-key') || '';
+      selectedVariantId = newVariantId;
+      renderSizes();
+
+      if (!wasInCart) return; // just updated the selection, nothing to sync server-side
+
+      // Swap the variant: remove old, add new with same properties.
+      setBusy(true);
+      setStatus('Updating magnet size\u2026');
+      fetch('/cart/change.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ id: oldLineKey, quantity: 0 }),
+      })
+        .then(function (r) { if (!r.ok) throw new Error('REMOVE_FAILED'); return r.json(); })
+        .then(function () {
+          return fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ id: selectedVariantId, quantity: 1, properties: buildProperties() }),
+          });
+        })
+        .then(function (r) { if (!r.ok) throw new Error('ADD_FAILED'); return r.json(); })
+        .then(function () { window.location.reload(); })
+        .catch(function () {
+          setBusy(false);
+          setStatus('Could not switch magnet size. Please try again.', true);
+        });
+    }
+
     fetch('/products/magnet.js', { headers: { 'Accept': 'application/json' } })
       .then(function (r) { if (!r.ok) throw new Error('NOT_FOUND'); return r.json(); })
       .then(function (p) {
-        var variants = (p.variants || []).filter(function (v) { return v.available; });
+        variants = (p.variants || []).filter(function (v) { return v.available; });
         if (!variants.length) throw new Error('NO_VARIANT');
-        // Prefer the 4"x4" size — best balance of visibility and price.
-        // Fall back to the first available variant if 4"x4" isn't published.
-        var preferred = variants.find(function (v) {
-          return /4.{1,2}[x\u00d7].{0,2}4/i.test(v.title || '');
-        }) || variants[0];
-        variantId = preferred.id;
-        if (priceEl) priceEl.textContent = '+' + formatMoney(preferred.price);
+        // Preselect: the variant that's already in cart (if any), else 4"x4",
+        // else the first available variant.
+        var currentInCart = parseInt(wrap.getAttribute('data-current-variant-id') || '0', 10) || null;
+        var preferred = (currentInCart && variants.find(function (v) { return v.id === currentInCart; }))
+          || variants.find(function (v) { return /4.{1,2}[x\u00d7].{0,2}4/i.test(v.title || ''); })
+          || variants[0];
+        selectedVariantId = preferred.id;
+        renderSizes();
       })
       .catch(function () {
         wrap.style.display = 'none';
@@ -636,7 +728,7 @@
       var wantOn = toggle.checked;
 
       if (wantOn) {
-        if (!variantId) {
+        if (!selectedVariantId) {
           toggle.checked = false;
           setStatus('Magnets are temporarily unavailable.', true);
           return;
@@ -646,7 +738,7 @@
         fetch('/cart/add.js', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ id: variantId, quantity: 1, properties: buildProperties() }),
+          body: JSON.stringify({ id: selectedVariantId, quantity: 1, properties: buildProperties() }),
         })
           .then(function (r) { if (!r.ok) throw new Error('ADD_FAILED'); return r.json(); })
           .then(function () { window.location.reload(); })
