@@ -60,6 +60,7 @@ def create_job(
     upload_path: str,
     terms_accepted_at: str = "",
     client_ip: str = "",
+    background_mode: str = "auto",
 ) -> dict:
     """Create a job, enqueue it, and return the job dict."""
     job_id = uuid.uuid4().hex[:12]
@@ -69,6 +70,7 @@ def create_job(
         "status": "queued",
         "pet_name": pet_name,
         "style": style,
+        "background_mode": background_mode or "auto",
         "upload_path": upload_path,
         "created_at": now,
         "updated_at": now,

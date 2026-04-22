@@ -188,11 +188,21 @@
   var petName = data.petName || '';
   var styleId = data.styleId || 'soft-watercolour';
   var fontSize = data.fontSize || 'medium';
-  // Selections from step 4 (size, name, frame)
+  // Selections from step 4 (size, name, frame, background)
   var selectedSize = data.selectedSize || null;       // e.g. '10x10'
   var wantsName = data.wantsName !== false;           // default true
   var wantsFrame = data.wantsFrame === true;          // default false
   var namedPreviewUrl = data.namedPreviewUrl || null; // with-name preview from step 4
+  var backgroundMode = data.backgroundMode || 'auto'; // 'auto' | 'light' | 'dark'
+
+  // Sanitize pet name client-side — mirrors backend allowlist in app.py
+  // (letters, numbers, spaces, hyphens, apostrophes, periods; 1–20 chars).
+  function sanitizePetName(raw) {
+    return String(raw || '')
+      .replace(/[^A-Za-z0-9\s\-'\u2019.]/g, '')
+      .slice(0, 20)
+      .trim();
+  }
 
   // ── Style → font mapping (must match portrait-flow.js) ──
   var STYLE_FONTS = {
@@ -243,7 +253,7 @@
       '16x20': { w: 16, h: 20 },
     },
     'framed-canvas': {
-      '8x10':  { w: 8,  h: 10 },
+      // 8x10 framed retired 2026-04-22 (no live Shopify variant).
       '12x12': { w: 12, h: 12 },
       '12x16': { w: 12, h: 16 },
       '16x16': { w: 16, h: 16 },
@@ -697,7 +707,10 @@
   // use it directly so the toggle swap is instant.
   var noTextUrl   = previewUrls[0] || previewUrls[1] || previewUrl;
   var withTextUrl = data.namedPreviewUrl || previewUrls[1] || null; // may be null until Yes is clicked
-  var showName = !!withTextUrl; // default to Yes if we already have the named version
+  // Default the toggle from what the customer picked on Step 4 ("Include name").
+  // If they opted in, we land on "Yes" — even if the named preview URL hasn't
+  // been persisted yet; we'll fetch it proactively below.
+  var showName = wantsName;
 
   if (petName) {
     var toggleWrap = document.createElement('div');
@@ -789,6 +802,68 @@
       }
     }
 
+    // Run /add-name for the current petName + style + background. Used by
+    // the Yes toggle AND the inline name editor. Resolves when complete so
+    // callers can sequence additional updates.
+    function fetchNamedPreview() {
+      setLoading(true, 'Adding the name\u2026');
+      setButtonsDisabled(true);
+
+      var PHRASES = ['Adding the name\u2026', 'Painting the letters\u2026', 'Blending it in\u2026', 'Almost done\u2026'];
+      var idx = 0;
+      if (cycler) clearInterval(cycler);
+      cycler = setInterval(function () {
+        idx = Math.min(idx + 1, PHRASES.length - 1);
+        var p = nameLoadingEl && nameLoadingEl.querySelector('[data-phase]');
+        if (p) p.textContent = PHRASES[idx];
+      }, 3500);
+
+      var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+      return fetch(API_BASE + '/add-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: noTextUrl,
+          pet_name: petName,
+          style: data.styleId || '',
+          background_mode: backgroundMode,
+        }),
+      })
+      .then(function (r) { return r.ok ? r.json() : r.json().then(function (d) { throw new Error(d.error || 'Failed'); }); })
+      .then(function (resp) {
+        var newUrl = resp.composited_png_cdn || resp.composited;
+        if (!newUrl) throw new Error('No image URL returned');
+        withTextUrl = newUrl;
+
+        // Persist for future PDP loads so we don't re-fetch on refresh
+        try {
+          var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+          sess.namedPreviewUrl = newUrl;
+          sess.petName = petName;
+          sess.printFileUrl = resp.composited_png_cdn || sess.printFileUrl;
+          localStorage.setItem(LS_KEY, JSON.stringify(sess));
+        } catch (_) {}
+
+        if (showName) renderActiveImage(newUrl);
+        updateHiddenProps(showName, resp.composited_png_cdn || newUrl, newUrl);
+        setLoading(false);
+        setButtonsDisabled(false);
+      })
+      .catch(function (err) {
+        setLoading(false);
+        setButtonsDisabled(false);
+        if (nameLoadingEl) {
+          nameLoadingEl.style.display = 'inline-flex';
+          nameLoadingEl.style.color = '#B00020';
+          nameLoadingEl.textContent = 'Could not add name — try again';
+          setTimeout(function () { setLoading(false); nameLoadingEl.style.color = ''; }, 3000);
+        }
+        // Revert toggle state so the UI is coherent
+        updateTextToggle(false);
+        throw err;
+      });
+    }
+
     function updateTextToggle(withText) {
       showName = withText;
       // Toggle button styles
@@ -810,75 +885,121 @@
         return;
       }
 
-      // Otherwise fetch /add-name in the background with a toggle-local spinner.
-      setLoading(true, 'Adding the name\u2026');
-      setButtonsDisabled(true);
-
-      var PHRASES = ['Adding the name\u2026', 'Painting the letters\u2026', 'Blending it in\u2026', 'Almost done\u2026'];
-      var idx = 0;
-      cycler = setInterval(function () {
-        idx = Math.min(idx + 1, PHRASES.length - 1);
-        var p = nameLoadingEl && nameLoadingEl.querySelector('[data-phase]');
-        if (p) p.textContent = PHRASES[idx];
-      }, 3500);
-
-      var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-      fetch(API_BASE + '/add-name', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: noTextUrl,
-          pet_name: petName,
-          style: data.styleId || '',
-        }),
-      })
-      .then(function (r) { return r.ok ? r.json() : r.json().then(function (d) { throw new Error(d.error || 'Failed'); }); })
-      .then(function (resp) {
-        var newUrl = resp.composited_png_cdn || resp.composited;
-        if (!newUrl) throw new Error('No image URL returned');
-        withTextUrl = newUrl;
-
-        // Persist for future PDP loads so we don't re-fetch on refresh
-        try {
-          var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-          sess.namedPreviewUrl = newUrl;
-          sess.printFileUrl = resp.composited_png_cdn || sess.printFileUrl;
-          localStorage.setItem(LS_KEY, JSON.stringify(sess));
-        } catch (_) {}
-
-        renderActiveImage(newUrl);
-        updateHiddenProps(true, resp.composited_png_cdn || newUrl, newUrl);
-        setLoading(false);
-        setButtonsDisabled(false);
-      })
-      .catch(function (err) {
-        setLoading(false);
-        setButtonsDisabled(false);
-        if (nameLoadingEl) {
-          nameLoadingEl.style.display = 'inline-flex';
-          nameLoadingEl.style.color = '#B00020';
-          nameLoadingEl.textContent = 'Could not add name — try again';
-          setTimeout(function () { setLoading(false); nameLoadingEl.style.color = ''; }, 3000);
-        }
-        // Revert toggle state
-        updateTextToggle(false);
-      });
+      fetchNamedPreview().catch(function () { /* handled inline */ });
     }
 
     yesBtn.addEventListener('click', function () { updateTextToggle(true); });
     noBtn.addEventListener('click',  function () { updateTextToggle(false); });
+
+    // ── Inline pet-name editor ────────────────────────────
+    // Lets the customer tweak the name right on the PDP. Debounced so we
+    // only re-call /add-name after they stop typing, and only when the
+    // "Show name" toggle is on (so we don't burn a Gemini call the user
+    // won't see).
+    var editorRow = document.createElement('div');
+    editorRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-top:10px;';
+
+    var editorLabel = document.createElement('label');
+    editorLabel.setAttribute('for', 'PdpPetNameEdit');
+    editorLabel.textContent = 'Name';
+    editorLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:600;"
+      + 'color:var(--color-muted, #8a8580);text-transform:uppercase;letter-spacing:0.08em;';
+    editorRow.appendChild(editorLabel);
+
+    var editorInput = document.createElement('input');
+    editorInput.type = 'text';
+    editorInput.id = 'PdpPetNameEdit';
+    editorInput.value = petName;
+    editorInput.maxLength = 20;
+    editorInput.setAttribute('aria-label', 'Edit name on portrait');
+    editorInput.style.cssText = "flex:1;min-width:0;font-family:'Inter',sans-serif;font-size:0.9rem;"
+      + 'padding:8px 12px;border:1.5px solid var(--color-border, #e5e0db);border-radius:8px;'
+      + 'background:#fff;color:var(--color-ink, #1C1C1C);outline:none;transition:border-color 0.2s;';
+    editorInput.addEventListener('focus', function () {
+      editorInput.style.borderColor = 'var(--color-ink, #1C1C1C)';
+    });
+    editorInput.addEventListener('blur', function () {
+      editorInput.style.borderColor = 'var(--color-border, #e5e0db)';
+    });
+
+    var editorCounter = document.createElement('span');
+    editorCounter.style.cssText = "font-family:'Inter',sans-serif;font-size:0.72rem;color:var(--color-muted, #8a8580);";
+    editorCounter.textContent = petName.length + '/20';
+    editorRow.appendChild(editorInput);
+    editorRow.appendChild(editorCounter);
+    toggleWrap.appendChild(editorRow);
+    // Switch the toggleWrap to a column layout now that we're stacking
+    // the toggle row and the editor row inside it.
+    toggleWrap.style.flexDirection = 'column';
+    toggleWrap.style.alignItems = 'stretch';
+
+    function applyNameEverywhere(newName) {
+      petName = newName;
+      // Update the banner above the product title
+      var existingBanner = document.querySelector('.product-info__title');
+      if (existingBanner && existingBanner.previousElementSibling &&
+          existingBanner.previousElementSibling.tagName === 'P') {
+        existingBanner.previousElementSibling.textContent = (newName || 'Your') + '\u2019s portrait';
+      }
+      // Update the confirmed-portrait strip label
+      if (nameLabel) {
+        nameLabel.textContent = newName ? newName + '\u2019s Portrait' : 'Your Portrait';
+      }
+      // Keep the (hidden) Shopify form input in sync — Pet Name goes on the cart line
+      var petNameFormInput = document.getElementById('PetName');
+      if (petNameFormInput) petNameFormInput.value = newName;
+      var form = document.querySelector('.product-form, form[action*="/cart/add"]');
+      if (form) {
+        var nameProp = form.querySelector('input[name="properties[Pet Name]"]');
+        if (nameProp) nameProp.value = newName;
+      }
+      // Persist the new name so reloads pick it up
+      try {
+        var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        sess.petName = newName;
+        localStorage.setItem(LS_KEY, JSON.stringify(sess));
+      } catch (_) {}
+    }
+
+    var editDebounce = null;
+    editorInput.addEventListener('input', function () {
+      var cleaned = sanitizePetName(editorInput.value);
+      editorCounter.textContent = cleaned.length + '/20';
+      if (cleaned === petName) return;
+
+      // Update banner / strip / hidden inputs immediately — this is what the
+      // customer sees in the cart line, regardless of the Gemini rerender.
+      applyNameEverywhere(cleaned);
+
+      // The previously generated named preview is now stale.
+      withTextUrl = null;
+
+      // If "Show name" is off, don't fire /add-name — the customer hasn't
+      // asked to see the name on the art. They'll get a fresh render if
+      // they flip the toggle on.
+      if (!showName) return;
+
+      // Show "no name" version immediately while we regenerate, so the
+      // stale name doesn't linger on screen.
+      renderActiveImage(noTextUrl);
+
+      if (editDebounce) clearTimeout(editDebounce);
+      editDebounce = setTimeout(function () {
+        if (!petName) return; // empty — leave as no-name
+        fetchNamedPreview().catch(function () { /* handled inline */ });
+      }, 650);
+    });
 
     // Insert after the portrait strip
     if (insertTarget && insertTarget.parentNode) {
       insertTarget.parentNode.insertBefore(toggleWrap, insertTarget);
     }
 
-    // If we landed with showName=true but no namedPreviewUrl, proactively
-    // trigger the /add-name call so the customer doesn't click Yes on load
-    // only to be stuck waiting.
-    if (showName && !withTextUrl) {
-      // No-op: user must explicitly click Yes to opt in, so we don't auto-fire
-      // a Gemini call on every PDP visit.
+    // If the customer opted in on Step 4 but we don't have the named
+    // preview cached yet (race with Continue click, or they edited from
+    // another device), kick off the render so "Yes" actually shows names.
+    if (showName && !withTextUrl && petName) {
+      fetchNamedPreview().catch(function () { /* handled inline */ });
     }
   }
 

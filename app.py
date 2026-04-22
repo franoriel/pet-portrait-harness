@@ -419,6 +419,11 @@ def generate_route():
     if style not in PROMPTS:
         return jsonify(error="Invalid style."), 400
 
+    # Background mode: 'auto' (style default), 'light' (soft/airy), or 'dark' (moody/rich).
+    background_mode = (request.form.get("background_mode") or "auto").strip().lower()
+    if background_mode not in ("auto", "light", "dark"):
+        background_mode = "auto"
+
     # ── Photo-license consent (audit trail) ──────────────────────────────────
     # Frontend checkbox sends an ISO-8601 timestamp when the customer ticks
     # "I own rights to this photo and grant a licence to reproduce/modify/print".
@@ -492,6 +497,7 @@ def generate_route():
         upload_path=str(upload_path),
         terms_accepted_at=terms_accepted_at,
         client_ip=ip,
+        background_mode=background_mode,
     )
     depth = queue_depth()
 
@@ -663,6 +669,9 @@ def add_name():
     data = request.get_json(silent=True) or {}
     image_url = (data.get("image_url") or "").strip()
     style_raw = (data.get("style") or "watercolor").strip()
+    background_mode = (data.get("background_mode") or "auto").strip().lower()
+    if background_mode not in ("auto", "light", "dark"):
+        background_mode = "auto"
 
     # Validate pet_name
     ok_name, pet_name = sanitize_pet_name(data.get("pet_name", ""))
@@ -698,6 +707,7 @@ def add_name():
             no_name_image_bytes=no_name_bytes,
             pet_name=pet_name,
             style=style,
+            background_mode=background_mode,
         )
 
         # Upload both to R2 for fast CDN delivery — parallelized to cut latency.
@@ -935,7 +945,12 @@ def _process_job(job: dict):
     # off to the deferred-original task below, which takes over cleanup.
     file_owned = True
     try:
-        raw_path, comp_path, web_path = generate(str(upload_path), job["pet_name"], job["style"])
+        raw_path, comp_path, web_path = generate(
+            str(upload_path),
+            job["pet_name"],
+            job["style"],
+            background_mode=job.get("background_mode") or "auto",
+        )
 
         # In the no-name preview path, raw_path and comp_path are byte-identical
         # (same PIL image saved to two filenames). Upload the comp PNG once and

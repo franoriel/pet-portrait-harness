@@ -627,32 +627,91 @@ _NO_BORDER_RULE = (
 )
 
 _COMPOSITION_RULE = (
-    "\n\nCOMPOSITION — CRITICAL:\n"
-    "- The pet is the focal subject, centered horizontally. Head and upper chest.\n"
-    "- The pet's head/face should sit roughly in the VERTICAL CENTER of the image, "
-    "with the body extending downward. Leave enough uncluttered space above the "
-    "pet's head (roughly the top 8-20% of the image) so a small name label can "
-    "sit there cleanly — but that space should be the SAME style/background as "
-    "the rest of the artwork, not a separate solid panel.\n"
-    "- The artwork's background, palette, and atmosphere must fill the ENTIRE "
-    "canvas from top edge to bottom edge. No solid color bars, no reserved "
-    "panels, no empty rectangles or bands at the top or bottom.\n"
+    "\n\nCOMPOSITION — CRITICAL (read twice, follow exactly):\n"
+    "- FULL-BLEED CANVAS FILL: The artwork MUST extend edge-to-edge on all four "
+    "sides (top, bottom, left, right). Zero margins. Zero borders. Zero letterbox "
+    "bars. Zero frames. Zero paper edges. Zero vignette cutoffs. The background, "
+    "palette, and atmosphere fill 100% of the canvas pixel grid.\n"
+    "- 4:5 PORTRAIT ASPECT RATIO: The image canvas is taller than it is wide. "
+    "Compose for that — do NOT output a square or wide image.\n"
+    "- CENTERED FACE — FOCAL POINT: The pet's FACE is the single focal subject. "
+    "Position the pet's EYES at approximately 42-48% down from the top (roughly "
+    "horizontal center of the frame) and perfectly centered left-to-right. The "
+    "nose/muzzle sits just below center. The head occupies 40-55% of the image "
+    "height so it reads as the clear focal point from across a room.\n"
+    "- NO CROPPED FEATURES: Ears must be fully visible with breathing room above "
+    "them. Chin/chest must have breathing room below. Nothing important (eyes, "
+    "ears, whiskers, nose, chin) is clipped by any edge.\n"
+    "- HEADROOM FOR NAME: Leave roughly the top 10-18% of the image as the style's "
+    "natural background (continuous scenery/wash/tone — NOT a reserved solid "
+    "panel) so a small name label can sit above the pet's head cleanly.\n"
+    "- NO RESERVED BANDS: Never output a solid color bar, empty rectangle, or "
+    "panel at the top or bottom. The artwork's native scenery extends uniformly "
+    "to every edge, just more open above the head than around the body.\n"
     "- If the style has a dark moody background (e.g. Renaissance, oil paint), "
-    "that dark atmosphere extends uniformly to all four edges — the top area "
-    "above the pet should still feel like continuous scenery (drapery, shadow, "
-    "wall), just slightly more open so a name reads clearly.\n"
+    "the dark atmosphere still extends uniformly to all four edges — drapery, "
+    "shadow, or wall continues into the top area above the pet, just slightly "
+    "more open so a name reads clearly.\n"
     "- The pet should NOT be pushed to the bottom edge. Natural portrait framing.\n"
 )
 
 
+# Background-mode overrides — injected after the style prompt so the customer's
+# choice trumps the style default without otherwise changing the art direction.
+# 'auto' → no override (style keeps its native palette).
+_BACKGROUND_MODE_RULES: dict[str, str] = {
+    "light": (
+        "\n\nBACKGROUND MODE — LIGHT (customer choice, OVERRIDES any dark "
+        "background instructions above):\n"
+        "- Render the background in SOFT, LIGHT tones that complement the pet's "
+        "coat colors — cream, warm off-white, pale sand, soft peach, gentle "
+        "blush, muted sky, or a delicate pastel wash tuned to the pet's palette.\n"
+        "- The light background must still match the style's medium (watercolor "
+        "wash, oil paint glow, poster flat color, etc.) — just in a light key.\n"
+        "- Keep the pet's natural coat color unchanged — only the surrounding "
+        "atmosphere is lightened.\n"
+        "- The light tone fills the ENTIRE canvas edge-to-edge with no borders.\n"
+    ),
+    "dark": (
+        "\n\nBACKGROUND MODE — DARK (customer choice, OVERRIDES any light "
+        "background instructions above):\n"
+        "- Render the background in RICH, DEEP tones that complement the pet's "
+        "coat colors — midnight navy, deep forest, warm charcoal, aubergine, "
+        "deep burgundy, or a moody dark wash tuned to the pet's palette.\n"
+        "- The dark background must still match the style's medium (watercolor "
+        "wash, oil paint shadow, poster flat color, etc.) — just in a dark key.\n"
+        "- Keep the pet's natural coat color unchanged and well-lit — only the "
+        "surrounding atmosphere goes dark. The pet must remain clearly visible "
+        "against the darker tones, not lost in shadow.\n"
+        "- The dark tone fills the ENTIRE canvas edge-to-edge with no borders.\n"
+    ),
+}
 
-def build_prompt_with_name(style_id: str, pet_name: str, style_vars: Optional[dict] = None) -> str:
+
+def _background_rule(mode: Optional[str]) -> str:
+    """Return the background-mode instruction block for 'light'/'dark', or '' for auto."""
+    return _BACKGROUND_MODE_RULES.get((mode or "auto").lower(), "")
+
+
+
+def build_prompt_with_name(
+    style_id: str,
+    pet_name: str,
+    style_vars: Optional[dict] = None,
+    background_mode: Optional[str] = "auto",
+) -> str:
     """Build the full prompt for a style with the pet's name integrated
     into the artwork as a native design element."""
     base = PROMPTS[style_id](style_vars)
     base = _strip_no_text_rules(base)
     name_block = _name_integration(style_id, pet_name)
-    return base.rstrip() + _COMPOSITION_RULE + "\n\n" + name_block + _NO_BORDER_RULE
+    return (
+        base.rstrip()
+        + _background_rule(background_mode)
+        + _COMPOSITION_RULE
+        + "\n\n" + name_block
+        + _NO_BORDER_RULE
+    )
 
 
 # Master registry: style → prompt builder callable
@@ -1106,6 +1165,7 @@ def add_name_to_image(
     style: str,
     pet_name: str,
     max_retries: int = 2,
+    background_mode: Optional[str] = "auto",  # noqa: ARG001 — accepted for API parity; the art is already rendered, so the background is fixed by this point.
 ) -> bytes:
     """Take an already-generated portrait and ask Gemini to add the pet's name
     into the existing artwork — preserving every detail of the original image.
@@ -1169,6 +1229,7 @@ def call_gemini(
     style_vars: Optional[dict] = None,
     max_retries: int = 2,
     pet_name: str = "",
+    background_mode: Optional[str] = "auto",
 ) -> bytes:
     """Send photo + prompt to Gemini; return raw PNG/JPEG bytes of the generated image.
 
@@ -1182,9 +1243,14 @@ def call_gemini(
     image_bytes = photo_path.read_bytes()
     mime_type   = MIME_MAP.get(photo_path.suffix.lower(), "image/jpeg")
     if pet_name:
-        prompt = build_prompt_with_name(style, pet_name, style_vars)
+        prompt = build_prompt_with_name(style, pet_name, style_vars, background_mode)
     else:
-        prompt = PROMPTS[style](style_vars) + _COMPOSITION_RULE + _NO_BORDER_RULE
+        prompt = (
+            PROMPTS[style](style_vars)
+            + _background_rule(background_mode)
+            + _COMPOSITION_RULE
+            + _NO_BORDER_RULE
+        )
 
     last_exc: Optional[Exception] = None
     for attempt in range(max_retries + 1):
@@ -1246,6 +1312,7 @@ def generate(
     style: str = "classic",
     output_dir: Optional[Path] = None,
     style_vars: Optional[dict] = None,
+    background_mode: Optional[str] = "auto",
 ) -> tuple[Path, Path, Path]:
     """
     Generate a portrait and composite the pet name onto it.
@@ -1261,7 +1328,7 @@ def generate(
         raise RuntimeError("BUSY")
 
     try:
-        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars)  # type: ignore[return-value]
+        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars, background_mode)  # type: ignore[return-value]
     finally:
         _generation_semaphore.release()
 
@@ -1272,6 +1339,7 @@ def _generate_inner(
     style: str,
     output_dir: Optional[Path],
     style_vars: Optional[dict],
+    background_mode: Optional[str] = "auto",
 ) -> tuple[Path, Path]:
     import uuid as _uuid
     out = output_dir or OUTPUT_DIR
@@ -1285,7 +1353,7 @@ def _generate_inner(
     # Preview generation: ONE Gemini call — no-name version only.
     # The with-name version is generated lazily by add_name_endpoint
     # when the user adds to cart (halves per-portrait Gemini cost).
-    raw_bytes = call_gemini(photo, style, style_vars, pet_name="")
+    raw_bytes = call_gemini(photo, style, style_vars, pet_name="", background_mode=background_mode)
 
     ai_image_no_name = Image.open(BytesIO(raw_bytes))
     ai_image_no_name.load()
@@ -1330,6 +1398,7 @@ def generate_with_name_on_demand(
     pet_name: str,
     style: str,
     output_dir: Optional[Path] = None,
+    background_mode: Optional[str] = "auto",
 ) -> tuple[Path, Path]:
     """Add the pet's name to an already-generated no-name portrait.
     Called at add-to-cart time to halve the up-front Gemini cost.
@@ -1348,7 +1417,9 @@ def generate_with_name_on_demand(
 
         log.info("[generate_with_name] %s '%s' (on-demand)", style, pet_name)
 
-        composited_bytes = add_name_to_image(no_name_image_bytes, style, pet_name)
+        composited_bytes = add_name_to_image(
+            no_name_image_bytes, style, pet_name, background_mode=background_mode
+        )
 
         ai_image = Image.open(BytesIO(composited_bytes))
         ai_image.load()

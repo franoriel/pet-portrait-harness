@@ -105,7 +105,7 @@ VARIANT_SIZE_MAP = {
         "16x20": '16\u2033\u00d720\u2033',
     },
     "canvas-framed": {
-        "8x10":  '8\u2033\u00d710\u2033',
+        # 8x10 framed retired 2026-04-22 — no live Shopify variant.
         "12x12": '12\u2033\u00d712\u2033',
         "12x16": '12\u2033\u00d716\u2033',
         "16x16": '16\u2033\u00d716\u2033',

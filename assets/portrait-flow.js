@@ -52,6 +52,14 @@ const FONT_SIZES = [
   { id: 'large',  label: 'L', scale: 1.35 },
 ];
 
+// Background options — tell Gemini whether to lean light or dark for the
+// scene around the pet. 'auto' lets the style's default palette decide.
+const BACKGROUND_OPTIONS = [
+  { id: 'auto',  label: 'Auto',  sub: 'Style default' },
+  { id: 'light', label: 'Light', sub: 'Soft & airy' },
+  { id: 'dark',  label: 'Dark',  sub: 'Moody & rich' },
+];
+
 // Load a Google Font dynamically
 const _loadedFonts = new Set();
 function loadGoogleFont(styleId) {
@@ -263,6 +271,7 @@ function saveSession(state) {
       petName: state.petName,
       styleId: state.selectedStyleId,
       fontSize: state.fontSize || 'medium',
+      backgroundMode: state.backgroundMode || 'auto',
       jobId: state.jobId,
       previewDataUrls: state.previewDataUrls || [],
       previewCdnUrls: state.previewCdnUrls || [],
@@ -357,11 +366,12 @@ function getTurnstileToken() {
   return '';
 }
 
-async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt }) {
+async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, backgroundMode }) {
   const formData = new FormData();
   formData.append('photo', imageFile);
   formData.append('pet_name', petName || 'Pet');
   formData.append('style', STYLE_MAP[styleId] || 'classic');
+  formData.append('background_mode', backgroundMode || 'auto');
   formData.append('turnstile_token', getTurnstileToken());
   // Photo-license audit trail — ISO timestamp of when the customer
   // accepted the upload terms. Backend logs this with the job.
@@ -689,6 +699,7 @@ function usePortraitFlow() {
     previewCdnUrls: saved?.previewCdnUrls || [],
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
     fontSize: saved?.fontSize || 'medium',
+    backgroundMode: saved?.backgroundMode || 'auto',
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
     printFileUrl: saved?.printFileUrl || '',
@@ -832,6 +843,7 @@ function usePortraitFlow() {
         styleId: state.selectedStyleId,
         petName: state.petName,
         termsAcceptedAt: state.termsAcceptedAt,
+        backgroundMode: state.backgroundMode || 'auto',
       });
       // Try to convert preview URLs to base64 for localStorage,
       // but always keep the original URLs as fallback
@@ -1054,6 +1066,7 @@ function usePortraitFlow() {
         previewImages: [], previewDataUrls: [], previewCdnUrls: [],
         selectedPreviewIndex: 0,
         fontSize: 'medium',
+        backgroundMode: 'auto',
         imageFilename: '', originalPhotoUrl: '', printFileUrl: '',
         jobId: null, restoredSession: false,
         pendingPhoto: null,
@@ -1735,6 +1748,70 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       }),
     ),
 
+    // Background mode selector (only when style is selected).
+    // Complements the colors of the generated pet image — auto lets the style
+    // default, light leans soft/airy, dark leans moody/rich.
+    state.selectedStyleId && React.createElement('div', {
+      style: {
+        marginTop: '20px', padding: '16px', background: tokens.colorWhite,
+        borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+      },
+    },
+      React.createElement('p', {
+        style: { ...s.smallCaps, margin: '0 0 10px', fontSize: '10px', textAlign: 'center' },
+      }, 'Background'),
+      React.createElement('div', {
+        style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' },
+        role: 'radiogroup', 'aria-label': 'Background mode',
+      },
+        BACKGROUND_OPTIONS.map(opt => {
+          const active = (state.backgroundMode || 'auto') === opt.id;
+          const swatchBg =
+            opt.id === 'light' ? 'linear-gradient(135deg, #FAF6EE, #EFE7D9)' :
+            opt.id === 'dark'  ? 'linear-gradient(135deg, #2A2620, #1A1714)' :
+                                 `linear-gradient(135deg, ${tokens.colorSurface} 0 50%, #2A2620 50% 100%)`;
+          return React.createElement('button', {
+            key: opt.id, type: 'button', role: 'radio',
+            'aria-checked': active,
+            'aria-label': `${opt.label} background — ${opt.sub}`,
+            onClick: () => {
+              update({ backgroundMode: opt.id });
+              saveSession({ ...state, backgroundMode: opt.id });
+            },
+            style: {
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: '6px', padding: '10px 6px',
+              border: active ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+              borderRadius: '10px',
+              background: active ? tokens.colorAccentLight : tokens.colorWhite,
+              cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+            },
+          },
+            React.createElement('span', {
+              'aria-hidden': true,
+              style: {
+                width: '36px', height: '22px', borderRadius: '5px',
+                background: swatchBg,
+                border: `1px solid ${tokens.colorBorder}`,
+              },
+            }),
+            React.createElement('span', {
+              style: {
+                fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
+                color: active ? tokens.colorAccent : tokens.colorBrand,
+              },
+            }, opt.label),
+            React.createElement('span', {
+              style: {
+                fontFamily: fontSans, fontSize: '10px',
+                color: tokens.colorMuted, lineHeight: 1.2,
+              },
+            }, opt.sub),
+          );
+        }),
+      ),
+    ),
+
     // Name font preview + size selector (only when style is selected)
     state.selectedStyleId && state.petName && React.createElement('div', {
       style: {
@@ -2187,12 +2264,9 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
 
 // Canvas configurator — real Shopify variants
 // Source: Printful → Shopify product sync (accurate as of 2026-04)
-// Each size has an unframed variant; only 16x20 has both frame options; 18x24 is framed-only.
+// 8x10 framed retired 2026-04-22 (no live Shopify variant).
+// 18x24 is framed-only; all others have both frame options.
 const CANVAS_SIZES = [
-  // 8x10 — framed only
-  { id: '8x10',  label: '8\u2033 \u00D7 10\u2033',  unframedAvailable: false, framedAvailable: true,
-    price: null, priceFramed: 96.00,
-    variantIdFramed: 47267981754517 },
   // 12x12 — both unframed + framed
   { id: '12x12', label: '12\u2033 \u00D7 12\u2033', unframedAvailable: true, framedAvailable: true,
     price: 79.99,  variantId: 47267971760277,
@@ -2292,6 +2366,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         image_url: imageUrl,
         pet_name: state.petName,
         style: state.selectedStyleId,
+        background_mode: state.backgroundMode || 'auto',
       }),
     })
     .then(async r => {
@@ -2354,7 +2429,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   // Live canvas mockup — updates as user changes size/frame
   // Maps size id to aspect ratio (width:height in inches)
   const sizeDims = {
-    '8x10': [8, 10], '12x12': [12, 12], '12x16': [12, 16],
+    '12x12': [12, 12], '12x16': [12, 16],
     '16x16': [16, 16], '16x20': [16, 20], '18x24': [18, 24],
   };
   const [sizeW, sizeH] = sizeDims[selectedSize] || [10, 10];

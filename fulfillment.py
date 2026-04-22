@@ -51,8 +51,7 @@ PRINT_SIZES: dict[str, tuple[int, int]] = {
     "canvas-12x16":        (3600, 4800),
     "canvas-16x16":        (4800, 4800),
     "canvas-16x20":        (4800, 6000),
-    # Framed canvas
-    "canvas-8x10-framed":  (2400, 3000),
+    # Framed canvas (8x10 retired 2026-04-22 — no live Shopify variant)
     "canvas-12x12-framed": (3600, 3600),
     "canvas-12x16-framed": (3600, 4800),
     "canvas-16x16-framed": (4800, 4800),
@@ -72,8 +71,7 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "canvas-12x16":        (3, 4),
     "canvas-16x16":        (1, 1),
     "canvas-16x20":        (4, 5),
-    # Framed
-    "canvas-8x10-framed":  (4, 5),
+    # Framed (8x10 retired 2026-04-22)
     "canvas-12x12-framed": (1, 1),
     "canvas-12x16-framed": (3, 4),
     "canvas-16x16-framed": (1, 1),
