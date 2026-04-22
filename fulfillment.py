@@ -51,12 +51,11 @@ PRINT_SIZES: dict[str, tuple[int, int]] = {
     "canvas-12x16":        (3600, 4800),
     "canvas-16x16":        (4800, 4800),
     "canvas-16x20":        (4800, 6000),
-    # Framed canvas (8x10 retired 2026-04-22 — no live Shopify variant)
+    # Framed canvas (8x10 + 18x24 retired 2026-04-22 — no live Shopify variants)
     "canvas-12x12-framed": (3600, 3600),
     "canvas-12x16-framed": (3600, 4800),
     "canvas-16x16-framed": (4800, 4800),
     "canvas-16x20-framed": (4800, 6000),
-    "canvas-18x24-framed": (5400, 7200),
     # Poster
     "poster-default":      (3600, 4800),
     # Magnet (Printful Kiss-Cut Magnet, 4"x4" default — update if we
@@ -71,12 +70,11 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "canvas-12x16":        (3, 4),
     "canvas-16x16":        (1, 1),
     "canvas-16x20":        (4, 5),
-    # Framed (8x10 retired 2026-04-22)
+    # Framed (8x10 + 18x24 retired 2026-04-22)
     "canvas-12x12-framed": (1, 1),
     "canvas-12x16-framed": (3, 4),
     "canvas-16x16-framed": (1, 1),
     "canvas-16x20-framed": (4, 5),
-    "canvas-18x24-framed": (3, 4),
     "poster-default":      (3, 4),
     "magnet-default":      (1, 1),
 }
@@ -95,7 +93,7 @@ def _get_printful_variant_id(product_key: str) -> int:
     from mockups import _resolve_variant_ids
 
     # Parse product_key into (product_type, size_label)
-    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, canvas-18x24-framed, poster-default
+    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, poster-default, magnet-default
     if product_key.endswith("-framed"):
         # e.g. "canvas-16x20-framed" → product_type="canvas-framed", size="16x20"
         size = product_key.rsplit("-", 1)[0].split("-", 1)[1]

@@ -105,12 +105,11 @@ VARIANT_SIZE_MAP = {
         "16x20": '16\u2033\u00d720\u2033',
     },
     "canvas-framed": {
-        # 8x10 framed retired 2026-04-22 — no live Shopify variant.
+        # 8x10 + 18x24 framed retired 2026-04-22 — no live Shopify variants.
         "12x12": '12\u2033\u00d712\u2033',
         "12x16": '12\u2033\u00d716\u2033',
         "16x16": '16\u2033\u00d716\u2033',
         "16x20": '16\u2033\u00d720\u2033',
-        "18x24": '18\u2033\u00d724\u2033',
     },
     "poster": {
         "default": None,  # single variant poster

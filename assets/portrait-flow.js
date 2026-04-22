@@ -144,7 +144,6 @@ const PRICES = {
     '12x16': '$84.99 CAD',
     '16x16': '$99.99 CAD',
     '16x20': '$109.99 CAD',
-    '18x24': '$197.00 CAD',  // framed only
   },
   poster: { 'default': '$36.11 CAD' },
 };
@@ -155,7 +154,6 @@ const VARIANT_MAP = {
   'canvas-16x16': 47267971825813,
   'canvas-16x20': 47267971858581,
   'canvas-16x20-framed': 47267981885589,
-  'canvas-18x24-framed': 47267981918357,
   'poster-default': 47167380521109,
 };
 
@@ -2264,8 +2262,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
 
 // Canvas configurator — real Shopify variants
 // Source: Printful → Shopify product sync (accurate as of 2026-04)
-// 8x10 framed retired 2026-04-22 (no live Shopify variant).
-// 18x24 is framed-only; all others have both frame options.
+// Retired 2026-04-22 (no live Shopify variants): 8x10 framed, 18x24 framed.
 const CANVAS_SIZES = [
   // 12x12 — both unframed + framed
   { id: '12x12', label: '12\u2033 \u00D7 12\u2033', unframedAvailable: true, framedAvailable: true,
@@ -2283,10 +2280,6 @@ const CANVAS_SIZES = [
   { id: '16x20', label: '16\u2033 \u00D7 20\u2033', unframedAvailable: true, framedAvailable: true,
     price: 109.99, variantId: 47267971858581,
     priceFramed: 171.50, variantIdFramed: 47267981885589 },
-  // 18x24 — framed only
-  { id: '18x24', label: '18\u2033 \u00D7 24\u2033', unframedAvailable: false, framedAvailable: true,
-    price: null, priceFramed: 197.00,
-    variantIdFramed: 47267981918357 },
 ];
 
 function ProductGallery({ state, retryFromStyle, startFresh }) {
@@ -2430,7 +2423,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   // Maps size id to aspect ratio (width:height in inches)
   const sizeDims = {
     '12x12': [12, 12], '12x16': [12, 16],
-    '16x16': [16, 16], '16x20': [16, 20], '18x24': [18, 24],
+    '16x16': [16, 16], '16x20': [16, 20],
   };
   const [sizeW, sizeH] = sizeDims[selectedSize] || [10, 10];
 

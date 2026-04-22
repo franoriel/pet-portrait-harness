@@ -253,12 +253,11 @@
       '16x20': { w: 16, h: 20 },
     },
     'framed-canvas': {
-      // 8x10 framed retired 2026-04-22 (no live Shopify variant).
+      // 8x10 + 18x24 framed retired 2026-04-22 (no live Shopify variants).
       '12x12': { w: 12, h: 12 },
       '12x16': { w: 12, h: 16 },
       '16x16': { w: 16, h: 16 },
       '16x20': { w: 16, h: 20 },
-      '18x24': { w: 18, h: 24 },
     },
     'poster': {
       '12x18': { w: 12, h: 18 },
