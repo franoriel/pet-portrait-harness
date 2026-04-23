@@ -696,19 +696,20 @@ _BACKGROUND_MODE_RULES: dict[str, str] = {
 # black ink on white — 'dark' background makes lines disappear).
 _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     # Ink-only legacy styles — white paper only.
-    "classic":             {"auto", "light"},
-    "minimal":             {"auto", "light"},
-    "naturalist":          {"auto", "light"},
-    # Current styles — match portrait-flow.js STYLES[].backgrounds
-    "watercolor":          {"auto", "light"},
-    "minimal-line-art":    {"auto", "light"},
-    "modern-oil-paint":    {"auto", "light", "dark"},
-    "neon-pop-art":        {"auto", "light", "dark"},
-    "renaissance-royalty": {"auto", "dark"},
-    "cozy-film-grain":     {"auto", "light", "dark"},
-    "rainbow-bridge":      {"auto", "light"},
+    "classic":             {"auto"},
+    "minimal":             {"auto"},
+    "naturalist":          {"auto"},
+    # Only three current styles expose light/dark — the rest keep their
+    # baked-in look. Matches portrait-flow.js STYLES[].backgrounds.
+    "watercolor":          {"auto", "light", "dark"},
+    "minimal-line-art":    {"auto", "light", "dark"},
+    "modern-oil-paint":    {"auto"},
+    "neon-pop-art":        {"auto"},
+    "renaissance-royalty": {"auto"},
+    "cozy-film-grain":     {"auto"},
+    "rainbow-bridge":      {"auto"},
     "bold-graphic-poster": {"auto", "light", "dark"},
-    "aura-gradient":       {"auto", "light", "dark"},
+    "aura-gradient":       {"auto"},
 }
 
 

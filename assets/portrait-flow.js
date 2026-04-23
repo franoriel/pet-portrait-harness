@@ -75,9 +75,10 @@ function loadGoogleFont(styleId) {
 /* ── Style catalogue ───────────────────────────────────────── */
 
 // `backgrounds` declares which background modes are offered for a given style.
-// 'auto' is always included. We omit modes that fight the style's inherent
-// medium — e.g. minimal line art is black ink on white by design, so 'dark'
-// is hidden (it produced unreadable output in preview testing).
+// Only styles where a light/dark inversion produces a meaningfully different —
+// and still on-brand — result expose the selector (soft watercolour, minimal
+// line art, bold graphic poster). The rest keep their baked-in look and the
+// background card is hidden.
 const STYLES = [
   {
     id: 'soft-watercolour',
@@ -85,49 +86,49 @@ const STYLES = [
     badge: 'Most popular',
     available: true,
     exampleImage: 'example-soft-watercolour.webp',
-    backgrounds: ['auto', 'light'], // wet-on-wet on dark paper isn't how this medium reads
+    backgrounds: ['auto', 'light', 'dark'],
   },
   {
     id: 'minimal-line-art',
     name: 'Minimal Line Art',
     available: true,
     exampleImage: 'example-minimal-line-art.webp',
-    backgrounds: ['auto', 'light'], // black ink only — dark background makes lines disappear
+    backgrounds: ['auto', 'light', 'dark'],
   },
   {
     id: 'modern-oil-paint',
     name: 'Modern Oil Paint',
     available: true,
     exampleImage: 'example-modern-oil-paint.webp',
-    backgrounds: ['auto', 'light', 'dark'],
+    backgrounds: ['auto'],
   },
   {
     id: 'neon-pop-art',
     name: 'Neon Pop Art',
     available: true,
     exampleImage: 'example-neon-pop-art.webp',
-    backgrounds: ['auto', 'light', 'dark'],
+    backgrounds: ['auto'],
   },
   {
     id: 'renaissance-royalty',
     name: 'Renaissance Royalty',
     available: true,
     exampleImage: 'example-renaissance-royalty.webp',
-    backgrounds: ['auto', 'dark'], // chiaroscuro needs the dark drapery — light flattens it
+    backgrounds: ['auto'],
   },
   {
     id: 'cozy-film-grain',
     name: 'Cozy Film Grain',
     available: true,
     exampleImage: 'example-cozy-film-grain.webp',
-    backgrounds: ['auto', 'light', 'dark'],
+    backgrounds: ['auto'],
   },
   {
     id: 'rainbow-bridge',
     name: 'Rainbow Bridge',
     available: true,
     exampleImage: 'example-rainbow-bridge.webp',
-    backgrounds: ['auto', 'light'], // ethereal memorial — dark fights the mood
+    backgrounds: ['auto'],
   },
   {
     id: 'bold-graphic-poster',
@@ -141,7 +142,7 @@ const STYLES = [
     name: 'Aura Gradient',
     available: true,
     exampleImage: 'example-aura-gradient.webp',
-    backgrounds: ['auto', 'light', 'dark'],
+    backgrounds: ['auto'],
   },
 ];
 
