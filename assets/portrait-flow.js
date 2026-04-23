@@ -1057,7 +1057,7 @@ function usePortraitFlow() {
     } finally {
       generatingRef.current = false;
     }
-  }, [state.photo, state.imageFilename, state.originalPhotoUrl, state.selectedStyleId, state.petName, state.termsAccepted, state.termsAcceptedAt, state.stage, update]);
+  }, [state.photo, state.imageFilename, state.originalPhotoUrl, state.selectedStyleId, state.petName, state.backgroundMode, state.termsAccepted, state.termsAcceptedAt, state.stage, update]);
 
   const selectPreview = useCallback((idx) => update({ selectedPreviewIndex: idx }), [update]);
   const goToStage = useCallback((stage) => update({ stage }), [update]);
