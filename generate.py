@@ -688,9 +688,40 @@ _BACKGROUND_MODE_RULES: dict[str, str] = {
 }
 
 
-def _background_rule(mode: Optional[str]) -> str:
-    """Return the background-mode instruction block for 'light'/'dark', or '' for auto."""
-    return _BACKGROUND_MODE_RULES.get((mode or "auto").lower(), "")
+# Per-style background-mode allowlist — mirrors the `backgrounds` field on
+# STYLES in portrait-flow.js. Kept in sync by hand (both files are the source
+# of truth for their tier). A frontend filter hides unsupported modes; this
+# server-side guard prevents a crafted request from injecting an override
+# that clashes with the style's hardcoded palette (e.g. minimal line art is
+# black ink on white — 'dark' background makes lines disappear).
+_STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
+    # Ink-only legacy styles — white paper only.
+    "classic":             {"auto", "light"},
+    "minimal":             {"auto", "light"},
+    "naturalist":          {"auto", "light"},
+    # Current styles — match portrait-flow.js STYLES[].backgrounds
+    "watercolor":          {"auto", "light"},
+    "minimal-line-art":    {"auto", "light"},
+    "modern-oil-paint":    {"auto", "light", "dark"},
+    "neon-pop-art":        {"auto", "light", "dark"},
+    "renaissance-royalty": {"auto", "dark"},
+    "cozy-film-grain":     {"auto", "light", "dark"},
+    "rainbow-bridge":      {"auto", "light"},
+    "bold-graphic-poster": {"auto", "light", "dark"},
+    "aura-gradient":       {"auto", "light", "dark"},
+}
+
+
+def _background_rule(mode: Optional[str], style_id: Optional[str] = None) -> str:
+    """Return the background-mode instruction block for 'light'/'dark',
+    or '' for 'auto' (and for any mode the style doesn't support —
+    we silently fall back to auto rather than fight the style)."""
+    resolved = (mode or "auto").lower()
+    if style_id is not None:
+        allowed = _STYLE_BACKGROUND_SUPPORT.get(style_id, {"auto"})
+        if resolved not in allowed:
+            resolved = "auto"
+    return _BACKGROUND_MODE_RULES.get(resolved, "")
 
 
 
@@ -707,7 +738,7 @@ def build_prompt_with_name(
     name_block = _name_integration(style_id, pet_name)
     return (
         base.rstrip()
-        + _background_rule(background_mode)
+        + _background_rule(background_mode, style_id)
         + _COMPOSITION_RULE
         + "\n\n" + name_block
         + _NO_BORDER_RULE
@@ -1247,7 +1278,7 @@ def call_gemini(
     else:
         prompt = (
             PROMPTS[style](style_vars)
-            + _background_rule(background_mode)
+            + _background_rule(background_mode, style)
             + _COMPOSITION_RULE
             + _NO_BORDER_RULE
         )

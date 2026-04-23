@@ -74,6 +74,10 @@ function loadGoogleFont(styleId) {
 
 /* ── Style catalogue ───────────────────────────────────────── */
 
+// `backgrounds` declares which background modes are offered for a given style.
+// 'auto' is always included. We omit modes that fight the style's inherent
+// medium — e.g. minimal line art is black ink on white by design, so 'dark'
+// is hidden (it produced unreadable output in preview testing).
 const STYLES = [
   {
     id: 'soft-watercolour',
@@ -81,56 +85,71 @@ const STYLES = [
     badge: 'Most popular',
     available: true,
     exampleImage: 'example-soft-watercolour.webp',
+    backgrounds: ['auto', 'light'], // wet-on-wet on dark paper isn't how this medium reads
   },
   {
     id: 'minimal-line-art',
     name: 'Minimal Line Art',
     available: true,
     exampleImage: 'example-minimal-line-art.webp',
+    backgrounds: ['auto', 'light'], // black ink only — dark background makes lines disappear
   },
   {
     id: 'modern-oil-paint',
     name: 'Modern Oil Paint',
     available: true,
     exampleImage: 'example-modern-oil-paint.webp',
+    backgrounds: ['auto', 'light', 'dark'],
   },
   {
     id: 'neon-pop-art',
     name: 'Neon Pop Art',
     available: true,
     exampleImage: 'example-neon-pop-art.webp',
+    backgrounds: ['auto', 'light', 'dark'],
   },
   {
     id: 'renaissance-royalty',
     name: 'Renaissance Royalty',
     available: true,
     exampleImage: 'example-renaissance-royalty.webp',
+    backgrounds: ['auto', 'dark'], // chiaroscuro needs the dark drapery — light flattens it
   },
   {
     id: 'cozy-film-grain',
     name: 'Cozy Film Grain',
     available: true,
     exampleImage: 'example-cozy-film-grain.webp',
+    backgrounds: ['auto', 'light', 'dark'],
   },
   {
     id: 'rainbow-bridge',
     name: 'Rainbow Bridge',
     available: true,
     exampleImage: 'example-rainbow-bridge.webp',
+    backgrounds: ['auto', 'light'], // ethereal memorial — dark fights the mood
   },
   {
     id: 'bold-graphic-poster',
     name: 'Bold Graphic Poster',
     available: true,
     exampleImage: 'example-bold-graphic-poster.webp',
+    backgrounds: ['auto', 'light', 'dark'],
   },
   {
     id: 'aura-gradient',
     name: 'Aura Gradient',
     available: true,
     exampleImage: 'example-aura-gradient.webp',
+    backgrounds: ['auto', 'light', 'dark'],
   },
 ];
+
+// Quick lookup — used by StyleStep UI filter + saved-session normalization.
+function backgroundsFor(styleId) {
+  const style = STYLES.find(s => s.id === styleId);
+  return (style && style.backgrounds) || ['auto'];
+}
 
 // Resolve asset base path for style example images
 const _pfScript = document.querySelector('script[src*="portrait-flow"]');
@@ -803,8 +822,18 @@ function usePortraitFlow() {
 
   const selectStyle = useCallback((styleId) => {
     const style = STYLES.find(s => s.id === styleId);
-    if (style && style.available) update({ selectedStyleId: styleId });
-  }, [update]);
+    if (!style || !style.available) return;
+    // If the incoming style doesn't support the currently-selected background
+    // mode, snap back to 'auto' so the customer never lands on an unsupported
+    // combo (e.g. picking Dark under Oil Paint, then switching to Minimal).
+    setState(prev => {
+      const allowed = (style.backgrounds || ['auto']);
+      const nextMode = allowed.includes(prev.backgroundMode || 'auto')
+        ? (prev.backgroundMode || 'auto')
+        : 'auto';
+      return { ...prev, selectedStyleId: styleId, backgroundMode: nextMode };
+    });
+  }, []);
 
   const generatingRef = useRef(false);
 
@@ -1746,69 +1775,77 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       }),
     ),
 
-    // Background mode selector (only when style is selected).
-    // Complements the colors of the generated pet image — auto lets the style
-    // default, light leans soft/airy, dark leans moody/rich.
-    state.selectedStyleId && React.createElement('div', {
-      style: {
-        marginTop: '20px', padding: '16px', background: tokens.colorWhite,
-        borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+    // Background mode selector — only shown when the selected style offers
+    // more than one background. Styles that only support 'auto' (rare)
+    // get the card hidden entirely; styles that support 2 of 3 (e.g. minimal
+    // line art: no 'dark') render just the modes that actually work.
+    (() => {
+      if (!state.selectedStyleId) return null;
+      const allowed = backgroundsFor(state.selectedStyleId);
+      const visibleOptions = BACKGROUND_OPTIONS.filter(o => allowed.includes(o.id));
+      if (visibleOptions.length < 2) return null;
+      const columns = visibleOptions.length;
+      return React.createElement('div', {
+        style: {
+          marginTop: '20px', padding: '16px', background: tokens.colorWhite,
+          borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+        },
       },
-    },
-      React.createElement('p', {
-        style: { ...s.smallCaps, margin: '0 0 10px', fontSize: '10px', textAlign: 'center' },
-      }, 'Background'),
-      React.createElement('div', {
-        style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' },
-        role: 'radiogroup', 'aria-label': 'Background mode',
-      },
-        BACKGROUND_OPTIONS.map(opt => {
-          const active = (state.backgroundMode || 'auto') === opt.id;
-          const swatchBg =
-            opt.id === 'light' ? 'linear-gradient(135deg, #FAF6EE, #EFE7D9)' :
-            opt.id === 'dark'  ? 'linear-gradient(135deg, #2A2620, #1A1714)' :
-                                 `linear-gradient(135deg, ${tokens.colorSurface} 0 50%, #2A2620 50% 100%)`;
-          return React.createElement('button', {
-            key: opt.id, type: 'button', role: 'radio',
-            'aria-checked': active,
-            'aria-label': `${opt.label} background — ${opt.sub}`,
-            onClick: () => {
-              update({ backgroundMode: opt.id });
-              saveSession({ ...state, backgroundMode: opt.id });
+        React.createElement('p', {
+          style: { ...s.smallCaps, margin: '0 0 10px', fontSize: '10px', textAlign: 'center' },
+        }, 'Background'),
+        React.createElement('div', {
+          style: { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '8px' },
+          role: 'radiogroup', 'aria-label': 'Background mode',
+        },
+          visibleOptions.map(opt => {
+            const active = (state.backgroundMode || 'auto') === opt.id;
+            const swatchBg =
+              opt.id === 'light' ? 'linear-gradient(135deg, #FAF6EE, #EFE7D9)' :
+              opt.id === 'dark'  ? 'linear-gradient(135deg, #2A2620, #1A1714)' :
+                                   `linear-gradient(135deg, ${tokens.colorSurface} 0 50%, #2A2620 50% 100%)`;
+            return React.createElement('button', {
+              key: opt.id, type: 'button', role: 'radio',
+              'aria-checked': active,
+              'aria-label': `${opt.label} background — ${opt.sub}`,
+              onClick: () => {
+                update({ backgroundMode: opt.id });
+                saveSession({ ...state, backgroundMode: opt.id });
+              },
+              style: {
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: '6px', padding: '10px 6px',
+                border: active ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+                borderRadius: '10px',
+                background: active ? tokens.colorAccentLight : tokens.colorWhite,
+                cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+              },
             },
-            style: {
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: '6px', padding: '10px 6px',
-              border: active ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
-              borderRadius: '10px',
-              background: active ? tokens.colorAccentLight : tokens.colorWhite,
-              cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
-            },
-          },
-            React.createElement('span', {
-              'aria-hidden': true,
-              style: {
-                width: '36px', height: '22px', borderRadius: '5px',
-                background: swatchBg,
-                border: `1px solid ${tokens.colorBorder}`,
-              },
-            }),
-            React.createElement('span', {
-              style: {
-                fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
-                color: active ? tokens.colorAccent : tokens.colorBrand,
-              },
-            }, opt.label),
-            React.createElement('span', {
-              style: {
-                fontFamily: fontSans, fontSize: '10px',
-                color: tokens.colorMuted, lineHeight: 1.2,
-              },
-            }, opt.sub),
-          );
-        }),
-      ),
-    ),
+              React.createElement('span', {
+                'aria-hidden': true,
+                style: {
+                  width: '36px', height: '22px', borderRadius: '5px',
+                  background: swatchBg,
+                  border: `1px solid ${tokens.colorBorder}`,
+                },
+              }),
+              React.createElement('span', {
+                style: {
+                  fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
+                  color: active ? tokens.colorAccent : tokens.colorBrand,
+                },
+              }, opt.label),
+              React.createElement('span', {
+                style: {
+                  fontFamily: fontSans, fontSize: '10px',
+                  color: tokens.colorMuted, lineHeight: 1.2,
+                },
+              }, opt.sub),
+            );
+          }),
+        ),
+      );
+    })(),
 
     // Name font preview + size selector (only when style is selected)
     state.selectedStyleId && state.petName && React.createElement('div', {
