@@ -639,43 +639,46 @@ def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
 # ---------------------------------------------------------------------------
 
 _MINIMAL_LINE_ART_DARK_TEMPLATE = """\
-Transform this photo into a minimal line art pet portrait with an INVERTED dark palette.
+Transform this photo into a minimal WHITE-INK pet portrait drawn on black paper \
+— a single-weight brush or pen illustration rendered in warm ivory ink on a \
+solid deep background.
 
-INVERTED MONOCHROME — THIS IS CRITICAL:
-- The artwork MUST be strictly TWO TONES ONLY. Render the linework in WARM \
-IVORY or CREAM (#F3EFE4) on a SOLID DEEP DARK background. Choose ONE dark color \
-for the whole background: deep charcoal (#1A1A1A), midnight navy (#0E1424), or \
-rich forest (#0F1F14). Absolutely NO other color anywhere — not in the pet, not \
-in the eyes, not in the background.
-- Use the pet's coat markings/patches/patterns as a guide for WHERE lines go, \
-but DO NOT color-fill them. All markings are expressed purely through line \
-placement and density.
-- DO NOT render black ink lines. DO NOT render a white or off-white background. \
-This is the INVERTED version — ivory-on-dark, not black-on-white.
+TWO-TONE WHITE-INK ILLUSTRATION — THIS IS CRITICAL:
+- The linework is warm ivory / cream (#F3EFE4). The surface it sits on is a \
+SOLID DEEP DARK field — pick ONE and hold it across the entire image: deep \
+charcoal (#1A1A1A), midnight navy (#0E1424), or rich forest (#0F1F14).
+- Reference styles to lean into: fine white-ink brush drawing on black paper, \
+editorial minimalist ink-on-dark illustration. The pet is drawn IN ivory \
+strokes, directly on top of the dark surface.
+- Pure two-tone only: ivory strokes + one dark background color. Pet markings \
+are expressed through line placement and density, never as filled shapes.
 
 STYLE:
-- Clean, confident single-weight IVORY ink lines on a solid DARK background
-- High contrast — the warm-ivory linework reads clearly against the dark field
+- Clean, confident single-weight ivory strokes on the solid dark field
+- High contrast — the warm-ivory linework reads cleanly against the dark surface
 - Minimal detail: capture the essence of the pet in as few strokes as possible
-- No shading, no fills, no gradients, no gray tones — pure inverted linework only
 - Suggest fur direction with sparse, deliberate strokes
 - Fine art illustration quality, high resolution 300dpi, print-ready
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, direct or three-quarter gaze
-- The DARK background fills the entire canvas edge-to-edge — no reserved \
+- The dark background fills the entire canvas edge-to-edge — no reserved \
 panels, bars, color blocks, or empty bands at the top or bottom
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
-Avoid: white or off-white backgrounds, black ink lines, any color other than \
-warm-ivory lines on a dark field, sepia, duotone with other colors, photography, \
-photorealism, cartoon, anime, 3D render, gray shading, crosshatching, stippling, \
-color fills, text, watermark, border, solid color bars or panels at image edges.\
+Avoid: white or off-white backgrounds, black ink on light paper, color fills, \
+chalkboard / blackboard texture (this is ink on paper, not chalk on a board), \
+photography, photorealism, cartoon, anime, 3D render, gray shading, \
+crosshatching, stippling, text, watermark, border, solid color bars or panels \
+at image edges.\
 """
 
 _WATERCOLOR_DARK_TEMPLATE = """\
-Transform this photo into a watercolor pet portrait on a RICH DARK wash.
+Transform this photo into a nocturnal watercolor pet portrait — painted on \
+paper that has been pre-flooded edge-to-edge with a deep, richly pigmented \
+dark wash. Think moody night-study watercolor, indigo-dye ink-wash painting, \
+or a Winslow Homer nocturne.
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
@@ -686,10 +689,10 @@ remain clearly visible and well-lit, not lost in shadow.
 
 STYLE:
 - Loose expressive brushwork, soft wet-on-wet watercolor technique
-- DARK watercolor wash background — choose one: deep indigo, midnight navy, \
-rich aubergine, warm charcoal, or deep burgundy. The wash carries natural \
-organic bleed edges just as watercolor paper does, but pre-saturated with \
-dark pigment rather than white.
+- The BACKGROUND is a deep pigmented watercolor wash — pick ONE: deep indigo, \
+midnight navy, rich aubergine, warm charcoal, or deep burgundy. The wash \
+carries natural organic bleed edges, but the paper is saturated with dark \
+pigment all the way through — no light paper shows.
 - Painterly fur texture with subtle fine ink linework on facial features
 - Warm focused lighting on the pet so it reads clearly against the dark wash
 - Fine art illustration style, high resolution 300dpi, print-ready
@@ -697,17 +700,19 @@ dark pigment rather than white.
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The DARK watercolor wash extends to every edge of the canvas. No reserved \
+- The dark watercolor wash extends to every edge of the canvas. No reserved \
 panels, bars, color blocks, or empty bands anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
-Avoid: white paper background, bright washed-out backgrounds, photography, \
-photorealism, harsh shadows, pixelation, blurry, low resolution, cartoon, anime, \
-3D render, clipping, text, watermark, border.\
+Avoid: white or cream paper showing through, bright washed-out backgrounds, \
+photography, photorealism, harsh shadows, pixelation, blurry, low resolution, \
+cartoon, anime, 3D render, clipping, text, watermark, border.\
 """
 
 _BOLD_GRAPHIC_POSTER_DARK_TEMPLATE = """\
-Transform this photo into a bold graphic poster-style pet portrait on a DARK background.
+Transform this photo into a bold graphic poster pet portrait on a deep, \
+saturated dark ground — a mid-century night-poster screen print, Saul Bass \
+after-dark title card, or Shepard Fairey "Obey" work in its darker palette.
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Use the animal's fur/coat pattern and markings as the structural guide. \
@@ -720,8 +725,10 @@ STYLE:
 - Strong color blocking with 4-6 bold flat colors, no gradients
 - Thick confident outlines where color zones meet
 - Mid-century modern poster / screen print aesthetic
-- DARK solid background — single bold DEEP color (midnight navy #0E1A2C, \
-deep crimson #5C1414, rich forest #0F2617, or deep aubergine #2B1030)
+- The BACKGROUND is a single solid deep color — pick ONE: midnight navy \
+(#0E1A2C), deep crimson (#5C1414), rich forest (#0F2617), or deep aubergine \
+(#2B1030). It must read as visibly dark (luminance well below 30%) — never a \
+mid-tone or pastel.
 - Shepard Fairey / Aaron Draplin inspired graphic boldness
 - Fine art illustration style, high resolution 300dpi, print-ready
 
@@ -729,15 +736,15 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
 - Clean negative space around the subject
-- The DARK background is a single solid flat color filling the entire canvas \
-edge-to-edge behind the pet — one continuous color, NOT split into panels or \
-bands. No reserved color blocks, bars, or rectangles anywhere
+- The dark background is one continuous flat color filling the entire canvas \
+edge-to-edge behind the pet — NOT split into panels or bands. No reserved \
+color blocks, bars, or rectangles anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
-Avoid: light/white backgrounds, photography, photorealism, soft edges, gradients, \
-watercolor, painterly strokes, 3D render, blurry, detailed fur texture, text, \
-watermark, border, solid color bars or panels at image edges, horizontal \
-color-band splits.\
+Avoid: light, white, cream, or pastel backgrounds, photography, photorealism, \
+soft edges, gradients, watercolor, painterly strokes, 3D render, blurry, \
+detailed fur texture, text, watermark, border, solid color bars or panels at \
+image edges, horizontal color-band splits.\
 """
 
 # (style_id, mode) → dedicated template. Missing keys fall back to the base
