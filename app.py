@@ -420,9 +420,9 @@ def generate_route():
         return jsonify(error="Invalid style."), 400
 
     # Background mode: 'auto' (style default), 'light' (soft/airy), or 'dark' (moody/rich).
-    background_mode = (request.form.get("background_mode") or "auto").strip().lower()
-    if background_mode not in ("auto", "light", "dark"):
-        background_mode = "auto"
+    background_mode_raw = (request.form.get("background_mode") or "auto").strip().lower()
+    background_mode = background_mode_raw if background_mode_raw in ("auto", "light", "dark") else "auto"
+    log.info("[/generate] style=%s bg_mode=%s (raw=%r)", style, background_mode, background_mode_raw)
 
     # ── Photo-license consent (audit trail) ──────────────────────────────────
     # Frontend checkbox sends an ISO-8601 timestamp when the customer ticks
@@ -945,11 +945,13 @@ def _process_job(job: dict):
     # off to the deferred-original task below, which takes over cleanup.
     file_owned = True
     try:
+        worker_bg = job.get("background_mode") or "auto"
+        log.info("[worker] job=%s style=%s bg_mode=%s", job_id, job["style"], worker_bg)
         raw_path, comp_path, web_path = generate(
             str(upload_path),
             job["pet_name"],
             job["style"],
-            background_mode=job.get("background_mode") or "auto",
+            background_mode=worker_bg,
         )
 
         # In the no-name preview path, raw_path and comp_path are byte-identical

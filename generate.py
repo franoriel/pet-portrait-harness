@@ -894,13 +894,23 @@ def _resolve_prompt_body(
 
     Callers still append _COMPOSITION_RULE / name block / _NO_BORDER_RULE.
     """
-    resolved = (background_mode or "auto").lower()
+    requested = (background_mode or "auto").lower()
+    resolved = requested
     if resolved not in _STYLE_BACKGROUND_SUPPORT.get(style_id, {"auto"}):
         resolved = "auto"
 
     alt = _ALT_PROMPTS.get((style_id, resolved))
     if alt is not None:
+        log.info(
+            "[prompt] style=%s bg_requested=%s bg_resolved=%s template=alt(%s,%s)",
+            style_id, requested, resolved, style_id, resolved,
+        )
         return alt
+    log.info(
+        "[prompt] style=%s bg_requested=%s bg_resolved=%s template=base%s",
+        style_id, requested, resolved,
+        f"+override({resolved})" if resolved in _BACKGROUND_MODE_RULES else "",
+    )
     return PROMPTS[style_id](style_vars) + _BACKGROUND_MODE_RULES.get(resolved, "")
 
 
