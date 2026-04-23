@@ -30,7 +30,7 @@ Total delivery time is typically **6–13 business days** from order to doorstep
 ## 4. Shipping rates
 
 - **Standard shipping** — a flat rate is calculated at checkout based on your destination and parcel weight.
-- **Free shipping** on Canadian orders **$85 CAD or more** (subtotal before taxes).
+- **Free shipping** on Canadian orders **$95 CAD or more** (subtotal before taxes).
 - We do not currently offer expedited or overnight shipping.
 
 The exact rate is shown before you confirm payment.

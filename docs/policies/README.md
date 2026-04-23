@@ -30,5 +30,5 @@ Search each file for these tokens and replace:
 - [ ] Support email lives and is monitored daily
 - [ ] GST/HST registration done OR policies note you're not yet registered
 - [ ] Shipping policy times match what Printful actually quotes you
-- [ ] Free-shipping threshold ($85) matches the cart tracker
+- [ ] Free-shipping threshold ($95) matches the cart tracker
 - [ ] Photo-licence language in Terms matches the checkbox wording in the portrait widget

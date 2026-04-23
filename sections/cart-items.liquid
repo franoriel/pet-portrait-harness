@@ -110,9 +110,9 @@
 
             {%- comment -%}
               Free shipping threshold tracker
-              cart.total_price is in cents — $85 CAD = 8500 cents
+              cart.total_price is in cents — $95 CAD = 9500 cents
             {%- endcomment -%}
-            {%- assign free_ship_cents = 8500 -%}
+            {%- assign free_ship_cents = 9500 -%}
             {%- assign remaining_cents = free_ship_cents | minus: cart.total_price -%}
             {%- if remaining_cents > 0 -%}
               {%- assign progress_pct = cart.total_price | times: 100.0 | divided_by: free_ship_cents -%}
@@ -979,7 +979,7 @@
   })();
 
   /* Free-shipping celebration — trigger on cart page load when the
-     current cart is over the $85 threshold and this session hasn't
+     current cart is over the $95 threshold and this session hasn't
      celebrated yet. theme.js defines window.petPrintables.maybeCelebrateFreeShipping
      and handles session-scoped de-dupe. */
   (function () {
