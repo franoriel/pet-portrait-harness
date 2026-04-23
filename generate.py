@@ -65,9 +65,20 @@ WATERCOLOR_MIN_SIZE = PORTRAIT_MIN_SIZE
 # pet's name as a NATIVE part of the artwork (not a sticker on top).
 # ---------------------------------------------------------------------------
 
-def _name_integration(style_id: str, pet_name: str) -> str:
+def _name_integration(
+    style_id: str,
+    pet_name: str,
+    background_mode: Optional[str] = "auto",
+) -> str:
     """Returns a prompt fragment instructing Gemini how to integrate the
-    pet's name into the artwork in the style's native medium."""
+    pet's name into the artwork in the style's native medium.
+
+    `background_mode` matters only for the three styles that expose a dark
+    inversion (minimal-line-art, watercolor, bold-graphic-poster). When dark
+    is picked for one of them, we swap the hardcoded dark name color for
+    a light ivory/cream — otherwise the name renders invisible on the
+    inverted background.
+    """
     if not pet_name or not pet_name.strip():
         return "- Do NOT include any text, words, or letters anywhere in the image."
 
@@ -132,12 +143,33 @@ def _name_integration(style_id: str, pet_name: str) -> str:
     # Target sizes: 3-5% of image height for most styles. Bold styles go
     # slightly larger (5-6%) but never oversized.
 
+    # When the user picked Dark on one of the three supported styles, the
+    # background is inverted — so the name's hardcoded dark ink color would
+    # disappear. Swap in an ivory/cream ink for legibility.
+    _dark_inverted = (
+        (background_mode or "auto").lower() == "dark"
+        and style_id in {"minimal-line-art", "watercolor", "bold-graphic-poster"}
+    )
+
+    watercolor_ink = (
+        "warm ivory #F3EFE4 or pale cream" if _dark_inverted
+        else "deep sepia #4a2c14 or rich umber"
+    )
+    minimal_ink = (
+        "warm ivory #F3EFE4 (matching the inverted linework)" if _dark_inverted
+        else "Solid black (#000000)"
+    )
+    poster_ink = (
+        "warm ivory #F3EFE4 or a bright palette accent color" if _dark_inverted
+        else "jet black #000000 OR a palette accent color"
+    )
+
     integrations = {
         "watercolor": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name}\" as DELICATE hand-written calligraphy (thin brush, "
-            f"flowing script). Use deep sepia #4a2c14 or rich umber for contrast but with "
+            f"flowing script). Use {watercolor_ink} for contrast but with "
             f"a LIGHT, refined stroke — not bold. Slight natural bleed at letter edges is okay. "
             f"Size: SMALL and refined, 3-4% of image height. Centered. Minimalist, editorial feel."
         ),
@@ -146,7 +178,7 @@ def _name_integration(style_id: str, pet_name: str) -> str:
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in clean geometric sans-serif capitals "
             f"(Futura/Avenir feel). Wide letter-spacing (~0.15em). Thin-to-medium weight, "
-            f"NOT bold. Solid black (#000000). Size: 2.5-3.5% of image height. Centered."
+            f"NOT bold. {minimal_ink}. Size: 2.5-3.5% of image height. Centered."
         ),
         "modern-oil-paint": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -188,8 +220,8 @@ def _name_integration(style_id: str, pet_name: str) -> str:
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in a bold geometric sans-serif, but kept at a "
-            f"MODERATE size — a refined design accent, not a billboard. Use jet black #000000 "
-            f"OR a palette accent color. Size: 5-6% of image height. Centered."
+            f"MODERATE size — a refined design accent, not a billboard. Use {poster_ink}. "
+            f"Size: 5-6% of image height. Centered."
         ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -595,6 +627,128 @@ def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
     return _WATERCOLOR_TEMPLATE
 
 
+# ---------------------------------------------------------------------------
+# DARK-mode templates — dedicated prompts for the three styles where a
+# dark inversion reads on-brand. These REPLACE the base template rather than
+# patching it with an override, because the base templates lock in very
+# specific light-background/ink-color rules (e.g. minimal line art's
+# MONOCHROME block hardcodes "pure black ink on #FAF8F5"). A post-hoc
+# BACKGROUND MODE — DARK override can't reliably countermand those — Gemini
+# defers to the earlier, more specific instruction. Dedicated templates
+# avoid the conflict entirely.
+# ---------------------------------------------------------------------------
+
+_MINIMAL_LINE_ART_DARK_TEMPLATE = """\
+Transform this photo into a minimal line art pet portrait with an INVERTED dark palette.
+
+INVERTED MONOCHROME — THIS IS CRITICAL:
+- The artwork MUST be strictly TWO TONES ONLY. Render the linework in WARM \
+IVORY or CREAM (#F3EFE4) on a SOLID DEEP DARK background. Choose ONE dark color \
+for the whole background: deep charcoal (#1A1A1A), midnight navy (#0E1424), or \
+rich forest (#0F1F14). Absolutely NO other color anywhere — not in the pet, not \
+in the eyes, not in the background.
+- Use the pet's coat markings/patches/patterns as a guide for WHERE lines go, \
+but DO NOT color-fill them. All markings are expressed purely through line \
+placement and density.
+- DO NOT render black ink lines. DO NOT render a white or off-white background. \
+This is the INVERTED version — ivory-on-dark, not black-on-white.
+
+STYLE:
+- Clean, confident single-weight IVORY ink lines on a solid DARK background
+- High contrast — the warm-ivory linework reads clearly against the dark field
+- Minimal detail: capture the essence of the pet in as few strokes as possible
+- No shading, no fills, no gradients, no gray tones — pure inverted linework only
+- Suggest fur direction with sparse, deliberate strokes
+- Fine art illustration quality, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, direct or three-quarter gaze
+- The DARK background fills the entire canvas edge-to-edge — no reserved \
+panels, bars, color blocks, or empty bands at the top or bottom
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: white or off-white backgrounds, black ink lines, any color other than \
+warm-ivory lines on a dark field, sepia, duotone with other colors, photography, \
+photorealism, cartoon, anime, 3D render, gray shading, crosshatching, stippling, \
+color fills, text, watermark, border, solid color bars or panels at image edges.\
+"""
+
+_WATERCOLOR_DARK_TEMPLATE = """\
+Transform this photo into a watercolor pet portrait on a RICH DARK wash.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
+lighten, darken, or alter the coat color. Preserve the original coloring faithfully.
+- Match the animal's actual eye color from the photo.
+- The pet stays at its natural coloring against the dark wash — the pet must \
+remain clearly visible and well-lit, not lost in shadow.
+
+STYLE:
+- Loose expressive brushwork, soft wet-on-wet watercolor technique
+- DARK watercolor wash background — choose one: deep indigo, midnight navy, \
+rich aubergine, warm charcoal, or deep burgundy. The wash carries natural \
+organic bleed edges just as watercolor paper does, but pre-saturated with \
+dark pigment rather than white.
+- Painterly fur texture with subtle fine ink linework on facial features
+- Warm focused lighting on the pet so it reads clearly against the dark wash
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Slight natural vignette
+- The DARK watercolor wash extends to every edge of the canvas. No reserved \
+panels, bars, color blocks, or empty bands anywhere
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: white paper background, bright washed-out backgrounds, photography, \
+photorealism, harsh shadows, pixelation, blurry, low resolution, cartoon, anime, \
+3D render, clipping, text, watermark, border.\
+"""
+
+_BOLD_GRAPHIC_POSTER_DARK_TEMPLATE = """\
+Transform this photo into a bold graphic poster-style pet portrait on a DARK background.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Use the animal's fur/coat pattern and markings as the structural guide. \
+Simplify into 4-6 flat color zones that respect the original coloring. Brighten \
+individual zones slightly if needed so the pet pops against the dark background.
+- Match the animal's actual eye shape from the photo.
+
+STYLE:
+- Flat vector illustration — clean geometric shapes with hard edges
+- Strong color blocking with 4-6 bold flat colors, no gradients
+- Thick confident outlines where color zones meet
+- Mid-century modern poster / screen print aesthetic
+- DARK solid background — single bold DEEP color (midnight navy #0E1A2C, \
+deep crimson #5C1414, rich forest #0F2617, or deep aubergine #2B1030)
+- Shepard Fairey / Aaron Draplin inspired graphic boldness
+- Fine art illustration style, high resolution 300dpi, print-ready
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation)
+- Head and chest, strong forward-facing pose, graphic impact
+- Clean negative space around the subject
+- The DARK background is a single solid flat color filling the entire canvas \
+edge-to-edge behind the pet — one continuous color, NOT split into panels or \
+bands. No reserved color blocks, bars, or rectangles anywhere
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+
+Avoid: light/white backgrounds, photography, photorealism, soft edges, gradients, \
+watercolor, painterly strokes, 3D render, blurry, detailed fur texture, text, \
+watermark, border, solid color bars or panels at image edges, horizontal \
+color-band splits.\
+"""
+
+# (style_id, mode) → dedicated template. Missing keys fall back to the base
+# PROMPTS template plus the generic _BACKGROUND_MODE_RULES override.
+_ALT_PROMPTS: dict[tuple[str, str], str] = {
+    ("minimal-line-art", "dark"):    _MINIMAL_LINE_ART_DARK_TEMPLATE,
+    ("watercolor", "dark"):          _WATERCOLOR_DARK_TEMPLATE,
+    ("bold-graphic-poster", "dark"): _BOLD_GRAPHIC_POSTER_DARK_TEMPLATE,
+}
+
+
 def _static(text: str) -> Callable[[Optional[dict]], str]:
     """Wrap a fixed prompt string as a style-vars-aware callable."""
     return lambda _vars: text
@@ -725,6 +879,31 @@ def _background_rule(mode: Optional[str], style_id: Optional[str] = None) -> str
     return _BACKGROUND_MODE_RULES.get(resolved, "")
 
 
+def _resolve_prompt_body(
+    style_id: str,
+    style_vars: Optional[dict],
+    background_mode: Optional[str],
+) -> str:
+    """Return the base prompt body (style template + any background handling)
+    with the server-side background-mode guard applied.
+
+    If a dedicated alt template exists for (style, mode) (see _ALT_PROMPTS),
+    it's used verbatim — no generic background override is appended, since
+    the alt template already bakes the inversion in. Otherwise we fall back
+    to the base PROMPTS template plus the generic _background_rule block.
+
+    Callers still append _COMPOSITION_RULE / name block / _NO_BORDER_RULE.
+    """
+    resolved = (background_mode or "auto").lower()
+    if resolved not in _STYLE_BACKGROUND_SUPPORT.get(style_id, {"auto"}):
+        resolved = "auto"
+
+    alt = _ALT_PROMPTS.get((style_id, resolved))
+    if alt is not None:
+        return alt
+    return PROMPTS[style_id](style_vars) + _BACKGROUND_MODE_RULES.get(resolved, "")
+
+
 
 def build_prompt_with_name(
     style_id: str,
@@ -734,12 +913,11 @@ def build_prompt_with_name(
 ) -> str:
     """Build the full prompt for a style with the pet's name integrated
     into the artwork as a native design element."""
-    base = PROMPTS[style_id](style_vars)
+    base = _resolve_prompt_body(style_id, style_vars, background_mode)
     base = _strip_no_text_rules(base)
-    name_block = _name_integration(style_id, pet_name)
+    name_block = _name_integration(style_id, pet_name, background_mode)
     return (
         base.rstrip()
-        + _background_rule(background_mode, style_id)
         + _COMPOSITION_RULE
         + "\n\n" + name_block
         + _NO_BORDER_RULE
@@ -1197,7 +1375,7 @@ def add_name_to_image(
     style: str,
     pet_name: str,
     max_retries: int = 2,
-    background_mode: Optional[str] = "auto",  # noqa: ARG001 — accepted for API parity; the art is already rendered, so the background is fixed by this point.
+    background_mode: Optional[str] = "auto",
 ) -> bytes:
     """Take an already-generated portrait and ask Gemini to add the pet's name
     into the existing artwork — preserving every detail of the original image.
@@ -1206,7 +1384,7 @@ def add_name_to_image(
     artworks when we want "same image with/without name".
     """
     client = _get_client()
-    name_block = _name_integration(style, pet_name)
+    name_block = _name_integration(style, pet_name, background_mode)
     prompt = (
         "Take this existing artwork and add the pet's name integrated into it. "
         "KEEP THE ORIGINAL ARTWORK EXACTLY AS IT IS — do NOT redraw, reimagine, "
@@ -1278,8 +1456,7 @@ def call_gemini(
         prompt = build_prompt_with_name(style, pet_name, style_vars, background_mode)
     else:
         prompt = (
-            PROMPTS[style](style_vars)
-            + _background_rule(background_mode, style)
+            _resolve_prompt_body(style, style_vars, background_mode)
             + _COMPOSITION_RULE
             + _NO_BORDER_RULE
         )
