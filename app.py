@@ -20,8 +20,13 @@ from flask import Flask, jsonify, render_template, request, send_file
 
 from generate import ALLOWED_SUFFIXES, OUTPUT_DIR, PROMPTS, generate, generate_with_name_on_demand, verify_image_is_pet
 from fulfillment import (
+    PRINTFUL_BASE,
+    SHOPIFY_ADMIN_API_VERSION,
+    _printful_headers,
     fulfill_order_item,
     parse_order_items,
+    tag_shopify_order,
+    tags_from_order_items,
     verify_shopify_webhook,
 )
 from mockups import generate_mockups
@@ -837,6 +842,13 @@ def webhook_order_created():
 
     log.info("Order #%s — %d portrait item(s), dispatching fulfillment", order_id, len(items))
 
+    # Tag the order in Shopify with the chosen styles + product types.
+    # Runs in the background so webhook stays well inside the 5s budget.
+    # Fulfillment continues whether or not tagging succeeds.
+    order_tags = tags_from_order_items(items)
+    if order_tags:
+        _fulfillment_pool.submit(tag_shopify_order, order_id, order_tags)
+
     # Dispatch fulfillment in background so we respond to Shopify quickly
     shipping = order.get("shipping_address", {})
     recipient = {
@@ -857,6 +869,190 @@ def webhook_order_created():
         )
 
     return jsonify(status="accepted", items=len(items)), 200
+
+
+# ---------------------------------------------------------------------------
+# Admin — verify a Shopify order's print files reached Printful intact
+# ---------------------------------------------------------------------------
+
+def _head_ok(url: str) -> bool:
+    """HEAD the URL with a tight timeout. Used to confirm Printful can fetch
+    the print file we handed it. Returns False on any non-2xx or network error."""
+    if not url or not url.startswith(("http://", "https://")):
+        return False
+    try:
+        r = _req.head(url, timeout=5, allow_redirects=True)
+        return 200 <= r.status_code < 300
+    except Exception:
+        return False
+
+
+def _r2_key_from_url(url: str) -> Optional[str]:
+    """Strip the R2_PUBLIC_URL prefix to recover the object key, mirroring
+    the logic in _process_fulfillment."""
+    if not url:
+        return None
+    r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+    if r2_public and url.startswith(r2_public + "/"):
+        return url[len(r2_public) + 1:]
+    return None
+
+
+@app.route("/admin/verify-order/<shopify_id>")
+def admin_verify_order(shopify_id):
+    """Cross-check a Shopify order against Printful: returns the cart's
+    print-file URL, the file URL Printful actually received, and reachability
+    flags so you can confirm the customer's generated portrait — not a
+    placeholder — was sent for printing.
+
+    Auth: X-Admin-Token header or ?admin_token=… query param.
+    """
+    if not _require_debug_token():
+        return jsonify(error="Forbidden"), 403
+
+    warnings: list[str] = []
+
+    # ── 1. Pull the Shopify order so we can re-parse line items ──────────
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not token:
+        return jsonify(error="SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set"), 500
+
+    shopify_url = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}/orders/{shopify_id}.json"
+    try:
+        sr = _req.get(
+            shopify_url,
+            headers={"X-Shopify-Access-Token": token, "Accept": "application/json"},
+            timeout=10,
+        )
+    except Exception:
+        log.exception("verify-order: Shopify fetch failed for %s", shopify_id)
+        return jsonify(error="Shopify request failed"), 502
+
+    if sr.status_code == 404:
+        return jsonify(error="Shopify order not found", shopify_order_id=shopify_id), 404
+    if sr.status_code != 200:
+        return jsonify(
+            error="Shopify lookup failed",
+            status=sr.status_code,
+            body=sr.text[:300],
+        ), 502
+
+    order = sr.json().get("order") or {}
+    parsed_items = parse_order_items(order)
+
+    cart_items = []
+    for it in parsed_items:
+        cart_url = it.get("print_file_url") or it.get("preview_url") or ""
+        cart_items.append({
+            "pet_name": it.get("pet_name"),
+            "style": it.get("style"),
+            "product_type": it.get("product_type"),
+            "size": it.get("size"),
+            "job_id": it.get("job_id"),
+            "cart_print_file_url": cart_url,
+            "cart_print_file_reachable": _head_ok(cart_url),
+            "source_r2_key": _r2_key_from_url(cart_url),
+        })
+
+    if not cart_items:
+        warnings.append("Shopify order has no portrait line items (nothing was dispatched to Printful).")
+
+    # ── 2. Pull the matching Printful order by external_id ───────────────
+    printful_block: dict = {"found": False}
+    try:
+        pr = _req.get(
+            f"{PRINTFUL_BASE}/orders/@{shopify_id}",
+            headers=_printful_headers(),
+            timeout=15,
+        )
+    except RuntimeError as e:
+        # Missing PRINTFUL_API_KEY — _printful_headers raises this.
+        return jsonify(error=str(e)), 500
+    except Exception:
+        log.exception("verify-order: Printful fetch failed for %s", shopify_id)
+        return jsonify(error="Printful request failed"), 502
+
+    if pr.status_code == 404:
+        warnings.append(
+            "Printful has no order with this external_id yet. "
+            "If checkout just happened, fulfillment may still be running."
+        )
+    elif pr.status_code != 200:
+        warnings.append(f"Printful lookup returned HTTP {pr.status_code}: {pr.text[:200]}")
+    else:
+        pf = pr.json().get("result") or {}
+        pf_items = []
+        for pi in pf.get("items", []):
+            files_out = []
+            for f in pi.get("files", []):
+                furl = f.get("url") or ""
+                files_out.append({
+                    "type": f.get("type"),
+                    "url": furl,
+                    "preview_url": f.get("preview_url"),
+                    "filename": f.get("filename"),
+                    "url_reachable": _head_ok(furl),
+                    "is_our_r2": bool(_r2_key_from_url(furl)),
+                })
+            pf_items.append({
+                "variant_id": pi.get("variant_id"),
+                "name": pi.get("name"),
+                "quantity": pi.get("quantity"),
+                "files": files_out,
+            })
+
+        printful_block = {
+            "found": True,
+            "order_id": pf.get("id"),
+            "external_id": pf.get("external_id"),
+            "status": pf.get("status"),
+            "items": pf_items,
+        }
+
+    # ── 3. Roll-up checks ────────────────────────────────────────────────
+    pf_files = [
+        f
+        for it in printful_block.get("items", [])
+        for f in it.get("files", [])
+    ]
+    all_reachable = bool(pf_files) and all(f["url_reachable"] for f in pf_files)
+    all_our_r2 = bool(pf_files) and all(f["is_our_r2"] for f in pf_files)
+    no_local_fallback = not any("/preview/" in (f.get("url") or "") for f in pf_files)
+
+    if printful_block["found"] and not all_our_r2:
+        warnings.append(
+            "One or more Printful files are NOT served from our R2 bucket — "
+            "this is the fallback path and may indicate the upload failed."
+        )
+    if printful_block["found"] and not all_reachable:
+        warnings.append(
+            "One or more Printful files returned non-2xx on HEAD — "
+            "Printful may not be able to fetch them for printing."
+        )
+    if printful_block["found"] and not no_local_fallback:
+        warnings.append(
+            "A file URL contains '/preview/' — that is the local-Flask fallback "
+            "from upload_print_file() and is unreachable from Printful."
+        )
+
+    return jsonify(
+        shopify_order_id=shopify_id,
+        shopify={
+            "name": order.get("name"),
+            "email": order.get("email"),
+            "items": cart_items,
+        },
+        printful=printful_block,
+        checks={
+            "shopify_lookup_ok": True,
+            "printful_lookup_ok": printful_block["found"],
+            "all_printful_files_reachable": all_reachable,
+            "all_printful_files_from_our_r2": all_our_r2,
+            "no_local_fallback_urls": no_local_fallback,
+        },
+        warnings=warnings,
+    )
 
 
 def _process_fulfillment(order_id: str, item: dict, recipient: dict):
@@ -915,8 +1111,43 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
             result.get("result", {}).get("id", "?"),
         )
 
+        # Tag the Shopify order with a short hash of every print-file URL
+        # Printful received. Lets you spot-check from the Shopify orders list
+        # and cross-reference against /admin/verify-order/<id>.
+        tags = _printful_file_tags(result)
+        if tags:
+            tag_shopify_order(order_id, tags)
+
     except Exception:
         log.exception("Order #%s — fulfillment failed for item %s", order_id, item)
+
+
+def _printful_file_tags(printful_response: dict) -> list[str]:
+    """Build `printful-file:<hash>` tags from a create_printful_order response.
+
+    Hash priority: the 8-char uuid embedded in our generated filename
+    (`print_<product>_<pet>_<uuid8>.png`); if that pattern isn't matched,
+    fall back to the first 8 chars of md5(url) so the tag is still stable
+    and unique per file."""
+    import hashlib as _hashlib
+    import re as _re_local
+
+    tags: list[str] = []
+    seen: set[str] = set()
+    items = (printful_response.get("result") or {}).get("items") or []
+    for it in items:
+        for f in it.get("files") or []:
+            url = f.get("url") or ""
+            if not url:
+                continue
+            stem = url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+            m = _re_local.search(r"_([0-9a-f]{8})$", stem)
+            short = m.group(1) if m else _hashlib.md5(url.encode()).hexdigest()[:8]
+            tag = f"printful-file:{short}"
+            if tag not in seen:
+                seen.add(tag)
+                tags.append(tag)
+    return tags
 
 
 # ---------------------------------------------------------------------------

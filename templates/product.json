@@ -13,8 +13,14 @@
       "type": "product-upload",
       "settings": {
         "show_upload": true,
-        "inventory_threshold": 0
+        "inventory_threshold": 0,
+        "rating_value": "4.9",
+        "review_count": "124"
       }
+    },
+    "social-proof-ticker": {
+      "type": "social-proof-ticker",
+      "settings": {}
     },
     "upsell": {
       "type": "upsell",
@@ -30,9 +36,5 @@
       }
     }
   },
-  "order": [
-    "product-upload",
-    "upsell",
-    "faq"
-  ]
+  "order": ["product-upload", "social-proof-ticker", "upsell", "faq"]
 }

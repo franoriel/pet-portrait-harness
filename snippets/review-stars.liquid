@@ -1,6 +1,7 @@
 {% comment %}
-  Renders star rating.
-  Usage: {% render 'review-stars', rating: 4.9, count: 124 %}
+  TODO: DORMANT — do not re-enable until we have real customer reviews.
+  No callers as of launch. The default rating/count values are placeholders.
+  Renders star rating. Usage: {% render 'review-stars', rating: 4.9, count: 124 %}
 {% endcomment %}
 {%- assign r = rating | default: 4.9 | times: 1.0 -%}
 {%- assign c = count | default: 0 | plus: 0 -%}

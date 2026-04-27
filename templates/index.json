@@ -17,7 +17,7 @@
         "parallax_strength": 0.3,
         "heading": "A modern tribute to unconditional love",
         "subheading": "Upload a photo of your pet. Choose from 9 artistic styles. Get a stunning portrait printed on canvas or paper, shipped to your door.",
-        "show_rating": false,
+        "show_rating": true,
         "rating_text": "",
         "cta_label": "Create My Portrait",
         "cta_url": "",
@@ -47,7 +47,7 @@
           "type": "item",
           "settings": {
             "icon": "✦",
-            "text": "Free redos if you're not happy"
+            "text": "Free image redo's"
           }
         },
         "b4": {
@@ -66,10 +66,6 @@
       ],
       "settings": {}
     },
-    "style-carousel": {
-      "type": "style-carousel",
-      "settings": {}
-    },
     "how-it-works": {
       "type": "how-it-works",
       "blocks": {
@@ -86,7 +82,7 @@
           "settings": {
             "icon": "2",
             "title": "Preview your portrait",
-            "description": "Pick a style — watercolour, oil paint, line art, pop art and more — and see your portrait in quickly. You only pay if you love it."
+            "description": "Pick a style — watercolour, oil paint, line art, pop art and more — and see your portrait in about 30 seconds. You only pay if you love it."
           }
         },
         "s3": {
@@ -94,7 +90,7 @@
           "settings": {
             "icon": "3",
             "title": "Pick a format, we ship it",
-            "description": "Canvas, poster, or both. Printed on museum-grade materials and shipped Canada-wide in 3–5 days."
+            "description": "Canvas, poster, or both. Printed on museum-grade materials and shipped to Canada or the US in 3–5 days."
           }
         }
       },
@@ -112,13 +108,17 @@
         "cta_url": "/pages/create"
       }
     },
+    "review-ticker": {
+      "type": "social-proof-ticker",
+      "settings": {}
+    },
     "before-after": {
       "type": "before-after",
       "settings": {
         "eyebrow": "See the difference",
         "heading": "From camera roll to canvas.",
         "subheading": "Drag the slider. Every portrait is painted from your actual photo.",
-        "before_image": "shopify://shop_images/582f28eb23_watercolor_raw.jpg",
+        "before_image": "shopify://shop_images/fe10a6be-9612-44d2-9f21-a8140461b6be_watercolor_charlieking.png",
         "after_image": "shopify://shop_images/pexels-chevanon-1108099.jpg",
         "cta_label": "Try it with your pet",
         "cta_url": "/pages/create"
@@ -145,8 +145,8 @@
   "order": [
     "hero",
     "trust-bar",
-    "style-carousel",
     "how-it-works",
+    "review-ticker",
     "before-after",
     "faq",
     "final-cta"

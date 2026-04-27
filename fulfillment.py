@@ -305,6 +305,111 @@ def upload_print_file(local_path: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Shopify Admin API — order tagging
+# ---------------------------------------------------------------------------
+
+SHOPIFY_ADMIN_API_VERSION = "2024-10"
+
+
+def tag_shopify_order(order_id: str, tags_to_add: list[str]) -> bool:
+    """Append tags to a Shopify order via the Admin REST API.
+
+    Merges with existing tags rather than overwriting. Safe to call
+    multiple times — duplicate tags are de-duplicated by the API.
+
+    Requires env vars:
+      SHOPIFY_SHOP_DOMAIN       e.g. "pet-printables.myshopify.com"
+      SHOPIFY_ADMIN_API_TOKEN   admin API access token with `write_orders`
+
+    Returns True on success, False on any failure (logged — never raises).
+    """
+    if not tags_to_add:
+        return True
+
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not token:
+        log.warning(
+            "Order %s: skipping tagging — SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set",
+            order_id,
+        )
+        return False
+
+    # Normalize tag values: trim, collapse whitespace, lowercase. Shopify
+    # tags are case-preserving but case-insensitive — lowercasing keeps the
+    # admin UI/filter consistent.
+    clean_tags = []
+    for t in tags_to_add:
+        if not t:
+            continue
+        t = " ".join(str(t).split()).lower().replace(",", "-")[:40]
+        if t and t not in clean_tags:
+            clean_tags.append(t)
+    if not clean_tags:
+        return True
+
+    base = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}/orders/{order_id}.json"
+    headers = {
+        "X-Shopify-Access-Token": token,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    try:
+        # 1. Read the order's current tags so we can merge instead of overwrite.
+        r = requests.get(base, headers=headers, params={"fields": "id,tags"}, timeout=10)
+        if r.status_code != 200:
+            log.error(
+                "Order %s: failed to read tags (HTTP %s): %s",
+                order_id, r.status_code, r.text[:300],
+            )
+            return False
+        existing = (r.json().get("order") or {}).get("tags") or ""
+        existing_list = [t.strip() for t in existing.split(",") if t.strip()]
+        existing_lower = {t.lower() for t in existing_list}
+
+        # 2. Append any new tags that aren't already on the order.
+        new_tags = [t for t in clean_tags if t not in existing_lower]
+        if not new_tags:
+            log.info("Order %s: tags already present (%s)", order_id, clean_tags)
+            return True
+
+        merged = ", ".join(existing_list + new_tags)
+
+        # 3. Write the merged tag list back.
+        payload = {"order": {"id": int(order_id), "tags": merged}}
+        r2 = requests.put(base, headers=headers, json=payload, timeout=10)
+        if r2.status_code not in (200, 201):
+            log.error(
+                "Order %s: failed to set tags (HTTP %s): %s",
+                order_id, r2.status_code, r2.text[:300],
+            )
+            return False
+
+        log.info("Order %s: tagged with %s", order_id, new_tags)
+        return True
+
+    except Exception:
+        log.exception("Order %s: tagging failed unexpectedly", order_id)
+        return False
+
+
+def tags_from_order_items(items: list[dict]) -> list[str]:
+    """Build a tag list from parsed order items.
+
+    Emits:
+        style:<style>     — one per unique portrait style
+        product:<type>    — one per unique product_type
+    """
+    styles = {str(i.get("style") or "").strip() for i in items if i.get("style")}
+    products = {str(i.get("product_type") or "").strip() for i in items if i.get("product_type")}
+    tags = []
+    tags += [f"style:{s}" for s in sorted(styles) if s]
+    tags += [f"product:{p}" for p in sorted(products) if p]
+    return tags
+
+
+# ---------------------------------------------------------------------------
 # Printful API client
 # ---------------------------------------------------------------------------
 
