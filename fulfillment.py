@@ -156,6 +156,7 @@ def generate_print_file(
     style_vars: Optional[dict] = None,
     composited_r2_key: Optional[str] = None,
     font_size: str = "medium",
+    show_name: str = "Yes",
 ) -> Path:
     """
     Generate a print-ready hi-res portrait sized for the target product.
@@ -212,9 +213,11 @@ def generate_print_file(
         # Sharpen to recover detail lost in upscaling
         img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
-        # Composite pet name AFTER cropping to correct ratio (skip for mugs)
+        # Composite pet name AFTER cropping to correct ratio. Skip for mugs,
+        # and honor the customer's _Show Name=No selection from the cart.
         style_key = _map_style_id(style)
-        if not product_key.startswith("mug"):
+        skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
+        if not skip_name:
             img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
 
         # Clean up downloaded file
@@ -244,8 +247,10 @@ def generate_print_file(
         if img.width < target_w or img.height < target_h:
             img = img.resize((target_w, target_h), Image.LANCZOS)
 
-        # Composite pet name AFTER cropping (skip for mugs)
-        if not product_key.startswith("mug"):
+        # Composite pet name AFTER cropping. Skip for mugs, and honor the
+        # customer's _Show Name=No selection from the cart.
+        skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
+        if not skip_name:
             img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
 
     # Save with 300 DPI metadata embedded for print shops
@@ -507,6 +512,7 @@ def fulfill_order_item(
     recipient: dict,
     style_vars: Optional[dict] = None,
     composited_r2_key: Optional[str] = None,
+    show_name: str = "Yes",
 ) -> dict:
     """
     End-to-end fulfillment for a single line item.
@@ -537,6 +543,7 @@ def fulfill_order_item(
         product_key=product_key,
         style_vars=style_vars,
         composited_r2_key=composited_r2_key,
+        show_name=show_name,
     )
 
     # Step 2: Upload
@@ -653,6 +660,7 @@ def parse_order_items(order: dict) -> list[dict]:
             "job_id": job_id,
             "preview_url": preview_url,
             "print_file_url": props.get("_Print File URL", ""),
+            "no_name_url": props.get("_No Name URL", ""),
             "product_type": product_type,
             "size": size,
             "quantity": li.get("quantity", 1),

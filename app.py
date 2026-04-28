@@ -1087,9 +1087,16 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
             log.error("Order #%s — photo not found: %s", order_id, photo_path)
             return
 
+        # Honor _Show Name=No by sourcing from the cart's _No Name URL when
+        # available. Falls back to the regular print-file URL otherwise.
+        show_name = (item.get("show_name") or "Yes").strip()
+        if show_name.lower() == "no" and item.get("no_name_url"):
+            portrait_url = item["no_name_url"]
+        else:
+            portrait_url = item.get("preview_url", "")
+
         # Extract R2 key from portrait URL for upscale-based fulfillment
         composited_r2_key = None
-        portrait_url = item.get("preview_url", "")
         r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
         if r2_public and portrait_url.startswith(r2_public):
             composited_r2_key = portrait_url[len(r2_public) + 1:]  # strip base + "/"
@@ -1103,6 +1110,7 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
             shopify_order_id=order_id,
             recipient=recipient,
             composited_r2_key=composited_r2_key,
+            show_name=show_name,
         )
 
         log.info(
