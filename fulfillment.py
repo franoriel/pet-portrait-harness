@@ -56,10 +56,7 @@ PRINT_SIZES: dict[str, tuple[int, int]] = {
     "canvas-12x16-framed": (3600, 4800),
     "canvas-16x16-framed": (4800, 4800),
     "canvas-16x20-framed": (4800, 6000),
-    # Poster
-    "poster-default":      (3600, 4800),
-    # Magnet (Printful Kiss-Cut Magnet, 4"x4" default — update if we
-    # pick a different Printful size. 300 DPI + 1/8" bleed each side.)
+    # Magnet (Printful Die-Cut Magnet, 4"x4". 300 DPI + 1/8" bleed each side.)
     "magnet-default":      (1275, 1275),
 }
 
@@ -75,7 +72,6 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "canvas-12x16-framed": (3, 4),
     "canvas-16x16-framed": (1, 1),
     "canvas-16x20-framed": (4, 5),
-    "poster-default":      (3, 4),
     "magnet-default":      (1, 1),
 }
 
@@ -93,7 +89,7 @@ def _get_printful_variant_id(product_key: str) -> int:
     from mockups import _resolve_variant_ids
 
     # Parse product_key into (product_type, size_label)
-    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, poster-default, magnet-default
+    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, magnet-default
     if product_key.endswith("-framed"):
         # e.g. "canvas-16x20-framed" → product_type="canvas-framed", size="16x20"
         size = product_key.rsplit("-", 1)[0].split("-", 1)[1]
@@ -513,6 +509,7 @@ def fulfill_order_item(
     style_vars: Optional[dict] = None,
     composited_r2_key: Optional[str] = None,
     show_name: str = "Yes",
+    quantity: int = 1,
 ) -> dict:
     """
     End-to-end fulfillment for a single line item.
@@ -555,6 +552,7 @@ def fulfill_order_item(
         recipient=recipient,
         product_key=product_key,
         print_file_url=print_url,
+        quantity=quantity,
     )
 
     return result

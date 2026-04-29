@@ -84,15 +84,14 @@ def get_catalog_variants(catalog_product_id: int) -> dict[str, int]:
 # Product type → Printful catalog mapping
 # ---------------------------------------------------------------------------
 
-# Printful catalog product IDs (from their public catalog)
-# - Product 3  = Canvas (gallery-wrapped, stretched)
-# - Product 1  = Enhanced matte poster
-# - Product 12 = Framed canvas (product ID TBD — verify on Printful dashboard)
+# Printful catalog product IDs (verified 2026-04-29 via /products listing).
+# - Product 3   = Canvas (in) — gallery-wrapped, unframed
+# - Product 614 = Framed Canvas (in)
+# - Product 656 = Die-Cut Magnets
 CATALOG_PRODUCTS = {
-    "canvas":        3,    # unframed canvas
-    "canvas-framed": 12,   # TODO: verify the real Printful product ID for framed canvas
-    "poster":        1,
-    "magnet":        358,  # TODO: verify — 358 = "Kiss-Cut Magnet" on the current Printful catalog
+    "canvas":        3,
+    "canvas-framed": 614,
+    "magnet":        656,
 }
 
 # Printful uses unicode: 12″×12″ (U+2033 double prime, U+00D7 multiplication sign)
@@ -111,30 +110,28 @@ VARIANT_SIZE_MAP = {
         "16x16": '16\u2033\u00d716\u2033',
         "16x20": '16\u2033\u00d720\u2033',
     },
-    "poster": {
-        "default": None,  # single variant poster
-    },
     "magnet": {
         "default": '4\u2033\u00d74\u2033',  # 4"x4" — update if we pick a different size
     },
 }
 
-# Fallback IDs if the API lookup fails. EMPTY until verified — run
-# `curl https://api.printful.com/products/3 -H "Authorization: Bearer $PRINTFUL_API_KEY"`
-# and fill in the real variant IDs for 12x12, 12x16, 16x16, 16x20.
+# Verified variant IDs from Printful catalog (2026-04-29). Used if the
+# live API lookup fails so orders still resolve.
 VARIANT_ID_FALLBACK = {
     "canvas": {
-        # "12x12": 0,   # TODO: fill in after running the API call
-        # "12x16": 0,
-        # "16x16": 0,
-        # "16x20": 0,
+        "12x12": 823,
+        "12x16": 5,
+        "16x16": 824,
+        "16x20": 6,
     },
     "canvas-framed": {
-        # "16x20": 0,   # TODO
-        # "18x24": 0,
+        "12x12": 15695,
+        "12x16": 15696,
+        "16x16": 15697,
+        "16x20": 15698,
     },
-    "poster": {
-        "default": 3876,  # 12″×18″ poster
+    "magnet": {
+        "default": 16367,
     },
 }
 

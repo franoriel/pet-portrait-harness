@@ -1111,6 +1111,7 @@ def _process_fulfillment(order_id: str, item: dict, recipient: dict):
             recipient=recipient,
             composited_r2_key=composited_r2_key,
             show_name=show_name,
+            quantity=int(item.get("quantity", 1) or 1),
         )
 
         log.info(
