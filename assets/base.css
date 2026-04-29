@@ -182,6 +182,10 @@ p { color: var(--color-ink); }
   .urgency-banner__icon { animation: none; }
 }
 
+/* Positioning context for the absolute homepage header so it anchors
+   below the announcement bar rather than to the viewport top. */
+.site-frame { position: relative; }
+
 /* ── Header ───────────────────────────────────────────────── */
 .site-header {
   position: sticky;

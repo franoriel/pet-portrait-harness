@@ -61,11 +61,13 @@
     </aside>
   {%- endif -%}
   {%- section 'announcement-bar' -%}
-  {%- section 'header' -%}
+  <div class="site-frame">
+    {%- section 'header' -%}
 
-  <main id="MainContent" role="main" tabindex="-1">
-    {{ content_for_layout }}
-  </main>
+    <main id="MainContent" role="main" tabindex="-1">
+      {{ content_for_layout }}
+    </main>
+  </div>
 
   {%- section 'footer' -%}
 
