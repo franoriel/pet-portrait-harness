@@ -710,25 +710,38 @@ cartoon, anime, 3D render, clipping, text, watermark, border.\
 """
 
 _BOLD_GRAPHIC_POSTER_DARK_TEMPLATE = """\
-Transform this photo into a bold graphic poster pet portrait on a deep, \
-saturated dark ground — a mid-century night-poster screen print, Saul Bass \
-after-dark title card, or Shepard Fairey "Obey" work in its darker palette.
+Transform this photo into a bold graphic poster pet portrait on a pure \
+black-or-dark-gray background — a high-contrast screen print where the pet \
+pops off the black field in crisp white and one or two bold accent colors. \
+Think Saul Bass after-dark title card, Shepard Fairey "Obey" on black, or a \
+mid-century night-poster screen print.
 
-COLOR ACCURACY — THIS IS CRITICAL:
-- Use the animal's fur/coat pattern and markings as the structural guide. \
-Simplify into 4-6 flat color zones that respect the original coloring. Brighten \
-individual zones slightly if needed so the pet pops against the dark background.
-- Match the animal's actual eye shape from the photo.
+BACKGROUND — THIS IS CRITICAL:
+- The BACKGROUND is a single flat NEUTRAL dark — pick ONE and hold it across \
+the whole canvas: pure black (#0A0A0A), charcoal (#151515), or dark graphite \
+gray (#202020).
+- It must read as black or near-black — NEVER navy, crimson, forest, \
+aubergine, or any chromatic dark. No color cast. No gradient. No split panels.
+
+PET COLOR TREATMENT — THIS IS CRITICAL:
+- The pet is rendered primarily in CRISP WHITE / IVORY (#F5F2EB) as the \
+dominant value, so it reads instantly against the black field.
+- Add 1-2 BOLD accent colors (hot red #E63946, electric yellow #FFD60A, \
+bright cyan #1BA5D4, neon orange #FF6B1A, or electric pink #FF3E8F) as \
+punchy spot highlights — muzzle, tongue, collar zone, a single eye \
+highlight, a stripe of fur. Accents are sparing, not dominant.
+- Use the pet's fur pattern and markings as a guide for WHERE shapes go, \
+but reinterpret into 3-5 flat zones of white + accent + deep shadow. \
+Shadows can read as pure black (merging into the background) for a classic \
+screen-print silhouette effect.
+- Do NOT try to match the pet's realistic fur colors — this is a stylized \
+poster, not a portrait transcription.
 
 STYLE:
 - Flat vector illustration — clean geometric shapes with hard edges
-- Strong color blocking with 4-6 bold flat colors, no gradients
-- Thick confident outlines where color zones meet
+- Strong color blocking, no gradients, no soft shading
+- Thick confident black outlines where white zones meet accent colors
 - Mid-century modern poster / screen print aesthetic
-- The BACKGROUND is a single solid deep color — pick ONE: midnight navy \
-(#0E1A2C), deep crimson (#5C1414), rich forest (#0F2617), or deep aubergine \
-(#2B1030). It must read as visibly dark (luminance well below 30%) — never a \
-mid-tone or pastel.
 - Shepard Fairey / Aaron Draplin inspired graphic boldness
 - Fine art illustration style, high resolution 300dpi, print-ready
 
@@ -736,15 +749,16 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
 - Clean negative space around the subject
-- The dark background is one continuous flat color filling the entire canvas \
-edge-to-edge behind the pet — NOT split into panels or bands. No reserved \
-color blocks, bars, or rectangles anywhere
+- The black/dark-gray background is one continuous flat color filling the \
+entire canvas edge-to-edge behind the pet — NOT split into panels or bands. \
+No reserved color blocks, bars, or rectangles anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
-Avoid: light, white, cream, or pastel backgrounds, photography, photorealism, \
+Avoid: colored dark backgrounds (navy, burgundy, forest, aubergine), light \
+or pastel backgrounds, realistic fur coloring, photography, photorealism, \
 soft edges, gradients, watercolor, painterly strokes, 3D render, blurry, \
-detailed fur texture, text, watermark, border, solid color bars or panels at \
-image edges, horizontal color-band splits.\
+detailed fur texture, text, watermark, border, solid color bars or panels \
+at image edges, horizontal color-band splits.\
 """
 
 # (style_id, mode) → dedicated template. Missing keys fall back to the base
