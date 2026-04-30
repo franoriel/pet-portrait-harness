@@ -1337,7 +1337,7 @@ function PetNameInput({ id, value, onChange }) {
       style: {
         ...s.bodyMuted, fontSize: '11px', marginTop: '6px', marginBottom: 0,
       },
-    }, `Short names print the clearest — up to ${PET_NAME_MAX} characters fit on the canvas.`),
+    }, `Short names print the cleanest — up to ${PET_NAME_MAX} characters.`),
   );
 }
 
@@ -1473,7 +1473,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
     // Photo upload — compact and action-oriented
     React.createElement('p', {
       style: { ...s.smallCaps, margin: '0 0 10px' },
-    }, 'Upload their best photo'),
+    }, 'Upload the photo that makes you smile'),
 
     hasPhoto
       ? React.createElement('div', {
@@ -1588,10 +1588,10 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
       canContinue
         ? iconLabel(React.createElement(ArrowRightIcon), 'CHOOSE YOUR STYLE', 'right')
         : (!state.photo
-            ? 'ADD PHOTO & NAME TO CONTINUE'
+            ? 'ADD A PHOTO + NAME'
             : (!state.termsAccepted
                 ? 'ACCEPT PHOTO TERMS TO CONTINUE'
-                : 'ADD PHOTO & NAME TO CONTINUE'))
+                : 'ADD A PHOTO + NAME'))
     ),
   );
 }
@@ -1646,7 +1646,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
 
   return React.createElement('div', { style: s.sectionWrap },
     React.createElement(StepIndicator, { current: 2 }),
-    React.createElement('h2', { style: s.serifHeading }, 'Choose your artistic finish'),
+    React.createElement('h2', { style: s.serifHeading }, 'Pick a style — see them all'),
 
     // Inline error banner — shown when a previous generation attempt
     // failed for a reason we want the user to act on from this step
@@ -1888,7 +1888,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         canGenerate
           ? 'CREATE MY PORTRAIT'
           : (!state.selectedStyleId
-              ? 'PICK A STYLE TO CONTINUE'
+              ? 'PICK A STYLE FIRST'
               : (!state.termsAccepted
                   ? 'ACCEPT PHOTO TERMS TO CONTINUE'
                   : 'CREATE MY PORTRAIT'))
@@ -2118,10 +2118,10 @@ function UrgencyBanner({ generatedAt }) {
           fontFamily: fontSans, fontSize: '13px', fontWeight: 700,
           color: '#991B1B', margin: '0 0 4px', letterSpacing: '0.02em',
         },
-      }, '\u23F0 Your session has expired'),
+      }, 'Your hold expired'),
       React.createElement('p', {
         style: { fontFamily: fontSans, fontSize: '12px', color: '#7F1D1D', margin: 0, lineHeight: 1.5 },
-      }, 'Your portrait is still saved for 24 hours \u2014 please start a new session to order.'),
+      }, 'Don\u2019t worry \u2014 your portrait is still saved for 24 hours. Start a new session to pick it back up.'),
     );
   }
 
@@ -2151,8 +2151,8 @@ function UrgencyBanner({ generatedAt }) {
         margin: '0 0 8px', letterSpacing: '0.10em', textTransform: 'uppercase',
       },
     }, isUrgent
-      ? '\uD83D\uDEA8 Hurry \u2014 expires very soon'
-      : '\u23F1\uFE0F Your session expires in'),
+      ? 'Almost time \u2014 your hold is about to drop'
+      : '\u23F1\uFE0F This portrait is held just for you'),
 
     // Large countdown display
     React.createElement('div', {
@@ -2622,7 +2622,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       ),
       React.createElement('div', { style: { display: 'flex', gap: '10px' } },
         optionCard(
-          generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, include name',
+          generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, with their name',
           wantsName === true,
           () => handleNameToggle(true),
           generatingNamedPreview && wantsName
@@ -2643,7 +2643,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             : null,
           generatingNamedPreview,
         ),
-        optionCard('No, portrait only', wantsName === false, () => handleNameToggle(false)),
+        optionCard('No, just the portrait', wantsName === false, () => handleNameToggle(false)),
       ),
       nameError && React.createElement('p', {
         style: {
@@ -2686,7 +2686,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
     React.createElement('div', {
       style: { borderTop: `1px solid ${tokens.colorBorder}`, marginTop: '24px', paddingTop: '20px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' },
     },
-      ['Preview before we print', "Free redos if you\u2019re not in love", 'Ships in 3\u20135 days'].map((line, i) =>
+      ['Preview before we print', "Free redos until it\u2019s right", 'Ships in 7\u201310 days'].map((line, i) =>
         React.createElement('p', { key: i, style: { ...s.bodyMuted, fontSize: '12px' } },
           React.createElement('span', { style: { color: tokens.colorSuccess, marginRight: '10px' } }, '\u2713'),
           line,
@@ -2725,7 +2725,7 @@ function PageHero() {
         fontFamily: fontSans, fontSize: '14px', color: tokens.colorMuted,
         margin: '0 0 14px', lineHeight: 1.5,
       },
-    }, '8 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
+    }, '8 styles \u00B7 You only pay if you love it \u00B7 On your wall in 7\u201310 days'),
 
     // Marquee — all 8 styles scrolling continuously
     React.createElement('div', {
