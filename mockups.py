@@ -350,7 +350,8 @@ def generate_mockups(
     """
     catalog_id = CATALOG_PRODUCTS.get(product_type)
     if not catalog_id:
-        raise ValueError(f"Unknown product type: {product_type}")
+        log.warning("Skipping mockup generation for unknown product type: %s", product_type)
+        return []
 
     # Use provided CDN URL, or fall back to Railway preview URL
     if not image_url:
