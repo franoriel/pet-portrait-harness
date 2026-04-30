@@ -82,7 +82,7 @@
           "settings": {
             "icon": "2",
             "title": "Preview your portrait",
-            "description": "Pick a style — watercolour, oil paint, line art, pop art and more — and see your portrait in about 30 seconds. You only pay if you love it."
+            "description": "Pick a style — watercolour, oil paint, line art, pop art and more — and see your pet's portrait faster than they can finish their zoomies. You only pay if you love it."
           }
         },
         "s3": {
@@ -90,7 +90,7 @@
           "settings": {
             "icon": "3",
             "title": "Pick a format, we ship it",
-            "description": "Canvas, poster, or both. Printed on museum-grade materials and shipped to Canada or the US in 3–5 days."
+            "description": "Canvas, poster, or both. Printed on museum-grade materials and shipped to Canada 3–5 days."
           }
         }
       },
