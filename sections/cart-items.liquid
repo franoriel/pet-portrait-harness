@@ -628,6 +628,10 @@
       if (d.portraitUrl) props['_Portrait URL'] = d.portraitUrl;
       if (d.printUrl) props['_Print File URL'] = d.printUrl;
       if (d.noNameUrl) props['_No Name URL'] = d.noNameUrl;
+      // Tag the line item so fulfillment routes it to the magnet pipeline.
+      // Shopify line items don't carry a product handle, so without this the
+      // backend defaults to canvas and the order can't be fulfilled.
+      props['_Product type'] = 'magnet';
       return props;
     }
 

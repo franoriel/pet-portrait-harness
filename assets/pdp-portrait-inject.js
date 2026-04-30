@@ -1028,7 +1028,7 @@
       '_Job ID': data.jobId || '',
       '_Portrait URL': previewUrlForCart,      // preview for display (with or without name)
       '_Print File URL': printFileUrl,         // hi-res for Printful
-      '_No Name URL': cdnUrls[data.selectedPreviewIndex || 0] || cdnUrls[0] || '',  // mirrors _Portrait URL so the cart toggle stays on the customer's selected style
+      '_No Name URL': cdnUrls[1] || cdnUrls[0] || '',  // index 1 = raw (no-name) per /status response shape; falls back to comp if raw upload was missing
     };
     Object.keys(props).forEach(function (key) {
       var input = document.createElement('input');

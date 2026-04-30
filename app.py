@@ -1194,15 +1194,16 @@ def _process_job(job: dict):
             background_mode=worker_bg,
         )
 
-        # In the no-name preview path, raw_path and comp_path are byte-identical
-        # (same PIL image saved to two filenames). Upload the comp PNG once and
-        # alias the URL for raw_cdn — saves one full-size PNG round-trip to R2.
-        # Upload comp + web in parallel to cut ~1-3s off the total wait.
+        # Upload raw + comp + web in parallel. raw_path is the no-name version,
+        # needed by the cart's _No Name URL property so a customer toggling
+        # "Show Name = No" gets a true no-name print rather than the comp
+        # (with-name) image they were previously aliased to.
+        raw_fut = _fulfillment_pool.submit(upload_portrait, raw_path)
         comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
         web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
+        raw_cdn = raw_fut.result()
         comp_cdn = comp_fut.result()
         web_cdn = web_fut.result()
-        raw_cdn = comp_cdn  # same bytes on disk
 
         # Mark complete as soon as the preview URLs are ready. The original
         # photo (used only by fulfillment at order time) uploads in the

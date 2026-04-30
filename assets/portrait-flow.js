@@ -893,12 +893,20 @@ function usePortraitFlow() {
 
       // Fire background mockup generation (non-blocking, with retry)
       if (result.filename) {
-        ['canvas', 'poster'].forEach(productType => {
+        ['canvas'].forEach(productType => {
           const fetchMockup = (retries = 1) => {
+            // Prefer the R2 CDN URL so Printful fetches a durable URL rather
+            // than the ephemeral Railway /preview/ host. Falls back to filename
+            // if previews didn't make it into result for some reason.
+            const cdnUrl = (result.previews && result.previews[0]) || '';
             fetch(`${API_BASE}/mockups`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ image_filename: result.filename, product_type: productType }),
+              body: JSON.stringify({
+                image_filename: result.filename,
+                image_url: cdnUrl,
+                product_type: productType,
+              }),
             })
             .then(r => {
               if ((r.status === 503 || r.status === 429) && retries > 0) {
