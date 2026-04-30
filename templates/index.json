@@ -16,14 +16,14 @@
         "enable_parallax": true,
         "parallax_strength": 0.3,
         "heading": "A modern tribute to unconditional love",
-        "subheading": "Upload a photo of your pet. Choose from 8 artistic styles. Get a stunning portrait printed on canvas or paper, shipped to your door.",
+        "subheading": "They've earned more than a phone photo in a frame. Upload one — see your pet rendered as real art in seconds, then decide if it's worthy of the wall.",
         "show_rating": true,
         "rating_text": "",
         "cta_label": "Create My Portrait",
         "cta_url": "",
         "secondary_cta_label": "",
         "secondary_cta_url": "",
-        "reassurance": "See it before you buy · Made and shipped in North America"
+        "reassurance": "Preview free · You only pay if you love it · Shipped from North America"
       }
     },
     "trust-bar": {
@@ -33,7 +33,7 @@
           "type": "item",
           "settings": {
             "icon": "✦",
-            "text": "Made in Canada"
+            "text": "Printed in Canada"
           }
         },
         "b2": {
@@ -47,7 +47,7 @@
           "type": "item",
           "settings": {
             "icon": "✦",
-            "text": "Free image redo's"
+            "text": "Free redos until it's right"
           }
         },
         "b4": {
@@ -78,7 +78,7 @@
           "settings": {
             "icon": "1",
             "title": "Upload a photo",
-            "description": "Snap a pic or grab one from your camera roll. Any breed, any age. Phone photos work great."
+            "description": "Pick your favourite photo. Phone snaps work — any breed, any age, any vibe."
           }
         },
         "s2": {
@@ -94,7 +94,7 @@
           "settings": {
             "icon": "3",
             "title": "Pick a format, we ship it",
-            "description": "Canvas, poster, or both. Printed on museum-grade materials and shipped to Canada 3–5 days."
+            "description": "Canvas, poster, or magnet. Museum-grade printing, on your wall in 3–5 days."
           }
         }
       },
@@ -121,7 +121,7 @@
       "settings": {
         "eyebrow": "See the difference",
         "heading": "From camera roll to canvas.",
-        "subheading": "Drag the slider. Every portrait is painted from your actual photo.",
+        "subheading": "Drag the slider. Every detail — the eye colour, the head tilt, the underbite — comes from your photo, not a template.",
         "before_image": "shopify://shop_images/fe10a6be-9612-44d2-9f21-a8140461b6be_watercolor_charlieking.png",
         "after_image": "shopify://shop_images/pexels-chevanon-1108099.jpg",
         "cta_label": "Try it with your pet",
@@ -140,7 +140,7 @@
       "settings": {
         "eyebrow": "Ready?",
         "heading": "The portrait they'll never take down.",
-        "subheading": "Start with a photo. We'll handle the painting, printing, and shipping.",
+        "subheading": "Upload one photo. The preview is free. Pay only if you love it.",
         "cta_label": "Create My Portrait",
         "cta_url": "/pages/create"
       }
