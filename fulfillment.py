@@ -206,12 +206,19 @@ def generate_print_file(
         # safe-zone) also survive this crop.
         img = crop_to_ratio(img, ratio, gravity="center")
 
-        # Upscale to print dimensions
-        if img.width < target_w or img.height < target_h:
+        # Resize to print dimensions (handles BOTH upscale AND downscale).
+        # Magnet sizes (1275–1875 px) are smaller than PORTRAIT_MIN_SIZE
+        # (3000×3750), so the composited R2 source needs to be DOWNSIZED for
+        # magnet variants — the previous `<` check skipped this and shipped
+        # oversized PNGs to Printful for every magnet order.
+        needs_upscale = img.width < target_w or img.height < target_h
+        if (img.width, img.height) != (target_w, target_h):
             img = img.resize((target_w, target_h), Image.LANCZOS)
 
-        # Sharpen to recover detail lost in upscaling
-        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        # Sharpen ONLY when upscaling. Applying UnsharpMask after a LANCZOS
+        # downscale would over-sharpen edges and produce halos.
+        if needs_upscale:
+            img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
         # Composite pet name AFTER cropping to correct ratio. Skip for mugs,
         # and honor the customer's _Show Name=No selection from the cart.
@@ -243,8 +250,9 @@ def generate_print_file(
         if style_key != "watercolor":
             img = POST_PROCESS.get(style_key, lambda x: x)(img)
 
-        # Upscale to print dimensions
-        if img.width < target_w or img.height < target_h:
+        # Resize to print dimensions (handles BOTH upscale AND downscale).
+        # Magnet target sizes are smaller than the post-processed source.
+        if (img.width, img.height) != (target_w, target_h):
             img = img.resize((target_w, target_h), Image.LANCZOS)
 
         # Composite pet name AFTER cropping. Skip for mugs, and honor the

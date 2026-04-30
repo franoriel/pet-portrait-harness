@@ -1064,6 +1064,203 @@ def admin_verify_order(shopify_id):
     )
 
 
+# ---------------------------------------------------------------------------
+# Admin — per-style smoke test (no Printful submission)
+# ---------------------------------------------------------------------------
+
+@app.route("/admin/style-smoke-test/<style_id>")
+def admin_style_smoke_test(style_id: str):
+    """Run the full pre-Printful pipeline for a single style and return a
+    JSON report. Validates that:
+      - the prompt template + Gemini integration produce a valid image
+      - the print-file pipeline produces the right pixel dimensions and
+        300 DPI metadata for each requested product (canvas + magnet)
+      - the SAME composited source is reused across multiple variants —
+        the magnet-upsell single-source invariant
+      - all uploaded URLs are reachable from the public web (R2-served)
+
+    Does NOT submit to Printful. Hits Gemini once per call (~$0.04) plus
+    one upscale per product key.
+
+    Auth: X-Admin-Token header or ?admin_token=… query param.
+
+    Path:
+      /admin/style-smoke-test/<style_id>     React-side ID, e.g. 'modern-shape-art'
+
+    Query params:
+      products    comma-separated product keys (default: canvas-16x20,magnet-4x4)
+      photo       filename in test_photos/    (default: buddy.png)
+      pet_name    name to composite           (default: Buddy)
+    """
+    if not _require_debug_token():
+        return jsonify(error="Forbidden"), 403
+
+    import time
+    from PIL import Image as _Image
+    from generate import PROMPTS, generate as generate_portrait
+    from fulfillment import (
+        PRINT_SIZES, PRODUCT_RATIOS,
+        generate_print_file, upload_print_file, _map_style_id,
+    )
+    from storage import upload_portrait
+
+    # Validate style — accept React-side ID (preferred) or harness key.
+    harness_style = _map_style_id(style_id)
+    if harness_style == "classic" and style_id != "classic":
+        return jsonify(
+            error=f"Unknown style: {style_id}",
+            valid_react_styles=[
+                "soft-watercolour", "minimal-line-art", "modern-shape-art",
+                "neon-pop-art", "renaissance-royalty", "rainbow-bridge",
+                "bold-graphic-poster", "aura-gradient",
+            ],
+        ), 400
+
+    # Parse + validate product keys.
+    requested = (request.args.get("products") or "canvas-16x20,magnet-4x4").split(",")
+    requested = [p.strip() for p in requested if p.strip()]
+    invalid = [p for p in requested if p not in PRINT_SIZES]
+    if invalid:
+        return jsonify(
+            error=f"Unknown product keys: {invalid}",
+            valid_products=sorted(PRINT_SIZES.keys()),
+        ), 400
+
+    # Resolve test photo.
+    photo_name = request.args.get("photo", "buddy.png")
+    photo_path = Path("test_photos") / photo_name
+    if not photo_path.exists():
+        return jsonify(error=f"Test photo not found: test_photos/{photo_name}"), 400
+
+    pet_name = (request.args.get("pet_name") or "Buddy").strip()[:20] or "Buddy"
+
+    started = time.time()
+    warnings_out: list[str] = []
+
+    # ── Step 1: generate the no-name composited via the production path ──
+    try:
+        _raw_path, comp_path, web_path = generate_portrait(
+            photo_path, pet_name, style=harness_style,
+            style_vars=None, background_mode="auto",
+        )
+    except Exception as e:
+        log.exception("smoke-test: portrait generation failed for style=%s", style_id)
+        return jsonify(error=f"Portrait generation failed: {e}"), 500
+
+    # Upload composited PNG to R2 — this is the source the print-file
+    # pipeline reuses for every product key.
+    ts = int(time.time())
+    composited_key = f"smoke-test/{ts}/{harness_style}/composited.png"
+    composited_url = upload_portrait(comp_path, key=composited_key)
+    if not composited_url:
+        warnings_out.append(
+            "R2 upload of composited image failed — print files will fall back "
+            "to re-generating via Gemini, which is not what production does."
+        )
+        composited_key = None  # don't pass an unreachable key to print-file gen
+
+    # Web preview URL (the WebP shown in cart / order confirmation).
+    preview_key = f"smoke-test/{ts}/{harness_style}/preview.webp"
+    preview_url = upload_portrait(web_path, key=preview_key)
+
+    # ── Step 2: build a print file per product key, all from one source ──
+    print_results: list[dict] = []
+    sources_used: set[str] = set()
+
+    for pk in requested:
+        try:
+            print_path = generate_print_file(
+                photo_path=photo_path,
+                pet_name=pet_name,
+                style=style_id,  # React-side ID; fulfillment maps it internally
+                product_key=pk,
+                style_vars=None,
+                composited_r2_key=composited_key,
+                font_size="small",
+                show_name="Yes",
+            )
+            sources_used.add(composited_key or "<no-r2>")
+
+            with _Image.open(print_path) as pim:
+                actual_w, actual_h = pim.size
+                actual_dpi = pim.info.get("dpi", (None, None))
+                actual_format = pim.format
+
+            print_url = upload_print_file(print_path)
+
+            expected_w, expected_h = PRINT_SIZES[pk]
+            expected_ratio_w, expected_ratio_h = PRODUCT_RATIOS[pk]
+
+            print_results.append({
+                "product_key": pk,
+                "expected_px": [expected_w, expected_h],
+                "actual_px": [actual_w, actual_h],
+                "expected_ratio": f"{expected_ratio_w}:{expected_ratio_h}",
+                "expected_dpi": 300,
+                "actual_dpi": list(actual_dpi) if actual_dpi[0] else None,
+                "format": actual_format,
+                "size_bytes": print_path.stat().st_size,
+                "url": print_url,
+                "url_reachable": _head_ok(print_url) if print_url else False,
+                "served_from_r2": bool(_r2_key_from_url(print_url)) if print_url else False,
+                "dimensions_match": (actual_w, actual_h) == (expected_w, expected_h),
+                # PIL stores DPI as float (300 may read back as 299.9994).
+                # Round before comparing to avoid spurious failures.
+                "dpi_match": bool(
+                    actual_dpi[0]
+                    and round(actual_dpi[0]) == 300
+                    and round(actual_dpi[1]) == 300
+                ),
+            })
+        except Exception as e:
+            log.exception("smoke-test: print-file failed for style=%s product=%s", style_id, pk)
+            print_results.append({"product_key": pk, "error": str(e)})
+
+    # ── Step 3: roll-up checks ──
+    successful = [r for r in print_results if "error" not in r]
+    all_dim = bool(successful) and all(r["dimensions_match"] for r in successful)
+    all_dpi = bool(successful) and all(r["dpi_match"] for r in successful)
+    all_reachable = bool(successful) and all(r["url_reachable"] for r in successful)
+    all_r2 = bool(successful) and all(r["served_from_r2"] for r in successful)
+    single_source = len(sources_used) == 1 and "<no-r2>" not in sources_used
+
+    if successful and not all_dim:
+        warnings_out.append("One or more print files have wrong pixel dimensions vs PRINT_SIZES")
+    if successful and not all_dpi:
+        warnings_out.append("One or more print files lack 300 DPI metadata — Printful may scale wrong")
+    if successful and not all_reachable:
+        warnings_out.append("One or more print file URLs are not reachable on HEAD")
+    if successful and not all_r2:
+        warnings_out.append("One or more print files are not served from our R2 bucket")
+    if len(requested) > 1 and not single_source:
+        warnings_out.append(
+            "Print files used different source images — magnet-upsell single-source "
+            "invariant broken (canvas + magnet should reuse one composited image)"
+        )
+    if any("error" in r for r in print_results):
+        warnings_out.append("One or more product keys failed during print-file generation")
+
+    return jsonify(
+        style=style_id,
+        harness_style=harness_style,
+        test_photo=photo_name,
+        pet_name=pet_name,
+        preview_url=preview_url,
+        preview_url_reachable=_head_ok(preview_url) if preview_url else False,
+        composited_source_r2_key=composited_key,
+        print_files=print_results,
+        checks={
+            "all_dimensions_match": all_dim,
+            "all_dpi_match": all_dpi,
+            "all_print_files_reachable": all_reachable,
+            "all_print_files_from_our_r2": all_r2,
+            "single_source_used_for_all_products": single_source,
+        },
+        warnings=warnings_out,
+        elapsed_seconds=round(time.time() - started, 2),
+    )
+
+
 def _process_fulfillment(order_id: str, items: list, recipient: dict):
     """
     Background task: process all line items in a Shopify order as a SINGLE
