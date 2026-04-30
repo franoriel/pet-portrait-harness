@@ -107,35 +107,58 @@ def _name_integration(
     # The pet's face stays at 50% of source so it lands at the visual center
     # of the visible face on every variant.
     safe_zone = (
-        "- POSITION — CRITICAL: Place the name in the upper portion of the "
-        "image, clearly ABOVE the pet, with a visible margin of empty "
-        "background between the top edge of the image and the name.\n"
+        "- POSITION — CRITICAL: Place the name in the most aesthetically "
+        "pleasing area of NEGATIVE SPACE in the artwork — the calm, "
+        "unoccupied region of the background where the eye naturally rests. "
+        "The default is the upper portion above the pet, but you may shift "
+        "to a side or corner of negative space if that area is visibly "
+        "calmer and lets the name breathe. Choose ONE pocket of negative "
+        "space and commit; never split the name across regions.\n"
         "- The name is rendered as part of the artwork's own background or "
         "atmosphere (NOT a separate white strip or solid panel).\n"
-        "- Vertical placement: the name's vertical CENTER must sit between "
-        "18% and 24% of the image height, measured from the TOP edge. "
-        "Leave a clear top margin of at least 12% of image height above the "
-        "top of the name letters so the canvas never feels crowded at the "
-        "top and the name is safely inside the printed canvas face on every "
-        "product size (square, 3:4, and 4:5).\n"
-        "- NEVER place the name at the bottom, below the pet, near the pet's "
-        "paws, or anywhere in the bottom half of the image. Never place the "
-        "name in the top 10% of the image (too close to edge — wraps on "
-        "gallery-wrap canvas).\n"
-        "- Horizontal placement: PERFECTLY CENTERED horizontally on the image.\n"
-        "- SINGLE LINE ONLY — never wrap, break, or stack the name across two lines.\n"
-        "- WIDTH CONSTRAINT: the name must fit within the CENTER 70% of the image "
-        "width. If the letters would exceed this width at the specified font size, "
-        "reduce the font size until the whole name fits — never bleed past the "
-        "70% width envelope.\n"
-        "- Leave at least 15% clear horizontal margin on the LEFT and RIGHT sides.\n"
-        "- Name must sit above the pet's head — NEVER overlap the pet.\n"
+        "- PADDING — CRITICAL: Treat the name as a single block and surround "
+        "it on ALL FOUR sides with generous, even padding of clean negative "
+        "space. The minimum clear padding around every edge of the name "
+        "block is 8% of image height — visually obvious breathing room. "
+        "Nothing (canvas edge, pet, foliage, props, frame, decorative "
+        "flourishes) may touch or crowd the name within this padding.\n"
+        "- SAFE PRINT MARGIN — CRITICAL: NEVER render any letter, glyph, "
+        "stroke, serif, or letter shadow inside the outer 12% margin of the "
+        "image on ANY side (top, bottom, left, right). The full name, with "
+        "its padding, must sit comfortably within the inner 76% of the "
+        "canvas so it cannot be cropped, clipped, or wrapped on a gallery-"
+        "wrap canvas at any product aspect ratio (square, 3:4, 4:5).\n"
+        "- If the upper area is the chosen negative-space pocket, the name's "
+        "vertical CENTER should sit between 18% and 24% of the image height "
+        "from the TOP edge so the name lands cleanly above the pet on every "
+        "crop. NEVER place the name at the very bottom of the image, near "
+        "the pet's paws, or directly overlapping the pet.\n"
+        "- SINGLE LINE ONLY — never wrap, break, or stack the name across "
+        "two lines. The complete name must read on one continuous baseline.\n"
+        "- WIDTH CONSTRAINT — CRITICAL: the entire name (including any "
+        "letter spacing) must fit within the CENTER 60% of the image width. "
+        "BEFORE drawing, measure the name at the requested font size — if "
+        "the letters would exceed this 60% width envelope, REDUCE the font "
+        "size further until the whole name fits comfortably with the full "
+        "padding still intact. It is better to render the name SMALLER than "
+        "to bleed past the safe zone, clip a letter, or shrink the padding.\n"
+        "- SIZE — CRITICAL: Render the name SMALL and refined — a delicate, "
+        "editorial accent, never a banner or a headline. The name should "
+        "feel like a quiet caption that complements the pet, not competes "
+        "with it. When in doubt, make it smaller.\n"
+        "- The full name must be 100% visible — no letter, accent, or "
+        "descender may be cropped, faded into the canvas edge, or run off "
+        "the image. If you cannot fit the name with full padding intact, "
+        "shrink the font size — DO NOT push the name closer to the edge.\n"
+        "- Name must NEVER overlap the pet, its fur, paws, eyes, ears, or "
+        "any anatomical feature.\n"
         "- CONTRAST: Use HIGH-CONTRAST color so the name is clearly legible. "
-        "For light backgrounds use deep saturated dark colors (near-black, deep "
-        "navy, rich brown, deep sepia). For DARK backgrounds (moody drapery, "
-        "oil paint shadow, dark graphic poster) use LIGHT colors (warm ivory, "
-        "antique gold, pale cream) so the name reads clearly against the dark area. "
-        "Do NOT use washed-out or low-contrast colors.\n"
+        "For light backgrounds use deep saturated dark colors (near-black, "
+        "deep navy, rich brown, deep sepia). For DARK backgrounds (moody "
+        "drapery, oil paint shadow, dark graphic poster) use LIGHT colors "
+        "(warm ivory, antique gold, pale cream) so the name reads clearly "
+        "against the dark area. Do NOT use washed-out or low-contrast "
+        "colors.\n"
     )
 
     # AESTHETIC PRINCIPLE: The name is a SMALL, REFINED accent — never
@@ -171,14 +194,14 @@ def _name_integration(
             f"- Render the name \"{name}\" as DELICATE hand-written calligraphy (thin brush, "
             f"flowing script). Use {watercolor_ink} for contrast but with "
             f"a LIGHT, refined stroke — not bold. Slight natural bleed at letter edges is okay. "
-            f"Size: SMALL and refined, 3-4% of image height. Centered. Minimalist, editorial feel."
+            f"Size: SMALL and refined, 2-3% of image height. Centered. Minimalist, editorial feel."
         ),
         "minimal-line-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in clean geometric sans-serif capitals "
             f"(Futura/Avenir feel). Wide letter-spacing (~0.15em). Thin-to-medium weight, "
-            f"NOT bold. {minimal_ink}. Size: 2.5-3.5% of image height. Centered."
+            f"NOT bold. {minimal_ink}. Size: 2-2.5% of image height. Centered."
         ),
         "modern-oil-paint": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -186,68 +209,68 @@ def _name_integration(
             f"- Render the name \"{name}\" as an elegant italic serif (Playfair Display feel), "
             f"thin weight, painted subtly into the canvas. Use warm dark brown #3a2818 for "
             f"contrast but keep the stroke REFINED — not chunky. "
-            f"Size: 3-4% of image height. Centered."
+            f"Size: 2-3% of image height. Centered."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as a small accent in a bold sans-serif with "
             f"thin black outline and a single solid pop color (hot pink, electric blue, or yellow). "
-            f"Understated — not a huge banner. Size: 4-5% of image height. Centered."
+            f"Understated — not a huge banner. Size: 3-3.5% of image height. Centered."
         ),
         "renaissance-royalty": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in fine Trajan-style classical Roman capitals. "
             f"Thin serifs, refined proportions. Use antique gold #8B7355 OR deep burnt umber "
-            f"#3a2414 for strong contrast. Size: 3-4% of image height. Centered. Elegant, not loud."
+            f"#3a2414 for strong contrast. Size: 2-3% of image height. Centered. Elegant, not loud."
         ),
         "cozy-film-grain": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name}\" as a small personal handwritten cursive (ballpoint "
             f"pen). Deep warm sepia #2e1a0a or deep faded black. Slightly imperfect but "
-            f"delicate. Size: 3-4% of image height. Centered. Intimate, not shouty."
+            f"delicate. Size: 2-3% of image height. Centered. Intimate, not shouty."
         ),
         "rainbow-bridge": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name}\" as a delicate flowing cursive script. Warm gold "
             f"#B8860B or rich dark rose #9A3B4B for solid contrast. Thin strokes, refined. "
-            f"Size: 3-4% of image height. Centered. Soft and restrained."
+            f"Size: 2-3% of image height. Centered. Soft and restrained."
         ),
         "bold-graphic-poster": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in a bold geometric sans-serif, but kept at a "
-            f"MODERATE size — a refined design accent, not a billboard. Use {poster_ink}. "
-            f"Size: 5-6% of image height. Centered."
+            f"SMALL size — a refined design accent, never a billboard. Use {poster_ink}. "
+            f"Size: 3.5-4% of image height. Centered."
         ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name}\" in a delicate rounded sans-serif (Quicksand feel), "
             f"thin weight. Deep purple #4a2c5a with optional subtle glow. "
-            f"Size: 3-4% of image height. Centered. Airy, minimal."
+            f"Size: 2-3% of image height. Centered. Airy, minimal."
         ),
         # Legacy ink-only styles (classic/minimal/naturalist)
         "classic": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as fine single-stroke pen capitals with wide "
-            f"letter-spacing. Solid black #000000. Size: 2.5-3.5% of image height. Centered. Refined."
+            f"letter-spacing. Solid black #000000. Size: 2-2.5% of image height. Centered. Refined."
         ),
         "minimal": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as tiny sans-serif capitals with extreme "
-            f"letter-spacing. Solid jet black #000000. Size: 2-3% of image height. Centered."
+            f"letter-spacing. Solid jet black #000000. Size: 1.5-2% of image height. Centered."
         ),
         "naturalist": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as Victorian field-guide lettering with fine "
-            f"hairlines. Solid black ink (#000000) only. Size: 6-8% of image height. Centered."
+            f"hairlines. Solid black ink (#000000) only. Size: 4-5% of image height. Centered."
         ),
     }
 
@@ -1209,7 +1232,7 @@ def composite_name(
     image: Image.Image,
     pet_name: str,
     style: Optional[str] = None,
-    font_size_key: str = "medium",
+    font_size_key: str = "small",
 ) -> Image.Image:
     """
     Composite the pet name onto the bottom of the image.
