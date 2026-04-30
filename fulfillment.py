@@ -430,24 +430,37 @@ def _printful_headers() -> dict:
 def create_printful_order(
     shopify_order_id: str,
     recipient: dict,
-    product_key: str,
-    print_file_url: str,
-    quantity: int = 1,
+    items: list[dict],
 ) -> dict:
     """
-    Create a draft order in Printful.
+    Create a draft order in Printful with one or more items.
+
+    A Shopify order maps to ONE Printful order regardless of line item
+    count — sending separate Printful POSTs with the same external_id
+    triggers duplicate-key collisions and silently drops items.
 
     Args:
-        shopify_order_id: The Shopify order ID for cross-referencing.
-        recipient: Shipping address dict with name, address1, city, etc.
-        product_key: Product-size key (e.g. 'canvas-18x18').
-        print_file_url: Public URL of the print-ready image.
-        quantity: Number of units.
+        shopify_order_id: Shopify order ID — used as Printful external_id.
+        recipient: Shipping address dict.
+        items: List of dicts, each with keys:
+                 variant_id (int) — Printful catalog variant
+                 quantity (int)
+                 print_file_url (str) — public URL of the print-ready PNG
 
     Returns:
         Printful API response as dict.
     """
-    variant_id = _get_printful_variant_id(product_key)
+    if not items:
+        raise ValueError("create_printful_order requires at least one item")
+
+    pf_items = [
+        {
+            "variant_id": it["variant_id"],
+            "quantity": int(it.get("quantity", 1) or 1),
+            "files": [{"type": "default", "url": it["print_file_url"]}],
+        }
+        for it in items
+    ]
 
     payload = {
         "external_id": shopify_order_id,
@@ -462,21 +475,13 @@ def create_printful_order(
             "phone": recipient.get("phone", ""),
             "email": recipient.get("email", ""),
         },
-        "items": [
-            {
-                "variant_id": variant_id,
-                "quantity": quantity,
-                "files": [
-                    {
-                        "type": "default",
-                        "url": print_file_url,
-                    }
-                ],
-            }
-        ],
+        "items": pf_items,
     }
 
-    log.info("Creating Printful order for Shopify #%s", shopify_order_id)
+    log.info(
+        "Creating Printful order for Shopify #%s (%d item%s)",
+        shopify_order_id, len(pf_items), "" if len(pf_items) == 1 else "s",
+    )
 
     resp = requests.post(
         f"{PRINTFUL_BASE}/orders",
@@ -495,67 +500,15 @@ def create_printful_order(
 
 
 # ---------------------------------------------------------------------------
-# Full fulfillment pipeline
+# Helpers — used by app._process_fulfillment to assemble a multi-item order
 # ---------------------------------------------------------------------------
 
-def fulfill_order_item(
-    photo_path: Path,
-    pet_name: str,
-    style: str,
-    product_type: str,
-    size: str,
-    shopify_order_id: str,
-    recipient: dict,
-    style_vars: Optional[dict] = None,
-    composited_r2_key: Optional[str] = None,
-    show_name: str = "Yes",
-    quantity: int = 1,
-) -> dict:
-    """
-    End-to-end fulfillment for a single line item.
-
-    1. Generate hi-res print file (upscale from R2, or Gemini fallback)
-    2. Upload to cloud storage
-    3. Create Printful order
-
-    Returns:
-        Printful API response dict.
-    """
-    # Build the product_key used for PRINT_SIZES / Printful lookup
-    # For framed: "canvas-framed" + "16x20" → "canvas-16x20-framed"
+def build_product_key(product_type: str, size: str) -> str:
+    """Translate Shopify line-item (product_type, size) → PRINT_SIZES key."""
     if product_type.endswith("-framed"):
         base = product_type[:-len("-framed")]
-        product_key = f"{base}-{size}-framed"
-    else:
-        product_key = f"{product_type}-{size}"
-
-    if product_key not in PRINT_SIZES:
-        raise ValueError(f"Unknown product configuration: {product_key}")
-
-    # Step 1: Generate (prefers R2 upscale over Gemini re-generation)
-    print_path = generate_print_file(
-        photo_path=photo_path,
-        pet_name=pet_name,
-        style=style,
-        product_key=product_key,
-        style_vars=style_vars,
-        composited_r2_key=composited_r2_key,
-        show_name=show_name,
-    )
-
-    # Step 2: Upload
-    print_url = upload_print_file(print_path)
-
-    # Step 3: Send to Printful
-    result = create_printful_order(
-        shopify_order_id=shopify_order_id,
-        recipient=recipient,
-        product_key=product_key,
-        print_file_url=print_url,
-        quantity=quantity,
-    )
-
-    return result
+        return f"{base}-{size}-framed"
+    return f"{product_type}-{size}"
 
 
 # ---------------------------------------------------------------------------

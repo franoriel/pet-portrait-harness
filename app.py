@@ -23,7 +23,13 @@ from fulfillment import (
     PRINTFUL_BASE,
     SHOPIFY_ADMIN_API_VERSION,
     _printful_headers,
-    fulfill_order_item,
+    _get_printful_variant_id,
+    PRINT_SIZES,
+    PRODUCT_RATIOS,
+    build_product_key,
+    create_printful_order,
+    generate_print_file,
+    upload_print_file,
     parse_order_items,
     tag_shopify_order,
     tags_from_order_items,
@@ -863,9 +869,12 @@ def webhook_order_created():
         "email": order.get("email", ""),
     }
 
-    for item in items:
+    if items:
+        # ONE fulfillment task per order — bundles all line items into a
+        # single Printful order. Per-item dispatch caused duplicate
+        # external_id collisions where only one item survived.
         _fulfillment_pool.submit(
-            _process_fulfillment, order_id, item, recipient,
+            _process_fulfillment, order_id, items, recipient,
         )
 
     return jsonify(status="accepted", items=len(items)), 200
@@ -1055,80 +1064,178 @@ def admin_verify_order(shopify_id):
     )
 
 
-def _process_fulfillment(order_id: str, item: dict, recipient: dict):
+def _process_fulfillment(order_id: str, items: list, recipient: dict):
     """
-    Background task: download the customer's original photo (from the
-    preview that was stored during generation), generate the hi-res print
-    file, and send to Printful.
-    """
-    try:
-        # The preview URL points to our /preview/ endpoint which serves from
-        # output/. The original upload is deleted after preview generation,
-        # so we re-download the preview and use it as the source photo.
-        #
-        # TODO: In production, store the original upload in cloud storage
-        # during the /generate call and reference it here by Job ID.
-        preview_url = item.get("preview_url", "")
-        if preview_url.startswith("/"):
-            # Local path — resolve to output dir
-            photo_path = OUTPUT_DIR / Path(preview_url).name
-        else:
-            # Remote URL — download to temp file
-            import tempfile
-            import requests as req
-            resp = req.get(preview_url, timeout=30)
-            resp.raise_for_status()
-            suffix = ".png"
-            tmp = Path(tempfile.mktemp(suffix=suffix, dir="uploads"))
-            tmp.write_bytes(resp.content)
-            photo_path = tmp
+    Background task: process all line items in a Shopify order as a SINGLE
+    Printful order.
 
-        if not photo_path.exists():
-            log.error("Order #%s — photo not found: %s", order_id, photo_path)
+    Items sharing the same creative (pet, style, show-name choice, source
+    image, aspect ratio) reuse a single hi-res print file — so a canvas
+    12x12 + magnet 4x4 of the same portrait generates one upscaled file
+    instead of two redundant Gemini round-trips.
+    """
+    if not items:
+        return
+
+    try:
+        r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+        photo_path_cache: dict[str, Path] = {}  # preview_url -> downloaded path
+        creative_print_url: dict[tuple, str] = {}  # creative_key -> R2 print URL
+
+        def _resolve_photo(preview_url: str) -> Optional[Path]:
+            """Cached: download preview to local path (Gemini fallback source)."""
+            if not preview_url:
+                return None
+            if preview_url in photo_path_cache:
+                return photo_path_cache[preview_url]
+            if preview_url.startswith("/"):
+                p = OUTPUT_DIR / Path(preview_url).name
+            else:
+                import tempfile
+                import requests as req
+                resp = req.get(preview_url, timeout=30)
+                resp.raise_for_status()
+                tmp = Path(tempfile.mktemp(suffix=".png", dir="uploads"))
+                tmp.write_bytes(resp.content)
+                p = tmp
+            if not p.exists():
+                return None
+            photo_path_cache[preview_url] = p
+            return p
+
+        # Pass 1 — validate and group items by creative key.
+        # creative_key = (pet_name, style, show_name, source_url, aspect_ratio).
+        # Items in the same group share a print file generated at the
+        # largest item's size.
+        from collections import defaultdict
+        groups: dict[tuple, list[tuple[dict, str]]] = defaultdict(list)
+        for item in items:
+            try:
+                product_key = build_product_key(item["product_type"], item["size"])
+            except Exception:
+                log.exception("Order #%s — could not build product_key for item %s", order_id, item)
+                continue
+            if product_key not in PRINT_SIZES:
+                log.error("Order #%s — unknown product_key %s, skipping", order_id, product_key)
+                continue
+
+            show_name = (item.get("show_name") or "Yes").strip()
+            if show_name.lower() == "no" and item.get("no_name_url"):
+                source_url = item["no_name_url"]
+            else:
+                source_url = item.get("preview_url", "")
+
+            aspect = PRODUCT_RATIOS[product_key]
+            creative_key = (
+                item["pet_name"],
+                item["style"],
+                show_name.lower(),
+                source_url,
+                aspect,
+            )
+            groups[creative_key].append((item, product_key))
+
+        if not groups:
+            log.error("Order #%s — no fulfillable items after parsing", order_id)
             return
 
-        # Honor _Show Name=No by sourcing from the cart's _No Name URL when
-        # available. Falls back to the regular print-file URL otherwise.
-        show_name = (item.get("show_name") or "Yes").strip()
-        if show_name.lower() == "no" and item.get("no_name_url"):
-            portrait_url = item["no_name_url"]
-        else:
-            portrait_url = item.get("preview_url", "")
+        # Pass 2 — for each creative group, generate ONE print file at the
+        # largest size needed in the group, then reuse that URL for every
+        # item in the group.
+        for creative_key, group in groups.items():
+            pet_name, style, show_name_lc, source_url, _aspect = creative_key
 
-        # Extract R2 key from portrait URL for upscale-based fulfillment
-        composited_r2_key = None
-        r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
-        if r2_public and portrait_url.startswith(r2_public):
-            composited_r2_key = portrait_url[len(r2_public) + 1:]  # strip base + "/"
+            # Pick the largest product_key in this group (max pixel area).
+            largest_item, largest_product_key = max(
+                group,
+                key=lambda gi: PRINT_SIZES[gi[1]][0] * PRINT_SIZES[gi[1]][1],
+            )
 
-        result = fulfill_order_item(
-            photo_path=photo_path,
-            pet_name=item["pet_name"],
-            style=item["style"],
-            product_type=item["product_type"],
-            size=item["size"],
+            photo_path = _resolve_photo(largest_item.get("preview_url", ""))
+            if not photo_path:
+                log.error("Order #%s — photo unavailable for creative %s", order_id, creative_key[:3])
+                continue
+
+            composited_r2_key = None
+            if r2_public and source_url.startswith(r2_public):
+                composited_r2_key = source_url[len(r2_public) + 1:]
+
+            print_path = generate_print_file(
+                photo_path=photo_path,
+                pet_name=pet_name,
+                style=style,
+                product_key=largest_product_key,
+                composited_r2_key=composited_r2_key,
+                show_name="No" if show_name_lc == "no" else "Yes",
+            )
+            print_url = upload_print_file(print_path)
+            creative_print_url[creative_key] = print_url
+            log.info(
+                "Order #%s — print file ready for creative %s/%s: %s",
+                order_id, pet_name, style, print_url,
+            )
+
+        # Pass 3 — assemble Printful items in original Shopify order order.
+        pf_items = []
+        for item in items:
+            try:
+                product_key = build_product_key(item["product_type"], item["size"])
+            except Exception:
+                continue
+            if product_key not in PRINT_SIZES:
+                continue
+            show_name = (item.get("show_name") or "Yes").strip()
+            source_url = (
+                item.get("no_name_url") if show_name.lower() == "no" and item.get("no_name_url")
+                else item.get("preview_url", "")
+            )
+            creative_key = (
+                item["pet_name"],
+                item["style"],
+                show_name.lower(),
+                source_url,
+                PRODUCT_RATIOS[product_key],
+            )
+            print_url = creative_print_url.get(creative_key)
+            if not print_url:
+                # The creative's print file generation failed earlier — skip
+                # this item rather than ship an empty Printful entry.
+                log.warning("Order #%s — no print file for item %s, skipping", order_id, item)
+                continue
+            try:
+                variant_id = _get_printful_variant_id(product_key)
+            except Exception:
+                log.exception("Order #%s — variant lookup failed for %s", order_id, product_key)
+                continue
+            pf_items.append({
+                "variant_id": variant_id,
+                "quantity": int(item.get("quantity", 1) or 1),
+                "print_file_url": print_url,
+            })
+
+        if not pf_items:
+            log.error("Order #%s — no Printful items to send", order_id)
+            return
+
+        result = create_printful_order(
             shopify_order_id=order_id,
             recipient=recipient,
-            composited_r2_key=composited_r2_key,
-            show_name=show_name,
-            quantity=int(item.get("quantity", 1) or 1),
+            items=pf_items,
         )
-
         log.info(
-            "Order #%s — fulfillment complete: Printful order %s",
+            "Order #%s — Printful order %s created (%d item%s, %d unique print files)",
             order_id,
             result.get("result", {}).get("id", "?"),
+            len(pf_items), "" if len(pf_items) == 1 else "s",
+            len(creative_print_url),
         )
 
-        # Tag the Shopify order with a short hash of every print-file URL
-        # Printful received. Lets you spot-check from the Shopify orders list
-        # and cross-reference against /admin/verify-order/<id>.
         tags = _printful_file_tags(result)
         if tags:
             tag_shopify_order(order_id, tags)
 
     except Exception:
-        log.exception("Order #%s — fulfillment failed for item %s", order_id, item)
+        log.exception("Order #%s — fulfillment failed", order_id)
 
 
 def _printful_file_tags(printful_response: dict) -> list[str]:
