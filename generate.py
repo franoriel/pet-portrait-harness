@@ -203,13 +203,16 @@ def _name_integration(
             f"(Futura/Avenir feel). Wide letter-spacing (~0.15em). Thin-to-medium weight, "
             f"NOT bold. {minimal_ink}. Size: 2-2.5% of image height. Centered."
         ),
-        "modern-oil-paint": (
+        "modern-shape-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as an elegant italic serif (Playfair Display feel), "
-            f"thin weight, painted subtly into the canvas. Use warm dark brown #3a2818 for "
-            f"contrast but keep the stroke REFINED — not chunky. "
-            f"Size: 2-3% of image height. Centered."
+            f"- Render the name \"{name}\" in a clean geometric sans-serif (DM Sans / "
+            f"Inter feel), medium weight, set in title case with normal letter-spacing. "
+            f"Treat the name as a small typographic accent placed in clean negative "
+            f"space — never overlapping any shape. Use a single deep neutral ink "
+            f"(charcoal #1f1f1f, deep navy #1d2a44, or warm black #181614) sampled "
+            f"to read clearly against the calmest patch of background. "
+            f"Size: 2-3% of image height. Centered. Quiet, modern, editorial."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -224,13 +227,6 @@ def _name_integration(
             f"- Render the name \"{name_upper}\" in fine Trajan-style classical Roman capitals. "
             f"Thin serifs, refined proportions. Use antique gold #8B7355 OR deep burnt umber "
             f"#3a2414 for strong contrast. Size: 2-3% of image height. Centered. Elegant, not loud."
-        ),
-        "cozy-film-grain": (
-            f"NAME INTEGRATION — CRITICAL:\n"
-            f"{safe_zone}"
-            f"- Render the name \"{name}\" as a small personal handwritten cursive (ballpoint "
-            f"pen). Deep warm sepia #2e1a0a or deep faded black. Slightly imperfect but "
-            f"delicate. Size: 2-3% of image height. Centered. Intimate, not shouty."
         ),
         "rainbow-bridge": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -387,38 +383,6 @@ anime, 3D render, gray shading, crosshatching, stippling, color fills, text, \
 watermark, border, solid color bars or panels at image edges.\
 """
 
-_MODERN_OIL_PAINT_TEMPLATE = """\
-Transform this photo into a modern oil painting pet portrait.
-
-COLOR ACCURACY — THIS IS CRITICAL:
-- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
-lighten, darken, or alter the coat color. A black dog must stay black. A brown dog \
-must stay brown. A white cat must stay white. Preserve the original coloring faithfully.
-- Match the animal's actual eye color from the photo.
-- The color palette of the painting should complement the pet's real coat color, \
-not override it.
-
-STYLE:
-- Rich, visible impasto brush strokes with thick paint texture
-- Warm studio lighting — soft golden directional light from one side
-- Deep, saturated colors with luminous highlights
-- Painterly fur texture with bold confident strokes following fur direction
-- Slightly dark, moody background with warm amber and sienna tones that vignette softly
-- Classical oil portrait aesthetic with a contemporary looseness
-- Fine art illustration style, high resolution 300dpi, print-ready
-
-COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, noble three-quarter angle, direct gaze
-- The artwork must fill the entire canvas edge-to-edge — no reserved panels, \
-bars, color blocks, or empty bands at the top or bottom
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
-
-Avoid: photography, photorealism, flat digital art, cartoon, anime, 3D render, \
-harsh shadows, neon colors, pixelation, blurry, text, watermark, border, \
-solid color bars or panels at image edges.\
-"""
-
 _NEON_POP_ART_TEMPLATE = """\
 Transform this photo into a neon pop art pet portrait.
 
@@ -484,37 +448,48 @@ modern clothing, contemporary objects, text, watermark, border, \
 solid color bars or panels at image edges.\
 """
 
-_COZY_FILM_GRAIN_TEMPLATE = """\
-Transform this photo into a cozy vintage film-style pet portrait.
+_MODERN_SHAPE_ART_TEMPLATE = """\
+Transform this photo into a modern, clean, minimalist shape-art pet portrait.
 
 COLOR ACCURACY — THIS IS CRITICAL:
-- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift \
-the hue — only apply a subtle warm vintage color grade over the entire image. \
-A black dog must stay dark. A brown dog must stay brown. A white cat must stay \
-cream-white. Preserve the original coloring through the vintage filter.
-- Match the animal's actual eye color from the photo, with a warm tint.
+- Reinterpret the animal's fur/coat color as a small palette of FLAT shape \
+fills that clearly read as the pet's true color. A black dog stays in deep \
+charcoal/near-black tones. A brown dog stays in warm caramel/sienna tones. \
+A white cat stays in soft ivory/cream tones. Tabby/spotted/patched coats \
+keep their distinguishing markings, simplified into clean shape blocks.
+- Match the animal's actual eye color from the photo, simplified to a clean \
+flat shape.
 
 STYLE:
-- Soft warm vintage color grade — slightly faded, lifted blacks, warm highlights
-- Kodak Portra 400 / Fuji Pro 400H film emulation aesthetic
-- Subtle organic film grain texture across the entire image
-- Gentle vignette darkening the edges
-- Warm golden hour lighting — soft, diffused, wrapping around the subject
-- Slightly desaturated but warm overall — autumn/honey tones
-- Fine art photography feel, high resolution 300dpi, print-ready
+- Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets contemporary \
+Bauhaus. Confident geometric shapes that simplify the pet into clean planes.
+- FLAT color fills only — no gradients, no painterly texture, no airbrush, no \
+photographic detail, no brush strokes.
+- Crisp clean edges between shapes. Soft organic curves where appropriate \
+(ears, cheeks, brow), sharp geometric edges where appropriate (collars, \
+backgrounds, accents).
+- Restrained modern palette of 4–6 muted tones: warm off-white #F4EFE7, soft \
+clay #E2C7A8, sage #B6C2A3, dusty terracotta #C77B58, deep navy ink #1D2A44, \
+plus the pet's true coat color. Quietly confident, never garish.
+- Generous NEGATIVE SPACE — at least 35% of the canvas is calm, unbroken \
+background so the pet shapes have room to breathe. The negative space is the \
+hero alongside the pet.
+- Subtle abstract accents allowed (a single arc, circle, or thin line) but \
+restrained — they support the composition, never crowd the pet.
+- Fine art illustration style, high resolution 300dpi, print-ready.
 
 COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, natural relaxed pose, soft eye contact
-- Shallow depth of field feel — soft blurred warm background
-- The artwork must fill the entire canvas edge-to-edge — the warm blurred \
-background extends naturally to every edge. No reserved panels, bars, \
-color blocks, or empty bands
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+- Centered portrait, 4:5 aspect ratio (portrait orientation).
+- Head and chest, calm symmetrical pose, direct gentle gaze.
+- A single solid background color from the palette above fills every edge \
+edge-to-edge. No reserved panels, bars, frames, color blocks, or empty bands \
+beyond the chosen background.
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere.
 
-Avoid: harsh digital sharpness, oversaturation, cold blue tones, high contrast, \
-cartoon, anime, 3D render, pixelation, text, watermark, border, \
-solid color bars or panels at image edges.\
+Avoid: photography, photorealism, painterly brush strokes, oil paint, \
+watercolor bleed, film grain, sepia, gradients, drop shadows, 3D render, \
+cartoon, anime, neon, busy patterns, ornate details, text, watermark, \
+border, solid color bars or panels at image edges.\
 """
 
 _RAINBOW_BRIDGE_TEMPLATE = """\
@@ -901,10 +876,9 @@ _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     # baked-in look. Matches portrait-flow.js STYLES[].backgrounds.
     "watercolor":          {"auto", "light", "dark"},
     "minimal-line-art":    {"auto", "light", "dark"},
-    "modern-oil-paint":    {"auto"},
+    "modern-shape-art":    {"auto"},
     "neon-pop-art":        {"auto"},
     "renaissance-royalty": {"auto"},
-    "cozy-film-grain":     {"auto"},
     "rainbow-bridge":      {"auto"},
     "bold-graphic-poster": {"auto", "light", "dark"},
     "aura-gradient":       {"auto"},
@@ -986,10 +960,9 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
     "naturalist":         _static(_NATURALIST_PROMPT),
     "watercolor":         build_watercolor_prompt,
     "minimal-line-art":   _static(_MINIMAL_LINE_ART_TEMPLATE),
-    "modern-oil-paint":   _static(_MODERN_OIL_PAINT_TEMPLATE),
+    "modern-shape-art":   _static(_MODERN_SHAPE_ART_TEMPLATE),
     "neon-pop-art":       _static(_NEON_POP_ART_TEMPLATE),
     "renaissance-royalty": _static(_RENAISSANCE_ROYALTY_TEMPLATE),
-    "cozy-film-grain":    _static(_COZY_FILM_GRAIN_TEMPLATE),
     "rainbow-bridge":     _static(_RAINBOW_BRIDGE_TEMPLATE),
     "bold-graphic-poster": _static(_BOLD_GRAPHIC_POSTER_TEMPLATE),
     "aura-gradient":      _static(_AURA_GRADIENT_TEMPLATE),
@@ -1017,10 +990,9 @@ def _portrait_post_process(img: Image.Image) -> Image.Image:
 _PORTRAIT_STYLES = [
     "watercolor",
     "minimal-line-art",
-    "modern-oil-paint",
+    "modern-shape-art",
     "neon-pop-art",
     "renaissance-royalty",
-    "cozy-film-grain",
     "rainbow-bridge",
     "bold-graphic-poster",
     "aura-gradient",
@@ -1041,10 +1013,9 @@ _font_cache: dict[str, ImageFont.FreeTypeFont] = {}
 STYLE_FONT_MAP: dict[str, dict] = {
     "watercolor":           {"family": "Dancing Script",     "google": "Dancing+Script:wght@700",                  "file": "DancingScript-Bold.ttf"},
     "minimal-line-art":     {"family": "Raleway",            "google": "Raleway:wght@600",                         "file": "Raleway-SemiBold.ttf"},
-    "modern-oil-paint":     {"family": "Playfair Display",   "google": "Playfair+Display:wght@700",                "file": "PlayfairDisplay-Bold.ttf"},
+    "modern-shape-art":     {"family": "DM Sans",            "google": "DM+Sans:wght@500",                         "file": "DMSans-Medium.ttf"},
     "neon-pop-art":         {"family": "Bungee",             "google": "Bungee",                                   "file": "Bungee-Regular.ttf"},
     "renaissance-royalty":  {"family": "Cinzel",             "google": "Cinzel:wght@700",                          "file": "Cinzel-Bold.ttf"},
-    "cozy-film-grain":      {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@400",               "file": "LibreBaskerville-Regular.ttf"},
     "rainbow-bridge":       {"family": "Sacramento",         "google": "Sacramento",                               "file": "Sacramento-Regular.ttf"},
     "bold-graphic-poster":  {"family": "Oswald",             "google": "Oswald:wght@700",                          "file": "Oswald-Bold.ttf"},
     "aura-gradient":        {"family": "Quicksand",          "google": "Quicksand:wght@700",                       "file": "Quicksand-Bold.ttf"},
@@ -1167,12 +1138,12 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "letter_spacing": 6,
         "opacity": 1.0,
     },
-    "modern-oil-paint": {
-        "size_ratio": 0.045,
+    "modern-shape-art": {
+        "size_ratio": 0.035,
         "transform": "title",
-        "zone_top": 0.82,
+        "zone_top": 0.84,
         "letter_spacing": 1,
-        "opacity": 0.9,
+        "opacity": 1.0,
     },
     "neon-pop-art": {
         "size_ratio": 0.06,
@@ -1187,13 +1158,6 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "zone_top": 0.83,
         "letter_spacing": 8,
         "opacity": 0.9,
-    },
-    "cozy-film-grain": {
-        "size_ratio": 0.04,
-        "transform": "title",
-        "zone_top": 0.84,
-        "letter_spacing": 1,
-        "opacity": 0.8,
     },
     "rainbow-bridge": {
         "size_ratio": 0.06,

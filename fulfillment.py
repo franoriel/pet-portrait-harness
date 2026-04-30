@@ -269,10 +269,9 @@ def _map_style_id(react_style_id: str) -> str:
     mapping = {
         "soft-watercolour": "watercolor",
         "minimal-line-art": "minimal-line-art",
-        "modern-oil-paint": "modern-oil-paint",
+        "modern-shape-art": "modern-shape-art",
         "neon-pop-art": "neon-pop-art",
         "renaissance-royalty": "renaissance-royalty",
-        "cozy-film-grain": "cozy-film-grain",
         "rainbow-bridge": "rainbow-bridge",
         "bold-graphic-poster": "bold-graphic-poster",
         "aura-gradient": "aura-gradient",

@@ -208,10 +208,9 @@
   var STYLE_FONTS = {
     'soft-watercolour':     "'Dancing Script', cursive",
     'minimal-line-art':     "'Raleway', sans-serif",
-    'modern-oil-paint':     "'Playfair Display', serif",
+    'modern-shape-art':     "'DM Sans', sans-serif",
     'neon-pop-art':         "'Bungee', sans-serif",
     'renaissance-royalty':  "'Cinzel', serif",
-    'cozy-film-grain':      "'Libre Baskerville', serif",
     'rainbow-bridge':       "'Sacramento', cursive",
     'bold-graphic-poster':  "'Oswald', sans-serif",
     'aura-gradient':        "'Quicksand', sans-serif",
@@ -224,10 +223,9 @@
   var GOOGLE_FONTS = {
     'soft-watercolour':     'Dancing+Script:wght@700',
     'minimal-line-art':     'Raleway:wght@300;600',
-    'modern-oil-paint':     'Playfair+Display:ital,wght@0,700;1,700',
+    'modern-shape-art':     'DM+Sans:wght@400;500;700',
     'neon-pop-art':         'Bungee',
     'renaissance-royalty':  'Cinzel:wght@700',
-    'cozy-film-grain':      'Libre+Baskerville:ital,wght@0,400;1,400',
     'rainbow-bridge':       'Sacramento',
     'bold-graphic-poster':  'Oswald:wght@700',
     'aura-gradient':        'Quicksand:wght@500;700',

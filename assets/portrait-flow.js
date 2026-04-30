@@ -37,10 +37,9 @@ const fontSans  = "'Inter', sans-serif";
 const STYLE_FONTS = {
   'soft-watercolour':     { family: 'Dancing Script',     css: "'Dancing Script', cursive",     google: 'Dancing+Script:wght@700' },
   'minimal-line-art':     { family: 'Raleway',            css: "'Raleway', sans-serif",         google: 'Raleway:wght@300;600' },
-  'modern-oil-paint':     { family: 'Playfair Display',   css: "'Playfair Display', serif",     google: 'Playfair+Display:ital,wght@0,700;1,700' },
+  'modern-shape-art':     { family: 'DM Sans',            css: "'DM Sans', sans-serif",         google: 'DM+Sans:wght@400;500;700' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
-  'cozy-film-grain':      { family: 'Libre Baskerville',  css: "'Libre Baskerville', serif",    google: 'Libre+Baskerville:ital,wght@0,400;1,400' },
   'rainbow-bridge':       { family: 'Sacramento',         css: "'Sacramento', cursive",         google: 'Sacramento' },
   'bold-graphic-poster':  { family: 'Oswald',             css: "'Oswald', sans-serif",          google: 'Oswald:wght@700' },
   'aura-gradient':        { family: 'Quicksand',          css: "'Quicksand', sans-serif",       google: 'Quicksand:wght@500;700' },
@@ -94,10 +93,10 @@ const STYLES = [
     backgrounds: ['auto', 'light', 'dark'],
   },
   {
-    id: 'modern-oil-paint',
-    name: 'Modern Oil Paint',
+    id: 'modern-shape-art',
+    name: 'Modern',
     available: true,
-    exampleImage: 'example-modern-oil-paint.webp',
+    exampleImage: 'example-modern-shape-art.webp',
     backgrounds: ['auto'],
   },
   {
@@ -112,13 +111,6 @@ const STYLES = [
     name: 'Renaissance Royalty',
     available: true,
     exampleImage: 'example-renaissance-royalty.webp',
-    backgrounds: ['auto'],
-  },
-  {
-    id: 'cozy-film-grain',
-    name: 'Cozy Film Grain',
-    available: true,
-    exampleImage: 'example-cozy-film-grain.webp',
     backgrounds: ['auto'],
   },
   {
@@ -362,10 +354,9 @@ if (typeof window !== 'undefined') warmupBackend();
 const STYLE_MAP = {
   'soft-watercolour': 'watercolor',
   'minimal-line-art': 'minimal-line-art',
-  'modern-oil-paint': 'modern-oil-paint',
+  'modern-shape-art': 'modern-shape-art',
   'neon-pop-art': 'neon-pop-art',
   'renaissance-royalty': 'renaissance-royalty',
-  'cozy-film-grain': 'cozy-film-grain',
   'rainbow-bridge': 'rainbow-bridge',
   'bold-graphic-poster': 'bold-graphic-poster',
   'aura-gradient': 'aura-gradient',
@@ -2734,16 +2725,16 @@ function PageHero() {
         fontFamily: fontSans, fontSize: '14px', color: tokens.colorMuted,
         margin: '0 0 14px', lineHeight: 1.5,
       },
-    }, '9 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
+    }, '8 styles \u00B7 Preview before you pay \u00B7 Ships in 3\u20135 days'),
 
-    // Marquee — all 9 styles scrolling continuously
+    // Marquee — all 8 styles scrolling continuously
     React.createElement('div', {
       style: {
         overflow: 'hidden', margin: '0 -20px',
         maskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
         WebkitMaskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
       },
-      'aria-label': 'Example pet portraits in all 9 styles',
+      'aria-label': 'Example pet portraits in all 8 styles',
     },
       React.createElement('div', {
         style: {

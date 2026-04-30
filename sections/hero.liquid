@@ -21,7 +21,7 @@
   <!-- Content overlay — bottom-aligned -->
   <div class="hero__content container">
     <h1 class="hero__title" data-reveal>{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
-    <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Upload a photo. Choose from 9 artistic styles. Get a stunning portrait on canvas, shipped to your door.' }}</p>
+    <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Upload a photo. Choose from 8 artistic styles. Get a stunning portrait on canvas, shipped to your door.' }}</p>
 
     <div class="hero__cta-group" data-reveal>
       <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--primary btn--large">
@@ -75,7 +75,7 @@
     { "type": "checkbox", "id": "enable_parallax", "label": "Enable parallax effect", "default": true },
     { "type": "range", "id": "parallax_strength", "label": "Parallax strength", "min": 0.1, "max": 0.6, "step": 0.1, "default": 0.3 },
     { "type": "text", "id": "heading", "label": "Heading", "default": "They deserve a spot on the wall." },
-    { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "Upload a photo. Choose from 9 artistic styles. Get a stunning portrait on canvas, shipped to your door." },
+    { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "Upload a photo. Choose from 8 artistic styles. Get a stunning portrait on canvas, shipped to your door." },
     { "type": "checkbox", "id": "show_rating", "label": "Show rating badge", "default": false },
     { "type": "text", "id": "rating_text", "label": "Rating text", "default": "Rating text" },
     { "type": "text", "id": "cta_label", "label": "Primary CTA label", "default": "Create My Portrait" },
