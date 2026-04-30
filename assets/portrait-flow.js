@@ -48,8 +48,6 @@ const STYLE_FONTS = {
 
 const FONT_SIZES = [
   { id: 'small',  label: 'S', scale: 0.7 },
-  { id: 'medium', label: 'M', scale: 1.0 },
-  { id: 'large',  label: 'L', scale: 1.35 },
 ];
 
 // Background options — tell Gemini whether to lean light or dark for the
@@ -288,7 +286,7 @@ function saveSession(state) {
       version: 1,
       petName: state.petName,
       styleId: state.selectedStyleId,
-      fontSize: state.fontSize || 'medium',
+      fontSize: state.fontSize || 'small',
       backgroundMode: state.backgroundMode || 'auto',
       jobId: state.jobId,
       previewDataUrls: state.previewDataUrls || [],
@@ -716,7 +714,7 @@ function usePortraitFlow() {
     previewDataUrls: saved?.previewDataUrls || [],
     previewCdnUrls: saved?.previewCdnUrls || [],
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
-    fontSize: saved?.fontSize || 'medium',
+    fontSize: 'small',
     backgroundMode: saved?.backgroundMode || 'auto',
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
@@ -1101,7 +1099,7 @@ function usePortraitFlow() {
         generationError: null, generationErrorTips: null,
         previewImages: [], previewDataUrls: [], previewCdnUrls: [],
         selectedPreviewIndex: 0,
-        fontSize: 'medium',
+        fontSize: 'small',
         backgroundMode: 'auto',
         imageFilename: '', originalPhotoUrl: '', printFileUrl: '',
         jobId: null, restoredSession: false,
@@ -1454,7 +1452,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
         version: 1,
         petName: portrait.petName,
         styleId: portrait.styleId,
-        fontSize: 'medium',
+        fontSize: 'small',
         jobId: portrait.jobId,
         previewDataUrls: [],
         previewCdnUrls: [portrait.previewUrl].filter(Boolean),
@@ -1869,38 +1867,11 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         style: {
           fontFamily: (STYLE_FONTS[state.selectedStyleId] || {}).css || fontSerif,
           fontWeight: 700,
-          fontSize: `${Math.round(24 * (FONT_SIZES.find(f => f.id === (state.fontSize || 'medium')) || FONT_SIZES[1]).scale)}px`,
-          color: tokens.colorBrand, margin: '0 0 10px',
+          fontSize: `${Math.round(24 * (FONT_SIZES.find(f => f.id === (state.fontSize || 'small')) || FONT_SIZES[0]).scale)}px`,
+          color: tokens.colorBrand, margin: '0 0 0',
           letterSpacing: '0.04em', transition: 'all 0.3s ease',
         },
       }, state.petName),
-      React.createElement('div', {
-        style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
-        role: 'group', 'aria-label': 'Name size',
-      },
-        React.createElement('span', {
-          style: { fontFamily: fontSans, fontSize: '10px', color: tokens.colorMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: '2px' },
-        }, 'Size'),
-        FONT_SIZES.map(size =>
-          React.createElement('button', {
-            key: size.id, type: 'button',
-            'aria-pressed': state.fontSize === size.id,
-            onClick: () => {
-              update({ fontSize: size.id });
-              saveSession({ ...state, fontSize: size.id });
-            },
-            style: {
-              width: '44px', height: '44px', borderRadius: '10px',
-              border: state.fontSize === size.id ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
-              background: state.fontSize === size.id ? tokens.colorAccentLight : tokens.colorWhite,
-              color: state.fontSize === size.id ? tokens.colorAccent : tokens.colorMuted,
-              fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
-              cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            },
-          }, size.label)
-        ),
-      ),
     ),
 
     // Photo license + Terms acceptance — required before generating.
@@ -2580,7 +2551,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             fontSize: '11px', fontWeight: 400, color: tokens.colorMuted,
             maxWidth: '240px', textAlign: 'center', lineHeight: 1.4,
           },
-        }, 'This takes about 10 seconds. Don\u2019t refresh the page.'),
+        }, 'Should be done before your dog finishes their next zoomie. Don\u2019t refresh the page.'),
       ),
       // Keyframes injected once per render cycle (React de-dupes by id)
       generatingNamedPreview && React.createElement('style', null,
