@@ -56,8 +56,10 @@ PRINT_SIZES: dict[str, tuple[int, int]] = {
     "canvas-12x16-framed": (3600, 4800),
     "canvas-16x16-framed": (4800, 4800),
     "canvas-16x20-framed": (4800, 6000),
-    # Magnet (Printful Die-Cut Magnet, 4"x4". 300 DPI + 1/8" bleed each side.)
-    "magnet-default":      (1275, 1275),
+    # Die-Cut Magnets (300 DPI, +1/8" bleed each side → +0.25" total).
+    "magnet-3x3":          (975,  975),
+    "magnet-4x4":          (1275, 1275),
+    "magnet-6x6":          (1875, 1875),
 }
 
 # Aspect ratios for each product type (width:height)
@@ -72,7 +74,9 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "canvas-12x16-framed": (3, 4),
     "canvas-16x16-framed": (1, 1),
     "canvas-16x20-framed": (4, 5),
-    "magnet-default":      (1, 1),
+    "magnet-3x3":          (1, 1),
+    "magnet-4x4":          (1, 1),
+    "magnet-6x6":          (1, 1),
 }
 
 # Printful catalog variant IDs are resolved DYNAMICALLY at runtime via
@@ -89,7 +93,7 @@ def _get_printful_variant_id(product_key: str) -> int:
     from mockups import _resolve_variant_ids
 
     # Parse product_key into (product_type, size_label)
-    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, magnet-default
+    # Supports: canvas-12x12, canvas-16x20, canvas-16x20-framed, magnet-{3x3|4x4|6x6}
     if product_key.endswith("-framed"):
         # e.g. "canvas-16x20-framed" → product_type="canvas-framed", size="16x20"
         size = product_key.rsplit("-", 1)[0].split("-", 1)[1]
@@ -581,8 +585,15 @@ def parse_order_items(order: dict) -> list[dict]:
 
         # Size precedence: explicit prop → variant_title parse → warn + default.
         if is_magnet:
-            # Magnet is single-variant for now. Size is fixed.
-            size = "default"
+            # Customer can pick 3x3 / 4x4 / 6x6 from the cart upsell.
+            # Parse from variant_title so each size routes to the correct
+            # Printful variant. Default to 4x4 if parsing fails.
+            size = (
+                props.get("Size")
+                or props.get("_Size")
+                or _extract_size_from_variant(li)
+                or "4x4"
+            )
         else:
             size = props.get("Size") or props.get("_Size")
             if not size:

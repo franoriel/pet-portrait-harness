@@ -111,7 +111,9 @@ VARIANT_SIZE_MAP = {
         "16x20": '16\u2033\u00d720\u2033',
     },
     "magnet": {
-        "default": '4\u2033\u00d74\u2033',  # 4"x4" — update if we pick a different size
+        "3x3": '3\u2033\u00d73\u2033',
+        "4x4": '4\u2033\u00d74\u2033',
+        "6x6": '6\u2033\u00d76\u2033',
     },
 }
 
@@ -131,7 +133,9 @@ VARIANT_ID_FALLBACK = {
         "16x20": 15698,
     },
     "magnet": {
-        "default": 16367,
+        "3x3": 16366,
+        "4x4": 16367,
+        "6x6": 16465,
     },
 }
 
