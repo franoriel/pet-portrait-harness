@@ -284,7 +284,6 @@
               {%- assign progress_pct = cart.total_price | times: 100.0 | divided_by: free_ship_cents -%}
               <div class="free-ship-tracker" style="margin:14px 0;padding:14px;background:var(--color-surface);border-radius:var(--radius-card);border:1px solid var(--color-border);">
                 <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-base);color:var(--color-ink);margin-bottom:10px;line-height:1.4;">
-                  <span aria-hidden="true" style="font-size:var(--text-lg);">🚚</span>
                   <span>You're <strong style="font-weight:700;color:var(--color-primary);">{{ remaining_cents | money }}</strong> away from free shipping</span>
                 </div>
                 <div style="height:6px;background:var(--color-border);border-radius:99px;overflow:hidden;">
@@ -294,8 +293,7 @@
             {%- else -%}
               <div class="free-ship-tracker free-ship-tracker--achieved" style="margin:14px 0;padding:14px;background:#E8F5E9;border-radius:var(--radius-card);border:1px solid #81C784;">
                 <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);color:#1B5E20;font-weight:600;line-height:1.4;">
-                  <span aria-hidden="true" style="font-size:var(--text-lg);">🎉</span>
-                  <span>You've unlocked <strong>free shipping</strong>!</span>
+                  <span>You've unlocked <strong>free shipping</strong>.</span>
                 </div>
               </div>
             {%- endif -%}
@@ -337,7 +335,6 @@
                 >
                 <span style="flex:1;line-height:1.45;">
                   <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
-                    <span aria-hidden="true">📱</span>
                     Digital Files for Sharing
                     <span
                       data-digital-files-price
@@ -440,7 +437,6 @@
                   >
                   <span style="flex:1;">
                     <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
-                      <span aria-hidden="true">🧲</span>
                       Matching fridge magnet{%- if source_pet_name != '' %} of {{ source_pet_name }}{%- endif -%}
                       <span
                         data-magnet-price
@@ -519,7 +515,6 @@
                 >
                 <span style="flex:1;line-height:1.45;">
                   <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);flex-wrap:wrap;">
-                    <span aria-hidden="true">⚡</span>
                     Priority order
                     <span
                       class="priority-tooltip"

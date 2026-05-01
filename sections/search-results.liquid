@@ -17,7 +17,7 @@
     {%- if search.performed -%}
       {%- if search.results_count == 0 -%}
         <div class="search-empty text-center" style="padding:48px 0;">
-          <p style="font-size:2rem;margin-bottom:12px;">🔍</p>
+          <p aria-hidden="true" style="font-size:2rem;margin-bottom:12px;color:var(--color-muted);">✦</p>
           <h2>No results for "{{ search.terms | escape }}"</h2>
           <p class="text-muted">Try a different search, or browse all our products below.</p>
           <a href="{{ routes.all_products_collection_url }}" class="btn btn--primary" style="margin-top:20px;">Browse All Portraits</a>

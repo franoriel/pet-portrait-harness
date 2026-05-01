@@ -22,13 +22,13 @@
     "border_radius": 12,
     "enable_animations": true,
     "seo_title_suffix": "Pet Printables — Custom Pet Portraits Canada",
-    "seo_description": "Custom AI-powered pet portraits in 8 artistic styles — watercolour, line art, modern shapes, pop art and more. Upload a photo, preview it instantly, and we ship to your door. 🍁",
+    "seo_description": "Custom AI-powered pet portraits in 8 artistic styles — watercolour, line art, modern shapes, pop art and more. Upload a photo, preview it instantly, and we ship to your door across Canada.",
     "sections": {
       "announcement-bar": {
         "type": "announcement-bar",
         "settings": {
           "show_bar": true,
-          "text": "<p>🇨🇦 Made in Canada · Free shipping on orders over $95 CAD · We currently ship within Canada only</p>",
+          "text": "<p>Made in Canada · Free shipping on orders over $95 CAD · We currently ship within Canada only</p>",
           "link": ""
         }
       },

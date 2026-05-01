@@ -13,16 +13,16 @@
       <p class="site-footer__tagline">{{ section.settings.tagline | default: 'Custom pet portraits, printed in Canada. Ships within Canada only.' }}</p>
       <div class="site-footer__social" aria-label="Social media links">
         {%- if section.settings.instagram != blank -%}
-          <a href="{{ section.settings.instagram }}" aria-label="Instagram" rel="noopener noreferrer" target="_blank">📸</a>
+          <a href="{{ section.settings.instagram }}" rel="noopener noreferrer" target="_blank">Instagram</a>
         {%- endif -%}
         {%- if section.settings.tiktok != blank -%}
-          <a href="{{ section.settings.tiktok }}" aria-label="TikTok" rel="noopener noreferrer" target="_blank">🎵</a>
+          <a href="{{ section.settings.tiktok }}" rel="noopener noreferrer" target="_blank">TikTok</a>
         {%- endif -%}
         {%- if section.settings.pinterest != blank -%}
-          <a href="{{ section.settings.pinterest }}" aria-label="Pinterest" rel="noopener noreferrer" target="_blank">📌</a>
+          <a href="{{ section.settings.pinterest }}" rel="noopener noreferrer" target="_blank">Pinterest</a>
         {%- endif -%}
         {%- if section.settings.facebook != blank -%}
-          <a href="{{ section.settings.facebook }}" aria-label="Facebook" rel="noopener noreferrer" target="_blank">👥</a>
+          <a href="{{ section.settings.facebook }}" rel="noopener noreferrer" target="_blank">Facebook</a>
         {%- endif -%}
       </div>
     </div>
@@ -66,7 +66,7 @@
   </div>
 
   <div class="site-footer__bottom">
-    <p>🇨🇦 © {{ 'now' | date: '%Y' }} {{ shop.name }}. All rights reserved. Vancouver, BC, Canada.</p>
+    <p>© {{ 'now' | date: '%Y' }} {{ shop.name }}. All rights reserved. Vancouver, BC, Canada.</p>
     <div class="payment-icons" aria-label="Accepted payment methods">
       <span class="payment-icon">Visa</span>
       <span class="payment-icon">MC</span>
