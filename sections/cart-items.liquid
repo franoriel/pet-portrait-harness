@@ -63,6 +63,64 @@
   @media (max-width: 480px) {
     .priority-tooltip__bubble { max-width: 220px; }
   }
+
+  /* Newsletter recapture modal — fires on cart-page checkout click if
+     pf_newsletter_status === 'skipped'. */
+  .newsletter-recapture-backdrop {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(20, 17, 14, 0.55);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: nl-recapture-fade-in 0.2s ease-out;
+  }
+  .newsletter-recapture-backdrop[hidden] { display: none; }
+  .newsletter-recapture-modal {
+    background: #fff; border-radius: var(--radius-card);
+    padding: 32px 28px 24px; max-width: 420px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    animation: nl-recapture-pop 0.25s cubic-bezier(.2,1.2,.4,1);
+    text-align: center; font-family: var(--font-body);
+  }
+  .newsletter-recapture-modal h3 {
+    font-family: var(--font-heading); font-size: 22px;
+    margin: 0 0 10px; color: var(--color-brand, var(--color-ink));
+    line-height: 1.2;
+  }
+  .newsletter-recapture-modal > p {
+    font-size: 14px; color: var(--color-muted);
+    margin: 0 0 20px; line-height: 1.5;
+  }
+  .newsletter-recapture-modal form {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .newsletter-recapture-modal input[type="email"] {
+    padding: 12px 14px; font-size: 15px; text-align: center;
+    border: 1px solid var(--color-border); border-radius: 10px;
+    font-family: var(--font-body); background: #fff;
+    color: var(--color-ink); width: 100%; box-sizing: border-box;
+    min-height: 44px;
+  }
+  .newsletter-recapture-modal input[type="email"]:focus {
+    outline: 2px solid var(--color-primary, #4338CA); outline-offset: 1px;
+  }
+  .newsletter-recapture-error {
+    color: var(--color-warning, #B45309); font-size: 12px; margin: 0;
+  }
+  .newsletter-recapture-skip {
+    background: none; border: none; cursor: pointer;
+    color: var(--color-muted); font-family: var(--font-body);
+    font-size: 13px; padding: 8px 12px; margin-top: 14px;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .newsletter-recapture-skip:hover { color: var(--color-ink); }
+  @keyframes nl-recapture-fade-in {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  @keyframes nl-recapture-pop {
+    from { opacity: 0; transform: scale(0.94) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
 </style>
 
 <div class="cart-page">
@@ -491,7 +549,7 @@
               </p>
             </div>
 
-            <a href="/checkout" class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
+            <a href="/checkout" data-checkout-btn class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
               Checkout → <span style="font-size:0.85em;opacity:0.85;">{{ cart.total_price | money }} CAD</span>
             </a>
             <a href="{{ routes.all_products_collection_url }}" class="btn btn--outline btn--full">
@@ -504,6 +562,42 @@
             </div>
           </div>
         </aside>
+      </div>
+
+      {%- comment -%}
+        Newsletter recapture modal — only fires if the customer skipped the
+        10%-off popup on the create page (pf_newsletter_status === 'skipped'
+        in localStorage). Intercepts the checkout button click, asks if
+        they're sure, and either re-runs the signup flow with the new email
+        + applies /discount/PETFAM2026 OR proceeds to checkout untouched.
+      {%- endcomment -%}
+      <div
+        id="newsletter-recapture-backdrop"
+        class="newsletter-recapture-backdrop"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="newsletter-recapture-title"
+      >
+        <div class="newsletter-recapture-modal">
+          <h3 id="newsletter-recapture-title">Hold up — your dog won't be impressed</h3>
+          <p>You skipped 10% off. Sure you want to leave money on the table when your pet's looking?</p>
+          <form id="newsletter-recapture-form" novalidate>
+            <input
+              type="email" name="email" required
+              placeholder="you@example.com"
+              autocomplete="email"
+              aria-label="Your email address"
+            >
+            <p class="newsletter-recapture-error" role="alert" hidden></p>
+            <button type="submit" class="btn btn--primary btn--full">
+              You're right, gimme 10% off
+            </button>
+          </form>
+          <button type="button" id="newsletter-recapture-skip" class="newsletter-recapture-skip">
+            Yep, full price's fine
+          </button>
+        </div>
       </div>
     {%- else -%}
       <div class="cart-empty">
@@ -1421,6 +1515,118 @@
           setStatus('Could not update — please try again', true);
           checkbox.disabled = false;
         });
+    });
+  })();
+
+  /* ──────────────────────────────────────────────────────────────
+   * Newsletter recapture — final-chance modal for shoppers who
+   * skipped the 10%-off popup on the create page. Triggered only
+   * if pf_newsletter_status === 'skipped'. Submits email to
+   * Shopify newsletter (/contact) + applies /discount/PETFAM2026,
+   * then continues to checkout. Skipping the recapture proceeds
+   * straight to checkout untouched.
+   * ────────────────────────────────────────────────────────────── */
+  (function () {
+    var status;
+    try { status = localStorage.getItem('pf_newsletter_status'); }
+    catch (e) { status = null; }
+    if (status !== 'skipped') return;
+
+    var checkoutBtn = document.querySelector('[data-checkout-btn]');
+    var modal = document.getElementById('newsletter-recapture-backdrop');
+    var form = document.getElementById('newsletter-recapture-form');
+    var skipBtn = document.getElementById('newsletter-recapture-skip');
+    var errorEl = modal && modal.querySelector('.newsletter-recapture-error');
+    if (!checkoutBtn || !modal || !form || !skipBtn) return;
+
+    var pendingHref = null;
+    var submitting = false;
+
+    function showError(msg) {
+      if (!errorEl) return;
+      errorEl.textContent = msg || '';
+      errorEl.hidden = !msg;
+    }
+
+    function openModal(href) {
+      pendingHref = href;
+      modal.hidden = false;
+      var emailInput = form.querySelector('input[name="email"]');
+      if (emailInput) setTimeout(function () { emailInput.focus(); }, 50);
+    }
+    function closeModal() {
+      modal.hidden = true;
+      showError('');
+    }
+
+    checkoutBtn.addEventListener('click', function (e) {
+      // Re-check status just-in-time in case it changed in another tab.
+      var currentStatus;
+      try { currentStatus = localStorage.getItem('pf_newsletter_status'); }
+      catch (err) { currentStatus = null; }
+      if (currentStatus !== 'skipped') return;
+      e.preventDefault();
+      openModal(checkoutBtn.href || '/checkout');
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (submitting) return;
+      var email = form.email.value.trim();
+      if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        showError('That email looks off — double-check it?');
+        return;
+      }
+      submitting = true;
+      showError('');
+      var submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing you up…';
+      }
+
+      var fd = new FormData();
+      fd.append('form_type', 'customer');
+      fd.append('utf8', '✓');
+      fd.append('contact[email]', email);
+      fd.append('contact[accepts_marketing]', 'true');
+      fd.append('contact[tags]', 'newsletter,petfam-recapture');
+
+      // Fire-and-forget — Shopify normally redirects on /contact, but
+      // fetch with redirect:'manual' keeps us here. Even if /contact
+      // fails, we still try to apply the discount + ship the customer
+      // to checkout (better UX than a hard error).
+      Promise.allSettled([
+        fetch('/contact', { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' }),
+        fetch('/discount/PETFAM2026', { credentials: 'same-origin', redirect: 'manual' }),
+      ]).then(function () {
+        try { localStorage.setItem('pf_newsletter_status', 'signed_up'); }
+        catch (err) {}
+        window.location.href = pendingHref || '/checkout';
+      });
+    });
+
+    skipBtn.addEventListener('click', function () {
+      // They confirmed they don't want the discount — proceed to checkout
+      // and don't bug them again on this cart by leaving status as 'skipped'.
+      closeModal();
+      window.location.href = pendingHref || '/checkout';
+    });
+
+    // Close on backdrop click (treat as skip).
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) {
+        closeModal();
+        window.location.href = pendingHref || '/checkout';
+      }
+    });
+
+    // ESC key to dismiss (treat as skip).
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.hidden) {
+        closeModal();
+        window.location.href = pendingHref || '/checkout';
+      }
     });
   })();
 </script>

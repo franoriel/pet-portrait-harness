@@ -545,6 +545,14 @@ const KEYFRAME_CSS = `
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.015); }
 }
+@keyframes pf-newsletter-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pf-newsletter-pop {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   .pf-marquee-track { animation: none !important; }
 }
@@ -2084,6 +2092,170 @@ function GeneratingState() {
   );
 }
 
+/* ── Newsletter / 10%-off popup ────────────────────────────── */
+
+/* Captures email during the generation wait and applies the PETFAM2026
+ * automatic discount via /discount/PETFAM2026. Status is persisted in
+ * localStorage as 'signed_up' | 'skipped' | null so the cart-items.liquid
+ * recapture modal can detect a skipped state and re-prompt before checkout. */
+const NEWSLETTER_LS_KEY = 'pf_newsletter_status';
+
+function loadNewsletterStatus() {
+  try { return localStorage.getItem(NEWSLETTER_LS_KEY); } catch { return null; }
+}
+function saveNewsletterStatus(status) {
+  try { localStorage.setItem(NEWSLETTER_LS_KEY, status); } catch {}
+}
+
+async function submitNewsletterSignup(email) {
+  // 1. POST to Shopify's /contact endpoint with form_type=customer +
+  //    accepts_marketing=true. Shopify normally redirects on success;
+  //    using fetch with redirect:'manual' keeps us on the page.
+  const fd = new FormData();
+  fd.append('form_type', 'customer');
+  fd.append('utf8', '✓');
+  fd.append('contact[email]', email);
+  fd.append('contact[accepts_marketing]', 'true');
+  fd.append('contact[tags]', 'newsletter,petfam-popup');
+  await fetch('/contact', {
+    method: 'POST', body: fd,
+    credentials: 'same-origin', redirect: 'manual',
+  }).catch(() => {});  // network failures shouldn't block discount apply
+  // 2. Apply the automatic discount via Shopify's URL-discount endpoint —
+  //    this sets the cart-level discount cookie so the next /cart/add.js
+  //    or /checkout includes the 10% off automatically.
+  await fetch('/discount/PETFAM2026', {
+    credentials: 'same-origin', redirect: 'manual',
+  }).catch(() => {});
+  saveNewsletterStatus('signed_up');
+}
+
+function NewsletterModal({ isOpen, onClose, onSignedUp }) {
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setError('That email looks off — double-check it?');
+      return;
+    }
+    setError(''); setSubmitting(true);
+    try {
+      await submitNewsletterSignup(email);
+      setSubmitted(true);
+      if (onSignedUp) onSignedUp();
+      setTimeout(onClose, 2200);
+    } catch {
+      setError("Couldn't sign you up. Try again in a sec.");
+      setSubmitting(false);
+    }
+  }
+
+  function handleSkip() {
+    saveNewsletterStatus('skipped');
+    onClose();
+  }
+
+  return React.createElement('div', {
+    style: {
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(20, 17, 14, 0.55)',
+      backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px', animation: 'pf-newsletter-fade-in 0.2s ease-out',
+    },
+    role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'pf-newsletter-title',
+    onClick: (e) => { if (e.target === e.currentTarget) handleSkip(); },
+  },
+    React.createElement('div', {
+      style: {
+        background: tokens.colorWhite, borderRadius: tokens.radiusCard,
+        padding: '32px 28px 24px', maxWidth: '420px', width: '100%',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+        animation: 'pf-newsletter-pop 0.25s cubic-bezier(.2,1.2,.4,1)',
+        textAlign: 'center',
+      },
+    },
+      submitted
+        ? [
+            React.createElement('div', {
+              key: 't', style: { fontSize: '40px', marginBottom: '8px' },
+            }, '🎉'),
+            React.createElement('h3', {
+              key: 'h',
+              style: { ...s.serifHeading, fontSize: '20px', margin: '0 0 8px', color: tokens.colorBrand },
+            }, "You're in. Your dog's proud."),
+            React.createElement('p', {
+              key: 'p', style: { ...s.bodyMuted, margin: 0, fontSize: '14px' },
+            }, '10% off is on your cart automatically.'),
+          ]
+        : [
+            React.createElement('h3', {
+              key: 'h', id: 'pf-newsletter-title',
+              style: { ...s.serifHeading, fontSize: '22px', margin: '0 0 10px', color: tokens.colorBrand, lineHeight: 1.2 },
+            }, '10% off? Or pay full price like a stranger?'),
+            React.createElement('p', {
+              key: 'sub',
+              style: { ...s.bodyMuted, margin: '0 0 20px', fontSize: '14px', lineHeight: 1.5 },
+            }, "Join PetFam — 10% off your first order, applied automatically. Your dog already RSVP'd."),
+            React.createElement('form', {
+              key: 'f', onSubmit: handleSubmit,
+              style: { display: 'flex', flexDirection: 'column', gap: '10px' },
+            },
+              React.createElement('input', {
+                type: 'email', name: 'email',
+                placeholder: 'you@example.com',
+                value: email,
+                onChange: (e) => setEmail(e.target.value),
+                disabled: submitting,
+                autoFocus: true,
+                style: { ...s.input, fontSize: '15px', textAlign: 'center' },
+                'aria-label': 'Your email address',
+              }),
+              error && React.createElement('p', {
+                key: 'err', role: 'alert',
+                style: { color: tokens.colorWarning || '#B45309', margin: 0, fontSize: '12px' },
+              }, error),
+              React.createElement('button', {
+                type: 'submit', disabled: submitting,
+                style: { ...s.primaryBtn, opacity: submitting ? 0.7 : 1 },
+              }, submitting ? 'Signing you up…' : 'Yes, I want 10% off'),
+            ),
+            React.createElement('button', {
+              key: 'skip', type: 'button', onClick: handleSkip,
+              style: {
+                ...s.secondaryLink, marginTop: '14px',
+                fontSize: '13px', color: tokens.colorMuted,
+              },
+            }, 'No thanks, I love paying full price'),
+          ]
+    ),
+  );
+}
+
+/* Floating pill — appears after a customer dismisses the modal so they can
+ * still claim the discount without a hard re-prompt. Hidden once they sign up. */
+function NewsletterPill({ onClick, visible }) {
+  if (!visible) return null;
+  return React.createElement('button', {
+    type: 'button', onClick,
+    'aria-label': 'Reopen the 10% off offer',
+    style: {
+      position: 'fixed', bottom: '18px', right: '18px', zIndex: 9998,
+      background: tokens.colorBrand, color: tokens.colorWhite,
+      border: 'none', borderRadius: '999px',
+      padding: '12px 18px', fontFamily: fontSans, fontWeight: 600, fontSize: '13px',
+      cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+      animation: 'pf-newsletter-pop 0.3s cubic-bezier(.2,1.2,.4,1)',
+    },
+  }, '⚡ Get 10% off');
+}
+
 /* ── PreviewStep ───────────────────────────────────────────── */
 
 /* ── UrgencyBanner — 10-minute checkout window countdown ─── */
@@ -2788,6 +2960,27 @@ function PortraitFlow() {
   const { state } = flow;
   useEffect(() => { injectKeyframes(); }, []);
 
+  // Newsletter / 10%-off popup state. Shows when generation starts so the
+  // user has something to do during the wait. Persists in localStorage so a
+  // dismissal carries through to the cart-side recapture modal.
+  const initialNlStatus = loadNewsletterStatus();
+  const [newsletterModalOpen, setNewsletterModalOpen] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState(initialNlStatus);
+
+  // Auto-open the modal once when the user enters the GENERATING stage,
+  // unless they've already signed up or skipped in a prior session.
+  const generatingPromptShown = useRef(false);
+  useEffect(() => {
+    if (
+      state.stage === STAGES.GENERATING
+      && !generatingPromptShown.current
+      && newsletterStatus === null
+    ) {
+      generatingPromptShown.current = true;
+      setNewsletterModalOpen(true);
+    }
+  }, [state.stage, newsletterStatus]);
+
   let content;
   switch (state.stage) {
     case STAGES.UPLOAD:
@@ -2824,6 +3017,20 @@ function PortraitFlow() {
     // Show hero on upload + style steps, hide on later steps (portrait is the hero)
     (state.stage === STAGES.UPLOAD || state.stage === STAGES.STYLE) && React.createElement(PageHero),
     content,
+    // Newsletter modal + dismissed-state floating pill. Both opt out
+    // automatically once newsletterStatus === 'signed_up'.
+    React.createElement(NewsletterModal, {
+      isOpen: newsletterModalOpen,
+      onClose: () => {
+        setNewsletterModalOpen(false);
+        setNewsletterStatus(loadNewsletterStatus());
+      },
+      onSignedUp: () => setNewsletterStatus('signed_up'),
+    }),
+    React.createElement(NewsletterPill, {
+      visible: !newsletterModalOpen && newsletterStatus === 'skipped',
+      onClick: () => setNewsletterModalOpen(true),
+    }),
   );
 }
 
