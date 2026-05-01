@@ -187,6 +187,28 @@
                     {%- unless item.variant.title == 'Default Title' -%}
                       <p class="cart-page__item-variant text-muted">{{ item.variant.title }}</p>
                     {%- endunless -%}
+                    {%- comment -%}
+                      Style is stored as the hidden `_Style` slug on every line item
+                      (see pdp-portrait-inject.js). Translate to a friendly label so
+                      the customer sees which style they picked while reviewing
+                      their cart. Falls back to the slug if a future style isn't
+                      mapped yet so we never show a blank row.
+                    {%- endcomment -%}
+                    {%- if style_val != blank -%}
+                      {%- assign style_label = style_val -%}
+                      {%- case style_val -%}
+                        {%- when 'soft-watercolour'    -%}{%- assign style_label = 'Soft Watercolour' -%}
+                        {%- when 'minimal-line-art'    -%}{%- assign style_label = 'Minimal Line Art' -%}
+                        {%- when 'modern-shape-art'    -%}{%- assign style_label = 'Modern' -%}
+                        {%- when 'neon-pop-art'        -%}{%- assign style_label = 'Neon Pop Art' -%}
+                        {%- when 'renaissance-royalty' -%}{%- assign style_label = 'Renaissance Royalty' -%}
+                        {%- when 'bold-graphic-poster' -%}{%- assign style_label = 'Bold Graphic Poster' -%}
+                        {%- when 'aura-gradient'       -%}{%- assign style_label = 'Aura Gradient' -%}
+                      {%- endcase -%}
+                      <p class="cart-page__item-prop text-muted" style="font-size:var(--text-sm);margin-top:4px;">
+                        Style: <span style="color:var(--color-ink);font-weight:600;">{{ style_label }}</span>
+                      </p>
+                    {%- endif -%}
                     {%- for property in item.properties -%}
                       {%- unless property.last == blank -%}
                         {%- assign prop_first_char = property.first | slice: 0 -%}

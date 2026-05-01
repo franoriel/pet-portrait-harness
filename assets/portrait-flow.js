@@ -134,6 +134,26 @@ function backgroundsFor(styleId) {
   return (style && style.backgrounds) || ['auto'];
 }
 
+// Human-readable name for a style id. Falls back to the slug if unknown.
+function styleNameFor(styleId) {
+  const s = STYLES.find(x => x.id === styleId);
+  return (s && s.name) || (styleId || '');
+}
+
+// Per-style on-brand affirmations shown on the style step the moment a
+// customer picks one. Tone matches the rest of the site — warm, confident,
+// a little cheeky. Keep the line under ~70 chars so it sits on one row on
+// most phones.
+const STYLE_AFFIRMATIONS = {
+  'soft-watercolour':    { tag: 'A classic',         line: 'Heart-melting on a wall — and a fridge.' },
+  'minimal-line-art':    { tag: 'Quiet & clean',     line: 'Few lines, big feelings. Looks great anywhere.' },
+  'modern-shape-art':    { tag: 'Sharp eye',         line: 'Confident shapes — this one looks killer in any room.' },
+  'neon-pop-art':        { tag: 'Bold move',         line: 'About to glow. Total head-turner.' },
+  'renaissance-royalty': { tag: 'Royalty status',    line: 'Majestic. We’re honoured to paint a noble.' },
+  'bold-graphic-poster': { tag: 'Statement piece',   line: 'Big colour, big personality.' },
+  'aura-gradient':       { tag: 'Dreamy choice',     line: 'Soft gradients, unmistakable presence.' },
+};
+
 // Resolve asset base path for style example images
 const _pfScript = document.querySelector('script[src*="portrait-flow"]');
 const _pfAssetBase = _pfScript ? _pfScript.src.replace(/portrait-flow[^/]*$/, '') : '';
@@ -544,6 +564,17 @@ const KEYFRAME_CSS = `
   from { opacity: 0; transform: scale(0.94) translateY(8px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
+@keyframes pf-style-celebrate {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.97); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.015); }
+  100% { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes pf-sparkle-0 { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 30%{opacity:1} 100%{opacity:0;transform:translate(-22px,-18px) scale(1)} }
+@keyframes pf-sparkle-1 { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 30%{opacity:1} 100%{opacity:0;transform:translate( 26px,-12px) scale(1.1)} }
+@keyframes pf-sparkle-2 { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 30%{opacity:1} 100%{opacity:0;transform:translate( 18px, 22px) scale(0.9)} }
+@keyframes pf-sparkle-3 { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 30%{opacity:1} 100%{opacity:0;transform:translate(-18px, 24px) scale(1)} }
+@keyframes pf-sparkle-4 { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 30%{opacity:1} 100%{opacity:0;transform:translate(  2px,-26px) scale(0.85)} }
+@keyframes pf-sparkle-5 { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 30%{opacity:1} 100%{opacity:0;transform:translate( 30px,  6px) scale(1.05)} }
 @media (prefers-reduced-motion: reduce) {
   .pf-marquee-track { animation: none !important; }
 }
@@ -1772,6 +1803,70 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       }),
     ),
 
+    // Celebration banner — appears the moment a style is picked. Confirms
+    // the choice with a per-style affirmation and a brief sparkle burst.
+    // Persistent (so the customer keeps seeing what they chose while they
+    // tweak background/name), but the burst animation is one-shot via the
+    // key= prop forcing a re-mount on every change.
+    state.selectedStyleId && (() => {
+      const aff = STYLE_AFFIRMATIONS[state.selectedStyleId] || { tag: 'Lovely choice', line: 'You picked a great one.' };
+      const styleName = styleNameFor(state.selectedStyleId);
+      const personalLine = state.petName
+        ? state.petName + ', ' + aff.line.charAt(0).toLowerCase() + aff.line.slice(1)
+        : aff.line;
+      return React.createElement('div', {
+        key: 'celebrate-' + state.selectedStyleId,
+        role: 'status',
+        'aria-live': 'polite',
+        style: {
+          marginTop: '20px', position: 'relative',
+          padding: '16px 18px',
+          background: 'linear-gradient(135deg, ' + tokens.colorAccentLight + ' 0%, ' + tokens.colorWhite + ' 70%)',
+          border: '1px solid ' + tokens.colorAccent,
+          borderRadius: tokens.radiusCard,
+          overflow: 'hidden',
+          animation: 'pf-style-celebrate 0.55s cubic-bezier(.2,1.2,.4,1) both',
+        },
+      },
+        React.createElement('div', {
+          'aria-hidden': true,
+          style: {
+            position: 'absolute', top: '14px', left: '14px',
+            width: 0, height: 0, pointerEvents: 'none',
+          },
+        },
+          [0, 1, 2, 3, 4, 5].map(i => React.createElement('span', {
+            key: i,
+            style: {
+              position: 'absolute', top: 0, left: 0,
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: i % 2 === 0 ? tokens.colorAccent : tokens.colorSuccess,
+              opacity: 0,
+              animation: 'pf-sparkle-' + i + ' 0.9s ease-out 0.05s forwards',
+            },
+          })),
+        ),
+        React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
+          React.createElement('span', {
+            'aria-hidden': true,
+            style: { fontSize: 'var(--text-base)', lineHeight: 1, marginTop: '2px' },
+          }, '✨'),
+          React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+            React.createElement('p', {
+              style: { ...s.smallCaps, margin: '0 0 2px', color: tokens.colorAccent, fontSize: 'var(--text-xs)' },
+            }, aff.tag + ' · You picked ' + styleName),
+            React.createElement('p', {
+              style: {
+                fontFamily: fontSerif, fontStyle: 'italic',
+                fontSize: 'var(--text-base)', color: tokens.colorBrand,
+                margin: 0, lineHeight: 1.35,
+              },
+            }, personalLine),
+          ),
+        ),
+      );
+    })(),
+
     // Background mode selector — only shown when the selected style offers
     // more than one background. Styles that only support 'auto' (rare)
     // get the card hidden entirely; styles that support 2 of 3 (e.g. minimal
@@ -2531,8 +2626,29 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     // Heading
     React.createElement('p', { style: { ...s.smallCaps, textAlign: 'center', margin: '0 0 6px' } }, 'One-of-one \u00B7 never recreated'),
     state.petName && React.createElement('h2', {
-      style: { ...s.serifHeading, textAlign: 'center', marginBottom: '20px' },
+      style: { ...s.serifHeading, textAlign: 'center', marginBottom: '12px' },
     }, state.petName),
+
+    // Selected-style chip — quiet reminder of the choice they made
+    state.selectedStyleId && React.createElement('div', {
+      style: { display: 'flex', justifyContent: 'center', marginBottom: '20px' },
+    },
+      React.createElement('span', {
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          padding: '6px 12px',
+          background: tokens.colorAccentLight,
+          border: '1px solid ' + tokens.colorAccent,
+          borderRadius: '999px',
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
+          color: tokens.colorBrand, letterSpacing: '0.04em',
+        },
+        'aria-label': 'Selected style: ' + styleNameFor(state.selectedStyleId),
+      },
+        React.createElement('span', { 'aria-hidden': true }, '✨'),
+        ' Your style: ' + styleNameFor(state.selectedStyleId),
+      ),
+    ),
 
     // Main preview (single, large)
     React.createElement('div', {
@@ -2743,6 +2859,28 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
   return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
     React.createElement(StepIndicator, { current: 4, total: 4 }),
+
+    // Selected-style chip — keeps the customer's choice visible while they
+    // pick size and frame. Mirrors the chip on the preview step.
+    state.selectedStyleId && React.createElement('div', {
+      style: { display: 'flex', justifyContent: 'center', marginBottom: '14px' },
+    },
+      React.createElement('span', {
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          padding: '6px 12px',
+          background: tokens.colorAccentLight,
+          border: '1px solid ' + tokens.colorAccent,
+          borderRadius: '999px',
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
+          color: tokens.colorBrand, letterSpacing: '0.04em',
+        },
+        'aria-label': 'Selected style: ' + styleNameFor(state.selectedStyleId),
+      },
+        React.createElement('span', { 'aria-hidden': true }, '✨'),
+        ' Your style: ' + styleNameFor(state.selectedStyleId),
+      ),
+    ),
 
     // Urgency banner — countdown timer hidden for now. Uncomment to re-enable.
     // React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
