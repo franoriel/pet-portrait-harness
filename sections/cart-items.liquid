@@ -376,18 +376,38 @@
             {%- endif -%}
 
             {%- comment -%}
-              Priority order toggle (FAB framing — Feature: priority lane;
+              Priority order upsell (FAB framing — Feature: priority lane;
               Advantage: same-day QA + immediate fulfillment handoff;
-              Benefit: 1–2 days sooner). Stored as a Shopify cart attribute
-              `Priority order: Yes/No` so it surfaces on the order in admin
-              and order exports for the ops/QA team to actually act on.
-              Note: doesn't add a paid line item — see TODO in the script
-              handler if you later want to charge for this.
+              Benefit: 1–2 days sooner).
+
+              Adds the "priority-order" Shopify product as a paid line
+              item (variant_id resolved at runtime via Liquid so price
+              stays in sync with Shopify admin) AND sets a redundant
+              `Priority order: Yes` cart attribute so the QA/ops team
+              can spot it in the order admin without scanning line items.
+
+              The product handle is hardcoded — change it here if you
+              ever rename the product slug in admin.
             {%- endcomment -%}
-            {%- assign priority_on = cart.attributes['Priority order'] -%}
+            {%- assign priority_product = all_products['priority-order'] -%}
+            {%- assign priority_variant = priority_product.variants.first -%}
+            {%- assign priority_in_cart = false -%}
+            {%- assign priority_line_key = '' -%}
+            {%- if priority_variant -%}
+              {%- for item in cart.items -%}
+                {%- if item.variant_id == priority_variant.id -%}
+                  {%- assign priority_in_cart = true -%}
+                  {%- assign priority_line_key = item.key -%}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+            {%- if priority_variant -%}
             <div
               class="cart-summary__priority"
               data-priority-toggle
+              data-variant-id="{{ priority_variant.id }}"
+              data-line-key="{{ priority_line_key }}"
+              data-in-cart="{{ priority_in_cart }}"
               style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
             >
               <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
@@ -395,7 +415,7 @@
                   type="checkbox"
                   id="PriorityOrderToggle"
                   data-priority-checkbox
-                  {% if priority_on == 'Yes' %}checked{% endif %}
+                  {% if priority_in_cart %}checked{% endif %}
                   style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
                 >
                 <span style="flex:1;line-height:1.45;">
@@ -414,19 +434,23 @@
                         Our QA team processes priority orders the same day and hands them straight to fulfillment — usually 1–2 days faster on production. (Carrier shipping is unchanged: 3–5 business days.)
                       </span>
                     </span>
-                    <span
-                      data-priority-status
-                      role="status"
-                      aria-live="polite"
-                      style="margin-left:auto;font-size:0.78rem;color:var(--color-muted);font-weight:500;"
-                    ></span>
+                    <span style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;">
+                      +{{ priority_variant.price | money }}
+                    </span>
                   </span>
                   <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
                     Skip the QA queue — get it 1–2 days sooner.
                   </span>
+                  <span
+                    data-priority-status
+                    role="status"
+                    aria-live="polite"
+                    style="display:block;font-size:0.78rem;color:var(--color-muted);margin-top:6px;min-height:1em;"
+                  ></span>
                 </span>
               </label>
             </div>
+            {%- endif -%}
 
             {%- comment -%}
               Shipping estimator — user enters a postal code, we call
@@ -1304,14 +1328,14 @@
   })();
 
   /* ──────────────────────────────────────────────────────────────
-   * Priority-order toggle.
-   * Stores `Priority order: Yes/No` as a Shopify cart attribute via
-   * /cart/update.js — visible on the order in admin so the QA/ops
-   * team can see at a glance which orders to process same-day.
-   * If you later want to charge for this, create a "Priority
-   * Processing" Shopify product and replace the /cart/update.js call
-   * with /cart/add.js (variant_id) + /cart/change.js to remove on
-   * uncheck. Cart attribute stays as a redundant flag for ops.
+   * Priority-order upsell.
+   * On check: adds the "priority-order" Shopify product (variant ID
+   *   in data-variant-id) as a $5.01 line item AND sets the cart
+   *   attribute `Priority order: Yes` for the ops team.
+   * On uncheck: removes the line item AND sets the attribute to "No".
+   * Reloads the page after either operation so the cart subtotal,
+   * free-ship tracker, and checkout button stay in sync — same
+   * pattern as the magnet upsell.
    * ────────────────────────────────────────────────────────────── */
   (function () {
     var toggle = document.querySelector('[data-priority-toggle]');
@@ -1319,6 +1343,7 @@
     var checkbox = toggle.querySelector('[data-priority-checkbox]');
     var status = toggle.querySelector('[data-priority-status]');
     var tipBtn = toggle.querySelector('.priority-tooltip');
+    var variantId = parseInt(toggle.getAttribute('data-variant-id'), 10);
 
     /* Mobile: tap-to-toggle the tooltip (CSS hover doesn't fire on touch). */
     if (tipBtn) {
@@ -1339,36 +1364,63 @@
       });
     }
 
-    if (!checkbox) return;
+    if (!checkbox || !variantId) return;
 
     function setStatus(text, isError) {
       if (!status) return;
       status.textContent = text || '';
       status.style.color = isError ? 'var(--color-warning, #B45309)' : 'var(--color-muted)';
-      if (text && !isError) {
-        setTimeout(function () { status.textContent = ''; }, 2200);
-      }
+    }
+
+    function setAttribute(value) {
+      return fetch('/cart/update.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ attributes: { 'Priority order': value } }),
+      });
+    }
+
+    function addPriority() {
+      return fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ id: variantId, quantity: 1 }),
+      })
+        .then(function (r) { if (!r.ok) throw new Error('ADD_FAILED'); return r.json(); })
+        .then(function () { return setAttribute('Yes'); });
+    }
+
+    function removePriority() {
+      var lineKey = toggle.getAttribute('data-line-key');
+      /* If we don't have a stored line key (e.g. user double-clicked or
+       * the page didn't re-render), fall back to changing by variant id
+       * — Shopify's /cart/change.js accepts an `id` of either a line
+       * key or a variant id. */
+      var body = lineKey
+        ? { id: lineKey, quantity: 0 }
+        : { id: variantId, quantity: 0 };
+      return fetch('/cart/change.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body),
+      })
+        .then(function (r) { if (!r.ok) throw new Error('REMOVE_FAILED'); return r.json(); })
+        .then(function () { return setAttribute('No'); });
     }
 
     checkbox.addEventListener('change', function () {
-      var val = checkbox.checked ? 'Yes' : 'No';
+      var nowOn = checkbox.checked;
       checkbox.disabled = true;
-      setStatus('Saving…');
-      fetch('/cart/update.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ attributes: { 'Priority order': val } }),
-      })
-        .then(function (r) { if (!r.ok) throw new Error('UPDATE_FAILED'); return r.json(); })
-        .then(function () {
-          setStatus(val === 'Yes' ? 'Priority on' : 'Saved');
-        })
+      setStatus(nowOn ? 'Adding priority…' : 'Removing priority…');
+      var op = nowOn ? addPriority() : removePriority();
+      op
+        .then(function () { window.location.reload(); })
         .catch(function () {
           /* Revert the checkbox so the UI matches server state. */
           checkbox.checked = !checkbox.checked;
-          setStatus('Could not save — try again', true);
-        })
-        .finally(function () { checkbox.disabled = false; });
+          setStatus('Could not update — please try again', true);
+          checkbox.disabled = false;
+        });
     });
   })();
 </script>
