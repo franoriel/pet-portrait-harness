@@ -208,13 +208,15 @@ def _name_integration(
         "modern-shape-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" in a clean geometric sans-serif (DM Sans / "
-            f"Inter feel), medium weight, set in title case with normal letter-spacing. "
-            f"Treat the name as a small typographic accent placed in clean negative "
-            f"space — never overlapping any shape. Use a single deep neutral ink "
-            f"(charcoal #1f1f1f, deep navy #1d2a44, or warm black #181614) sampled "
-            f"to read clearly against the calmest patch of background. "
-            f"Size: 2-3% of image height. Centered. Quiet, modern, editorial."
+            f"- Render the name \"{name_upper}\" in ALL CAPS (uppercase only) "
+            f"using a modern geometric sans-serif (Space Grotesk / Archivo / Inter "
+            f"feel), medium weight, with comfortable wide letter-spacing (~0.10em) "
+            f"so the caps breathe. Treat the name as a small typographic accent "
+            f"placed in clean negative space — never overlapping any shape. Use a "
+            f"single deep neutral ink (charcoal #1f1f1f, deep navy #1d2a44, or "
+            f"warm black #181614) sampled to read clearly against the calmest "
+            f"patch of background. Size: 2-3% of image height. Centered. Quiet, "
+            f"modern, editorial."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -1031,7 +1033,7 @@ _font_cache: dict[str, ImageFont.FreeTypeFont] = {}
 STYLE_FONT_MAP: dict[str, dict] = {
     "watercolor":           {"family": "Dancing Script",     "google": "Dancing+Script:wght@700",                  "file": "DancingScript-Bold.ttf"},
     "minimal-line-art":     {"family": "Raleway",            "google": "Raleway:wght@600",                         "file": "Raleway-SemiBold.ttf"},
-    "modern-shape-art":     {"family": "DM Sans",            "google": "DM+Sans:wght@500",                         "file": "DMSans-Medium.ttf"},
+    "modern-shape-art":     {"family": "Space Grotesk",      "google": "Space+Grotesk:wght@500",                   "file": "SpaceGrotesk-Medium.ttf"},
     "neon-pop-art":         {"family": "Bungee",             "google": "Bungee",                                   "file": "Bungee-Regular.ttf"},
     "renaissance-royalty":  {"family": "Cinzel",             "google": "Cinzel:wght@700",                          "file": "Cinzel-Bold.ttf"},
     "rainbow-bridge":       {"family": "Sacramento",         "google": "Sacramento",                               "file": "Sacramento-Regular.ttf"},
@@ -1158,9 +1160,9 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
     },
     "modern-shape-art": {
         "size_ratio": 0.035,
-        "transform": "title",
+        "transform": "upper",
         "zone_top": 0.84,
-        "letter_spacing": 1,
+        "letter_spacing": 4,
         "opacity": 1.0,
     },
     "neon-pop-art": {

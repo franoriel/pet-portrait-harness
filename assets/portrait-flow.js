@@ -37,7 +37,7 @@ const fontSans  = "'Inter', sans-serif";
 const STYLE_FONTS = {
   'soft-watercolour':     { family: 'Dancing Script',     css: "'Dancing Script', cursive",     google: 'Dancing+Script:wght@700' },
   'minimal-line-art':     { family: 'Raleway',            css: "'Raleway', sans-serif",         google: 'Raleway:wght@300;600' },
-  'modern-shape-art':     { family: 'DM Sans',            css: "'DM Sans', sans-serif",         google: 'DM+Sans:wght@400;500;700' },
+  'modern-shape-art':     { family: 'Space Grotesk',      css: "'Space Grotesk', sans-serif",   google: 'Space+Grotesk:wght@400;500;700' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
   'rainbow-bridge':       { family: 'Sacramento',         css: "'Sacramento', cursive",         google: 'Sacramento' },
@@ -1860,7 +1860,12 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           fontWeight: 700,
           fontSize: `${Math.round(24 * (FONT_SIZES.find(f => f.id === (state.fontSize || 'small')) || FONT_SIZES[0]).scale)}px`,
           color: tokens.colorBrand, margin: '0 0 0',
-          letterSpacing: '0.04em', transition: 'all 0.3s ease',
+          // modern-shape-art renders the name in ALL CAPS with wider tracking;
+          // every other style uses the printed casing as-is. Keep this preview
+          // visually aligned with the actual rendered output.
+          textTransform: state.selectedStyleId === 'modern-shape-art' ? 'uppercase' : 'none',
+          letterSpacing: state.selectedStyleId === 'modern-shape-art' ? '0.10em' : '0.04em',
+          transition: 'all 0.3s ease',
         },
       }, state.petName),
     ),

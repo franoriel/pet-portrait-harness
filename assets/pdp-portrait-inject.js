@@ -208,7 +208,7 @@
   var STYLE_FONTS = {
     'soft-watercolour':     "'Dancing Script', cursive",
     'minimal-line-art':     "'Raleway', sans-serif",
-    'modern-shape-art':     "'DM Sans', sans-serif",
+    'modern-shape-art':     "'Space Grotesk', sans-serif",
     'neon-pop-art':         "'Bungee', sans-serif",
     'renaissance-royalty':  "'Cinzel', serif",
     'rainbow-bridge':       "'Sacramento', cursive",
@@ -223,7 +223,7 @@
   var GOOGLE_FONTS = {
     'soft-watercolour':     'Dancing+Script:wght@700',
     'minimal-line-art':     'Raleway:wght@300;600',
-    'modern-shape-art':     'DM+Sans:wght@400;500;700',
+    'modern-shape-art':     'Space+Grotesk:wght@400;500;700',
     'neon-pop-art':         'Bungee',
     'renaissance-royalty':  'Cinzel:wght@700',
     'rainbow-bridge':       'Sacramento',
