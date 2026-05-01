@@ -68,5 +68,13 @@
       { "type": "text", "id": "seo_title_suffix", "label": "Page title suffix", "default": "Pet Printables — Custom Pet Portraits" },
       { "type": "textarea", "id": "seo_description", "label": "Default meta description", "default": "Custom AI-powered pet portraits in 8 artistic styles — watercolour, line art, modern shapes, pop art and more. Upload a photo, preview your portrait, and we print and ship it to your door." }
     ]
+  },
+  {
+    "name": "Klaviyo (newsletter + SMS)",
+    "settings": [
+      { "type": "paragraph", "content": "Powers the 10%-off newsletter popup on the create page and the cart-side recapture modal. The Public API Key is the 6-character key under Klaviyo → Account → Settings → API Keys → Public API Key (NOT a private key)." },
+      { "type": "text", "id": "klaviyo_public_key", "label": "Public API Key (company_id)", "default": "SPKeMf" },
+      { "type": "text", "id": "klaviyo_list_id",    "label": "Newsletter list ID",         "default": "VySGe8" }
+    ]
   }
 ]

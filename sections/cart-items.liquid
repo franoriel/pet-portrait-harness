@@ -92,17 +92,36 @@
     margin: 0 0 20px; line-height: 1.5;
   }
   .newsletter-recapture-modal form {
-    display: flex; flex-direction: column; gap: 10px;
+    display: flex; flex-direction: column; gap: 10px; text-align: left;
   }
-  .newsletter-recapture-modal input[type="email"] {
-    padding: 12px 14px; font-size: 15px; text-align: center;
+  .newsletter-recapture-row {
+    display: flex; gap: 8px;
+  }
+  .newsletter-recapture-row input { flex: 1; }
+  .newsletter-recapture-modal input[type="email"],
+  .newsletter-recapture-modal input[type="text"],
+  .newsletter-recapture-modal input[type="tel"] {
+    padding: 12px 14px; font-size: 15px;
     border: 1px solid var(--color-border); border-radius: 10px;
     font-family: var(--font-body); background: #fff;
     color: var(--color-ink); width: 100%; box-sizing: border-box;
     min-height: 44px;
   }
-  .newsletter-recapture-modal input[type="email"]:focus {
+  .newsletter-recapture-modal input:focus {
     outline: 2px solid var(--color-primary, #4338CA); outline-offset: 1px;
+  }
+  .newsletter-recapture-sms {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12px; color: var(--color-ink); line-height: 1.5;
+    cursor: pointer; margin-top: 4px;
+  }
+  .newsletter-recapture-sms input[type="checkbox"] {
+    margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px;
+    accent-color: var(--color-primary, var(--color-accent));
+  }
+  .newsletter-recapture-sms a {
+    color: var(--color-accent, var(--color-primary));
+    text-decoration: underline;
   }
   .newsletter-recapture-error {
     color: var(--color-warning, #B45309); font-size: 12px; margin: 0;
@@ -583,12 +602,37 @@
           <h3 id="newsletter-recapture-title">Hold up — your dog won't be impressed</h3>
           <p>You skipped 10% off. Sure you want to leave money on the table when your pet's looking?</p>
           <form id="newsletter-recapture-form" novalidate>
+            <div class="newsletter-recapture-row">
+              <input
+                type="text" name="firstName" required
+                placeholder="First name" autocomplete="given-name"
+                aria-label="First name"
+              >
+              <input
+                type="text" name="lastName" required
+                placeholder="Last name" autocomplete="family-name"
+                aria-label="Last name"
+              >
+            </div>
             <input
               type="email" name="email" required
-              placeholder="you@example.com"
-              autocomplete="email"
-              aria-label="Your email address"
+              placeholder="you@example.com" autocomplete="email"
+              aria-label="Email address"
             >
+            <input
+              type="tel" name="phone"
+              placeholder="Phone (optional, for SMS)"
+              autocomplete="tel"
+              aria-label="Phone number (optional)"
+            >
+            <label class="newsletter-recapture-sms">
+              <input type="checkbox" name="smsOptIn" value="yes">
+              <span>
+                <strong>Also send me text updates</strong> — by checking this box, you agree to receive recurring marketing texts from Pet Printables at the number above. Consent isn’t a condition of purchase. Msg &amp; data rates may apply. Reply STOP to opt out.
+                <a href="/policies/terms-of-service" target="_blank" rel="noopener noreferrer">Terms</a> ·
+                <a href="/policies/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy</a>.
+              </span>
+            </label>
             <p class="newsletter-recapture-error" role="alert" hidden></p>
             <button type="submit" class="btn btn--primary btn--full">
               You're right, gimme 10% off
@@ -1569,14 +1613,43 @@
       openModal(checkoutBtn.href || '/checkout');
     });
 
+    function normalizePhoneE164(raw) {
+      if (!raw) return null;
+      var trimmed = String(raw).trim();
+      var compact = trimmed.replace(/\s|-|\(|\)/g, '');
+      if (/^\+\d{10,15}$/.test(compact)) return compact;
+      var digits = trimmed.replace(/\D/g, '');
+      if (digits.length === 10) return '+1' + digits;
+      if (digits.length === 11 && digits.charAt(0) === '1') return '+' + digits;
+      return null;
+    }
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (submitting) return;
-      var email = form.email.value.trim();
+      var firstName = (form.firstName.value || '').trim();
+      var lastName  = (form.lastName.value  || '').trim();
+      var email     = (form.email.value     || '').trim();
+      var phoneRaw  = (form.phone.value     || '').trim();
+      var smsOptIn  = !!form.smsOptIn.checked;
+
+      if (!firstName || !lastName) {
+        showError('Need your first and last name.');
+        return;
+      }
       if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         showError('That email looks off — double-check it?');
         return;
       }
+      var phoneE164 = null;
+      if (smsOptIn) {
+        phoneE164 = normalizePhoneE164(phoneRaw);
+        if (!phoneE164) {
+          showError('Need a valid phone number to opt into SMS (or uncheck the box).');
+          return;
+        }
+      }
+
       submitting = true;
       showError('');
       var submitBtn = form.querySelector('button[type="submit"]');
@@ -1585,21 +1658,53 @@
         submitBtn.textContent = 'Signing you up…';
       }
 
-      var fd = new FormData();
-      fd.append('form_type', 'customer');
-      fd.append('utf8', '✓');
-      fd.append('contact[email]', email);
-      fd.append('contact[accepts_marketing]', 'true');
-      fd.append('contact[tags]', 'newsletter,petfam-recapture');
+      // Build Klaviyo Client Subscriptions API payload
+      var klaviyo = (window.petPrintables && window.petPrintables.klaviyo) || {};
+      var companyId = klaviyo.publicKey;
+      var listId    = klaviyo.listId;
 
-      // Fire-and-forget — Shopify normally redirects on /contact, but
-      // fetch with redirect:'manual' keeps us here. Even if /contact
-      // fails, we still try to apply the discount + ship the customer
-      // to checkout (better UX than a hard error).
-      Promise.allSettled([
-        fetch('/contact', { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' }),
-        fetch('/discount/PETFAM2026', { credentials: 'same-origin', redirect: 'manual' }),
-      ]).then(function () {
+      var subscriptions = { email: { marketing: { consent: 'SUBSCRIBED' } } };
+      if (phoneE164 && smsOptIn) {
+        subscriptions.sms = { marketing: { consent: 'SUBSCRIBED' } };
+      }
+      var profileAttrs = {
+        email: email,
+        first_name: firstName,
+        last_name: lastName,
+        subscriptions: subscriptions,
+        properties: { source: 'cart-recapture' }
+      };
+      if (phoneE164 && smsOptIn) profileAttrs.phone_number = phoneE164;
+
+      var payload = {
+        data: {
+          type: 'subscription',
+          attributes: {
+            custom_source: 'Pet Printables — Cart Recapture',
+            profile: { data: { type: 'profile', attributes: profileAttrs } }
+          },
+          relationships: { list: { data: { type: 'list', id: listId } } }
+        }
+      };
+
+      // Klaviyo subscribe + apply discount cookie. Discount is the priority
+      // here — if Klaviyo errors out, we still want to ship the customer
+      // to checkout with the 10% applied (better UX than a hard error).
+      var klaviyoCall = (companyId && listId)
+        ? fetch(
+            'https://a.klaviyo.com/client/subscriptions?company_id=' + encodeURIComponent(companyId),
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'revision': '2024-10-15' },
+              body: JSON.stringify(payload)
+            }
+          ).catch(function () {})
+        : Promise.resolve();
+      var discountCall = fetch('/discount/PETFAM2026', {
+        credentials: 'same-origin', redirect: 'manual'
+      }).catch(function () {});
+
+      Promise.allSettled([klaviyoCall, discountCall]).then(function () {
         try { localStorage.setItem('pf_newsletter_status', 'signed_up'); }
         catch (err) {}
         window.location.href = pendingHref || '/checkout';

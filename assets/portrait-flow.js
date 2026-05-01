@@ -2107,23 +2107,78 @@ function saveNewsletterStatus(status) {
   try { localStorage.setItem(NEWSLETTER_LS_KEY, status); } catch {}
 }
 
-async function submitNewsletterSignup(email) {
-  // 1. POST to Shopify's /contact endpoint with form_type=customer +
-  //    accepts_marketing=true. Shopify normally redirects on success;
-  //    using fetch with redirect:'manual' keeps us on the page.
-  const fd = new FormData();
-  fd.append('form_type', 'customer');
-  fd.append('utf8', '✓');
-  fd.append('contact[email]', email);
-  fd.append('contact[accepts_marketing]', 'true');
-  fd.append('contact[tags]', 'newsletter,petfam-popup');
-  await fetch('/contact', {
-    method: 'POST', body: fd,
-    credentials: 'same-origin', redirect: 'manual',
-  }).catch(() => {});  // network failures shouldn't block discount apply
-  // 2. Apply the automatic discount via Shopify's URL-discount endpoint —
-  //    this sets the cart-level discount cookie so the next /cart/add.js
-  //    or /checkout includes the 10% off automatically.
+/* Normalize a North American phone number into E.164 (+15551234567).
+ * Strips non-digits, prepends +1 to a 10-digit number, accepts existing
+ * +country-code input. Returns null if the result still doesn't look
+ * E.164. Klaviyo rejects anything that isn't strict E.164. */
+function normalizePhoneE164(raw) {
+  if (!raw) return null;
+  const trimmed = String(raw).trim();
+  // Already E.164-style
+  if (/^\+\d{10,15}$/.test(trimmed.replace(/\s|-|\(|\)/g, ''))) {
+    return trimmed.replace(/[^\d+]/g, '');
+  }
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length === 10) return '+1' + digits;
+  if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+  return null;
+}
+
+/* Klaviyo Subscribe API call — single POST that handles email + optional
+ * SMS subscription on the same profile. List-level double-opt-in (set in
+ * Klaviyo admin) controls whether a confirmation email is sent. */
+async function submitNewsletterSignup({ firstName, lastName, email, phoneE164, smsConsent, source }) {
+  const klaviyo = (window.petPrintables && window.petPrintables.klaviyo) || {};
+  const companyId = klaviyo.publicKey;
+  const listId    = klaviyo.listId;
+  if (!companyId || !listId) {
+    throw new Error('Klaviyo not configured');
+  }
+
+  const subscriptions = { email: { marketing: { consent: 'SUBSCRIBED' } } };
+  if (phoneE164 && smsConsent) {
+    subscriptions.sms = { marketing: { consent: 'SUBSCRIBED' } };
+  }
+
+  const profileAttrs = {
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    subscriptions,
+    properties: { source: source || 'create-page-popup' },
+  };
+  if (phoneE164 && smsConsent) profileAttrs.phone_number = phoneE164;
+
+  const payload = {
+    data: {
+      type: 'subscription',
+      attributes: {
+        custom_source: source || 'Pet Printables — Create Page Popup',
+        profile: { data: { type: 'profile', attributes: profileAttrs } },
+      },
+      relationships: { list: { data: { type: 'list', id: listId } } },
+    },
+  };
+
+  const res = await fetch(
+    'https://a.klaviyo.com/client/subscriptions?company_id=' + encodeURIComponent(companyId),
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'revision': '2024-10-15',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+  // Klaviyo returns 202 Accepted on success (subscription queued for processing).
+  if (!res.ok && res.status !== 202) {
+    const txt = await res.text().catch(() => '');
+    throw new Error('Klaviyo signup failed (' + res.status + '): ' + txt.slice(0, 120));
+  }
+
+  // Apply the 10%-off discount cookie regardless of whether the customer
+  // also opted into SMS — the discount is for joining the email list.
   await fetch('/discount/PETFAM2026', {
     credentials: 'same-origin', redirect: 'manual',
   }).catch(() => {});
@@ -2131,7 +2186,11 @@ async function submitNewsletterSignup(email) {
 }
 
 function NewsletterModal({ isOpen, onClose, onSignedUp }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [smsOptIn, setSmsOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -2140,17 +2199,37 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Need your first and last name.');
+      return;
+    }
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       setError('That email looks off — double-check it?');
       return;
     }
+    let phoneE164 = null;
+    if (smsOptIn) {
+      phoneE164 = normalizePhoneE164(phone);
+      if (!phoneE164) {
+        setError('Need a valid phone number to opt into SMS (or uncheck the box).');
+        return;
+      }
+    }
     setError(''); setSubmitting(true);
     try {
-      await submitNewsletterSignup(email);
+      await submitNewsletterSignup({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phoneE164,
+        smsConsent: smsOptIn && !!phoneE164,
+        source: 'Pet Printables — Create Page Popup',
+      });
       setSubmitted(true);
       if (onSignedUp) onSignedUp();
-      setTimeout(onClose, 2200);
-    } catch {
+      setTimeout(onClose, 2400);
+    } catch (err) {
+      console.error('Newsletter signup error:', err);
       setError("Couldn't sign you up. Try again in a sec.");
       setSubmitting(false);
     }
@@ -2161,6 +2240,9 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
     onClose();
   }
 
+  const inputStyle = { ...s.input, fontSize: '15px' };
+  const fieldRowStyle = { display: 'flex', gap: '8px' };
+
   return React.createElement('div', {
     style: {
       position: 'fixed', inset: 0, zIndex: 9999,
@@ -2168,6 +2250,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
       backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px', animation: 'pf-newsletter-fade-in 0.2s ease-out',
+      overflowY: 'auto',
     },
     role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'pf-newsletter-title',
     onClick: (e) => { if (e.target === e.currentTarget) handleSkip(); },
@@ -2175,10 +2258,11 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
     React.createElement('div', {
       style: {
         background: tokens.colorWhite, borderRadius: tokens.radiusCard,
-        padding: '32px 28px 24px', maxWidth: '420px', width: '100%',
+        padding: '28px 26px 22px', maxWidth: '440px', width: '100%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
         animation: 'pf-newsletter-pop 0.25s cubic-bezier(.2,1.2,.4,1)',
         textAlign: 'center',
+        maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
       },
     },
       submitted
@@ -2191,45 +2275,99 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
               style: { ...s.serifHeading, fontSize: '20px', margin: '0 0 8px', color: tokens.colorBrand },
             }, "You're in. Your dog's proud."),
             React.createElement('p', {
-              key: 'p', style: { ...s.bodyMuted, margin: 0, fontSize: '14px' },
+              key: 'p', style: { ...s.bodyMuted, margin: '0 0 8px', fontSize: '14px' },
             }, '10% off is on your cart automatically.'),
+            React.createElement('p', {
+              key: 'p2', style: { ...s.bodyMuted, margin: 0, fontSize: '12px' },
+            }, "Check your inbox — we sent a confirmation email to make sure it's really you."),
           ]
         : [
             React.createElement('h3', {
               key: 'h', id: 'pf-newsletter-title',
-              style: { ...s.serifHeading, fontSize: '22px', margin: '0 0 10px', color: tokens.colorBrand, lineHeight: 1.2 },
+              style: { ...s.serifHeading, fontSize: '22px', margin: '0 0 8px', color: tokens.colorBrand, lineHeight: 1.2 },
             }, '10% off? Or pay full price like a stranger?'),
             React.createElement('p', {
               key: 'sub',
-              style: { ...s.bodyMuted, margin: '0 0 20px', fontSize: '14px', lineHeight: 1.5 },
+              style: { ...s.bodyMuted, margin: '0 0 18px', fontSize: '14px', lineHeight: 1.5 },
             }, "Join PetFam — 10% off your first order, applied automatically. Your dog already RSVP'd."),
             React.createElement('form', {
-              key: 'f', onSubmit: handleSubmit,
-              style: { display: 'flex', flexDirection: 'column', gap: '10px' },
+              key: 'f', onSubmit: handleSubmit, noValidate: true,
+              style: { display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left' },
             },
+              React.createElement('div', { style: fieldRowStyle },
+                React.createElement('input', {
+                  type: 'text', name: 'firstName',
+                  placeholder: 'First name', autoComplete: 'given-name',
+                  value: firstName, onChange: (e) => setFirstName(e.target.value),
+                  disabled: submitting, autoFocus: true, required: true,
+                  style: { ...inputStyle, flex: 1 },
+                  'aria-label': 'First name',
+                }),
+                React.createElement('input', {
+                  type: 'text', name: 'lastName',
+                  placeholder: 'Last name', autoComplete: 'family-name',
+                  value: lastName, onChange: (e) => setLastName(e.target.value),
+                  disabled: submitting, required: true,
+                  style: { ...inputStyle, flex: 1 },
+                  'aria-label': 'Last name',
+                }),
+              ),
               React.createElement('input', {
-                type: 'email', name: 'email',
+                type: 'email', name: 'email', autoComplete: 'email',
                 placeholder: 'you@example.com',
-                value: email,
-                onChange: (e) => setEmail(e.target.value),
-                disabled: submitting,
-                autoFocus: true,
-                style: { ...s.input, fontSize: '15px', textAlign: 'center' },
-                'aria-label': 'Your email address',
+                value: email, onChange: (e) => setEmail(e.target.value),
+                disabled: submitting, required: true,
+                style: inputStyle, 'aria-label': 'Email address',
               }),
+              React.createElement('input', {
+                type: 'tel', name: 'phone', autoComplete: 'tel',
+                placeholder: 'Phone (optional, for SMS)',
+                value: phone, onChange: (e) => setPhone(e.target.value),
+                disabled: submitting,
+                style: inputStyle, 'aria-label': 'Phone number (optional)',
+              }),
+              React.createElement('label', {
+                style: {
+                  display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  fontSize: '12px', color: tokens.colorInk || '#222',
+                  lineHeight: 1.5, marginTop: '4px', cursor: 'pointer',
+                },
+              },
+                React.createElement('input', {
+                  type: 'checkbox', name: 'smsOptIn',
+                  checked: smsOptIn,
+                  onChange: (e) => setSmsOptIn(e.target.checked),
+                  disabled: submitting,
+                  style: { marginTop: '3px', flexShrink: 0, width: '16px', height: '16px', accentColor: tokens.colorAccent },
+                }),
+                React.createElement('span', null,
+                  React.createElement('strong', null, 'Also send me text updates'),
+                  ' — by checking this box, you agree to receive recurring marketing texts from Pet Printables at the number above. Consent isn’t a condition of purchase. Msg & data rates may apply. Reply STOP to opt out. ',
+                  React.createElement('a', {
+                    href: '/policies/terms-of-service', target: '_blank', rel: 'noopener noreferrer',
+                    style: { color: tokens.colorAccent || tokens.colorBrand, textDecoration: 'underline' },
+                  }, 'Terms'),
+                  ' · ',
+                  React.createElement('a', {
+                    href: '/policies/privacy-policy', target: '_blank', rel: 'noopener noreferrer',
+                    style: { color: tokens.colorAccent || tokens.colorBrand, textDecoration: 'underline' },
+                  }, 'Privacy'),
+                  '.',
+                ),
+              ),
               error && React.createElement('p', {
                 key: 'err', role: 'alert',
-                style: { color: tokens.colorWarning || '#B45309', margin: 0, fontSize: '12px' },
+                style: { color: tokens.colorWarning || '#B45309', margin: '4px 0 0', fontSize: '12px' },
               }, error),
               React.createElement('button', {
                 type: 'submit', disabled: submitting,
-                style: { ...s.primaryBtn, opacity: submitting ? 0.7 : 1 },
+                style: { ...s.primaryBtn, opacity: submitting ? 0.7 : 1, marginTop: '6px' },
               }, submitting ? 'Signing you up…' : 'Yes, I want 10% off'),
             ),
             React.createElement('button', {
               key: 'skip', type: 'button', onClick: handleSkip,
               style: {
-                ...s.secondaryLink, marginTop: '14px',
+                ...s.secondaryLink, marginTop: '12px',
                 fontSize: '13px', color: tokens.colorMuted,
               },
             }, 'No thanks, I love paying full price'),

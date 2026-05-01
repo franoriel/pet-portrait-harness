@@ -25,7 +25,11 @@
       shopCurrency: "CAD",
       cartUrl: "{{ routes.cart_url }}",
       previewApi: "{{ settings.portrait_api_url | default: 'https://web-production-a392e.up.railway.app' }}",
-      turnstileSiteKey: "{{ settings.turnstile_site_key }}"
+      turnstileSiteKey: "{{ settings.turnstile_site_key }}",
+      klaviyo: {
+        publicKey: "{{ settings.klaviyo_public_key | default: 'SPKeMf' }}",
+        listId:    "{{ settings.klaviyo_list_id    | default: 'VySGe8' }}"
+      }
     };
   </script>
 
