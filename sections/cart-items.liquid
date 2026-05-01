@@ -1,3 +1,70 @@
+<style>
+  /* Priority-order tooltip — shown on hover, focus, and mobile tap */
+  .priority-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-border);
+    color: var(--color-ink);
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: help;
+    outline: none;
+    user-select: none;
+    transition: background 0.15s ease;
+  }
+  .priority-tooltip:hover,
+  .priority-tooltip:focus-visible,
+  .priority-tooltip.is-open {
+    background: var(--color-ink);
+    color: #fff;
+  }
+  .priority-tooltip:focus-visible { box-shadow: 0 0 0 2px var(--color-primary, #4338CA); }
+  .priority-tooltip__bubble {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 260px;
+    background: var(--color-ink);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    font-weight: 400;
+    text-align: left;
+    white-space: normal;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 50;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+  .priority-tooltip__bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--color-ink);
+  }
+  .priority-tooltip:hover .priority-tooltip__bubble,
+  .priority-tooltip:focus-visible .priority-tooltip__bubble,
+  .priority-tooltip.is-open .priority-tooltip__bubble {
+    opacity: 1;
+  }
+  /* Shift left near the right edge of narrow viewports */
+  @media (max-width: 480px) {
+    .priority-tooltip__bubble { max-width: 220px; }
+  }
+</style>
+
 <div class="cart-page">
   <div class="container container--mid">
     {%- render 'breadcrumbs' -%}
@@ -307,6 +374,59 @@
               ></div>
             </div>
             {%- endif -%}
+
+            {%- comment -%}
+              Priority order toggle (FAB framing — Feature: priority lane;
+              Advantage: same-day QA + immediate fulfillment handoff;
+              Benefit: 1–2 days sooner). Stored as a Shopify cart attribute
+              `Priority order: Yes/No` so it surfaces on the order in admin
+              and order exports for the ops/QA team to actually act on.
+              Note: doesn't add a paid line item — see TODO in the script
+              handler if you later want to charge for this.
+            {%- endcomment -%}
+            {%- assign priority_on = cart.attributes['Priority order'] -%}
+            <div
+              class="cart-summary__priority"
+              data-priority-toggle
+              style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
+            >
+              <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
+                <input
+                  type="checkbox"
+                  id="PriorityOrderToggle"
+                  data-priority-checkbox
+                  {% if priority_on == 'Yes' %}checked{% endif %}
+                  style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
+                >
+                <span style="flex:1;line-height:1.45;">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);flex-wrap:wrap;">
+                    <span aria-hidden="true">⚡</span>
+                    Priority order
+                    <span
+                      class="priority-tooltip"
+                      tabindex="0"
+                      role="button"
+                      aria-label="What is priority order?"
+                      aria-describedby="PriorityOrderTip"
+                    >
+                      ?
+                      <span id="PriorityOrderTip" role="tooltip" class="priority-tooltip__bubble">
+                        Our QA team processes priority orders the same day and hands them straight to fulfillment — usually 1–2 days faster on production. (Carrier shipping is unchanged: 3–5 business days.)
+                      </span>
+                    </span>
+                    <span
+                      data-priority-status
+                      role="status"
+                      aria-live="polite"
+                      style="margin-left:auto;font-size:0.78rem;color:var(--color-muted);font-weight:500;"
+                    ></span>
+                  </span>
+                  <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                    Skip the QA queue — get it 1–2 days sooner.
+                  </span>
+                </span>
+              </label>
+            </div>
 
             {%- comment -%}
               Shipping estimator — user enters a postal code, we call
@@ -1180,6 +1300,75 @@
           }
         });
       });
+    });
+  })();
+
+  /* ──────────────────────────────────────────────────────────────
+   * Priority-order toggle.
+   * Stores `Priority order: Yes/No` as a Shopify cart attribute via
+   * /cart/update.js — visible on the order in admin so the QA/ops
+   * team can see at a glance which orders to process same-day.
+   * If you later want to charge for this, create a "Priority
+   * Processing" Shopify product and replace the /cart/update.js call
+   * with /cart/add.js (variant_id) + /cart/change.js to remove on
+   * uncheck. Cart attribute stays as a redundant flag for ops.
+   * ────────────────────────────────────────────────────────────── */
+  (function () {
+    var toggle = document.querySelector('[data-priority-toggle]');
+    if (!toggle) return;
+    var checkbox = toggle.querySelector('[data-priority-checkbox]');
+    var status = toggle.querySelector('[data-priority-status]');
+    var tipBtn = toggle.querySelector('.priority-tooltip');
+
+    /* Mobile: tap-to-toggle the tooltip (CSS hover doesn't fire on touch). */
+    if (tipBtn) {
+      tipBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        tipBtn.classList.toggle('is-open');
+      });
+      tipBtn.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          tipBtn.classList.toggle('is-open');
+        }
+        if (e.key === 'Escape') tipBtn.classList.remove('is-open');
+      });
+      document.addEventListener('click', function (e) {
+        if (!tipBtn.contains(e.target)) tipBtn.classList.remove('is-open');
+      });
+    }
+
+    if (!checkbox) return;
+
+    function setStatus(text, isError) {
+      if (!status) return;
+      status.textContent = text || '';
+      status.style.color = isError ? 'var(--color-warning, #B45309)' : 'var(--color-muted)';
+      if (text && !isError) {
+        setTimeout(function () { status.textContent = ''; }, 2200);
+      }
+    }
+
+    checkbox.addEventListener('change', function () {
+      var val = checkbox.checked ? 'Yes' : 'No';
+      checkbox.disabled = true;
+      setStatus('Saving…');
+      fetch('/cart/update.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ attributes: { 'Priority order': val } }),
+      })
+        .then(function (r) { if (!r.ok) throw new Error('UPDATE_FAILED'); return r.json(); })
+        .then(function () {
+          setStatus(val === 'Yes' ? 'Priority on' : 'Saved');
+        })
+        .catch(function () {
+          /* Revert the checkbox so the UI matches server state. */
+          checkbox.checked = !checkbox.checked;
+          setStatus('Could not save — try again', true);
+        })
+        .finally(function () { checkbox.disabled = false; });
     });
   })();
 </script>
