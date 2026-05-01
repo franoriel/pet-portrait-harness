@@ -458,9 +458,8 @@
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
     toast.innerHTML = `
-      <span class="pf-freeship-toast__emoji" aria-hidden="true">🎉</span>
       <span class="pf-freeship-toast__text">
-        <strong>Free shipping unlocked!</strong>
+        <strong>Free shipping unlocked.</strong>
         <span class="pf-freeship-toast__sub">Nice — your order ships on us.</span>
       </span>`;
     document.body.appendChild(toast);
@@ -538,9 +537,9 @@
       if (cart.items.length === 0) {
         body.innerHTML = `
           <div class="cart-empty-state">
-            <p class="cart-empty-state__icon">🛒</p>
+            <p class="cart-empty-state__icon" aria-hidden="true">✦</p>
             <p class="cart-empty-state__title">Your cart is empty</p>
-            <p class="cart-empty-state__sub">Create your first pet portrait!</p>
+            <p class="cart-empty-state__sub">Create your first pet portrait.</p>
             <a href="/collections/all" class="btn btn--primary" data-cart-close>Shop Now</a>
           </div>`;
         if (footer) footer.innerHTML = '';
@@ -575,14 +574,13 @@
         const shipTracker = remainingCents > 0
           ? `<div class="cart-drawer__ship-tracker">
                <div class="cart-drawer__ship-msg">
-                 <span aria-hidden="true">🚚</span>
                  You're <strong>${this.fmt(remainingCents)}</strong> from free shipping
                </div>
                <div class="cart-drawer__ship-bar"><div style="width:${progressPct}%"></div></div>
                <a href="/pages/create" class="cart-drawer__ship-cta">+ Add another portrait</a>
              </div>`
           : `<div class="cart-drawer__ship-tracker cart-drawer__ship-tracker--achieved">
-               <span aria-hidden="true">🎉</span> You've unlocked <strong>free shipping</strong>!
+               You've unlocked <strong>free shipping</strong>.
              </div>`;
 
         footer.innerHTML = `

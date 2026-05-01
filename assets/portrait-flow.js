@@ -1847,10 +1847,17 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           })),
         ),
         React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
+          // Decorative checkmark badge — replaces the previous sparkle glyph
           React.createElement('span', {
             'aria-hidden': true,
-            style: { fontSize: 'var(--text-base)', lineHeight: 1, marginTop: '2px' },
-          }, '✨'),
+            style: {
+              flexShrink: 0,
+              width: '20px', height: '20px', borderRadius: '50%',
+              background: tokens.colorAccent, color: tokens.colorWhite,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'var(--text-xs)', fontWeight: 700, marginTop: '2px',
+            },
+          }, '✓'),
           React.createElement('div', { style: { flex: 1, minWidth: 0 } },
             React.createElement('p', {
               style: { ...s.smallCaps, margin: '0 0 2px', color: tokens.colorAccent, fontSize: 'var(--text-xs)' },
@@ -2353,9 +2360,20 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
     },
       submitted
         ? [
+            // Decorative checkmark in a brand-tone circle — replaces the
+            // previous party-popper emoji.
             React.createElement('div', {
-              key: 't', style: { fontSize: 'var(--text-2xl)', marginBottom: '8px' },
-            }, '🎉'),
+              key: 't',
+              style: {
+                width: '44px', height: '44px', borderRadius: '50%',
+                background: tokens.colorAccentLight,
+                color: tokens.colorAccent,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 'var(--text-lg)', fontWeight: 700,
+                marginBottom: '12px',
+              },
+              'aria-hidden': true,
+            }, '✓'),
             React.createElement('h3', {
               key: 'h',
               style: { ...s.serifHeading, fontSize: 'var(--text-lg)', margin: '0 0 8px', color: tokens.colorBrand },
@@ -2477,7 +2495,7 @@ function NewsletterPill({ onClick, visible }) {
       cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
       animation: 'pf-newsletter-pop 0.3s cubic-bezier(.2,1.2,.4,1)',
     },
-  }, '⚡ Get 10% off');
+  }, 'Get 10% off');
 }
 
 /* ── PreviewStep ───────────────────────────────────────────── */
@@ -2645,8 +2663,15 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         },
         'aria-label': 'Selected style: ' + styleNameFor(state.selectedStyleId),
       },
-        React.createElement('span', { 'aria-hidden': true }, '✨'),
-        ' Your style: ' + styleNameFor(state.selectedStyleId),
+        React.createElement('span', {
+          'aria-hidden': true,
+          style: {
+            display: 'inline-block',
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: tokens.colorAccent,
+          },
+        }),
+        'Your style: ' + styleNameFor(state.selectedStyleId),
       ),
     ),
 
@@ -2877,8 +2902,15 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         },
         'aria-label': 'Selected style: ' + styleNameFor(state.selectedStyleId),
       },
-        React.createElement('span', { 'aria-hidden': true }, '✨'),
-        ' Your style: ' + styleNameFor(state.selectedStyleId),
+        React.createElement('span', {
+          'aria-hidden': true,
+          style: {
+            display: 'inline-block',
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: tokens.colorAccent,
+          },
+        }),
+        'Your style: ' + styleNameFor(state.selectedStyleId),
       ),
     ),
 
