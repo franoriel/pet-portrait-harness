@@ -37,9 +37,31 @@
           {%- endif -%}
         </div>
       {%- else -%}
-        {%- for i in (1..6) -%}
+        {%- comment -%}
+          Default gallery fills with the 8 style example assets shipped in
+          assets/example-*.webp (the same images that power the homepage
+          marquee). Replaced as soon as a merchant adds custom Gallery Item
+          blocks via the theme editor.
+
+          Categories are illustrative ("dogs" by default since the shipped
+          examples are dog-led) — when real customer pieces are added as
+          blocks, set the appropriate category there.
+        {%- endcomment -%}
+        {%- assign default_examples = "soft-watercolour|Soft Watercolour;minimal-line-art|Minimal Line Art;modern-shape-art|Modern;neon-pop-art|Neon Pop Art;renaissance-royalty|Renaissance Royalty;rainbow-bridge|Rainbow Bridge;bold-graphic-poster|Bold Graphic Poster;aura-gradient|Aura Gradient" | split: ";" -%}
+        {%- for entry in default_examples -%}
+          {%- assign parts = entry | split: '|' -%}
+          {%- assign slug = parts[0] -%}
+          {%- assign label = parts[1] -%}
           <div class="gallery-item" role="listitem" data-category="dogs">
-            {{ 'image' | placeholder_svg_tag }}
+            <img
+              src="{{ 'example-' | append: slug | append: '.webp' | asset_url }}"
+              alt="{{ label }} style example portrait"
+              loading="lazy"
+              width="200"
+              height="248"
+              style="width:100%;height:auto;display:block;border-radius:var(--radius-card);"
+            >
+            <p style="font-size:0.78rem;color:var(--color-muted);padding:6px 8px;text-align:center;">{{ label }}</p>
           </div>
         {%- endfor -%}
       {%- endfor -%}
