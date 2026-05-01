@@ -399,7 +399,7 @@
     var sizeLabel = document.createElement('div');
     sizeLabel.style.cssText = 'position:absolute;bottom:12px;right:14px;'
       + 'display:flex;align-items:center;gap:8px;'
-      + "font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.04em;"
+      + "font-family:'Inter',sans-serif;font-size:var(--text-xs);font-weight:500;letter-spacing:0.04em;"
       + 'color:#3a3530;background:rgba(255,255,255,0.55);padding:6px 12px;border-radius:999px;'
       + 'border:1px solid rgba(255,255,255,0.6);'
       + 'box-shadow:0 2px 8px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.6);'
@@ -412,7 +412,7 @@
 
     // Separator dot
     var sep = document.createElement('span');
-    sep.style.cssText = 'color:#a09890;font-size:0.7em;';
+    sep.style.cssText = 'color:#a09890;font-size:var(--text-xs);';
     sep.textContent = '\u00B7';
     sizeLabel.appendChild(sep);
 
@@ -547,7 +547,7 @@
     var title = document.querySelector('.product-info__title');
     if (title) {
       var banner = document.createElement('p');
-      banner.style.cssText = "font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:#1C1C1C;margin:0 0 4px;letter-spacing:0.02em;";
+      banner.style.cssText = "font-family:'Cormorant Garamond',serif;font-style:italic;font-size:var(--text-xl);color:#1C1C1C;margin:0 0 4px;letter-spacing:0.02em;";
       banner.textContent = petName + '\u2019s portrait';
       title.parentNode.insertBefore(banner, title);
     }
@@ -580,11 +580,11 @@
   var info = document.createElement('div');
   info.style.cssText = 'flex:1;min-width:0;';
   var nameLabel = document.createElement('p');
-  nameLabel.style.cssText = "margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--color-ink, #1C1C1C);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+  nameLabel.style.cssText = "margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:var(--text-lg);color:var(--color-ink, #1C1C1C);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
   nameLabel.textContent = petName ? petName + '\u2019s Portrait' : 'Your Portrait';
   info.appendChild(nameLabel);
   var styleLabel = document.createElement('p');
-  styleLabel.style.cssText = 'margin:2px 0 0;font-size:0.8rem;color:var(--color-muted, #8a8580);';
+  styleLabel.style.cssText = 'margin:2px 0 0;font-size:var(--text-sm);color:var(--color-muted, #8a8580);';
   styleLabel.textContent = styleName;
   info.appendChild(styleLabel);
 
@@ -593,7 +593,7 @@
   var changeLink = document.createElement('a');
   changeLink.href = '#';
   changeLink.textContent = 'Change';
-  changeLink.style.cssText = 'font-size:0.82rem;color:var(--color-muted, #8a8580);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;flex-shrink:0;';
+  changeLink.style.cssText = 'font-size:var(--text-sm);color:var(--color-muted, #8a8580);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;flex-shrink:0;';
   changeLink.addEventListener('click', function (e) {
     e.preventDefault();
     try { localStorage.removeItem(LS_KEY); } catch (err) {}
@@ -612,15 +612,15 @@
       + 'text-align:center;transition:all 0.3s ease;';
 
     var label = document.createElement('p');
-    label.style.cssText = "font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;"
+    label.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-xs);font-weight:700;"
       + 'margin:0 0 8px;letter-spacing:0.10em;text-transform:uppercase;';
 
     var clock = document.createElement('div');
-    clock.style.cssText = "font-family:'Inter',sans-serif;font-weight:700;font-size:36px;"
+    clock.style.cssText = "font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-2xl);"
       + 'line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums;letter-spacing:0.02em;';
 
     var msg = document.createElement('p');
-    msg.style.cssText = "font-family:'Inter',sans-serif;font-size:12px;color:#1C1C1C;"
+    msg.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-xs);color:#1C1C1C;"
       + 'margin:0;line-height:1.4;font-weight:500;';
 
     banner.appendChild(label);
@@ -715,8 +715,8 @@
       + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;background:var(--color-surface, #faf9f7);';
 
     var toggleLabel = document.createElement('span');
-    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;display:inline-flex;align-items:center;gap:10px;";
-    toggleLabel.innerHTML = '<span>Show name on portrait</span><span data-name-loading style="display:none;font-size:0.76rem;color:var(--color-muted, #8a8580);font-weight:500;align-items:center;gap:6px;"></span>';
+    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;display:inline-flex;align-items:center;gap:10px;";
+    toggleLabel.innerHTML = '<span>Show name on portrait</span><span data-name-loading style="display:none;font-size:var(--text-xs);color:var(--color-muted, #8a8580);font-weight:500;align-items:center;gap:6px;"></span>';
     toggleWrap.appendChild(toggleLabel);
 
     // Inject spinner keyframe once per page
@@ -735,7 +735,7 @@
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = text;
-      btn.style.cssText = "font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:600;"
+      btn.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-xs);font-weight:600;"
         + 'padding:8px 16px;border:none;cursor:pointer;transition:all 0.2s;min-width:52px;'
         + (isActive
           ? 'background:var(--color-ink, #1C1C1C);color:#fff;'
@@ -899,7 +899,7 @@
     var editorLabel = document.createElement('label');
     editorLabel.setAttribute('for', 'PdpPetNameEdit');
     editorLabel.textContent = 'Name';
-    editorLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:600;"
+    editorLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-xs);font-weight:600;"
       + 'color:var(--color-muted, #8a8580);text-transform:uppercase;letter-spacing:0.08em;';
     editorRow.appendChild(editorLabel);
 
@@ -909,7 +909,7 @@
     editorInput.value = petName;
     editorInput.maxLength = 20;
     editorInput.setAttribute('aria-label', 'Edit name on portrait');
-    editorInput.style.cssText = "flex:1;min-width:0;font-family:'Inter',sans-serif;font-size:0.9rem;"
+    editorInput.style.cssText = "flex:1;min-width:0;font-family:'Inter',sans-serif;font-size:var(--text-sm);"
       + 'padding:8px 12px;border:1.5px solid var(--color-border, #e5e0db);border-radius:8px;'
       + 'background:#fff;color:var(--color-ink, #1C1C1C);outline:none;transition:border-color 0.2s;';
     editorInput.addEventListener('focus', function () {
@@ -920,7 +920,7 @@
     });
 
     var editorCounter = document.createElement('span');
-    editorCounter.style.cssText = "font-family:'Inter',sans-serif;font-size:0.72rem;color:var(--color-muted, #8a8580);";
+    editorCounter.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-xs);color:var(--color-muted, #8a8580);";
     editorCounter.textContent = petName.length + '/20';
     editorRow.appendChild(editorInput);
     editorRow.appendChild(editorCounter);

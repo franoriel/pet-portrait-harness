@@ -713,7 +713,7 @@ function usePortraitFlow() {
     previewDataUrls: saved?.previewDataUrls || [],
     previewCdnUrls: saved?.previewCdnUrls || [],
     selectedPreviewIndex: saved?.selectedPreviewIndex || 0,
-    fontSize: 'small',
+    fontSize: 'var(--text-sm)',
     backgroundMode: saved?.backgroundMode || 'auto',
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
@@ -1098,7 +1098,7 @@ function usePortraitFlow() {
         generationError: null, generationErrorTips: null,
         previewImages: [], previewDataUrls: [], previewCdnUrls: [],
         selectedPreviewIndex: 0,
-        fontSize: 'small',
+        fontSize: 'var(--text-sm)',
         backgroundMode: 'auto',
         imageFilename: '', originalPhotoUrl: '', printFileUrl: '',
         jobId: null, restoredSession: false,
@@ -1120,7 +1120,7 @@ function usePortraitFlow() {
 
 const s = {
   primaryBtn: {
-    fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
+    fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
     letterSpacing: '0.12em', textTransform: 'uppercase',
     background: tokens.colorCta, color: tokens.colorWhite,
     border: 'none', borderRadius: tokens.radiusButton,
@@ -1129,7 +1129,7 @@ const s = {
   },
   primaryBtnDisabled: { opacity: 0.35, cursor: 'not-allowed' },
   outlineBtn: {
-    fontFamily: fontSans, fontWeight: 500, fontSize: '12px',
+    fontFamily: fontSans, fontWeight: 500, fontSize: 'var(--text-xs)',
     letterSpacing: '0.12em', textTransform: 'uppercase',
     color: tokens.colorCta, background: tokens.colorWhite,
     border: `1.5px solid ${tokens.colorBorder}`, borderRadius: tokens.radiusButton,
@@ -1137,19 +1137,19 @@ const s = {
     cursor: 'pointer', outline: 'none', transition: 'border-color 0.15s',
   },
   secondaryLink: {
-    fontFamily: fontSans, fontWeight: 400, fontSize: '13px',
+    fontFamily: fontSans, fontWeight: 400, fontSize: 'var(--text-sm)',
     color: tokens.colorMuted, background: 'none', border: 'none',
     padding: '8px 0', cursor: 'pointer', outline: 'none',
     textDecoration: 'none', transition: 'color 0.15s',
   },
   secondaryLinkUnderline: {
-    fontFamily: fontSans, fontWeight: 400, fontSize: '13px',
+    fontFamily: fontSans, fontWeight: 400, fontSize: 'var(--text-sm)',
     color: tokens.colorMuted, background: 'none', border: 'none',
     padding: '8px 0', cursor: 'pointer', outline: 'none',
     textDecoration: 'underline', transition: 'color 0.15s',
   },
   bodyMuted: {
-    fontFamily: fontSans, fontWeight: 400, fontSize: '13px',
+    fontFamily: fontSans, fontWeight: 400, fontSize: 'var(--text-sm)',
     color: tokens.colorMuted, lineHeight: 1.6, margin: 0,
   },
   serifItalic: {
@@ -1157,21 +1157,21 @@ const s = {
     color: tokens.colorBrand,
   },
   smallCaps: {
-    fontFamily: fontSans, fontWeight: 500, fontSize: '12px',
+    fontFamily: fontSans, fontWeight: 500, fontSize: 'var(--text-xs)',
     letterSpacing: '0.12em', textTransform: 'uppercase',
     color: tokens.colorMuted,
   },
   serifHeading: {
     fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
-    fontSize: 'clamp(22px, 5vw, 28px)', color: tokens.colorBrand,
+    fontSize: 'clamp(var(--text-lg), 5vw, var(--text-xl))', color: tokens.colorBrand,
     margin: '0 0 20px 0', lineHeight: 1.2,
   },
   photoGuidelines: {
-    fontFamily: fontSerif, fontStyle: 'italic', fontSize: '15px',
+    fontFamily: fontSerif, fontStyle: 'italic', fontSize: 'var(--text-base)',
     color: tokens.colorMuted, lineHeight: 1.8, marginBottom: '32px',
   },
   input: {
-    fontFamily: fontSans, fontSize: '15px', color: tokens.colorBrand,
+    fontFamily: fontSans, fontSize: 'var(--text-base)', color: tokens.colorBrand,
     background: 'transparent', border: 'none',
     borderBottom: `1.5px solid ${tokens.colorBorder}`, borderRadius: 0,
     padding: '12px 0', width: '100%', boxSizing: 'border-box',
@@ -1268,7 +1268,7 @@ function StepIndicator({ current, total = 4 }) {
           // Label
           React.createElement('span', {
             style: {
-              fontFamily: fontSans, fontSize: '12px', fontWeight: isCurrent ? 700 : 500,
+              fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: isCurrent ? 700 : 500,
               color: isCurrent ? tokens.colorBrand : tokens.colorMuted,
               marginTop: '7px', textTransform: 'uppercase', letterSpacing: '0.06em',
             },
@@ -1321,7 +1321,7 @@ function PetNameInput({ id, value, onChange }) {
       React.createElement('span', {
         'aria-live': 'polite',
         style: {
-          fontFamily: fontSans, fontSize: '11px', letterSpacing: 0,
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', letterSpacing: 0,
           textTransform: 'none', fontWeight: 500,
           color: nearLimit ? tokens.colorWarning : tokens.colorMuted,
         },
@@ -1343,7 +1343,7 @@ function PetNameInput({ id, value, onChange }) {
     }),
     React.createElement('p', {
       style: {
-        ...s.bodyMuted, fontSize: '11px', marginTop: '6px', marginBottom: 0,
+        ...s.bodyMuted, fontSize: 'var(--text-xs)', marginTop: '6px', marginBottom: 0,
       },
     }, `Short names print the cleanest — up to ${PET_NAME_MAX} characters.`),
   );
@@ -1376,7 +1376,7 @@ function YourPortraits({ onOrderPortrait }) {
     },
       React.createElement('p', { style: { ...s.smallCaps, margin: 0 } }, 'Your saved portraits'),
       React.createElement('span', {
-        style: { fontFamily: fontSans, fontSize: '11px', color: tokens.colorMuted },
+        style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorMuted },
       }, `${library.length} saved`),
     ),
 
@@ -1408,13 +1408,13 @@ function YourPortraits({ onOrderPortrait }) {
             }),
             React.createElement('p', {
               style: {
-                fontFamily: fontSerif, fontStyle: 'italic', fontSize: '15px',
+                fontFamily: fontSerif, fontStyle: 'italic', fontSize: 'var(--text-base)',
                 color: tokens.colorBrand, margin: '8px 0 2px', lineHeight: 1.2,
               },
             }, p.petName),
             React.createElement('p', {
               style: {
-                fontFamily: fontSans, fontSize: '10px', color: daysLeft <= 3 ? tokens.colorWarning : tokens.colorMuted,
+                fontFamily: fontSans, fontSize: 'var(--text-xs)', color: daysLeft <= 3 ? tokens.colorWarning : tokens.colorMuted,
                 margin: 0,
               },
             }, daysLeft <= 3 ? `Expires in ${daysLeft}d` : `${daysLeft}d left`),
@@ -1425,7 +1425,7 @@ function YourPortraits({ onOrderPortrait }) {
 
     React.createElement('p', {
       style: {
-        fontFamily: fontSans, fontSize: '11px', color: tokens.colorMuted,
+        fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorMuted,
         margin: '12px 0 0', textAlign: 'center',
       },
     }, 'Tap to order again, or create a new one below'),
@@ -1451,7 +1451,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
         version: 1,
         petName: portrait.petName,
         styleId: portrait.styleId,
-        fontSize: 'small',
+        fontSize: 'var(--text-sm)',
         jobId: portrait.jobId,
         previewDataUrls: [],
         previewCdnUrls: [portrait.previewUrl].filter(Boolean),
@@ -1497,10 +1497,10 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
           }),
           React.createElement('div', { style: { flex: 1 } },
             React.createElement('p', {
-              style: { fontFamily: fontSans, fontSize: '14px', fontWeight: 500, color: tokens.colorBrand, margin: '0 0 2px' },
+              style: { fontFamily: fontSans, fontSize: 'var(--text-sm)', fontWeight: 500, color: tokens.colorBrand, margin: '0 0 2px' },
             }, 'Photo uploaded \u2713'),
             React.createElement('button', {
-              type: 'button', style: { ...s.secondaryLinkUnderline, fontSize: '13px' },
+              type: 'button', style: { ...s.secondaryLinkUnderline, fontSize: 'var(--text-sm)' },
               onClick: () => fileRef.current?.click(),
             }, 'Change photo'),
           ),
@@ -1516,7 +1516,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
         },
           React.createElement(CameraIcon, { size: 32 }),
           React.createElement('button', {
-            type: 'button', style: { ...s.primaryBtn, width: 'auto', padding: '12px 32px', fontSize: '13px' },
+            type: 'button', style: { ...s.primaryBtn, width: 'auto', padding: '12px 32px', fontSize: 'var(--text-sm)' },
             onClick: () => fileRef.current?.click(),
           }, 'UPLOAD PHOTO'),
         ),
@@ -1572,7 +1572,7 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
       ['\uD83D\uDC41 Face clearly visible', '\u2600\uFE0F Good lighting', '\uD83D\uDC3E One pet per photo'].map(tip =>
         React.createElement('span', {
           key: tip,
-          style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted },
+          style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorMuted },
         }, tip),
       ),
     ),
@@ -1628,7 +1628,7 @@ function PhotoLicenseConsent({ accepted, onChange }) {
     }),
     React.createElement('span', {
       id: 'pf-terms-text',
-      style: { fontFamily: fontSans, fontSize: '12px', lineHeight: 1.5,
+      style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', lineHeight: 1.5,
                color: tokens.colorMuted },
     },
       'I confirm I own all rights to this photo (or have permission from the ' +
@@ -1669,7 +1669,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
     },
       React.createElement('p', {
         style: {
-          fontFamily: fontSans, fontWeight: 600, fontSize: '14px',
+          fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
           color: '#912018', margin: '0 0 6px', lineHeight: 1.4,
         },
       }, state.generationError),
@@ -1677,7 +1677,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         React.createElement('ul', {
           style: {
             margin: 0, paddingLeft: '18px',
-            fontFamily: fontSans, fontSize: '13px',
+            fontFamily: fontSans, fontSize: 'var(--text-sm)',
             color: '#7A271A', lineHeight: 1.5,
           },
         },
@@ -1724,7 +1724,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             style.badge && React.createElement('span', {
               style: {
                 position: 'absolute', top: '8px', left: '8px',
-                ...s.smallCaps, fontSize: '10px', letterSpacing: '0.08em',
+                ...s.smallCaps, fontSize: 'var(--text-xs)', letterSpacing: '0.08em',
                 color: tokens.colorWhite, background: tokens.colorSuccess,
                 borderRadius: '3px', padding: '3px 7px',
               },
@@ -1736,7 +1736,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
                 width: '22px', height: '22px', borderRadius: '50%',
                 background: tokens.colorAccent, color: tokens.colorWhite,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '12px',
+                fontSize: 'var(--text-xs)',
               },
             }, '\u2713'),
             // Available soon overlay
@@ -1750,7 +1750,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             },
               React.createElement('span', {
                 style: {
-                  ...s.smallCaps, fontSize: '12px', fontWeight: 700,
+                  ...s.smallCaps, fontSize: 'var(--text-xs)', fontWeight: 700,
                   color: tokens.colorBrand, background: 'rgba(255,255,255,0.95)',
                   borderRadius: '4px', padding: '6px 12px',
                 },
@@ -1761,7 +1761,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           React.createElement('div', { style: { padding: '8px 8px 10px' } },
             React.createElement('p', {
               style: {
-                fontFamily: fontSans, fontWeight: 600, fontSize: '11px',
+                fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
                 color: selected ? tokens.colorAccent : tokens.colorBrand,
                 margin: '0 0 2px', lineHeight: 1.3,
               },
@@ -1770,7 +1770,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             React.createElement('p', {
               style: {
                 fontFamily: (STYLE_FONTS[style.id] || {}).css || fontSerif,
-                fontWeight: 700, fontSize: '13px',
+                fontWeight: 700, fontSize: 'var(--text-sm)',
                 color: tokens.colorMuted,
                 margin: 0, lineHeight: 1.2,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -1798,7 +1798,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         },
       },
         React.createElement('p', {
-          style: { ...s.smallCaps, margin: '0 0 10px', fontSize: '10px', textAlign: 'center' },
+          style: { ...s.smallCaps, margin: '0 0 10px', fontSize: 'var(--text-xs)', textAlign: 'center' },
         }, 'Background'),
         React.createElement('div', {
           style: { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '8px' },
@@ -1837,13 +1837,13 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
               }),
               React.createElement('span', {
                 style: {
-                  fontFamily: fontSans, fontWeight: 600, fontSize: '12px',
+                  fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
                   color: active ? tokens.colorAccent : tokens.colorBrand,
                 },
               }, opt.label),
               React.createElement('span', {
                 style: {
-                  fontFamily: fontSans, fontSize: '10px',
+                  fontFamily: fontSans, fontSize: 'var(--text-xs)',
                   color: tokens.colorMuted, lineHeight: 1.2,
                 },
               }, opt.sub),
@@ -1861,7 +1861,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         textAlign: 'center',
       },
     },
-      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 6px', fontSize: '10px' } }, 'Name preview'),
+      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 6px', fontSize: 'var(--text-xs)' } }, 'Name preview'),
       React.createElement('p', {
         style: {
           fontFamily: (STYLE_FONTS[state.selectedStyleId] || {}).css || fontSerif,
@@ -2069,7 +2069,7 @@ function GeneratingState() {
     React.createElement('p', {
       key: 'phrase-' + fadeKey,
       style: {
-        ...s.serifItalic, fontSize: '20px', margin: 0, minHeight: '28px',
+        ...s.serifItalic, fontSize: 'var(--text-lg)', margin: 0, minHeight: '28px',
         animation: 'pf-phrase-fade 2.8s ease-in-out',
       },
     }, LOADING_PHRASES[phraseIdx]),
@@ -2240,7 +2240,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
     onClose();
   }
 
-  const inputStyle = { ...s.input, fontSize: '15px' };
+  const inputStyle = { ...s.input, fontSize: 'var(--text-base)' };
   const fieldRowStyle = { display: 'flex', gap: '8px' };
 
   return React.createElement('div', {
@@ -2268,27 +2268,27 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
       submitted
         ? [
             React.createElement('div', {
-              key: 't', style: { fontSize: '40px', marginBottom: '8px' },
+              key: 't', style: { fontSize: 'var(--text-2xl)', marginBottom: '8px' },
             }, '🎉'),
             React.createElement('h3', {
               key: 'h',
-              style: { ...s.serifHeading, fontSize: '20px', margin: '0 0 8px', color: tokens.colorBrand },
+              style: { ...s.serifHeading, fontSize: 'var(--text-lg)', margin: '0 0 8px', color: tokens.colorBrand },
             }, "You're in. Your dog's proud."),
             React.createElement('p', {
-              key: 'p', style: { ...s.bodyMuted, margin: '0 0 8px', fontSize: '14px' },
+              key: 'p', style: { ...s.bodyMuted, margin: '0 0 8px', fontSize: 'var(--text-sm)' },
             }, '10% off is on your cart automatically.'),
             React.createElement('p', {
-              key: 'p2', style: { ...s.bodyMuted, margin: 0, fontSize: '12px' },
+              key: 'p2', style: { ...s.bodyMuted, margin: 0, fontSize: 'var(--text-xs)' },
             }, "Check your inbox — we sent a confirmation email to make sure it's really you."),
           ]
         : [
             React.createElement('h3', {
               key: 'h', id: 'pf-newsletter-title',
-              style: { ...s.serifHeading, fontSize: '22px', margin: '0 0 8px', color: tokens.colorBrand, lineHeight: 1.2 },
+              style: { ...s.serifHeading, fontSize: 'var(--text-lg)', margin: '0 0 8px', color: tokens.colorBrand, lineHeight: 1.2 },
             }, '10% off? Or pay full price like a stranger?'),
             React.createElement('p', {
               key: 'sub',
-              style: { ...s.bodyMuted, margin: '0 0 18px', fontSize: '14px', lineHeight: 1.5 },
+              style: { ...s.bodyMuted, margin: '0 0 18px', fontSize: 'var(--text-sm)', lineHeight: 1.5 },
             }, "Join PetFam — 10% off your first order, applied automatically. Your dog already RSVP'd."),
             React.createElement('form', {
               key: 'f', onSubmit: handleSubmit, noValidate: true,
@@ -2329,7 +2329,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
               React.createElement('label', {
                 style: {
                   display: 'flex', alignItems: 'flex-start', gap: '10px',
-                  fontSize: '12px', color: tokens.colorInk || '#222',
+                  fontSize: 'var(--text-xs)', color: tokens.colorInk || '#222',
                   lineHeight: 1.5, marginTop: '4px', cursor: 'pointer',
                 },
               },
@@ -2357,7 +2357,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
               ),
               error && React.createElement('p', {
                 key: 'err', role: 'alert',
-                style: { color: tokens.colorWarning || '#B45309', margin: '4px 0 0', fontSize: '12px' },
+                style: { color: tokens.colorWarning || '#B45309', margin: '4px 0 0', fontSize: 'var(--text-xs)' },
               }, error),
               React.createElement('button', {
                 type: 'submit', disabled: submitting,
@@ -2368,7 +2368,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
               key: 'skip', type: 'button', onClick: handleSkip,
               style: {
                 ...s.secondaryLink, marginTop: '12px',
-                fontSize: '13px', color: tokens.colorMuted,
+                fontSize: 'var(--text-sm)', color: tokens.colorMuted,
               },
             }, 'No thanks, I love paying full price'),
           ]
@@ -2387,7 +2387,7 @@ function NewsletterPill({ onClick, visible }) {
       position: 'fixed', bottom: '18px', right: '18px', zIndex: 9998,
       background: tokens.colorBrand, color: tokens.colorWhite,
       border: 'none', borderRadius: '999px',
-      padding: '12px 18px', fontFamily: fontSans, fontWeight: 600, fontSize: '13px',
+      padding: '12px 18px', fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
       cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
       animation: 'pf-newsletter-pop 0.3s cubic-bezier(.2,1.2,.4,1)',
     },
@@ -2430,12 +2430,12 @@ function UrgencyBanner({ generatedAt }) {
     },
       React.createElement('p', {
         style: {
-          fontFamily: fontSans, fontSize: '13px', fontWeight: 700,
+          fontFamily: fontSans, fontSize: 'var(--text-sm)', fontWeight: 700,
           color: '#991B1B', margin: '0 0 4px', letterSpacing: '0.02em',
         },
       }, 'Your hold expired'),
       React.createElement('p', {
-        style: { fontFamily: fontSans, fontSize: '12px', color: '#7F1D1D', margin: 0, lineHeight: 1.5 },
+        style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: '#7F1D1D', margin: 0, lineHeight: 1.5 },
       }, 'Don\u2019t worry \u2014 your portrait is still saved for 24 hours. Start a new session to pick it back up.'),
     );
   }
@@ -2461,7 +2461,7 @@ function UrgencyBanner({ generatedAt }) {
   },
     React.createElement('p', {
       style: {
-        fontFamily: fontSans, fontSize: '11px', fontWeight: 700,
+        fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 700,
         color: isUrgent ? '#991B1B' : '#B45309',
         margin: '0 0 8px', letterSpacing: '0.10em', textTransform: 'uppercase',
       },
@@ -2473,7 +2473,7 @@ function UrgencyBanner({ generatedAt }) {
     React.createElement('div', {
       style: {
         fontFamily: fontSans, fontWeight: 700,
-        fontSize: '42px', color: isUrgent ? '#991B1B' : tokens.colorBrand,
+        fontSize: 'var(--text-2xl)', color: isUrgent ? '#991B1B' : tokens.colorBrand,
         lineHeight: 1, margin: '0 0 6px',
         fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em',
       },
@@ -2481,7 +2481,7 @@ function UrgencyBanner({ generatedAt }) {
 
     React.createElement('p', {
       style: {
-        fontFamily: fontSans, fontSize: '12px', color: tokens.colorBrand,
+        fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorBrand,
         margin: 0, lineHeight: 1.4, fontWeight: 500,
       },
     }, 'This exact portrait is ',
@@ -2501,18 +2501,18 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       : ['Your photo and style are saved \u2014 just try again.'];
     return React.createElement('div', { style: { ...s.sectionWrap, textAlign: 'center', padding: '48px 16px' } },
       React.createElement('h2', {
-        style: { ...s.serifItalic, fontSize: '22px', marginBottom: '10px' },
+        style: { ...s.serifItalic, fontSize: 'var(--text-lg)', marginBottom: '10px' },
       }, 'Something went off-leash'),
       React.createElement('p', {
         style: {
-          fontFamily: fontSans, fontSize: '15px', lineHeight: 1.5,
+          fontFamily: fontSans, fontSize: 'var(--text-base)', lineHeight: 1.5,
           color: tokens.colorBrand, margin: '0 auto 10px', maxWidth: '440px',
         },
         role: 'alert',
       }, reason),
       React.createElement('ul', {
         style: {
-          ...s.bodyMuted, fontSize: '14px', textAlign: 'left',
+          ...s.bodyMuted, fontSize: 'var(--text-sm)', textAlign: 'left',
           listStyle: 'disc', margin: '0 auto 28px', padding: '0 0 0 20px',
           maxWidth: '400px',
         },
@@ -2736,7 +2736,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       borderRadius: tokens.radiusCard,
       cursor: disabled ? 'default' : 'pointer',
       textAlign: 'center', outline: 'none', transition: 'all 0.2s',
-      fontFamily: fontSans, fontSize: '13px', fontWeight: 500,
+      fontFamily: fontSans, fontSize: 'var(--text-sm)', fontWeight: 500,
       color: selected ? tokens.colorAccent : tokens.colorBrand,
       opacity: disabled ? 0.5 : 1,
     },
@@ -2848,13 +2848,13 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         // Active phase message
         React.createElement('span', {
           style: {
-            fontSize: '13px', fontWeight: 600, letterSpacing: '0.02em',
+            fontSize: 'var(--text-sm)', fontWeight: 600, letterSpacing: '0.02em',
           },
         }, LOADING_PHRASES[loadingPhaseIdx]),
         // Subtext — reassurance
         React.createElement('span', {
           style: {
-            fontSize: '11px', fontWeight: 400, color: tokens.colorMuted,
+            fontSize: 'var(--text-xs)', fontWeight: 400, color: tokens.colorMuted,
             maxWidth: '240px', textAlign: 'center', lineHeight: 1.4,
           },
         }, 'Should be done before your dog finishes their next zoomie. Don\u2019t refresh the page.'),
@@ -2868,7 +2868,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       React.createElement('div', {
         style: {
           position: 'absolute', bottom: '12px', right: '14px',
-          fontFamily: fontSans, fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.04em',
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 500, letterSpacing: '0.04em',
           color: '#3a3530', background: 'rgba(255,255,255,0.55)', padding: '6px 12px', borderRadius: '999px',
           border: '1px solid rgba(255,255,255,0.6)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
@@ -2892,7 +2892,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('span', null,
             React.createElement('span', { style: { fontWeight: 600 } }, 'No frame'),
             React.createElement('br'),
-            React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } }, 'Gallery wrap'),
+            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Gallery wrap'),
           )
         ),
         optionCard(
@@ -2902,7 +2902,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('span', null,
             React.createElement('span', { style: { fontWeight: 600 } }, 'Framed'),
             React.createElement('br'),
-            React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } }, 'Solid wood'),
+            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Solid wood'),
           )
         ),
       ),
@@ -2921,7 +2921,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             React.createElement('span', null,
               React.createElement('span', { style: { fontWeight: 600 } }, size.label),
               React.createElement('br'),
-              React.createElement('span', { style: { fontSize: '11px', color: tokens.colorMuted } },
+              React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } },
                 `$${priceVal.toFixed(2)}`
               )
             )
@@ -2962,7 +2962,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       ),
       nameError && React.createElement('p', {
         style: {
-          fontFamily: fontSans, fontSize: '12px', color: tokens.colorError,
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorError,
           margin: '8px 0 0', lineHeight: 1.4,
         },
         role: 'alert',
@@ -2982,11 +2982,11 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       },
         React.createElement('span', { style: { ...s.smallCaps } }, 'Total'),
         React.createElement('span', {
-          style: { fontFamily: fontSerif, fontStyle: 'italic', fontSize: '28px', color: tokens.colorBrand },
+          style: { fontFamily: fontSerif, fontStyle: 'italic', fontSize: 'var(--text-xl)', color: tokens.colorBrand },
         }, `$${currentPrice.toFixed(2)}`),
       ),
       React.createElement('p', {
-        style: { fontFamily: fontSans, fontSize: '12px', color: tokens.colorMuted, margin: 0 },
+        style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorMuted, margin: 0 },
       },
         `${activeSize.label} canvas${wantsFrame ? ' · Framed' : ''}${wantsName ? ' · With name' : ''}`
       ),
@@ -3002,7 +3002,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       style: { borderTop: `1px solid ${tokens.colorBorder}`, marginTop: '24px', paddingTop: '20px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' },
     },
       ['Preview before we print', "Free redos until it\u2019s right", 'Ships in 7\u201310 days'].map((line, i) =>
-        React.createElement('p', { key: i, style: { ...s.bodyMuted, fontSize: '12px' } },
+        React.createElement('p', { key: i, style: { ...s.bodyMuted, fontSize: 'var(--text-xs)' } },
           React.createElement('span', { style: { color: tokens.colorSuccess, marginRight: '10px' } }, '\u2713'),
           line,
         )
@@ -3029,7 +3029,7 @@ function PageHero() {
     React.createElement('h1', {
       style: {
         fontFamily: fontSerif, fontWeight: 400, fontStyle: 'italic',
-        fontSize: 'clamp(26px, 7vw, 36px)', color: tokens.colorBrand,
+        fontSize: 'clamp(var(--text-xl), 7vw, var(--text-2xl))', color: tokens.colorBrand,
         margin: '0 0 6px', lineHeight: 1.15,
       },
     }, 'Turn your pet into art'),
@@ -3037,7 +3037,7 @@ function PageHero() {
     // Subtitle
     React.createElement('p', {
       style: {
-        fontFamily: fontSans, fontSize: '14px', color: tokens.colorMuted,
+        fontFamily: fontSans, fontSize: 'var(--text-sm)', color: tokens.colorMuted,
         margin: '0 0 14px', lineHeight: 1.5,
       },
     }, '8 styles \u00B7 You only pay if you love it \u00B7 On your wall in 7\u201310 days'),
@@ -3076,7 +3076,7 @@ function PageHero() {
               }),
               React.createElement('span', {
                 style: {
-                  fontFamily: fontSans, fontSize: '10px', fontWeight: 600,
+                  fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
                   color: tokens.colorMuted, textTransform: 'uppercase',
                   letterSpacing: '0.02em', marginTop: '5px', display: 'block',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',

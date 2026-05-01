@@ -10,7 +10,7 @@
     border-radius: 50%;
     background: var(--color-border);
     color: var(--color-ink);
-    font-size: 0.7rem;
+    font-size:var(--text-xs);
     font-weight: 700;
     cursor: help;
     outline: none;
@@ -35,7 +35,7 @@
     color: #fff;
     padding: 10px 12px;
     border-radius: 8px;
-    font-size: 0.78rem;
+    font-size:var(--text-xs);
     line-height: 1.5;
     font-weight: 400;
     text-align: left;
@@ -83,12 +83,12 @@
     text-align: center; font-family: var(--font-body);
   }
   .newsletter-recapture-modal h3 {
-    font-family: var(--font-heading); font-size: 22px;
+    font-family: var(--font-heading); font-size:var(--text-lg);
     margin: 0 0 10px; color: var(--color-brand, var(--color-ink));
     line-height: 1.2;
   }
   .newsletter-recapture-modal > p {
-    font-size: 14px; color: var(--color-muted);
+    font-size:var(--text-sm); color: var(--color-muted);
     margin: 0 0 20px; line-height: 1.5;
   }
   .newsletter-recapture-modal form {
@@ -101,7 +101,7 @@
   .newsletter-recapture-modal input[type="email"],
   .newsletter-recapture-modal input[type="text"],
   .newsletter-recapture-modal input[type="tel"] {
-    padding: 12px 14px; font-size: 15px;
+    padding: 12px 14px; font-size:var(--text-base);
     border: 1px solid var(--color-border); border-radius: 10px;
     font-family: var(--font-body); background: #fff;
     color: var(--color-ink); width: 100%; box-sizing: border-box;
@@ -112,7 +112,7 @@
   }
   .newsletter-recapture-sms {
     display: flex; align-items: flex-start; gap: 10px;
-    font-size: 12px; color: var(--color-ink); line-height: 1.5;
+    font-size:var(--text-xs); color: var(--color-ink); line-height: 1.5;
     cursor: pointer; margin-top: 4px;
   }
   .newsletter-recapture-sms input[type="checkbox"] {
@@ -124,12 +124,12 @@
     text-decoration: underline;
   }
   .newsletter-recapture-error {
-    color: var(--color-warning, #B45309); font-size: 12px; margin: 0;
+    color: var(--color-warning, #B45309); font-size:var(--text-xs); margin: 0;
   }
   .newsletter-recapture-skip {
     background: none; border: none; cursor: pointer;
     color: var(--color-muted); font-family: var(--font-body);
-    font-size: 13px; padding: 8px 12px; margin-top: 14px;
+    font-size:var(--text-sm); padding: 8px 12px; margin-top: 14px;
     text-decoration: underline; text-underline-offset: 3px;
   }
   .newsletter-recapture-skip:hover { color: var(--color-ink); }
@@ -191,7 +191,7 @@
                       {%- unless property.last == blank -%}
                         {%- assign prop_first_char = property.first | slice: 0 -%}
                         {%- unless prop_first_char == '_' -%}
-                          <p class="cart-page__item-prop text-muted" style="font-size:0.85rem;">
+                          <p class="cart-page__item-prop text-muted" style="font-size:var(--text-sm);">
                             {{ property.first }}: {{ property.last }}
                           </p>
                         {%- endunless -%}
@@ -206,15 +206,15 @@
                   </a>
                 </div>
                 {%- if pet_name_val != blank -%}
-                <div class="cart-page__name-toggle" style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:0.85rem;">
+                <div class="cart-page__name-toggle" style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:var(--text-sm);">
                   <span style="color:var(--color-muted);">Name on portrait:</span>
                   <button type="button" class="cart-name-btn" data-name-value="Yes"
                           aria-pressed="{% if show_name == 'Yes' %}true{% else %}false{% endif %}"
-                          style="padding:4px 12px;border-radius:14px;border:1px solid var(--color-border);cursor:pointer;font-size:0.82rem;font-weight:500;background:{% if show_name == 'Yes' %}var(--color-ink);color:#fff;{% else %}transparent;color:var(--color-ink);{% endif %}">Yes</button>
+                          style="padding:4px 12px;border-radius:14px;border:1px solid var(--color-border);cursor:pointer;font-size:var(--text-sm);font-weight:500;background:{% if show_name == 'Yes' %}var(--color-ink);color:#fff;{% else %}transparent;color:var(--color-ink);{% endif %}">Yes</button>
                   <button type="button" class="cart-name-btn" data-name-value="No"
                           aria-pressed="{% if show_name == 'No' %}true{% else %}false{% endif %}"
-                          style="padding:4px 12px;border-radius:14px;border:1px solid var(--color-border);cursor:pointer;font-size:0.82rem;font-weight:500;background:{% if show_name == 'No' %}var(--color-ink);color:#fff;{% else %}transparent;color:var(--color-ink);{% endif %}">No</button>
-                  <span class="cart-name-status" style="color:var(--color-muted);font-size:0.78rem;display:none;"></span>
+                          style="padding:4px 12px;border-radius:14px;border:1px solid var(--color-border);cursor:pointer;font-size:var(--text-sm);font-weight:500;background:{% if show_name == 'No' %}var(--color-ink);color:#fff;{% else %}transparent;color:var(--color-ink);{% endif %}">No</button>
+                  <span class="cart-name-status" style="color:var(--color-muted);font-size:var(--text-xs);display:none;"></span>
                 </div>
                 {%- endif -%}
                 <div class="cart-page__item-footer">
@@ -230,7 +230,7 @@
           {%- endfor -%}
 
           <!-- Add another portrait CTA -->
-          <a href="/pages/create" class="cart-add-another" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;margin-top:12px;border:1.5px solid var(--color-ink);border-radius:var(--radius-card);background:var(--color-surface);text-decoration:none;color:var(--color-ink);font-family:var(--font-body);font-size:1rem;font-weight:600;transition:all 0.2s;">
+          <a href="/pages/create" class="cart-add-another" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;margin-top:12px;border:1.5px solid var(--color-ink);border-radius:var(--radius-card);background:var(--color-surface);text-decoration:none;color:var(--color-ink);font-family:var(--font-body);font-size:var(--text-base);font-weight:600;transition:all 0.2s;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-8-8h16"/>
             </svg>
@@ -261,8 +261,8 @@
             {%- if remaining_cents > 0 -%}
               {%- assign progress_pct = cart.total_price | times: 100.0 | divided_by: free_ship_cents -%}
               <div class="free-ship-tracker" style="margin:14px 0;padding:14px;background:var(--color-surface);border-radius:var(--radius-card);border:1px solid var(--color-border);">
-                <div style="display:flex;align-items:center;gap:8px;font-size:0.95rem;color:var(--color-ink);margin-bottom:10px;line-height:1.4;">
-                  <span aria-hidden="true" style="font-size:1.1em;">🚚</span>
+                <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-base);color:var(--color-ink);margin-bottom:10px;line-height:1.4;">
+                  <span aria-hidden="true" style="font-size:var(--text-lg);">🚚</span>
                   <span>You're <strong style="font-weight:700;color:var(--color-primary);">{{ remaining_cents | money }}</strong> away from free shipping</span>
                 </div>
                 <div style="height:6px;background:var(--color-border);border-radius:99px;overflow:hidden;">
@@ -271,8 +271,8 @@
               </div>
             {%- else -%}
               <div class="free-ship-tracker free-ship-tracker--achieved" style="margin:14px 0;padding:14px;background:#E8F5E9;border-radius:var(--radius-card);border:1px solid #81C784;">
-                <div style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:#1B5E20;font-weight:600;line-height:1.4;">
-                  <span aria-hidden="true" style="font-size:1.15em;">🎉</span>
+                <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);color:#1B5E20;font-weight:600;line-height:1.4;">
+                  <span aria-hidden="true" style="font-size:var(--text-lg);">🎉</span>
                   <span>You've unlocked <strong>free shipping</strong>!</span>
                 </div>
               </div>
@@ -314,22 +314,22 @@
                   style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
                 >
                 <span style="flex:1;line-height:1.45;">
-                  <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
                     <span aria-hidden="true">📱</span>
                     Digital Files for Sharing
                     <span
                       data-digital-files-price
-                      style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
+                      style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:var(--text-sm);"
                     ></span>
                   </span>
-                  <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                  <span style="display:block;font-size:var(--text-sm);color:var(--color-muted);margin-top:3px;">
                     Get high-res files sized for Instagram &amp; Facebook — Story (9:16), Square (1:1), Portrait (4:5), plus the full-resolution original.
                   </span>
                   <span
                     data-digital-files-status
                     role="status"
                     aria-live="polite"
-                    style="display:none;font-size:0.78rem;color:var(--color-muted);margin-top:4px;"
+                    style="display:none;font-size:var(--text-xs);color:var(--color-muted);margin-top:4px;"
                   ></span>
                 </span>
               </label>
@@ -417,22 +417,22 @@
                     style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--color-border);"
                   >
                   <span style="flex:1;">
-                    <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);">
+                    <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
                       <span aria-hidden="true">🧲</span>
                       Matching fridge magnet{%- if source_pet_name != '' %} of {{ source_pet_name }}{%- endif -%}
                       <span
                         data-magnet-price
-                        style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;"
+                        style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:var(--text-sm);"
                       ></span>
                     </span>
-                    <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                    <span style="display:block;font-size:var(--text-sm);color:var(--color-muted);margin-top:3px;">
                       Same portrait, printed on a flexible fridge magnet. Ships with your order.
                     </span>
                     <span
                       data-magnet-status
                       role="status"
                       aria-live="polite"
-                      style="display:none;font-size:0.78rem;color:var(--color-muted);margin-top:4px;"
+                      style="display:none;font-size:var(--text-xs);color:var(--color-muted);margin-top:4px;"
                     ></span>
                   </span>
                 </span>
@@ -496,7 +496,7 @@
                   style="width:18px;height:18px;margin-top:2px;accent-color:var(--color-primary);flex-shrink:0;"
                 >
                 <span style="flex:1;line-height:1.45;">
-                  <span style="display:flex;align-items:center;gap:6px;font-size:0.95rem;font-weight:600;color:var(--color-ink);flex-wrap:wrap;">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);flex-wrap:wrap;">
                     <span aria-hidden="true">⚡</span>
                     Priority order
                     <span
@@ -511,18 +511,18 @@
                         Our QA team processes priority orders the same day and hands them straight to fulfillment — usually 1–2 days faster on production. (Carrier shipping is unchanged: 3–5 business days.)
                       </span>
                     </span>
-                    <span style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:0.9rem;">
+                    <span style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:var(--text-sm);">
                       +{{ priority_variant.price | money }}
                     </span>
                   </span>
-                  <span style="display:block;font-size:0.9rem;color:var(--color-muted);margin-top:3px;">
+                  <span style="display:block;font-size:var(--text-sm);color:var(--color-muted);margin-top:3px;">
                     Skip the QA queue — get it 1–2 days sooner.
                   </span>
                   <span
                     data-priority-status
                     role="status"
                     aria-live="polite"
-                    style="display:block;font-size:0.78rem;color:var(--color-muted);margin-top:6px;min-height:1em;"
+                    style="display:block;font-size:var(--text-xs);color:var(--color-muted);margin-top:6px;min-height:1em;"
                   ></span>
                 </span>
               </label>
@@ -536,7 +536,7 @@
               final addresses may change the amount at checkout.
             {%- endcomment -%}
             <div class="cart-summary__estimator" data-shipping-estimator style="margin:14px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);">
-              <label for="ShippingEstPostal" style="display:block;font-family:var(--font-body);font-size:0.9rem;font-weight:600;color:var(--color-ink);margin-bottom:8px;">
+              <label for="ShippingEstPostal" style="display:block;font-family:var(--font-body);font-size:var(--text-sm);font-weight:600;color:var(--color-ink);margin-bottom:8px;">
                 Estimate shipping
               </label>
               <div style="display:flex;gap:8px;">
@@ -547,12 +547,12 @@
                   autocomplete="postal-code"
                   placeholder="Postal code (e.g. K1A 0B1)"
                   aria-describedby="ShippingEstNote"
-                  style="flex:1;min-width:0;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;font-family:var(--font-body);font-size:0.9rem;background:#fff;color:var(--color-ink);"
+                  style="flex:1;min-width:0;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;font-family:var(--font-body);font-size:var(--text-sm);background:#fff;color:var(--color-ink);"
                 >
                 <button
                   type="button"
                   data-shipping-estimate-btn
-                  style="padding:10px 18px;border:1px solid var(--color-ink);background:var(--color-ink);color:#fff;border-radius:8px;font-family:var(--font-body);font-size:0.95rem;font-weight:600;cursor:pointer;white-space:nowrap;min-height:44px;"
+                  style="padding:10px 18px;border:1px solid var(--color-ink);background:var(--color-ink);color:#fff;border-radius:8px;font-family:var(--font-body);font-size:var(--text-base);font-weight:600;cursor:pointer;white-space:nowrap;min-height:44px;"
                 >
                   Get Estimate
                 </button>
@@ -561,15 +561,15 @@
                 data-shipping-result
                 role="status"
                 aria-live="polite"
-                style="display:none;margin-top:10px;font-size:0.88rem;line-height:1.45;"
+                style="display:none;margin-top:10px;font-size:var(--text-sm);line-height:1.45;"
               ></div>
-              <p id="ShippingEstNote" style="margin:10px 0 0;font-size:0.85rem;color:var(--color-muted);line-height:1.45;">
+              <p id="ShippingEstNote" style="margin:10px 0 0;font-size:var(--text-sm);color:var(--color-muted);line-height:1.45;">
                 This is an estimate for your reference only. Final shipping is calculated at checkout and may be different.
               </p>
             </div>
 
             <a href="/checkout" data-checkout-btn class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
-              Checkout → <span style="font-size:0.85em;opacity:0.85;">{{ cart.total_price | money }} CAD</span>
+              Checkout → <span style="font-size:var(--text-sm);opacity:0.85;">{{ cart.total_price | money }} CAD</span>
             </a>
             <a href="{{ routes.all_products_collection_url }}" class="btn btn--outline btn--full">
               Continue Shopping
@@ -942,14 +942,14 @@
         btn.setAttribute('aria-checked', selected ? 'true' : 'false');
         btn.style.cssText =
           'padding:6px 12px;border-radius:999px;cursor:pointer;' +
-          'font-family:var(--font-body);font-size:0.82rem;font-weight:500;' +
+          'font-family:var(--font-body);font-size:var(--text-sm);font-weight:500;' +
           'transition:all 0.15s ease;min-height:32px;' +
           (selected
             ? 'background:var(--color-ink);color:#fff;border:1px solid var(--color-ink);'
             : 'background:transparent;color:var(--color-ink);border:1px solid var(--color-border);');
         btn.innerHTML =
           '<span style="font-weight:600;">' + shortSizeLabel(v.title) + '</span>' +
-          '<span style="margin-left:6px;opacity:0.75;font-size:0.78rem;">' + formatMoney(v.price) + '</span>';
+          '<span style="margin-left:6px;opacity:0.75;font-size:var(--text-xs);">' + formatMoney(v.price) + '</span>';
         btn.addEventListener('click', function () { onSizeClick(v.id); });
         sizesEl.appendChild(btn);
       });
