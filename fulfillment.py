@@ -239,6 +239,13 @@ def generate_print_file(
         img = Image.open(BytesIO(raw_bytes))
         img.load()
 
+        # Add background padding to give the pet breathing room — Gemini
+        # routinely fills the canvas edge-to-edge regardless of prompt
+        # instructions. Mirrors the preview-side padding in generate.py
+        # so customer-facing previews and print files match.
+        from generate import add_background_padding as _pad
+        img = _pad(img, padding_ratio=0.12)
+
         # Crop to product aspect ratio with center gravity. The Pillow
         # composite_name() step below overlays the pet name at ~82% of the
         # CROPPED image, so the name always lands safely inside the frame

@@ -377,14 +377,19 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, direct or three-quarter gaze
-- The artwork must fill the entire canvas edge-to-edge — no reserved panels, \
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave clean white space above \
+the ears AND below the chest
+- The BACKGROUND (pure white paper) extends edge-to-edge — no reserved panels, \
 bars, color blocks, or empty bands at the top or bottom
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: ANY color whatsoever, colored ink, colored background, colored eyes, \
 colored fur, sepia, tinted, duotone, photography, photorealism, cartoon, \
 anime, 3D render, gray shading, crosshatching, stippling, color fills, text, \
-watermark, border, solid color bars or panels at image edges.\
+watermark, border, solid color bars or panels at image edges, pet pushed \
+to canvas edges.\
 """
 
 _NEON_POP_ART_TEMPLATE = """\
@@ -409,8 +414,12 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, facing forward with personality and attitude
-- The artwork must fill the entire canvas edge-to-edge — no reserved panels, \
-bars, color blocks, or empty bands at the top or bottom
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave clean color-block space \
+above the ears AND below the chest as part of the pop composition
+- The BACKGROUND (single bold color or geometric color blocks) extends \
+edge-to-edge — no reserved panels, bars, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
@@ -441,10 +450,12 @@ jeweled collar, or regal military sash appropriate to the animal
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and upper body in regal pose, noble and dignified
-- Dark moody background with subtle drapery or classical column
-- The artwork must fill the entire canvas edge-to-edge — the moody background and \
-classical drapery/column extend naturally all the way to the bottom and top \
-edges. No reserved panels, bars, color blocks, or empty bands anywhere
+- The PET itself (head + upper body) occupies ONLY 60-65% of image height — \
+top of head/crown at ~17-20% from top, bottom of body at ~80-83% from top, \
+centered horizontally. Do NOT make the pet fill the whole canvas. Leave \
+moody-background space above the head AND below the body
+- The BACKGROUND (dark moody drapery/column) extends edge-to-edge naturally \
+to all four sides. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, bright neon colors, cartoon, anime, 3D render, \
@@ -485,8 +496,12 @@ restrained — they support the composition, never crowd the pet.
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, calm symmetrical pose, direct gentle gaze.
-- A single solid background color from the palette above fills every edge \
-edge-to-edge. No reserved panels, bars, frames, color blocks, or empty bands \
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas — the negative space above and \
+below is essential to this minimalist aesthetic.
+- The BACKGROUND (single solid color from the palette above) extends to all \
+four edges. No reserved panels, bars, frames, color blocks, or empty bands \
 beyond the chosen background.
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere.
 
@@ -520,9 +535,12 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, peaceful expression, gentle eye contact
 - Soft light emanating from behind/around the pet
-- The artwork must fill the entire canvas edge-to-edge — soft clouds and \
-ethereal mist extend naturally to every edge. No reserved panels, bars, \
-color blocks, or empty bands
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave ethereal sky/cloud space \
+above the head AND below the chest
+- The BACKGROUND (soft clouds, pastel sky, ethereal mist) extends naturally \
+to every edge. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, dark/morbid imagery, tears, sadness, harsh shadows, \
@@ -552,15 +570,19 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
-- Clean negative space around the subject
-- The background is a single solid flat color that fills the entire canvas \
-edge-to-edge behind the pet — one continuous color, NOT split into panels \
-or bands. No reserved color blocks, bars, or rectangles anywhere
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave clean negative space above \
+the ears AND below the chest as an integral part of the poster composition
+- The BACKGROUND (single solid flat color) extends edge-to-edge behind the \
+pet — one continuous color, NOT split into panels or bands. No reserved \
+color blocks, bars, or rectangles anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, soft edges, gradients, watercolor, painterly strokes, \
 3D render, blurry, detailed fur texture, text, watermark, border, \
-solid color bars or panels at image edges, horizontal color-band splits.\
+solid color bars or panels at image edges, horizontal color-band splits, \
+pet pushed to canvas edges.\
 """
 
 _AURA_GRADIENT_TEMPLATE = """\
@@ -586,9 +608,13 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, serene expression, gentle eye contact
-- Aura radiates symmetrically from the pet outward to the edges
-- The aura gradient fills the entire canvas edge-to-edge as one continuous \
-smooth wash. No reserved panels, bars, color blocks, or empty bands anywhere
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Aura needs room to radiate ABOVE \
+the head AND BELOW the chest
+- The BACKGROUND (aura gradient) radiates symmetrically and fills every edge \
+as one continuous smooth wash. No reserved panels, bars, color blocks, or \
+empty bands anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, harsh edges, flat colors, cartoon, anime, 3D render, \
@@ -617,8 +643,12 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The watercolor wash and natural bleed edges extend to every edge of the \
-canvas. No reserved panels, bars, color blocks, or empty bands anywhere
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave clean watercolor wash above \
+the ears AND below the chest
+- The BACKGROUND (watercolor wash and natural bleed edges) extends to every \
+edge of the canvas. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
@@ -665,8 +695,12 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, direct or three-quarter gaze
-- The dark background fills the entire canvas edge-to-edge — no reserved \
-panels, bars, color blocks, or empty bands at the top or bottom
+- The PET (rendered in ivory linework) occupies ONLY 60-65% of image height \
+— top of ears at ~17-20% from top, bottom of chest at ~80-83% from top, \
+centered horizontally. Do NOT make the pet fill the whole canvas. Leave \
+clean dark-field space above the ears AND below the chest
+- The BACKGROUND (solid dark field) extends edge-to-edge — no reserved \
+panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: white or off-white backgrounds, black ink on light paper, color fills, \
@@ -702,8 +736,12 @@ pigment all the way through — no light paper shows.
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The dark watercolor wash extends to every edge of the canvas. No reserved \
-panels, bars, color blocks, or empty bands anywhere
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave dark wash above the ears \
+AND below the chest
+- The BACKGROUND (deep pigmented dark watercolor wash) extends to every edge \
+of the canvas. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: white or cream paper showing through, bright washed-out backgrounds, \
@@ -750,10 +788,13 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
-- Clean negative space around the subject
-- The black/dark-gray background is one continuous flat color filling the \
-entire canvas edge-to-edge behind the pet — NOT split into panels or bands. \
-No reserved color blocks, bars, or rectangles anywhere
+- The PET itself occupies ONLY 60-65% of image height — top of ears at \
+~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
+Do NOT make the pet fill the whole canvas. Leave clean dark-field space above \
+the ears AND below the chest as part of the poster composition
+- The BACKGROUND (single flat black/dark-gray) extends edge-to-edge behind \
+the pet — NOT split into panels or bands. No reserved color blocks, bars, \
+or rectangles anywhere
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: colored dark backgrounds (navy, burgundy, forest, aubergine), light \
@@ -805,31 +846,41 @@ _NO_BORDER_RULE = (
 
 _COMPOSITION_RULE = (
     "\n\nCOMPOSITION — CRITICAL (read twice, follow exactly):\n"
-    "- FULL-BLEED CANVAS FILL: The artwork MUST extend edge-to-edge on all four "
-    "sides (top, bottom, left, right). Zero margins. Zero borders. Zero letterbox "
-    "bars. Zero frames. Zero paper edges. Zero vignette cutoffs. The background, "
-    "palette, and atmosphere fill 100% of the canvas pixel grid.\n"
+    "- THE PET MUST BE SMALL IN THE FRAME — DO NOT FILL THE CANVAS WITH THE PET. "
+    "This is the single most important composition rule and overrides any "
+    "other instruction that suggests the pet should be large or dominant. "
+    "The pet's silhouette (top of ears to bottom of chest) must occupy AT "
+    "MOST 60-65% of image height AND AT MOST 65-70% of image width. The "
+    "other 35-40% of the canvas — clean background, evenly distributed top, "
+    "bottom, left, right around the pet — is NOT optional. This is the "
+    "intentional framing. A pet that fills the canvas is a REJECTED output.\n"
+    "- HARD CHECK BEFORE DRAWING: imagine the pet inscribed in a bounding "
+    "box. That bounding box must sit fully within the inner 70% of the "
+    "canvas — its top edge no higher than 17% from canvas top, its bottom "
+    "edge no lower than 83% from canvas top, and its left/right edges "
+    "comfortably inside the canvas with at least 12% clean background on "
+    "each side. NO part of the pet (ears, fur, whiskers, paws, chest, body) "
+    "may touch ANY edge of the canvas. If you can't fit the pet inside that "
+    "inner 70% box, render the pet SMALLER. Never push to an edge.\n"
     "- 4:5 PORTRAIT ASPECT RATIO: The image canvas is taller than it is wide. "
     "Compose for that — do NOT output a square or wide image.\n"
-    "- PET IS THE FOCAL POINT, CENTERED: The pet (head + chest) is the single "
-    "focal subject, centered both horizontally and vertically in the frame. "
-    "The pet's silhouette — top of ears to bottom of chest — occupies ONLY "
-    "60-65% of image height. The remaining 35-40% is split EVENLY as "
-    "clean-background breathing room above the ears AND below the chest. "
-    "Concretely: the top of the ears sits around 17-20% from the top edge, "
-    "and the bottom of the chest sits around 80-83% from the top edge. "
-    "Eyes naturally land in the upper third of the image (around 30-35% from "
-    "top) — that's correct portrait framing, do not push the face to the "
-    "exact center.\n"
+    "- BACKGROUND FILLS THE CANVAS — NOT THE PET: The artwork's BACKGROUND "
+    "(sky, drapery, color field, watercolor wash, gradient — whatever the "
+    "style calls for) extends edge-to-edge on all four sides. Zero white "
+    "margins, zero borders, zero letterbox bars, zero frames, zero panels. "
+    "But that means the BACKGROUND fills the canvas — NOT the pet. The pet "
+    "stays inside its inner 70% bounding box; the background flows around "
+    "it edge-to-edge.\n"
+    "- CENTERED, NATURAL PORTRAIT FRAMING: The pet is centered horizontally "
+    "and vertically in the frame. Eyes naturally land in the upper third of "
+    "the image (around 30-35% from top) — that's correct portrait framing. "
+    "Do not push the face to the exact vertical center.\n"
     "- WHY THIS MATTERS — SQUARE CROP SURVIVAL: Customers order this as a "
     "4:5 portrait OR as a 1:1 square canvas (which center-crops the top "
-    "10% AND bottom 10% of your output). With the framing above, the pet "
-    "still has 7-10% breathing room on every side AFTER the 1:1 crop. If "
-    "you push the pet to fill more of the canvas, you WILL ship a chest-"
-    "cut-off square canvas to a customer.\n"
-    "- NEVER let the chest, body, paws, or ears touch ANY edge of the "
-    "source image. If you cannot fit the pet at 60-65% of height with the "
-    "even breathing room intact, render the pet SMALLER — never larger.\n"
+    "10% AND bottom 10% of your output). With the inner-70% framing above, "
+    "the pet still has comfortable breathing room on every side AFTER the "
+    "1:1 crop. A pet at the canvas edges WILL ship a chest-cut-off, "
+    "ears-clipped square canvas to a customer.\n"
     "- NO CROPPED FEATURES: ears, whiskers, chin, chest — none clipped by any "
     "edge of the source image OR by a 1:1 center crop. If you can't fit the "
     "pet with the breathing room above intact, render the pet smaller — DO NOT "
@@ -993,8 +1044,61 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
 # Per-style post-processing hooks
 # ---------------------------------------------------------------------------
 
+def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Image.Image:
+    """Pad the image with the detected background color so the pet has
+    breathing room around it.
+
+    Gemini is strongly biased toward dominant-subject framing for pet
+    portraits — it routinely renders the pet filling the canvas edge-to-edge
+    no matter how aggressively the prompt asks otherwise. After many prompt
+    iterations failed to consistently move the framing, we add the breathing
+    room programmatically: sample the 4 corners (which are almost always
+    pure background regardless of style), use the average as a fill color,
+    and composite the original onto a padded canvas.
+
+    This adds ~12% padding on every side, which means a 1:1 center crop on
+    the customer's framed canvas variant still leaves the pet comfortably
+    away from any edge.
+
+    Edge case: styles with organic background variation (e.g. watercolor
+    bleed edges, gradient washes) will show a slight seam where the padding
+    meets the original. Acceptable trade-off vs cropped pets.
+    """
+    img = img.convert('RGB')
+    w, h = img.size
+    sample_size = max(12, min(w, h) // 25)
+
+    # Sample 4 corner regions and average the pixel values.
+    pixel_sum = [0, 0, 0]
+    pixel_count = 0
+    corners = [
+        (0, 0),
+        (w - sample_size, 0),
+        (0, h - sample_size),
+        (w - sample_size, h - sample_size),
+    ]
+    for x0, y0 in corners:
+        region = img.crop((x0, y0, x0 + sample_size, y0 + sample_size))
+        for px in region.getdata():
+            pixel_sum[0] += px[0]
+            pixel_sum[1] += px[1]
+            pixel_sum[2] += px[2]
+            pixel_count += 1
+    bg = tuple(int(c / pixel_count) for c in pixel_sum)
+
+    pad_w = int(w * padding_ratio)
+    pad_h = int(h * padding_ratio)
+    padded = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h), bg)
+    padded.paste(img, (pad_w, pad_h))
+    return padded
+
+
 def _portrait_post_process(img: Image.Image) -> Image.Image:
-    """Standard post-process for all portrait styles: 4:5 crop + minimum size."""
+    """Standard post-process for all portrait styles: 4:5 crop + minimum size.
+    NOTE: callers should add background padding via add_background_padding()
+    BEFORE calling this — the padding step needs the un-cropped image so it
+    can sample the corners reliably.
+    """
     img = crop_to_ratio(img, PORTRAIT_RATIO)
     min_w, min_h = PORTRAIT_MIN_SIZE
     if img.width < min_w or img.height < min_h:
@@ -1604,6 +1708,14 @@ def _generate_inner(
 
     ai_image_no_name = Image.open(BytesIO(raw_bytes))
     ai_image_no_name.load()
+
+    # Add background padding so the pet has breathing room around it.
+    # Gemini routinely ignores prompt-based size constraints and renders
+    # pets edge-to-edge — this guarantees breathing room programmatically.
+    if style in _PORTRAIT_STYLES:
+        padded = add_background_padding(ai_image_no_name, padding_ratio=0.12)
+        ai_image_no_name.close()
+        ai_image_no_name = padded
 
     # Per-style post-processing (crop + upscale to print size)
     processed_no_name = POST_PROCESS.get(style, lambda img: img)(ai_image_no_name)
