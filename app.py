@@ -1111,7 +1111,7 @@ def admin_style_smoke_test(style_id: str):
             error=f"Unknown style: {style_id}",
             valid_react_styles=[
                 "soft-watercolour", "minimal-line-art", "modern-shape-art",
-                "neon-pop-art", "renaissance-royalty", "rainbow-bridge",
+                "neon-pop-art", "renaissance-royalty",
                 "bold-graphic-poster", "aura-gradient",
             ],
         ), 400

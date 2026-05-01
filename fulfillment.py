@@ -287,7 +287,6 @@ def _map_style_id(react_style_id: str) -> str:
         "modern-shape-art": "modern-shape-art",
         "neon-pop-art": "neon-pop-art",
         "renaissance-royalty": "renaissance-royalty",
-        "rainbow-bridge": "rainbow-bridge",
         "bold-graphic-poster": "bold-graphic-poster",
         "aura-gradient": "aura-gradient",
     }

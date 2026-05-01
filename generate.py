@@ -232,13 +232,6 @@ def _name_integration(
             f"Thin serifs, refined proportions. Use antique gold #8B7355 OR deep burnt umber "
             f"#3a2414 for strong contrast. Size: 2-3% of image height. Centered. Elegant, not loud."
         ),
-        "rainbow-bridge": (
-            f"NAME INTEGRATION — CRITICAL:\n"
-            f"{safe_zone}"
-            f"- Render the name \"{name}\" as a delicate flowing cursive script. Warm gold "
-            f"#B8860B or rich dark rose #9A3B4B for solid contrast. Thin strokes, refined. "
-            f"Size: 2-3% of image height. Centered. Soft and restrained."
-        ),
         "bold-graphic-poster": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
@@ -509,43 +502,6 @@ Avoid: photography, photorealism, painterly brush strokes, oil paint, \
 watercolor bleed, film grain, sepia, gradients, drop shadows, 3D render, \
 cartoon, anime, neon, busy patterns, ornate details, text, watermark, \
 border, solid color bars or panels at image edges.\
-"""
-
-_RAINBOW_BRIDGE_TEMPLATE = """\
-Transform this photo into a serene Rainbow Bridge memorial pet portrait.
-
-COLOR ACCURACY — THIS IS CRITICAL:
-- Match the animal's EXACT fur/coat color from the uploaded photo. Do NOT shift, \
-lighten, darken, or alter the coat color. Preserve the original coloring faithfully \
-so the pet is instantly recognizable.
-- Match the animal's actual eye color from the photo.
-- The surrounding environment uses soft ethereal pastel tones — but the pet itself \
-must retain its true colors.
-
-STYLE:
-- Soft, luminous, ethereal atmosphere — the pet bathed in warm golden light
-- Gentle clouds or soft mist in the background, pastel sky with warm sunset hues
-- Subtle rainbow arc or prismatic light in the distant background (not overpowering)
-- Warm angelic glow surrounding the pet — peaceful, comforting, serene mood
-- Soft painterly rendering — between watercolor and digital painting
-- Respectful memorial tone — beautiful but not sad
-- Fine art illustration style, high resolution 300dpi, print-ready
-
-COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, peaceful expression, gentle eye contact
-- Soft light emanating from behind/around the pet
-- The PET itself occupies ONLY 60-65% of image height — top of ears at \
-~17-20% from top, bottom of chest at ~80-83% from top, centered horizontally. \
-Do NOT make the pet fill the whole canvas. Leave ethereal sky/cloud space \
-above the head AND below the chest
-- The BACKGROUND (soft clouds, pastel sky, ethereal mist) extends naturally \
-to every edge. No reserved panels, bars, color blocks, or empty bands
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
-
-Avoid: photography, photorealism, dark/morbid imagery, tears, sadness, harsh shadows, \
-cartoon, anime, 3D render, pixelation, text, watermark, border, \
-solid color bars or panels at image edges.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
@@ -950,7 +906,6 @@ _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     "modern-shape-art":    {"auto"},
     "neon-pop-art":        {"auto"},
     "renaissance-royalty": {"auto"},
-    "rainbow-bridge":      {"auto"},
     "bold-graphic-poster": {"auto", "light", "dark"},
     "aura-gradient":       {"auto"},
 }
@@ -1034,7 +989,6 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
     "modern-shape-art":   _static(_MODERN_SHAPE_ART_TEMPLATE),
     "neon-pop-art":       _static(_NEON_POP_ART_TEMPLATE),
     "renaissance-royalty": _static(_RENAISSANCE_ROYALTY_TEMPLATE),
-    "rainbow-bridge":     _static(_RAINBOW_BRIDGE_TEMPLATE),
     "bold-graphic-poster": _static(_BOLD_GRAPHIC_POSTER_TEMPLATE),
     "aura-gradient":      _static(_AURA_GRADIENT_TEMPLATE),
 }
@@ -1117,7 +1071,6 @@ _PORTRAIT_STYLES = [
     "modern-shape-art",
     "neon-pop-art",
     "renaissance-royalty",
-    "rainbow-bridge",
     "bold-graphic-poster",
     "aura-gradient",
 ]
@@ -1140,7 +1093,6 @@ STYLE_FONT_MAP: dict[str, dict] = {
     "modern-shape-art":     {"family": "Space Grotesk",      "google": "Space+Grotesk:wght@500",                   "file": "SpaceGrotesk-Medium.ttf"},
     "neon-pop-art":         {"family": "Bungee",             "google": "Bungee",                                   "file": "Bungee-Regular.ttf"},
     "renaissance-royalty":  {"family": "Cinzel",             "google": "Cinzel:wght@700",                          "file": "Cinzel-Bold.ttf"},
-    "rainbow-bridge":       {"family": "Sacramento",         "google": "Sacramento",                               "file": "Sacramento-Regular.ttf"},
     "bold-graphic-poster":  {"family": "Oswald",             "google": "Oswald:wght@700",                          "file": "Oswald-Bold.ttf"},
     "aura-gradient":        {"family": "Quicksand",          "google": "Quicksand:wght@700",                       "file": "Quicksand-Bold.ttf"},
     # Ink-only legacy styles use Libre Baskerville Bold
@@ -1282,13 +1234,6 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "zone_top": 0.83,
         "letter_spacing": 8,
         "opacity": 0.9,
-    },
-    "rainbow-bridge": {
-        "size_ratio": 0.06,
-        "transform": "title",
-        "zone_top": 0.82,
-        "letter_spacing": 0,
-        "opacity": 0.85,
     },
     "bold-graphic-poster": {
         "size_ratio": 0.07,
