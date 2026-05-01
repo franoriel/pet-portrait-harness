@@ -211,7 +211,6 @@
     'modern-shape-art':     "'Space Grotesk', sans-serif",
     'neon-pop-art':         "'Bungee', sans-serif",
     'renaissance-royalty':  "'Cinzel', serif",
-    'rainbow-bridge':       "'Sacramento', cursive",
     'bold-graphic-poster':  "'Oswald', sans-serif",
     'aura-gradient':        "'Quicksand', sans-serif",
   };
@@ -226,7 +225,6 @@
     'modern-shape-art':     'Space+Grotesk:wght@400;500;700',
     'neon-pop-art':         'Bungee',
     'renaissance-royalty':  'Cinzel:wght@700',
-    'rainbow-bridge':       'Sacramento',
     'bold-graphic-poster':  'Oswald:wght@700',
     'aura-gradient':        'Quicksand:wght@500;700',
   };

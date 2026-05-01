@@ -40,7 +40,6 @@ const STYLE_FONTS = {
   'modern-shape-art':     { family: 'Space Grotesk',      css: "'Space Grotesk', sans-serif",   google: 'Space+Grotesk:wght@400;500;700' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
-  'rainbow-bridge':       { family: 'Sacramento',         css: "'Sacramento', cursive",         google: 'Sacramento' },
   'bold-graphic-poster':  { family: 'Oswald',             css: "'Oswald', sans-serif",          google: 'Oswald:wght@700' },
   'aura-gradient':        { family: 'Quicksand',          css: "'Quicksand', sans-serif",       google: 'Quicksand:wght@500;700' },
 };
@@ -111,13 +110,6 @@ const STYLES = [
     name: 'Renaissance Royalty',
     available: true,
     exampleImage: 'example-renaissance-royalty.webp',
-    backgrounds: ['auto'],
-  },
-  {
-    id: 'rainbow-bridge',
-    name: 'Rainbow Bridge',
-    available: true,
-    exampleImage: 'example-rainbow-bridge.webp',
     backgrounds: ['auto'],
   },
   {
@@ -357,7 +349,6 @@ const STYLE_MAP = {
   'modern-shape-art': 'modern-shape-art',
   'neon-pop-art': 'neon-pop-art',
   'renaissance-royalty': 'renaissance-royalty',
-  'rainbow-bridge': 'rainbow-bridge',
   'bold-graphic-poster': 'bold-graphic-poster',
   'aura-gradient': 'aura-gradient',
 };
