@@ -141,17 +141,19 @@ function styleNameFor(styleId) {
 }
 
 // Per-style on-brand affirmations shown on the style step the moment a
-// customer picks one. Tone matches the rest of the site — warm, confident,
-// a little cheeky. Keep the line under ~70 chars so it sits on one row on
-// most phones.
+// customer picks one. Framework: 4Ps Picture → Promise. The eyebrow
+// validates the customer's taste; the line paints what the pet is about
+// to look like. `line` starts lowercase so it can be preceded by either
+// "{Pet} is " (sentence reads "Buddy is about to look…") or capitalised
+// at the first letter when no name is provided.
 const STYLE_AFFIRMATIONS = {
-  'soft-watercolour':    { tag: 'A classic',         line: 'Heart-melting on a wall — and a fridge.' },
-  'minimal-line-art':    { tag: 'Quiet & clean',     line: 'Few lines, big feelings. Looks great anywhere.' },
-  'modern-shape-art':    { tag: 'Sharp eye',         line: 'Confident shapes — this one looks killer in any room.' },
-  'neon-pop-art':        { tag: 'Bold move',         line: 'About to glow. Total head-turner.' },
-  'renaissance-royalty': { tag: 'Royalty status',    line: 'Majestic. We’re honoured to paint a noble.' },
-  'bold-graphic-poster': { tag: 'Statement piece',   line: 'Big colour, big personality.' },
-  'aura-gradient':       { tag: 'Dreamy choice',     line: 'Soft gradients, unmistakable presence.' },
+  'soft-watercolour':    { tag: 'The classic',          line: 'about to look heart-melting in soft watercolour.' },
+  'minimal-line-art':    { tag: 'Quiet confidence',     line: 'going to look effortless in clean line art.' },
+  'modern-shape-art':    { tag: 'Designer pick',        line: 'about to anchor a room with modern shapes.' },
+  'neon-pop-art':        { tag: 'Loud and lovable',     line: 'going to glow — saturated and electric.' },
+  'renaissance-royalty': { tag: 'Hall of portraits',    line: 'about to be ennobled, oil-painted in flattering light.' },
+  'bold-graphic-poster': { tag: 'Poster-shop energy',   line: 'getting the bold-colour, sharp-lines treatment.' },
+  'aura-gradient':       { tag: 'Halo treatment',       line: 'getting the soft-gradient halo treatment.' },
 };
 
 // Resolve asset base path for style example images
@@ -1676,7 +1678,10 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
 
   return React.createElement('div', { style: s.sectionWrap },
     React.createElement(StepIndicator, { current: 2 }),
-    React.createElement('h2', { style: s.serifHeading }, 'Pick a style — see them all'),
+    React.createElement('h2', { style: s.serifHeading },
+      state.petName
+        ? 'Which style feels like ' + state.petName + '?'
+        : 'Which style feels like them?'),
 
     // Inline error banner — shown when a previous generation attempt
     // failed for a reason we want the user to act on from this step
@@ -1809,11 +1814,13 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
     // tweak background/name), but the burst animation is one-shot via the
     // key= prop forcing a re-mount on every change.
     state.selectedStyleId && (() => {
-      const aff = STYLE_AFFIRMATIONS[state.selectedStyleId] || { tag: 'Lovely choice', line: 'You picked a great one.' };
+      const aff = STYLE_AFFIRMATIONS[state.selectedStyleId] || { tag: 'Lovely choice', line: 'going to look great.' };
       const styleName = styleNameFor(state.selectedStyleId);
+      // Lines are written lowercase so they can sit either after
+      // "{Pet} is " or stand on their own with a capitalised first letter.
       const personalLine = state.petName
-        ? state.petName + ', ' + aff.line.charAt(0).toLowerCase() + aff.line.slice(1)
-        : aff.line;
+        ? state.petName + ' is ' + aff.line
+        : aff.line.charAt(0).toUpperCase() + aff.line.slice(1);
       return React.createElement('div', {
         key: 'celebrate-' + state.selectedStyleId,
         role: 'status',
@@ -1861,7 +1868,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           React.createElement('div', { style: { flex: 1, minWidth: 0 } },
             React.createElement('p', {
               style: { ...s.smallCaps, margin: '0 0 2px', color: tokens.colorAccent, fontSize: 'var(--text-xs)' },
-            }, aff.tag + ' · You picked ' + styleName),
+            }, aff.tag + ' · ' + styleName),
             React.createElement('p', {
               style: {
                 fontFamily: fontSerif, fontStyle: 'italic',
