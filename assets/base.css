@@ -271,6 +271,40 @@ p { color: var(--color-ink); }
   -webkit-backdrop-filter: blur(8px) !important;
   border-bottom: 1px solid var(--color-border) !important;
 }
+/* Mobile homepage — drop the transparent-overlay treatment. The header
+   sits in normal flow with its own light background so the hero starts
+   below it cleanly, no overlap, no white-on-light contrast issues. */
+@media (max-width: 760px) {
+  .template-index .site-header {
+    position: sticky !important;
+    background: rgba(250,248,245,0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid var(--color-border) !important;
+  }
+  .template-index .site-header:not(.is-scrolled) .site-header__logo,
+  .template-index .site-header:not(.is-scrolled) .site-header__nav a,
+  .template-index .site-header:not(.is-scrolled) .site-header__actions a,
+  .template-index .site-header:not(.is-scrolled) .site-header__actions button,
+  .template-index .site-header:not(.is-scrolled) .nav-dropdown__trigger {
+    color: var(--color-ink) !important;
+  }
+  .template-index .site-header:not(.is-scrolled) .hamburger span {
+    background: var(--color-ink) !important;
+    box-shadow: none;
+  }
+  .template-index .site-header:not(.is-scrolled) .site-header__logo img {
+    filter: none;
+  }
+  .template-index .site-header:not(.is-scrolled) .btn--primary,
+  .template-index .site-header:not(.is-scrolled) #HeaderCta {
+    background: var(--color-primary, #2F2F2A) !important;
+    border: 1px solid transparent !important;
+    color: #fff !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
 .site-header__inner {
   position: relative;
   display: flex;

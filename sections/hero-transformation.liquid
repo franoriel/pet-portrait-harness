@@ -326,7 +326,11 @@
       min-height: 0;
       display: flex; flex-direction: column;
     }
-    .hero--transform::before { height: 70px; }
+    /* Header is opaque + in normal flow on mobile (see base.css), so the
+       hero's own dark top gradient is no longer needed for header
+       legibility — kill it to avoid a faint shadow band at the top of
+       the visual. */
+    .hero--transform::before { display: none; }
     .hero--transform .hero__media--stack {
       position: relative; aspect-ratio: 16 / 10;
       width: 100%; height: auto;
