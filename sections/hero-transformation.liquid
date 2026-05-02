@@ -48,7 +48,7 @@
       {%- endif -%}
     </div>
 
-    <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Preview before you pay · Free shipping over $95 · Ships within Canada only' }}</p>
+    <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Upload → Preview → Hang' }}</p>
     </div>
   </div>
 </section>
@@ -180,6 +180,18 @@
   .hero--transform .hero__content {
     padding: clamp(40px, 7vw, 88px) 0;
     max-width: 540px;
+    /* Center the stack within its column so the eyebrow, title, sub,
+       CTA, and step strip all share the same vertical axis. Reads
+       balanced at every viewport without needing per-element overrides. */
+    text-align: center;
+  }
+  .hero--transform .hero__title,
+  .hero--transform .hero__sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero--transform .hero__cta-group {
+    justify-content: center;
   }
   .hero--transform .hero__eyebrow {
     font-family: var(--font-body, sans-serif);
@@ -242,12 +254,17 @@
     background: rgba(255, 255, 255, 0.85);
     border-color: rgba(28, 28, 28, 0.32);
   }
-  /* Reassurance — sits inside the left cream wash, so plain text reads
-     cleanly across every frame without needing a pill backdrop. */
+  /* Step strip — the reassurance line now carries the customer journey
+     ("Upload → Preview → Hang"). Slight tracking + medium weight gives
+     it a step-indicator feel without competing with the eyebrow's full
+     small-caps treatment. The arrow characters inherit the same colour
+     so the whole line reads as a single, scannable strip. */
   .hero--transform .hero__reassurance {
     font-size: var(--text-xs, 0.78rem);
+    font-weight: 500;
     color: rgba(28, 28, 28, 0.78);
-    line-height: 1.5; margin: 0;
+    line-height: 1.6; margin: 0;
+    letter-spacing: 0.05em;
   }
 
   /* Mobile — stack the visual above the copy so the dog stays the hero.
@@ -310,7 +327,7 @@
     { "type": "url", "id": "cta_url", "label": "Primary CTA URL" },
     { "type": "text", "id": "secondary_cta_label", "label": "Secondary CTA label (optional)" },
     { "type": "url", "id": "secondary_cta_url", "label": "Secondary CTA URL" },
-    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Preview before you pay · Free shipping over $95 · Ships within Canada only" }
+    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Upload → Preview → Hang" }
   ],
   "presets": [{ "name": "Hero Transformation" }]
 }
