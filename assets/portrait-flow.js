@@ -602,6 +602,26 @@ const KEYFRAME_CSS = `
   /* Step indicator stays at the very top, full width above the grid. */
   .pf-preview-grid__indicator { grid-column: 1 / -1; margin-bottom: 8px; }
 }
+
+/* Style step ("Customize") — at 3 columns x 3 rows of style cards plus a
+   heading and the selected-style affirmation panel, the page would push
+   the Generate button below the fold on a 1080p desktop. Bumping to 4
+   columns x 2 rows + tighter card padding pulls everything into the
+   viewport so the customer can scan all 8 styles + hit Generate without
+   scrolling. */
+@media (min-width: 900px) {
+  .pf-style-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+  }
+  .pf-style-grid .pf-style-card-thumb {
+    aspect-ratio: 4 / 5 !important;
+  }
+  .pf-style-grid .pf-style-card-label {
+    padding: 8px 10px !important;
+    font-size: 0.85rem !important;
+  }
+}
 `;
 
 let keyframesInjected = false;
@@ -1746,6 +1766,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
     ),
 
     React.createElement('div', {
+      className: 'pf-style-grid',
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -1771,6 +1792,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         },
           // Thumbnail — real example portrait
           React.createElement('div', {
+            className: 'pf-style-card-thumb',
             style: { width: '100%', aspectRatio: '1/1', background: tokens.colorSurface, position: 'relative', overflow: 'hidden' },
           },
             style.exampleImage && React.createElement('img', {
