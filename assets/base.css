@@ -649,50 +649,73 @@ p { color: var(--color-ink); }
   letter-spacing: 0.05em;
 }
 
-/* ── Trust bar ────────────────────────────────────────────── */
+/* ── Trust bar (static glassmorphism) ─────────────────────────
+   Sits at the seam between the hero and the next section. Pulls up
+   over the hero by ~52px so the translucent dark glass actually has
+   the watercolour / canvas-on-wall behind it to blur — that's where
+   the glassmorphism effect earns its keep. Inherited from the
+   announcement bar's dark ink base for visual continuity. */
 .trust-bar {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  padding: 14px 0;
+  position: relative;
+  margin-top: -52px;
+  z-index: 5;
+  background: rgba(28, 28, 28, 0.62);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 14px var(--gutter, 16px);
   overflow: hidden;
 }
-.trust-bar__track {
+.trust-bar__row {
   display: flex;
-  width: max-content;
-  animation: marquee-scroll 25s linear infinite;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: clamp(12px, 2vw, 28px);
+  width: 100%;
+  max-width: var(--max-width, 1280px);
+  margin: 0 auto;
+  /* Mobile: items overflow → horizontal scroll. Desktop: fits cleanly. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.trust-bar__track:hover { animation-play-state: paused; }
-.trust-bar__set {
-  display: flex;
-  flex-shrink: 0;
-}
-@keyframes marquee-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
+.trust-bar__row::-webkit-scrollbar { display: none; }
 .trust-bar__item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--color-ink);
-  letter-spacing: 0.01em;
-  padding: 0 28px;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.02em;
   flex-shrink: 0;
+  padding: 0 4px;
 }
 .trust-bar__item + .trust-bar__item {
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  padding-left: clamp(12px, 2vw, 28px);
 }
 .trust-icon {
   font-size: var(--text-xs);
-  color: var(--color-muted);
+  color: rgba(255, 255, 255, 0.55);
   vertical-align: 1px;
 }
-/* Pause marquee for reduced-motion users */
-@media (prefers-reduced-motion: reduce) {
-  .trust-bar__track { animation: none; }
+/* Browsers without backdrop-filter fall back to a solid ink panel —
+   still readable, just without the glass blur. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .trust-bar { background: var(--color-ink, #1C1C1C); }
+}
+/* Mobile: lighter overlap and a touch more breathing room. */
+@media (max-width: 760px) {
+  .trust-bar { margin-top: 0; padding: 12px var(--gutter, 16px); }
+  .trust-bar__row { justify-content: flex-start; gap: 0; }
+  .trust-bar__item { padding: 0 14px; }
+  .trust-bar__item:first-child { padding-left: 4px; }
+  .trust-bar__item:last-child  { padding-right: 4px; }
 }
 
 /* ── How it works ─────────────────────────────────────────── */

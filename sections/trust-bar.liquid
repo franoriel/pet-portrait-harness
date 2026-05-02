@@ -1,22 +1,18 @@
-<div class="trust-bar" aria-label="Trust signals">
-  <div class="trust-bar__track">
-    {%- comment -%}Duplicate items twice for seamless infinite scroll{%- endcomment -%}
-    {%- for i in (1..2) -%}
-      <div class="trust-bar__set" {% if i == 2 %}aria-hidden="true"{% endif %}>
-        {%- for block in section.blocks -%}
-          <div class="trust-bar__item" {{ block.shopify_attributes }}>
-            {%- if block.settings.icon != blank -%}<span class="trust-icon" aria-hidden="true">{{ block.settings.icon }}</span>{%- endif -%}
-            {{ block.settings.text }}
-          </div>
-        {%- else -%}
-          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Printed in Canada</div>
-          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Free shipping over $95</div>
-          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Free redos until it's right</div>
-          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> Preview before you pay</div>
-          <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span> 8 artistic styles</div>
-        {%- endfor -%}
-      </div>
-    {%- endfor -%}
+<div class="trust-bar trust-bar--glass" aria-label="Trust signals" role="region">
+  <div class="trust-bar__row">
+    {%- if section.blocks.size > 0 -%}
+      {%- for block in section.blocks -%}
+        <div class="trust-bar__item" {{ block.shopify_attributes }}>
+          {%- if block.settings.icon != blank -%}<span class="trust-icon" aria-hidden="true">{{ block.settings.icon }}</span>{%- endif -%}
+          <span class="trust-bar__text">{{ block.settings.text }}</span>
+        </div>
+      {%- endfor -%}
+    {%- else -%}
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span><span class="trust-bar__text">Printed in Canada</span></div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span><span class="trust-bar__text">Free shipping over $95 — Canada only</span></div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span><span class="trust-bar__text">Free redos until it's right</span></div>
+      <div class="trust-bar__item"><span class="trust-icon" aria-hidden="true">✦</span><span class="trust-bar__text">Preview before you pay</span></div>
+    {%- endif -%}
   </div>
 </div>
 
