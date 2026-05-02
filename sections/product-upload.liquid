@@ -182,11 +182,18 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div class="faq__answer">
-          {%- if product.type == 'Canvas' or product.handle == 'canvas' -%}
+          {%- if product.handle == 'framed-canvas' -%}
             <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:6px;line-height:1.6;">
-              <li>1.25″ thick poly-cotton blend canvas</li>
-              <li>Fade-resistant archival inks</li>
-              <li>Hand-stretched over solid wood stretcher bars</li>
+              <li>Solid pine wood frame, 1.25″ (3.18 cm) thick</li>
+              <li>Polyester and cotton blend canvas with a floating effect inside the frame</li>
+              <li>Fade-resistant, archival-quality print</li>
+              <li>Hanging hardware attached — ready to hang</li>
+            </ul>
+          {%- elsif product.type == 'Canvas' or product.handle == 'canvas' -%}
+            <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:6px;line-height:1.6;">
+              <li>Polyester and cotton blend canvas, 1.25″ (3.18 cm) deep</li>
+              <li>Hand-glued to solid wood stretcher bars</li>
+              <li>Textured, fade-resistant, OBA-free for archival quality</li>
               <li>Mounting brackets included — ready to hang</li>
             </ul>
           {%- elsif product.handle == 'poster' -%}
@@ -209,16 +216,16 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div class="faq__answer">
-          {%- if product.handle == 'canvas' -%}
+          {%- if product.handle == 'canvas' or product.handle == 'framed-canvas' -%}
             <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
               <thead><tr style="text-align:left;color:var(--color-muted);border-bottom:1px solid var(--color-border);">
                 <th style="padding:8px 0;font-weight:500;">Size</th><th style="padding:8px 0;font-weight:500;">cm</th><th style="padding:8px 0;font-weight:500;">Best for</th>
               </tr></thead>
               <tbody>
-                <tr style="border-bottom:1px solid var(--color-border);"><td style="padding:8px 0;">10×10″</td><td>25 × 25</td><td style="color:var(--color-muted);">Desk or shelf</td></tr>
-                <tr style="border-bottom:1px solid var(--color-border);"><td style="padding:8px 0;">10×20″</td><td>25 × 51</td><td style="color:var(--color-muted);">Narrow wall space</td></tr>
-                <tr style="border-bottom:1px solid var(--color-border);"><td style="padding:8px 0;">12×18″</td><td>30 × 46</td><td style="color:var(--color-muted);">Living room</td></tr>
-                <tr><td style="padding:8px 0;">12×24″</td><td>30 × 61</td><td style="color:var(--color-muted);">Statement piece</td></tr>
+                <tr style="border-bottom:1px solid var(--color-border);"><td style="padding:8px 0;">12×12″</td><td>30 × 30</td><td style="color:var(--color-muted);">Cozy fit anywhere</td></tr>
+                <tr style="border-bottom:1px solid var(--color-border);"><td style="padding:8px 0;">12×16″</td><td>30 × 40</td><td style="color:var(--color-muted);">Hallway or shelf</td></tr>
+                <tr style="border-bottom:1px solid var(--color-border);"><td style="padding:8px 0;">16×16″</td><td>40 × 40</td><td style="color:var(--color-muted);">Statement square</td></tr>
+                <tr><td style="padding:8px 0;">16×20″</td><td>40 × 51</td><td style="color:var(--color-muted);">Living-room hero</td></tr>
               </tbody>
             </table>
           {%- elsif product.handle == 'poster' -%}
