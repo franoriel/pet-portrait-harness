@@ -214,6 +214,34 @@
     display: flex; flex-wrap: wrap; gap: 12px;
     margin-bottom: 18px;
   }
+  /* Override the global `.hero .btn--primary` glass-on-dark treatment —
+     this hero is light, so the primary CTA needs to read as a solid
+     dark button. Same visual identity as the rest of the site's
+     primary CTAs (cart checkout, sticky-add-to-cart, etc.). */
+  .hero--transform .hero__cta-group .btn--primary {
+    background: var(--color-primary, #2F2F2A);
+    color: #fff;
+    border: 1px solid transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 6px 18px rgba(28, 28, 28, 0.18);
+  }
+  .hero--transform .hero__cta-group .btn--primary:hover {
+    background: var(--color-primary-dk, #3D3D36);
+    box-shadow: 0 8px 22px rgba(28, 28, 28, 0.24);
+    transform: translateY(-1px);
+  }
+  .hero--transform .hero__cta-group .btn--outline {
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--color-ink, #1C1C1C);
+    border: 1px solid rgba(28, 28, 28, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .hero--transform .hero__cta-group .btn--outline:hover {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(28, 28, 28, 0.32);
+  }
   /* Reassurance — sits inside the left cream wash, so plain text reads
      cleanly across every frame without needing a pill backdrop. */
   .hero--transform .hero__reassurance {
