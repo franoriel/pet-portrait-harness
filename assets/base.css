@@ -300,10 +300,13 @@ p { color: var(--color-ink); }
   pointer-events: auto;
 }
 .site-header__logo img {
-  height: 40px;
+  height: 64px;
   width: auto;
   max-width: 100%;
   display: block;
+}
+@media (max-width: 760px) {
+  .site-header__logo img { height: 48px; }
 }
 .site-header__nav {
   display: none;

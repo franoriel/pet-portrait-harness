@@ -27,7 +27,7 @@
       "announcement-bar": {
         "type": "announcement-bar",
         "settings": {
-          "show_bar": true,
+          "show_bar": false,
           "text": "<p>Made in Canada · Free shipping on orders over $95 CAD · We currently ship within Canada only</p>",
           "link": ""
         }
