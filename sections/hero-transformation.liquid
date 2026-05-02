@@ -80,6 +80,34 @@
     background: linear-gradient(to bottom, rgba(28, 28, 28, 0.42) 0%, rgba(28, 28, 28, 0) 100%);
     z-index: 1; pointer-events: none;
   }
+
+  /* Left cream wash — anchors the headline column with reliable
+     contrast across all three frames. Frames A/B already have cream
+     in this zone so the wash is invisible on them; Frame C (canvas on
+     wall, with the eucalyptus vase + console pushing toward center-
+     left) gets a meaningful legibility lift in the column where the
+     subhead and CTA wrap. Stops at ~55% so the visual on the right
+     never feels veiled. */
+  .hero--transform::after {
+    content: '';
+    /* Starts below the dark header gradient so it doesn't fight the
+       white logo / nav contrast at the top. */
+    position: absolute; top: 120px; bottom: 0; left: 0;
+    width: 60%;
+    background: linear-gradient(
+      to right,
+      rgba(250, 248, 245, 0.78) 0%,
+      rgba(250, 248, 245, 0.55) 35%,
+      rgba(250, 248, 245, 0.2) 70%,
+      rgba(250, 248, 245, 0) 100%
+    );
+    z-index: 1; pointer-events: none;
+  }
+  @media (max-width: 760px) {
+    /* On mobile the visual stacks above the copy, so the left cream
+       wash isn't needed (and would tint the dog). */
+    .hero--transform::after { display: none; }
+  }
   /* Initial states — frame 1 visible, others hidden. */
   .hero-frame--1 { opacity: 1; }
   .hero-frame--2 { opacity: 0; }
@@ -186,18 +214,12 @@
     display: flex; flex-wrap: wrap; gap: 12px;
     margin-bottom: 18px;
   }
-  /* Reassurance — was washing out against the busy bottom of the canvas
-     frame. Bumped to ink at 75% with a soft cream pill backdrop so it
-     stays legible across all three frames. */
+  /* Reassurance — sits inside the left cream wash, so plain text reads
+     cleanly across every frame without needing a pill backdrop. */
   .hero--transform .hero__reassurance {
-    display: inline-block;
     font-size: var(--text-xs, 0.78rem);
     color: rgba(28, 28, 28, 0.78);
     line-height: 1.5; margin: 0;
-    padding: 6px 12px; border-radius: 999px;
-    background: rgba(250, 248, 245, 0.72);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
   }
 
   /* Mobile — stack the visual above the copy so the dog stays the hero.
