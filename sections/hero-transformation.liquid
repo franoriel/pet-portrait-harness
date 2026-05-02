@@ -66,6 +66,18 @@
     object-fit: cover; object-position: center right;
     will-change: opacity, transform;
   }
+
+  /* Top dark gradient — keeps the site header (white logo, white nav,
+     outline CTA) legible when the hero behind it is the light cream
+     watercolour or canvas-on-wall frame. Soft enough to feel cinematic
+     rather than shaded. */
+  .hero--transform::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 140px;
+    background: linear-gradient(to bottom, rgba(28, 28, 28, 0.42) 0%, rgba(28, 28, 28, 0) 100%);
+    z-index: 1; pointer-events: none;
+  }
   /* Initial states — frame 1 visible, others hidden. */
   .hero-frame--1 { opacity: 1; }
   .hero-frame--2 { opacity: 0; }
@@ -138,6 +150,9 @@
     line-height: 1.05;
     margin: 0 0 16px;
     max-width: 520px;
+    /* Hairline halo so dark serif copy stays crisp over the soft
+       watercolour bleed without feeling shadowed. */
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
   .hero--transform .hero__sub {
     font-family: var(--font-body, sans-serif);
@@ -145,15 +160,24 @@
     color: var(--color-ink, #1C1C1C);
     line-height: 1.55; margin: 0 0 28px;
     max-width: 460px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   }
   .hero--transform .hero__cta-group {
     display: flex; flex-wrap: wrap; gap: 12px;
     margin-bottom: 18px;
   }
+  /* Reassurance — was washing out against the busy bottom of the canvas
+     frame. Bumped to ink at 75% with a soft cream pill backdrop so it
+     stays legible across all three frames. */
   .hero--transform .hero__reassurance {
+    display: inline-block;
     font-size: var(--text-xs, 0.78rem);
-    color: var(--color-muted, #8A8A82);
+    color: rgba(28, 28, 28, 0.78);
     line-height: 1.5; margin: 0;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(250, 248, 245, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   /* Mobile — stack the visual above the copy so the dog stays the hero. */
