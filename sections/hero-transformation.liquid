@@ -316,27 +316,36 @@
   }
 
   /* Mobile — stack the visual above the copy so the dog stays the hero.
-     Tight 4:3 aspect ratio + per-frame object-position crops the
-     cream negative space on the left and lets the subject (dog or
-     canvas) actually fill the visible area on a phone. The top
-     gradient compresses to a thinner 80px to suit the tighter media. */
+     Source frames are baked for desktop (subject in right ~35%, cream
+     wall on the left two-thirds), so on mobile we zoom in via
+     transform: scale to push the subject into the visible viewport
+     instead of just relying on object-position. 16:10 aspect ratio
+     keeps the media ~30% shorter than the desktop default. */
   @media (max-width: 760px) {
     .hero--transform {
       min-height: 0;
       display: flex; flex-direction: column;
     }
-    .hero--transform::before { height: 80px; }
+    .hero--transform::before { height: 70px; }
     .hero--transform .hero__media--stack {
-      position: relative; aspect-ratio: 4 / 3;
+      position: relative; aspect-ratio: 16 / 10;
       width: 100%; height: auto;
+      overflow: hidden;
     }
-    /* Frames 1 + 2 are dog-on-right compositions — push the crop hard
-       to the right so the dog dominates the visible area. Frame 3
-       (canvas on wall) shows both the canvas and the eucalyptus vase
-       below it, so a slightly less aggressive crop keeps that context
-       legible. */
-    .hero-frame--1, .hero-frame--2 { object-position: 92% center; }
-    .hero-frame--3              { object-position: 78% center; }
+    /* Frames 1 + 2 are dog-on-right compositions — zoom hard and
+       anchor the origin to the dog's location so the dog fills the
+       visible area. Frame 3 (canvas on wall) zooms a touch less to
+       keep the eucalyptus vase + console table in frame as context. */
+    .hero-frame--1, .hero-frame--2 {
+      object-position: 90% center;
+      transform: scale(1.55);
+      transform-origin: 88% 55%;
+    }
+    .hero-frame--3 {
+      object-position: 75% center;
+      transform: scale(1.4);
+      transform-origin: 72% 50%;
+    }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
