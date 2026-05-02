@@ -143,9 +143,11 @@
   /* Stage indicator — captioned step strip that sits over the visual,
      tells the customer what's happening on the current frame, and
      reinforces the three-step product story. Text + dots in one
-     glassmorphism pill, bottom-right of the visual area. */
+     glassmorphism pill. Positioned high enough above the bottom edge
+     to clear the trust bar's 52px negative-margin overlap (plus the
+     trust bar's own ~48px height + breathing room). */
   .hero-frame__stage {
-    position: absolute; bottom: 20px; right: 24px;
+    position: absolute; bottom: 110px; right: 24px;
     display: inline-flex; align-items: center; gap: 12px;
     padding: 8px 14px; border-radius: 999px;
     background: rgba(28, 28, 28, 0.55);
