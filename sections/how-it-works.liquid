@@ -22,9 +22,26 @@
       {{ section.settings.subheading | default: 'From photo to art.' }}
     </p>
 
+    {%- comment -%}
+      Step media — three hyper-real lifestyle photographs map to the
+      three step blocks by index. They live as theme assets so the
+      sequence stays consistent without per-block image-picker setup.
+      Each card gets a slow Ken Burns scale (different delays per card)
+      so the trio feels animated without three competing motions.
+    {%- endcomment -%}
+    {%- assign hiw_step_media = 'hiw-step-1-upload.webp,hiw-step-2-preview.webp,hiw-step-3-ship.webp' | split: ',' -%}
+    {%- assign hiw_step_alt = 'A phone displaying a pet photo, fingertip about to tap to upload,A tablet showing a finished watercolour pet portrait at home,Hands lifting a finished pet portrait canvas out of its shipping box' | split: ',' -%}
+
     <div class="hiw__steps" role="list">
       {%- for block in section.blocks -%}
-        <div class="hiw__step" role="listitem" data-reveal {{ block.shopify_attributes }}>
+        <div class="hiw__step hiw__step--media" role="listitem" data-reveal {{ block.shopify_attributes }}>
+          {%- assign _media = hiw_step_media[forloop.index0] -%}
+          {%- assign _alt = hiw_step_alt[forloop.index0] -%}
+          {%- if _media != blank -%}
+            <div class="hiw__step-media" aria-hidden="true">
+              <img src="{{ _media | asset_url }}" alt="{{ _alt }}" loading="lazy" width="1280" height="956">
+            </div>
+          {%- endif -%}
           <div class="hiw__step-num" aria-label="Step {{ forloop.index }}">{{ forloop.index }}</div>
           <div class="hiw__step-body">
             <h3>{{ block.settings.title }}</h3>
@@ -32,21 +49,30 @@
           </div>
         </div>
       {%- else -%}
-        <div class="hiw__step" role="listitem">
+        <div class="hiw__step hiw__step--media" role="listitem">
+          <div class="hiw__step-media" aria-hidden="true">
+            <img src="{{ 'hiw-step-1-upload.webp' | asset_url }}" alt="A phone displaying a pet photo" loading="lazy" width="1280" height="956">
+          </div>
           <div class="hiw__step-num">1</div>
           <div class="hiw__step-body">
             <h3>Upload your photo</h3>
             <p>Any clear photo from your camera roll works. A front-facing shot with good lighting gets the best result.</p>
           </div>
         </div>
-        <div class="hiw__step" role="listitem">
+        <div class="hiw__step hiw__step--media" role="listitem">
+          <div class="hiw__step-media" aria-hidden="true">
+            <img src="{{ 'hiw-step-2-preview.webp' | asset_url }}" alt="A tablet showing a watercolour pet portrait" loading="lazy" width="1280" height="956">
+          </div>
           <div class="hiw__step-num">2</div>
           <div class="hiw__step-body">
             <h3>Preview your portrait</h3>
             <p>Watch your pet transform into a custom portrait in quickly. See it before you commit to anything.</p>
           </div>
         </div>
-        <div class="hiw__step" role="listitem">
+        <div class="hiw__step hiw__step--media" role="listitem">
+          <div class="hiw__step-media" aria-hidden="true">
+            <img src="{{ 'hiw-step-3-ship.webp' | asset_url }}" alt="A pet portrait canvas being unboxed" loading="lazy" width="1280" height="956">
+          </div>
           <div class="hiw__step-num">3</div>
           <div class="hiw__step-body">
             <h3>We print and ship</h3>
