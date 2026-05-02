@@ -31,7 +31,8 @@
     </span>
   </div>
 
-  <div class="hero__content container">
+  <div class="hero__layout container">
+    <div class="hero__content">
     <p class="hero__eyebrow" data-reveal>{{ section.settings.eyebrow | default: 'From your phone to your wall' }}</p>
     <h1 class="hero__title" data-reveal>{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
     <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Upload one photo. We paint it in your favourite style and ship a wall-worthy canvas — only if you love the preview.' }}</p>
@@ -48,6 +49,7 @@
     </div>
 
     <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Preview before you pay · Free shipping over $95 · Ships within Canada only' }}</p>
+    </div>
   </div>
 </section>
 
@@ -126,12 +128,30 @@
   .hero--transform [data-dot-2] { animation: hero-stage-dot-2 7.5s ease-in-out infinite; }
   .hero--transform [data-dot-3] { animation: hero-stage-dot-3 7.5s ease-in-out infinite; }
 
-  /* Hero content — overlays the cream negative space on the left two-
-     thirds of every baked frame. */
-  .hero--transform .hero__content {
+  /* Layout wrapper — keeps content respecting the 1280px container while
+     the visual stays full-bleed underneath. Desktop uses a two-column
+     grid that anchors the headline stack to the left negative-space
+     column of every baked frame; the right column stays empty so the
+     dog/canvas (already composed on the right third of each frame)
+     reads cleanly. */
+  .hero--transform .hero__layout {
     position: relative; z-index: 2;
-    padding: clamp(48px, 8vw, 96px) clamp(20px, 5vw, 48px) clamp(48px, 6vw, 72px);
-    max-width: 640px;
+    min-height: inherit;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 761px) {
+    .hero--transform { min-height: clamp(520px, 60vw, 680px); }
+    .hero--transform .hero__layout {
+      grid-template-columns: minmax(360px, 540px) 1fr;
+      align-items: center;
+      column-gap: 32px;
+    }
+  }
+
+  .hero--transform .hero__content {
+    padding: clamp(40px, 7vw, 88px) 0;
+    max-width: 540px;
   }
   .hero--transform .hero__eyebrow {
     font-family: var(--font-body, sans-serif);
@@ -180,19 +200,42 @@
     -webkit-backdrop-filter: blur(6px);
   }
 
-  /* Mobile — stack the visual above the copy so the dog stays the hero. */
+  /* Mobile — stack the visual above the copy so the dog stays the hero.
+     Visual collapses to a fixed 4:3 area with the dog cropped to the
+     right of the frame (object-position: 80% center) so the cream
+     negative space on the left isn't wasted on a phone width. The top
+     gradient compresses to a thinner 90px to suit the tighter media
+     area. Content sits below in normal flow with a comfortable padding
+     stack. */
   @media (max-width: 760px) {
-    .hero--transform { min-height: 0; }
+    .hero--transform {
+      min-height: 0;
+      display: flex; flex-direction: column;
+    }
+    .hero--transform::before { height: 90px; }
     .hero--transform .hero__media--stack {
       position: relative; aspect-ratio: 4 / 3;
       width: 100%; height: auto;
     }
-    .hero-frame { object-position: center; }
-    .hero--transform .hero__content {
-      padding: 28px 20px 40px;
-      max-width: none; text-align: left;
+    .hero-frame { object-position: 80% center; }
+    .hero--transform .hero__layout {
+      display: block; padding: 0;
     }
-    .hero-frame__stage { bottom: 12px; right: 14px; padding: 5px 8px; }
+    .hero--transform .hero__content {
+      padding: 28px var(--gutter, 16px) 36px;
+      max-width: none;
+    }
+    .hero--transform .hero__title {
+      font-size: clamp(1.75rem, 7vw, 2.25rem);
+      max-width: none;
+    }
+    .hero--transform .hero__sub {
+      font-size: 1rem;
+      max-width: none;
+    }
+    .hero--transform .hero__cta-group .btn { width: 100%; }
+    .hero-frame__stage { bottom: 10px; right: 12px; padding: 4px 8px; }
+    .hero-frame__stage-dot { width: 5px; height: 5px; }
   }
 
   /* Reduced motion — settle on the canvas-on-wall frame, no cycling.
