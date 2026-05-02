@@ -676,6 +676,21 @@ function RefreshIcon(props) {
   });
 }
 
+// Sparkle/regenerate-from-scratch icon — used by the "Regenerate Portrait"
+// link on the preview screen so it visually distinguishes from the
+// "Try another" same-style refresh.
+function SparkleIcon(props) {
+  return React.createElement(CtaIcon, {
+    ...props, paths: [
+      'M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z',
+      'M5 3v4',
+      'M3 5h4',
+      'M19 17v4',
+      'M17 19h4',
+    ],
+  });
+}
+
 // Wraps a button's content with inline-flex so the icon and text label
 // align cleanly (neither primaryBtn nor secondaryLink style sets flex
 // themselves). Accepts any React element for the icon.
@@ -2721,10 +2736,10 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
           'aria-label': 'Regenerate a new version in the same style',
         }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Try another')),
         React.createElement('button', {
-          type: 'button', style: s.secondaryLink,
+          type: 'button', style: s.secondaryLinkUnderline,
           onClick: startFresh,
-          'aria-label': 'Start over — clear this portrait and begin a new one',
-        }, 'Start over'),
+          'aria-label': 'Regenerate portrait — clear this portrait and start fresh',
+        }, iconLabel(React.createElement(SparkleIcon, { size: 14 }), 'Regenerate Portrait')),
       ),
     ),
   );
