@@ -2709,7 +2709,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         type: 'button', style: s.primaryBtn, onClick: onContinue,
         'aria-label': 'Continue to choose size and frame',
       }, iconLabel(React.createElement(ArrowRightIcon), 'PICK SIZE & FRAME', 'right')),
-      React.createElement('div', { style: { display: 'flex', gap: '16px' } },
+      React.createElement('div', { style: { display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' } },
         React.createElement('button', {
           type: 'button', style: s.secondaryLinkUnderline,
           onClick: retryFromStyle,
@@ -2717,9 +2717,14 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
         React.createElement('button', {
           type: 'button', style: s.secondaryLinkUnderline,
+          onClick: generate,
+          'aria-label': 'Regenerate a new version in the same style',
+        }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Try another')),
+        React.createElement('button', {
+          type: 'button', style: s.secondaryLink,
           onClick: startFresh,
           'aria-label': 'Start over — clear this portrait and begin a new one',
-        }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Start Over')),
+        }, 'Start over'),
       ),
     ),
   );
