@@ -580,6 +580,28 @@ const KEYFRAME_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .pf-marquee-track { animation: none !important; }
 }
+
+/* Preview screen — desktop two-column layout. The preview image and the
+   action stack (heading + chip + CTA + secondary links) compete for
+   vertical space on a single column, pushing the CTA below the fold on
+   1080p displays. Splitting into two columns at >=900px puts the
+   preview on the left and the actions on the right, both visible at
+   once with no scroll. Mobile keeps the original stacked layout. */
+@media (min-width: 900px) {
+  .pf-preview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 48px;
+    align-items: center;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  .pf-preview-grid__media { grid-column: 1; margin: 0 !important; max-width: 100% !important; }
+  .pf-preview-grid__copy  { grid-column: 2; text-align: left; }
+  .pf-preview-grid__copy .pf-preview-grid__center { text-align: center; }
+  /* Step indicator stays at the very top, full width above the grid. */
+  .pf-preview-grid__indicator { grid-column: 1 / -1; margin-bottom: 8px; }
+}
 `;
 
 let keyframesInjected = false;
@@ -2654,45 +2676,17 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
   // Single preview (no-name version) — this is what the user confirms
   const mainImage = state.previewImages[0] || state.previewCdnUrls[0];
 
-  return React.createElement('div', { style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' } },
-    React.createElement(StepIndicator, { current: 3 }),
-
-    // Heading
-    React.createElement('p', { style: { ...s.smallCaps, textAlign: 'center', margin: '0 0 6px' } }, 'One-of-one \u00B7 never recreated'),
-    state.petName && React.createElement('h2', {
-      style: { ...s.serifHeading, textAlign: 'center', marginBottom: '12px' },
-    }, state.petName),
-
-    // Selected-style chip — quiet reminder of the choice they made
-    state.selectedStyleId && React.createElement('div', {
-      style: { display: 'flex', justifyContent: 'center', marginBottom: '20px' },
-    },
-      React.createElement('span', {
-        style: {
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          padding: '6px 12px',
-          background: tokens.colorAccentLight,
-          border: '1px solid ' + tokens.colorAccent,
-          borderRadius: '999px',
-          fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
-          color: tokens.colorBrand, letterSpacing: '0.04em',
-        },
-        'aria-label': 'Selected style: ' + styleNameFor(state.selectedStyleId),
-      },
-        React.createElement('span', {
-          'aria-hidden': true,
-          style: {
-            display: 'inline-block',
-            width: '6px', height: '6px', borderRadius: '50%',
-            background: tokens.colorAccent,
-          },
-        }),
-        'Your style: ' + styleNameFor(state.selectedStyleId),
-      ),
+  return React.createElement('div', {
+    className: 'pf-preview-grid',
+    style: { ...s.sectionWrap, animation: 'pf-reveal-up 0.6s ease forwards' },
+  },
+    React.createElement('div', { className: 'pf-preview-grid__indicator' },
+      React.createElement(StepIndicator, { current: 3 }),
     ),
 
-    // Main preview (single, large)
+    // Main preview (single, large) — left column on desktop, top on mobile
     React.createElement('div', {
+      className: 'pf-preview-grid__media',
       style: {
         width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 16px', borderRadius: tokens.radiusCard,
         overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
@@ -2704,42 +2698,80 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       }),
     ),
 
-    // BAB "Bridge" — closes the gap between "this is a preview" and
-    // "this is what arrives on the wall." Free-preview language is the
-    // single biggest objection-handler on this step.
-    React.createElement('p', {
-      style: {
-        ...s.bodyMuted, textAlign: 'center',
-        fontSize: 'var(--text-xs)',
-        margin: '0 auto 18px', maxWidth: '380px',
+    // Right column on desktop (heading + chip + bridge + actions),
+    // stacks below the preview on mobile.
+    React.createElement('div', { className: 'pf-preview-grid__copy' },
+      // Heading
+      React.createElement('p', { style: { ...s.smallCaps, textAlign: 'center', margin: '0 0 6px' } }, 'One-of-one \u00B7 never recreated'),
+      state.petName && React.createElement('h2', {
+        style: { ...s.serifHeading, textAlign: 'center', marginBottom: '12px' },
+      }, state.petName),
+
+      // Selected-style chip — quiet reminder of the choice they made
+      state.selectedStyleId && React.createElement('div', {
+        style: { display: 'flex', justifyContent: 'center', marginBottom: '20px' },
       },
-    }, 'This is your preview — only pay if you love it. We print it just like you see.'),
+        React.createElement('span', {
+          style: {
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '6px 12px',
+            background: tokens.colorAccentLight,
+            border: '1px solid ' + tokens.colorAccent,
+            borderRadius: '999px',
+            fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
+            color: tokens.colorBrand, letterSpacing: '0.04em',
+          },
+          'aria-label': 'Selected style: ' + styleNameFor(state.selectedStyleId),
+        },
+          React.createElement('span', {
+            'aria-hidden': true,
+            style: {
+              display: 'inline-block',
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: tokens.colorAccent,
+            },
+          }),
+          'Your style: ' + styleNameFor(state.selectedStyleId),
+        ),
+      ),
 
-    // Urgency banner — countdown timer hidden for now. Uncomment to re-enable.
-    // React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
+      // BAB "Bridge" — closes the gap between "this is a preview" and
+      // "this is what arrives on the wall." Free-preview language is the
+      // single biggest objection-handler on this step.
+      React.createElement('p', {
+        style: {
+          ...s.bodyMuted, textAlign: 'center',
+          fontSize: 'var(--text-xs)',
+          margin: '0 auto 18px', maxWidth: '380px',
+        },
+      }, 'This is your preview — only pay if you love it. We print it just like you see.'),
 
-    // Actions
-    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
-      React.createElement('button', {
-        type: 'button', style: s.primaryBtn, onClick: onContinue,
-        'aria-label': 'Continue to choose size and frame',
-      }, iconLabel(React.createElement(ArrowRightIcon), 'PICK SIZE & FRAME', 'right')),
-      React.createElement('div', { style: { display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' } },
+      // Urgency banner — countdown timer hidden for now. Uncomment to re-enable.
+      // React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
+
+      // Actions
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
         React.createElement('button', {
-          type: 'button', style: s.secondaryLinkUnderline,
-          onClick: retryFromStyle,
-          'aria-label': 'Go back to change the art style',
-        }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
-        React.createElement('button', {
-          type: 'button', style: s.secondaryLinkUnderline,
-          onClick: generate,
-          'aria-label': 'Regenerate a new version in the same style',
-        }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Try another')),
-        React.createElement('button', {
-          type: 'button', style: s.secondaryLinkUnderline,
-          onClick: startFresh,
-          'aria-label': 'Regenerate portrait — clear this portrait and start fresh',
-        }, iconLabel(React.createElement(SparkleIcon, { size: 14 }), 'Regenerate Portrait')),
+          type: 'button', style: s.primaryBtn, onClick: onContinue,
+          'aria-label': 'Continue to choose size and frame',
+        }, iconLabel(React.createElement(ArrowRightIcon), 'PICK SIZE & FRAME', 'right')),
+        React.createElement('div', { style: { display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' } },
+          React.createElement('button', {
+            type: 'button', style: s.secondaryLinkUnderline,
+            onClick: retryFromStyle,
+            'aria-label': 'Go back to change the art style',
+          }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
+          React.createElement('button', {
+            type: 'button', style: s.secondaryLinkUnderline,
+            onClick: generate,
+            'aria-label': 'Regenerate a new version in the same style',
+          }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Try another')),
+          React.createElement('button', {
+            type: 'button', style: s.secondaryLinkUnderline,
+            onClick: startFresh,
+            'aria-label': 'Regenerate portrait — clear this portrait and start fresh',
+          }, iconLabel(React.createElement(SparkleIcon, { size: 14 }), 'Regenerate Portrait')),
+        ),
       ),
     ),
   );
