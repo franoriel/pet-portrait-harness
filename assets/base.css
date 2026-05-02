@@ -601,9 +601,15 @@ p { color: var(--color-ink); }
 /* ── Style carousel ──────────────────────────────────────── */
 .style-carousel {
   background: var(--color-bg);
-  padding: 32px 0;
+  padding: 28px 0 16px;
   overflow: hidden;
 }
+/* Adjacent-section override — when the carousel is stacked directly
+   on top of "How it works" (homepage default order), the section-
+   padding on .hiw was adding 64px on top of the carousel's own bottom
+   padding, leaving a noticeable empty cream band. Tighten the seam
+   while keeping HIW's 64px bottom intact. */
+.style-carousel + .hiw { padding-top: 32px; }
 .style-carousel__track {
   display: flex;
   width: max-content;
