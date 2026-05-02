@@ -315,41 +315,29 @@
     letter-spacing: 0.05em;
   }
 
-  /* Mobile — stack the visual above the copy so the dog stays the hero.
-     Source frames are baked for desktop (subject in right ~35%, cream
-     wall on the left two-thirds), so on mobile we zoom in via
-     transform: scale to push the subject into the visible viewport
-     instead of just relying on object-position. 16:10 aspect ratio
-     keeps the media ~30% shorter than the desktop default. */
+  /* Mobile — portrait 4:5 frame. Source images are 16:9 with the
+     subject baked into the right third, so cover-cropping into a 4:5
+     window naturally drops the cream wall on the left and centers the
+     dog/canvas in view — no transform-scale needed, no clipped heads.
+     Tall enough to feel premium and own the screen, short enough to
+     keep the headline + CTA in scroll range. */
   @media (max-width: 760px) {
     .hero--transform {
       min-height: 0;
       display: flex; flex-direction: column;
     }
-    /* Header is opaque + in normal flow on mobile (see base.css), so the
-       hero's own dark top gradient is no longer needed for header
-       legibility — kill it to avoid a faint shadow band at the top of
-       the visual. */
     .hero--transform::before { display: none; }
     .hero--transform .hero__media--stack {
-      position: relative; aspect-ratio: 16 / 10;
+      position: relative; aspect-ratio: 4 / 5;
       width: 100%; height: auto;
       overflow: hidden;
     }
-    /* Frames 1 + 2 are dog-on-right compositions — zoom hard and
-       anchor the origin to the dog's location so the dog fills the
-       visible area. Frame 3 (canvas on wall) zooms a touch less to
-       keep the eucalyptus vase + console table in frame as context. */
-    .hero-frame--1, .hero-frame--2 {
-      object-position: 90% center;
-      transform: scale(1.35);
-      transform-origin: 88% 32%;
-    }
-    .hero-frame--3 {
-      object-position: 75% center;
-      transform: scale(1.22);
-      transform-origin: 72% 40%;
-    }
+    /* Frames 1 + 2: dog-on-right composition — push toward right so
+       the dog sits in the visual centre. Frame 3: canvas + vase need
+       both in frame, so a slightly less aggressive horizontal crop
+       keeps the console table context. */
+    .hero-frame--1, .hero-frame--2 { object-position: 80% center; }
+    .hero-frame--3              { object-position: 65% center; }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
