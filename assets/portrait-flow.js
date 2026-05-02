@@ -1369,7 +1369,7 @@ function PetNameInput({ id, value, onChange }) {
       style: {
         ...s.bodyMuted, fontSize: 'var(--text-xs)', marginTop: '6px', marginBottom: 0,
       },
-    }, `Short names print the cleanest — up to ${PET_NAME_MAX} characters.`),
+    }, `Optional. Up to ${PET_NAME_MAX} characters — short names print the cleanest.`),
   );
 }
 
@@ -1586,20 +1586,14 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
         ),
     ),
 
-    // Photo tips — inline, compact
-    React.createElement('div', {
+    // Photo tips — MBR "Relief": disarms the "do I need a pro photo?"
+    // anxiety, then lists what we actually need in plain language.
+    React.createElement('p', {
       style: {
-        display: 'flex', gap: '12px', flexWrap: 'wrap', margin: '16px 0 24px',
-        justifyContent: 'center',
+        ...s.bodyMuted, fontSize: 'var(--text-xs)', textAlign: 'center',
+        margin: '14px auto 24px', maxWidth: '380px', lineHeight: 1.5,
       },
-    },
-      ['\uD83D\uDC41 Face clearly visible', '\u2600\uFE0F Good lighting', '\uD83D\uDC3E One pet per photo'].map(tip =>
-        React.createElement('span', {
-          key: tip,
-          style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorMuted },
-        }, tip),
-      ),
-    ),
+    }, 'Phone photos work great. Just look for a clear face, decent lighting, and one pet per photo — we handle the rest.'),
 
     // Photo license + Terms acceptance — required before generating
     React.createElement(PhotoLicenseConsent, {
@@ -1620,10 +1614,10 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
       canContinue
         ? iconLabel(React.createElement(ArrowRightIcon), 'CHOOSE YOUR STYLE', 'right')
         : (!state.photo
-            ? 'ADD A PHOTO + NAME'
+            ? 'ADD A PHOTO TO CONTINUE'
             : (!state.termsAccepted
                 ? 'ACCEPT PHOTO TERMS TO CONTINUE'
-                : 'ADD A PHOTO + NAME'))
+                : 'ADD A PHOTO TO CONTINUE'))
     ),
   );
 }
@@ -2695,6 +2689,17 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       }),
     ),
 
+    // BAB "Bridge" — closes the gap between "this is a preview" and
+    // "this is what arrives on the wall." Free-preview language is the
+    // single biggest objection-handler on this step.
+    React.createElement('p', {
+      style: {
+        ...s.bodyMuted, textAlign: 'center',
+        fontSize: 'var(--text-xs)',
+        margin: '0 auto 18px', maxWidth: '380px',
+      },
+    }, 'This is your preview — only pay if you love it. We print it just like you see.'),
+
     // Urgency banner — countdown timer hidden for now. Uncomment to re-enable.
     // React.createElement(UrgencyBanner, { generatedAt: state.generatedAt || new Date().toISOString() }),
 
@@ -2702,8 +2707,8 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' } },
       React.createElement('button', {
         type: 'button', style: s.primaryBtn, onClick: onContinue,
-        'aria-label': 'Continue to choose size',
-      }, iconLabel(React.createElement(ArrowRightIcon), 'CONTINUE', 'right')),
+        'aria-label': 'Continue to choose size and frame',
+      }, iconLabel(React.createElement(ArrowRightIcon), 'PICK SIZE & FRAME', 'right')),
       React.createElement('div', { style: { display: 'flex', gap: '16px' } },
         React.createElement('button', {
           type: 'button', style: s.secondaryLinkUnderline,
@@ -3060,7 +3065,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('span', null,
             React.createElement('span', { style: { fontWeight: 600 } }, 'No frame'),
             React.createElement('br'),
-            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Gallery wrap'),
+            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Gallery wrap · ready to hang'),
           )
         ),
         optionCard(
@@ -3070,7 +3075,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('span', null,
             React.createElement('span', { style: { fontWeight: 600 } }, 'Framed'),
             React.createElement('br'),
-            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Solid wood'),
+            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Solid wood · heirloom finish'),
           )
         ),
       ),
@@ -3162,8 +3167,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
     React.createElement('button', {
       type: 'button', style: s.primaryBtn, onClick: handleContinue,
-      'aria-label': 'Continue to cart',
-    }, iconLabel(React.createElement(ArrowRightIcon), 'CONTINUE', 'right')),
+      'aria-label': 'Review your order and add to cart',
+    }, iconLabel(React.createElement(ArrowRightIcon), 'REVIEW MY ORDER', 'right')),
 
     // Guarantee strip
     React.createElement('div', {

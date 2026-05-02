@@ -1,0 +1,200 @@
+<section class="hero hero--transform" aria-label="Hero" role="region">
+  {%- comment -%}
+    Hero transformation animation. Three pre-composed 16:9 frames cross-fade
+    in sequence: customer's photo → soft watercolour portrait → finished
+    canvas hanging on a styled home wall. Frames are baked with a cream
+    negative-space on the left two-thirds so the overlay copy stays legible
+    throughout the cycle. The animation settles longest on the canvas-on-
+    wall state — that's the emotional payoff. prefers-reduced-motion drops
+    to a static canvas-on-wall image (skips the animation entirely).
+  {%- endcomment -%}
+  <div class="hero__media hero__media--stack" aria-hidden="false">
+    <img class="hero-frame hero-frame--1"
+         src="{{ 'hero-transform-1-photo.webp' | asset_url }}"
+         alt="Your pet's photo"
+         loading="eager" fetchpriority="high"
+         width="1920" height="1072">
+    <img class="hero-frame hero-frame--2"
+         src="{{ 'hero-transform-2-watercolour.webp' | asset_url }}"
+         alt="Soft watercolour portrait of your pet"
+         loading="eager"
+         width="1920" height="1072">
+    <img class="hero-frame hero-frame--3"
+         src="{{ 'hero-transform-3-canvas.webp' | asset_url }}"
+         alt="Pet portrait canvas hanging on a wall at home"
+         loading="eager"
+         width="1920" height="1072">
+    <span class="hero-frame__stage" aria-live="polite" data-stage>
+      <span class="hero-frame__stage-dot" data-dot-1></span>
+      <span class="hero-frame__stage-dot" data-dot-2></span>
+      <span class="hero-frame__stage-dot" data-dot-3></span>
+    </span>
+  </div>
+
+  <div class="hero__content container">
+    <p class="hero__eyebrow" data-reveal>{{ section.settings.eyebrow | default: 'From your phone to your wall' }}</p>
+    <h1 class="hero__title" data-reveal>{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
+    <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Upload one photo. We paint it in your favourite style and ship a wall-worthy canvas — only if you love the preview.' }}</p>
+
+    <div class="hero__cta-group" data-reveal>
+      <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--primary btn--large">
+        {{ section.settings.cta_label | default: 'Create My Portrait' }}
+      </a>
+      {%- if section.settings.secondary_cta_label != blank -%}
+        <a href="{{ section.settings.secondary_cta_url }}" class="btn btn--outline btn--large">
+          {{ section.settings.secondary_cta_label }}
+        </a>
+      {%- endif -%}
+    </div>
+
+    <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Preview before you pay · Free shipping over $95 · Ships within Canada only' }}</p>
+  </div>
+</section>
+
+<style>
+  /* Hero transformation — overrides the regular .hero pattern just for this
+     section so the rest of the theme's hero CSS doesn't fight us. */
+  .hero--transform { position: relative; overflow: hidden; isolation: isolate;
+                     background: #FAF8F5; min-height: 560px; }
+  .hero--transform .hero__media--stack {
+    position: absolute; inset: 0;
+    display: block;
+  }
+  .hero-frame {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center right;
+    will-change: opacity, transform;
+  }
+  /* Initial states — frame 1 visible, others hidden. */
+  .hero-frame--1 { opacity: 1; }
+  .hero-frame--2 { opacity: 0; }
+  .hero-frame--3 { opacity: 0; }
+
+  /* 7-second loop. Settles longest on frame 3 (the canvas on the wall),
+     which is the emotional payoff and the clearest value-prop frame. */
+  @keyframes hero-frame-1 {
+    0%, 18%   { opacity: 1; }
+    25%, 100% { opacity: 0; }
+  }
+  @keyframes hero-frame-2 {
+    0%, 18%   { opacity: 0; }
+    25%, 43%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes hero-frame-3 {
+    0%, 43%   { opacity: 0; }
+    50%, 92%  { opacity: 1; }
+    98%, 100% { opacity: 0; } /* brief fade to dark before re-loop to frame 1 */
+  }
+  .hero--transform .hero-frame--1 { animation: hero-frame-1 7.5s ease-in-out infinite; }
+  .hero--transform .hero-frame--2 { animation: hero-frame-2 7.5s ease-in-out infinite; }
+  .hero--transform .hero-frame--3 { animation: hero-frame-3 7.5s ease-in-out infinite; }
+
+  /* Stage indicator — three small dots that light up as the cycle moves
+     through photo → painting → canvas. Tiny visual hint at the value prop
+     for users who can't read the imagery. */
+  .hero-frame__stage {
+    position: absolute; bottom: 18px; right: 24px;
+    display: inline-flex; gap: 6px;
+    padding: 6px 10px; border-radius: 999px;
+    background: rgba(28, 28, 28, 0.45);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 3;
+  }
+  .hero-frame__stage-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transition: background 0.3s ease;
+  }
+  @keyframes hero-stage-dot-1 { 0%, 22% { background: #fff; } 25%, 100% { background: rgba(255,255,255,0.4); } }
+  @keyframes hero-stage-dot-2 { 0%, 22% { background: rgba(255,255,255,0.4); } 25%, 47% { background: #fff; } 50%, 100% { background: rgba(255,255,255,0.4); } }
+  @keyframes hero-stage-dot-3 { 0%, 47% { background: rgba(255,255,255,0.4); } 50%, 100% { background: #fff; } }
+  .hero--transform [data-dot-1] { animation: hero-stage-dot-1 7.5s ease-in-out infinite; }
+  .hero--transform [data-dot-2] { animation: hero-stage-dot-2 7.5s ease-in-out infinite; }
+  .hero--transform [data-dot-3] { animation: hero-stage-dot-3 7.5s ease-in-out infinite; }
+
+  /* Hero content — overlays the cream negative space on the left two-
+     thirds of every baked frame. */
+  .hero--transform .hero__content {
+    position: relative; z-index: 2;
+    padding: clamp(48px, 8vw, 96px) clamp(20px, 5vw, 48px) clamp(48px, 6vw, 72px);
+    max-width: 640px;
+  }
+  .hero--transform .hero__eyebrow {
+    font-family: var(--font-body, sans-serif);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-accent, #8B7D6B);
+    margin: 0 0 14px;
+  }
+  .hero--transform .hero__title {
+    font-family: var(--font-heading, serif);
+    font-size: clamp(2rem, 5.5vw, 3.6rem);
+    font-style: italic; font-weight: 400;
+    color: var(--color-ink, #1C1C1C);
+    line-height: 1.05;
+    margin: 0 0 16px;
+    max-width: 520px;
+  }
+  .hero--transform .hero__sub {
+    font-family: var(--font-body, sans-serif);
+    font-size: clamp(0.95rem, 1.6vw, 1.075rem);
+    color: var(--color-ink, #1C1C1C);
+    line-height: 1.55; margin: 0 0 28px;
+    max-width: 460px;
+  }
+  .hero--transform .hero__cta-group {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 18px;
+  }
+  .hero--transform .hero__reassurance {
+    font-size: var(--text-xs, 0.78rem);
+    color: var(--color-muted, #8A8A82);
+    line-height: 1.5; margin: 0;
+  }
+
+  /* Mobile — stack the visual above the copy so the dog stays the hero. */
+  @media (max-width: 760px) {
+    .hero--transform { min-height: 0; }
+    .hero--transform .hero__media--stack {
+      position: relative; aspect-ratio: 4 / 3;
+      width: 100%; height: auto;
+    }
+    .hero-frame { object-position: center; }
+    .hero--transform .hero__content {
+      padding: 28px 20px 40px;
+      max-width: none; text-align: left;
+    }
+    .hero-frame__stage { bottom: 12px; right: 14px; padding: 5px 8px; }
+  }
+
+  /* Reduced motion — settle on the canvas-on-wall frame, no cycling.
+     The product story is still told (just without the transformation). */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-frame--1, .hero-frame--2 { opacity: 0 !important; animation: none !important; }
+    .hero-frame--3 { opacity: 1 !important; animation: none !important; }
+    .hero-frame__stage { display: none; }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Hero Transformation",
+  "tag": "section",
+  "settings": [
+    { "type": "paragraph", "content": "Animated three-frame hero. The frames live in assets/ — replace `hero-transform-1-photo.webp`, `hero-transform-2-watercolour.webp`, and `hero-transform-3-canvas.webp` to swap the visual." },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "From your phone to your wall" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "They deserve a spot on the wall." },
+    { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "Upload one photo. We paint it in your favourite style and ship a wall-worthy canvas — only if you love the preview." },
+    { "type": "text", "id": "cta_label", "label": "Primary CTA label", "default": "Create My Portrait" },
+    { "type": "url", "id": "cta_url", "label": "Primary CTA URL" },
+    { "type": "text", "id": "secondary_cta_label", "label": "Secondary CTA label (optional)" },
+    { "type": "url", "id": "secondary_cta_url", "label": "Secondary CTA URL" },
+    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Preview before you pay · Free shipping over $95 · Ships within Canada only" }
+  ],
+  "presets": [{ "name": "Hero Transformation" }]
+}
+{% endschema %}

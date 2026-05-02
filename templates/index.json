@@ -10,20 +10,16 @@
 {
   "sections": {
     "hero": {
-      "type": "hero",
+      "type": "hero-transformation",
       "settings": {
-        "image": "shopify://shop_images/hf_20260419_223200_cb70adfd-637e-4314-b3f4-73f10cc9fb97.png",
-        "enable_parallax": true,
-        "parallax_strength": 0.3,
-        "heading": "A modern tribute to unconditional love",
-        "subheading": "They've earned more than a phone photo in a frame.",
-        "show_rating": true,
-        "rating_text": "",
+        "eyebrow": "From your phone to your wall",
+        "heading": "A modern tribute to unconditional love.",
+        "subheading": "Upload one photo. We paint it in your favourite style and ship a wall-worthy canvas — only if you love the preview.",
         "cta_label": "Create My Portrait",
-        "cta_url": "",
+        "cta_url": "/pages/create",
         "secondary_cta_label": "",
         "secondary_cta_url": "",
-        "reassurance": "Your unique pet portrait in just a few clicks"
+        "reassurance": "Preview before you pay · Free shipping over $95 · Ships within Canada only"
       }
     },
     "trust-bar": {
