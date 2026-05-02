@@ -491,9 +491,20 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, calm symmetrical pose, direct gentle gaze.
 - The PET itself occupies 78-85% of image height — top of ears at \
-~8-12% from top, bottom of chest at ~88-93% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~8-12% padding) on all four sides — no edge bleed — the negative space above and \
-below is essential to this minimalist aesthetic.
+~8-12% from top, centered horizontally. Ensure the pet is the dominant \
+subject filling the canvas confidently, with clean breathing room \
+(~8-12% padding) at the top and sides — no edge bleed on those three sides.
+- BOTTOM SILHOUETTE — CRITICAL: the chest/body must terminate in ONE of \
+two ways and never anything in between:
+  (a) Taper organically into a soft, curved natural body silhouette \
+  that finishes around 88-93% from top, with breathing room below it; OR
+  (b) Run as a clean horizontal cut that extends ALL THE WAY to the \
+  bottom edge of the canvas — the cut IS the bottom edge, no background \
+  band visible underneath.
+  NEVER render a flat horizontal chest cut that floats above the bottom \
+  edge with background colour visible beneath it — that reads as a \
+  truncated, unfinished portrait. If you choose option (b), the dog's \
+  body fills the lower portion of the frame edge-to-edge.
 - The BACKGROUND is ONE single solid color from the palette above, extending \
 to all four edges. Completely uniform, no decoration, no shapes, no lines, \
 no gradients, no panels, no bars, no color blocks, no empty bands. Just one \
