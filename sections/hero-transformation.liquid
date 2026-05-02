@@ -9,21 +9,37 @@
     to a static canvas-on-wall image (skips the animation entirely).
   {%- endcomment -%}
   <div class="hero__media hero__media--stack" aria-hidden="false">
-    <img class="hero-frame hero-frame--1"
-         src="{{ 'hero-transform-1-photo.webp' | asset_url }}"
-         alt="Your pet's photo"
-         loading="eager" fetchpriority="high"
-         width="1920" height="1072">
-    <img class="hero-frame hero-frame--2"
-         src="{{ 'hero-transform-2-watercolour.webp' | asset_url }}"
-         alt="Soft watercolour portrait of your pet"
-         loading="eager"
-         width="1920" height="1072">
-    <img class="hero-frame hero-frame--3"
-         src="{{ 'hero-transform-3-canvas.webp' | asset_url }}"
-         alt="Pet portrait canvas hanging on a wall at home"
-         loading="eager"
-         width="1920" height="1072">
+    {%- comment -%}
+      Each frame ships two crops. Desktop loads the wide 1920×1072 frame
+      (subject in right third, cream negative space on the left for the
+      overlay copy column). Mobile loads a tight 1170×1071 crop where
+      the subject is centered with cream padding on both sides — looks
+      properly composed on a phone instead of touching the screen edge.
+    {%- endcomment -%}
+    <picture>
+      <source media="(max-width: 760px)" srcset="{{ 'hero-transform-1-photo-mobile.webp' | asset_url }}">
+      <img class="hero-frame hero-frame--1"
+           src="{{ 'hero-transform-1-photo.webp' | asset_url }}"
+           alt="Your pet's photo"
+           loading="eager" fetchpriority="high"
+           width="1920" height="1072">
+    </picture>
+    <picture>
+      <source media="(max-width: 760px)" srcset="{{ 'hero-transform-2-watercolour-mobile.webp' | asset_url }}">
+      <img class="hero-frame hero-frame--2"
+           src="{{ 'hero-transform-2-watercolour.webp' | asset_url }}"
+           alt="Soft watercolour portrait of your pet"
+           loading="eager"
+           width="1920" height="1072">
+    </picture>
+    <picture>
+      <source media="(max-width: 760px)" srcset="{{ 'hero-transform-3-canvas-mobile.webp' | asset_url }}">
+      <img class="hero-frame hero-frame--3"
+           src="{{ 'hero-transform-3-canvas.webp' | asset_url }}"
+           alt="Pet portrait canvas hanging on a wall at home"
+           loading="eager"
+           width="1920" height="1072">
+    </picture>
     <span class="hero-frame__stage" aria-live="polite" data-stage>
       <span class="hero-frame__stage-labels">
         <span class="hero-frame__stage-label" data-label-1>1. Upload your photo</span>
@@ -315,12 +331,11 @@
     letter-spacing: 0.05em;
   }
 
-  /* Mobile — square 1:1 frame. Source images are 16:9 with the
-     subject baked into the right ~40% (dog at source x 58-100%,
-     canvas+vase at 42-95%). Cover-cropping into a 1:1 window with
-     object-position pinned right shows just the subject zone with
-     minimal wall. Square keeps the image at ~46% of viewport so the
-     headline + CTA stay above the fold. */
+  /* Mobile — uses the dedicated 1170×1071 mobile crops (loaded via
+     <picture>) where the subject is pre-centered with cream padding
+     on both sides. Container aspect matches the asset, so cover is a
+     no-op and we just render the asset as composed. The image takes
+     ~42% of viewport so the headline + CTA stay above the fold. */
   @media (max-width: 760px) {
     .hero--transform {
       min-height: 0;
@@ -328,17 +343,12 @@
     }
     .hero--transform::before { display: none; }
     .hero--transform .hero__media--stack {
-      position: relative; aspect-ratio: 1 / 1;
+      position: relative; aspect-ratio: 1170 / 1071;
       width: 100%; height: auto;
       overflow: hidden;
     }
-    /* Frames 1 + 2: dog extends to the right edge of the source — pin
-       object-position to 100% so the dog stays fully in frame with a
-       sliver of wall on the left as breathing room. Frame 3: canvas +
-       vase both need to be in frame, so 92% keeps the eucalyptus vase
-       at the left edge of the visible area without clipping it. */
-    .hero-frame--1, .hero-frame--2 { object-position: 100% center; }
-    .hero-frame--3              { object-position: 92% center; }
+    .hero-frame--1, .hero-frame--2,
+    .hero-frame--3 { object-position: center center; }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
