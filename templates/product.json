@@ -20,12 +20,6 @@
       "type": "social-proof-ticker",
       "settings": {}
     },
-    "upsell": {
-      "type": "upsell",
-      "settings": {
-        "heading": "Customers also ordered"
-      }
-    },
     "faq": {
       "type": "faq",
       "settings": {
@@ -37,7 +31,6 @@
   "order": [
     "product-upload",
     "social-proof-ticker",
-    "upsell",
     "faq"
   ]
 }

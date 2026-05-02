@@ -1469,7 +1469,19 @@ p { color: var(--color-ink); }
   .product-showcase__grid { overflow: visible; flex-wrap: wrap; justify-content: center; }
   .product-card { flex: 0 0 calc(20% - 13px); }
 
-  .product-layout { grid-template-columns: 1fr 1fr; gap: 56px; padding: 48px var(--gutter); }
+  .product-layout { grid-template-columns: 1fr 1fr; gap: 56px; padding: 48px var(--gutter); align-items: start; }
+  /* Sticky gallery — the right column (info + accordions) is much taller
+     than the gallery, leaving the left column with empty negative space
+     when scrolled. Pinning the gallery keeps the image in view while the
+     customer reads through the accordions, eliminating the dead space
+     and the feeling that they're scrolling past the product. */
+  .product-layout .product-gallery {
+    position: sticky;
+    top: 96px;
+    align-self: start;
+    max-height: calc(100vh - 120px);
+    overflow: hidden;
+  }
   .product-gallery__track { border-radius: var(--radius); }
   .product-gallery__slide { border-radius: 0; }
 
