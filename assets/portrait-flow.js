@@ -2761,15 +2761,14 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
             onClick: retryFromStyle,
             'aria-label': 'Go back to change the art style',
           }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
+          // Regenerate keeps the current style + photo + name and re-runs the
+          // model. Replaces the redundant pair of "Try another" + a separate
+          // "Regenerate Portrait" that called startFresh — one labelled
+          // action, one clear behaviour.
           React.createElement('button', {
             type: 'button', style: s.secondaryLinkUnderline,
             onClick: generate,
-            'aria-label': 'Regenerate a new version in the same style',
-          }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Try another')),
-          React.createElement('button', {
-            type: 'button', style: s.secondaryLinkUnderline,
-            onClick: startFresh,
-            'aria-label': 'Regenerate portrait — clear this portrait and start fresh',
+            'aria-label': 'Regenerate a new portrait in the same style',
           }, iconLabel(React.createElement(SparkleIcon, { size: 14 }), 'Regenerate Portrait')),
         ),
       ),
