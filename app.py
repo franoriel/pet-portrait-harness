@@ -430,9 +430,17 @@ def generate_route():
     if style not in PROMPTS:
         return jsonify(error="Invalid style."), 400
 
-    # Background mode: 'auto' (style default), 'light' (soft/airy), or 'dark' (moody/rich).
+    # Background mode: 'auto' / 'light' / 'dark' for most styles, plus 8
+    # named colours for modern-shape-art (cream/clay/sage/terracotta/mauve/
+    # mustard/navy/charcoal). Anything else falls back to 'auto'.
+    from generate import MODERN_BG_COLORS
+    _BG_VALID = ("auto", "light", "dark", *MODERN_BG_COLORS.keys())
     background_mode_raw = (request.form.get("background_mode") or "auto").strip().lower()
-    background_mode = background_mode_raw if background_mode_raw in ("auto", "light", "dark") else "auto"
+    background_mode = background_mode_raw if background_mode_raw in _BG_VALID else "auto"
+    # Modern locks to a colour palette — if the request comes in with
+    # auto/light/dark while the chosen style is modern, default to 'clay'.
+    if style == "modern-shape-art" and background_mode not in MODERN_BG_COLORS:
+        background_mode = "clay"
     log.info("[/generate] style=%s bg_mode=%s (raw=%r)", style, background_mode, background_mode_raw)
 
     # ── Photo-license consent (audit trail) ──────────────────────────────────
@@ -681,7 +689,8 @@ def add_name():
     image_url = (data.get("image_url") or "").strip()
     style_raw = (data.get("style") or "watercolor").strip()
     background_mode = (data.get("background_mode") or "auto").strip().lower()
-    if background_mode not in ("auto", "light", "dark"):
+    from generate import MODERN_BG_COLORS
+    if background_mode not in ("auto", "light", "dark", *MODERN_BG_COLORS.keys()):
         background_mode = "auto"
 
     # Validate pet_name

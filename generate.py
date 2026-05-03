@@ -456,6 +456,35 @@ modern clothing, contemporary objects, text, watermark, border, \
 solid color bars or panels at image edges.\
 """
 
+# 8 print-safe colours offered to customers via the Modern style background
+# picker. All sit comfortably inside CMYK gamut (no neon, no pure RGB
+# primaries) so what they pick on-screen is what arrives on the wall.
+# id → (hex, descriptive name used in prompt)
+MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
+    "cream":      ("#F4EFE7", "warm off-white cream"),
+    "clay":       ("#E2C7A8", "soft warm clay"),
+    "sage":       ("#B6C2A3", "muted sage green"),
+    "terracotta": ("#C77B58", "dusty terracotta"),
+    "mauve":      ("#C9A4A4", "soft dusty mauve"),
+    "mustard":    ("#C9A352", "warm mustard ochre"),
+    "navy":       ("#1D2A44", "deep navy ink"),
+    "charcoal":   ("#2E2A26", "warm charcoal"),
+}
+
+def _modern_shape_art_prompt(style_vars: Optional[dict] = None) -> str:
+    """Build the modern-shape-art prompt with the customer-chosen background
+    colour interpolated into the COMPOSITION block. Falls back to clay if
+    no colour is supplied or the id is unknown."""
+    color_id = (style_vars or {}).get("modern_bg_color") or "clay"
+    if color_id not in MODERN_BG_COLORS:
+        color_id = "clay"
+    hex_code, name = MODERN_BG_COLORS[color_id]
+    return _MODERN_SHAPE_ART_TEMPLATE.replace(
+        "{{MODERN_BG_HEX}}", hex_code,
+    ).replace(
+        "{{MODERN_BG_NAME}}", name,
+    )
+
 _MODERN_SHAPE_ART_TEMPLATE = """\
 Transform this photo into a modern, clean, minimalist shape-art pet portrait.
 
@@ -475,9 +504,12 @@ Bauhaus. Confident geometric shapes that simplify the pet into clean planes.
 photographic detail, no brush strokes.
 - Crisp clean edges between shapes. Soft organic curves where appropriate \
 (ears, cheeks, brow), sharp geometric edges where appropriate (collars, jaw line).
-- Restrained modern palette of 4–6 muted tones: warm off-white #F4EFE7, soft \
-clay #E2C7A8, sage #B6C2A3, dusty terracotta #C77B58, deep navy ink #1D2A44, \
-plus the pet's true coat color. Quietly confident, never garish.
+- Restrained modern palette: the BACKGROUND is the customer's chosen \
+colour {{MODERN_BG_NAME}} ({{MODERN_BG_HEX}}). The pet's coat uses 4-6 \
+flat tones derived from the animal's true colour. Pet tones must read \
+clearly against the {{MODERN_BG_NAME}} background — pick coat shades that \
+contrast comfortably with {{MODERN_BG_HEX}} so the pet doesn't disappear \
+into the background. Quietly confident, never garish.
 - Generous NEGATIVE SPACE — at least 35% of the canvas is calm, unbroken \
 background so the pet shapes have room to breathe. The negative space is the \
 hero alongside the pet.
@@ -505,10 +537,11 @@ two ways and never anything in between:
   edge with background colour visible beneath it — that reads as a \
   truncated, unfinished portrait. If you choose option (b), the dog's \
   body fills the lower portion of the frame edge-to-edge.
-- The BACKGROUND is ONE single solid color from the palette above, extending \
-to all four edges. Completely uniform, no decoration, no shapes, no lines, \
-no gradients, no panels, no bars, no color blocks, no empty bands. Just one \
-flat field of color behind the pet.
+- The BACKGROUND is ONE single solid colour {{MODERN_BG_NAME}} \
+({{MODERN_BG_HEX}}) ONLY, extending edge-to-edge on all four sides. \
+Completely uniform — no decoration, no shapes, no lines, no gradients, \
+no panels, no bars, no colour blocks, no empty bands. Just one flat \
+field of {{MODERN_BG_HEX}} behind the pet.
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere.
 
 Avoid: photography, photorealism, painterly brush strokes, oil paint, \
@@ -1002,7 +1035,7 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
     "naturalist":         _static(_NATURALIST_PROMPT),
     "watercolor":         build_watercolor_prompt,
     "minimal-line-art":   _static(_MINIMAL_LINE_ART_TEMPLATE),
-    "modern-shape-art":   _static(_MODERN_SHAPE_ART_TEMPLATE),
+    "modern-shape-art":   _modern_shape_art_prompt,
     "neon-pop-art":       _static(_NEON_POP_ART_TEMPLATE),
     "renaissance-royalty": _static(_RENAISSANCE_ROYALTY_TEMPLATE),
     "bold-graphic-poster": _static(_BOLD_GRAPHIC_POSTER_TEMPLATE),
@@ -1659,6 +1692,15 @@ def _generate_inner(
 
     photo = Path(photo_path)
     uid   = _uuid.uuid4().hex[:10]  # unique per request — no file collisions
+
+    # Modern style uses background_mode as a colour-palette selector
+    # (cream/clay/sage/etc.) rather than auto/light/dark. Lift the chosen
+    # colour into style_vars so the prompt builder picks it up, and reset
+    # background_mode to 'auto' so the generic light/dark override block
+    # doesn't try to layer on top.
+    if style == "modern-shape-art" and background_mode in MODERN_BG_COLORS:
+        style_vars = {**(style_vars or {}), "modern_bg_color": background_mode}
+        background_mode = "auto"
 
     log.info("[generate] %s  '%s'  ←  %s", style, pet_name, photo.name)
 

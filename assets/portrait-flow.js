@@ -50,11 +50,31 @@ const FONT_SIZES = [
 
 // Background options — tell Gemini whether to lean light or dark for the
 // scene around the pet. 'auto' lets the style's default palette decide.
+// Modern-shape-art swaps the auto/light/dark trio for an 8-swatch palette
+// of print-safe colours (see MODERN_COLORS) since "single solid colour"
+// is the defining trait of that style.
 const BACKGROUND_OPTIONS = [
   { id: 'auto',  label: 'Auto',  sub: 'Style default' },
   { id: 'light', label: 'Light', sub: 'Soft & airy' },
   { id: 'dark',  label: 'Dark',  sub: 'Moody & rich' },
 ];
+
+// Modern-style background palette — 8 colours hand-picked to print true
+// on canvas/poster. All sit comfortably inside the CMYK gamut (no neon,
+// no pure RGB primaries, mid-saturation muted tones) so what the customer
+// sees on-screen is what arrives on the wall. IDs map to hex codes in
+// generate.py so the backend can inject the chosen colour into the prompt.
+const MODERN_COLORS = [
+  { id: 'cream',      hex: '#F4EFE7', label: 'Cream' },
+  { id: 'clay',       hex: '#E2C7A8', label: 'Clay' },
+  { id: 'sage',       hex: '#B6C2A3', label: 'Sage' },
+  { id: 'terracotta', hex: '#C77B58', label: 'Terracotta' },
+  { id: 'mauve',      hex: '#C9A4A4', label: 'Mauve' },
+  { id: 'mustard',    hex: '#C9A352', label: 'Mustard' },
+  { id: 'navy',       hex: '#1D2A44', label: 'Navy' },
+  { id: 'charcoal',   hex: '#2E2A26', label: 'Charcoal' },
+];
+const MODERN_COLOR_IDS = MODERN_COLORS.map(c => c.id);
 
 // Load a Google Font dynamically
 const _loadedFonts = new Set();
@@ -96,7 +116,10 @@ const STYLES = [
     name: 'Modern',
     available: true,
     exampleImage: 'example-modern-shape-art-v2.webp',
-    backgrounds: ['auto'],
+    // Modern uses the colour palette instead of auto/light/dark — see
+    // MODERN_COLORS. Default is 'clay' (the warm tone the example
+    // mockup is generated against).
+    backgrounds: MODERN_COLOR_IDS,
   },
   {
     id: 'neon-pop-art',
@@ -907,9 +930,15 @@ function usePortraitFlow() {
     // combo (e.g. picking Dark under Oil Paint, then switching to Minimal).
     setState(prev => {
       const allowed = (style.backgrounds || ['auto']);
+      // Style-specific fallback: modern uses 'clay' (its default colour);
+      // every other style falls back to 'auto'. Without this, switching
+      // from e.g. soft-watercolour to modern would leave backgroundMode
+      // = 'auto' which isn't in modern's allowed list and would render
+      // the swatch picker with no selection.
+      const fallback = allowed.includes('auto') ? 'auto' : (allowed[0] || 'auto');
       const nextMode = allowed.includes(prev.backgroundMode || 'auto')
         ? (prev.backgroundMode || 'auto')
-        : 'auto';
+        : fallback;
       return { ...prev, selectedStyleId: styleId, backgroundMode: nextMode };
     });
   }, []);
@@ -1934,13 +1963,70 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       );
     })(),
 
-    // Background mode selector — only shown when the selected style offers
-    // more than one background. Styles that only support 'auto' (rare)
-    // get the card hidden entirely; styles that support 2 of 3 (e.g. minimal
-    // line art: no 'dark') render just the modes that actually work.
+    // Background selector — modern-shape-art renders an 8-swatch print-safe
+    // colour grid (4x2). Other styles render the auto/light/dark trio if
+    // they support more than one mode; styles locked to 'auto' get nothing.
     (() => {
       if (!state.selectedStyleId) return null;
       const allowed = backgroundsFor(state.selectedStyleId);
+      const isModern = state.selectedStyleId === 'modern-shape-art';
+
+      if (isModern) {
+        const active = state.backgroundMode && MODERN_COLOR_IDS.includes(state.backgroundMode)
+          ? state.backgroundMode : 'clay';
+        return React.createElement('div', {
+          style: {
+            marginTop: '20px', padding: '16px', background: tokens.colorWhite,
+            borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+          },
+        },
+          React.createElement('p', {
+            style: { ...s.smallCaps, margin: '0 0 10px', fontSize: 'var(--text-xs)', textAlign: 'center' },
+          }, 'Background colour'),
+          React.createElement('div', {
+            style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' },
+            role: 'radiogroup', 'aria-label': 'Background colour',
+          },
+            MODERN_COLORS.map(c => {
+              const isActive = active === c.id;
+              return React.createElement('button', {
+                key: c.id, type: 'button', role: 'radio',
+                'aria-checked': isActive,
+                'aria-label': `${c.label} background (${c.hex})`,
+                onClick: () => {
+                  update({ backgroundMode: c.id });
+                  saveSession({ ...state, backgroundMode: c.id });
+                },
+                style: {
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: '6px', padding: '8px 4px',
+                  border: isActive ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+                  borderRadius: '10px',
+                  background: isActive ? tokens.colorAccentLight : tokens.colorWhite,
+                  cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+                },
+              },
+                React.createElement('span', {
+                  'aria-hidden': true,
+                  style: {
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: c.hex,
+                    border: `1px solid rgba(28, 28, 28, 0.10)`,
+                    boxShadow: isActive ? `0 0 0 2px ${tokens.colorAccent}, 0 0 0 4px ${tokens.colorAccentLight}` : 'inset 0 1px 2px rgba(28,28,28,0.06)',
+                  },
+                }),
+                React.createElement('span', {
+                  style: {
+                    fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
+                    color: isActive ? tokens.colorAccent : tokens.colorBrand,
+                  },
+                }, c.label),
+              );
+            }),
+          ),
+        );
+      }
+
       const visibleOptions = BACKGROUND_OPTIONS.filter(o => allowed.includes(o.id));
       if (visibleOptions.length < 2) return null;
       const columns = visibleOptions.length;
