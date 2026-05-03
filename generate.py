@@ -399,9 +399,13 @@ neon green, bright orange, vivid yellow.
 STYLE:
 - Bold thick black outlines (comic book / screen print weight)
 - Flat saturated color fills — no gradients within sections, hard color boundaries
-- Bright contrasting background — single bold color or geometric color blocks
+- ONE bright, contrasting background colour — a single saturated pop tone \
+(hot pink, electric blue, neon green, vivid yellow, or similar). NO multi-zone \
+backgrounds, NO geometric color blocks behind the pet, NO checker or stripe \
+panels — just one flat field of saturated colour edge-to-edge.
 - Andy Warhol meets Keith Haring aesthetic — playful, graphic, punchy
-- Halftone dot texture in select areas for retro pop feel
+- Halftone dot texture in select areas of the PET ONLY for retro pop feel \
+(never on the background)
 - Fine art illustration style, high resolution 300dpi, print-ready
 
 COMPOSITION:
@@ -409,10 +413,12 @@ COMPOSITION:
 - Head and chest, facing forward with personality and attitude
 - The PET itself occupies 82-87% of image height — top of ears at \
 ~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean color-block space \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean uniform background space \
 above the ears AND below the chest as part of the pop composition
-- The BACKGROUND (single bold color or geometric color blocks) extends \
-edge-to-edge — no reserved panels, bars, or empty bands
+- The BACKGROUND is ONE single saturated colour, perfectly uniform from \
+corner to corner, extending edge-to-edge with NO internal rectangles, \
+panels, bars, checker zones, or empty bands. The same colour you see in \
+one corner you see in every other corner.
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
@@ -868,19 +874,23 @@ _COMPOSITION_RULE = (
     "image's horizontal centre). Eyes land in the upper third of the "
     "image, around 28-34% from top. Never push the pet left or right of "
     "centre.\n"
-    "- BACKGROUND IS PERFECTLY UNIFORM, CORNER TO CORNER: the artwork's "
-    "background extends edge-to-edge with no internal variation. NO "
-    "vignette, NO subtle gradient, NO darker centre and lighter edges, "
-    "NO darker edges and lighter centre, NO inner rectangle of one shade "
-    "inside an outer rectangle of another shade, NO mat, NO frame, NO "
-    "border, NO inset panel, NO letterbox bar. The same colour or texture "
-    "you see in one corner you must see in every other corner. The pet is "
-    "the ONLY deviation from the background — nothing else interrupts it.\n"
+    "- BACKGROUND EXTENDS EDGE-TO-EDGE WITHOUT GEOMETRIC ARTIFACTS: the "
+    "artwork's background fills the canvas to all four edges. ANY variation "
+    "in the background (watercolour bleed, oil-paint atmosphere, soft "
+    "radial glow, etc.) must be ORGANIC and intrinsic to the style's "
+    "medium — never geometric. STRICTLY forbidden: NO inner rectangle of "
+    "one shade inside an outer rectangle of another shade, NO mat, NO "
+    "frame, NO border, NO inset panel, NO letterbox bar, NO horizontal or "
+    "vertical colour-band splits, NO checker zones, NO sharp-edged colour "
+    "blocks behind the pet. If the chosen style calls for a flat solid "
+    "background (modern shape art, bold poster, neon pop, minimal line "
+    "art), that background is perfectly uniform from corner to corner — "
+    "the same colour in every corner, no vignette, no subtle gradient.\n"
     "- NO PASTED-ON LOOK: the pet must read as integral to the artwork — "
     "no halo, no fringe, no hard outline of a different shade around the "
     "pet's silhouette, no visible 'cutout' edge that suggests the pet was "
     "rendered separately and laid on top of a different background. Pet "
-    "and background must feel painted in the same pass.\n"
+    "and background must feel painted in the same pass, in the same medium.\n"
     "- SQUARE CROP SURVIVAL: customers order this on 4:5 (e.g. 16x20) AND "
     "1:1 (e.g. 12x12, 16x16) canvases. The 1:1 product center-crops "
     "~10% off the top AND ~10% off the bottom of your 4:5 output. With "
