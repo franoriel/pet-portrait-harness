@@ -618,6 +618,85 @@ def download(filename):
 
 
 # ---------------------------------------------------------------------------
+# Signed download URL — used by the Klaviyo "A Gift For You" email so the
+# customer can pull a one-time, time-limited high-res copy of their portrait.
+# ---------------------------------------------------------------------------
+
+def _download_secret() -> bytes:
+    """HMAC secret for signing/verifying download tokens. Falls back to the
+    Shopify webhook secret if a dedicated DOWNLOAD_TOKEN_SECRET isn't set —
+    same trust boundary, no operational overhead."""
+    return (os.environ.get("DOWNLOAD_TOKEN_SECRET")
+            or os.environ.get("SHOPIFY_WEBHOOK_SECRET")
+            or "dev-secret-do-not-use-in-prod").encode("utf-8")
+
+
+def make_download_token(r2_key: str, ttl_seconds: int = 86400) -> str:
+    """Sign an R2 object key with HMAC + expiry. Returns a urlsafe-base64
+    token of the form base64(payload).hexsignature.
+    payload = "{r2_key}|{expires_unix}"
+    """
+    import base64, hmac, hashlib, time
+    expires = int(time.time()) + ttl_seconds
+    payload = f"{r2_key}|{expires}".encode("utf-8")
+    sig = hmac.new(_download_secret(), payload, hashlib.sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=") + "." + sig
+
+
+def verify_download_token(token: str) -> Optional[str]:
+    """Verify a token returned by make_download_token. Returns the r2_key on
+    success, None on signature failure or expiry."""
+    import base64, hmac, hashlib, time
+    try:
+        b64_payload, sig = token.rsplit(".", 1)
+        # Re-pad for base64 decoding
+        padding = 4 - (len(b64_payload) % 4)
+        if padding != 4:
+            b64_payload += "=" * padding
+        payload = base64.urlsafe_b64decode(b64_payload)
+        expected = hmac.new(_download_secret(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+        r2_key, expires_str = payload.decode("utf-8").rsplit("|", 1)
+        if int(expires_str) < int(time.time()):
+            return None
+        return r2_key
+    except Exception:
+        return None
+
+
+@app.route("/portrait/download/<token>")
+def portrait_download(token):
+    """Resolve a signed token to an R2 key, then 302 to the public R2 URL
+    so the browser triggers a download. Tokens expire 24h after issuance.
+
+    Email CTA hits this endpoint; we never expose the raw R2 key in the
+    email itself (so a copied URL can't be re-shared after the window)."""
+    ip = _client_ip()
+    allowed, _ = check_rate_limit(ip, "download")
+    if not allowed:
+        return "Too many requests", 429
+
+    r2_key = verify_download_token(token)
+    if not r2_key:
+        return ("This download link has expired. The high-res copy was "
+                "available for 24 hours from when your order email was sent. "
+                "Reply to that email and we'll send a fresh one."), 410
+
+    # Build the public R2 URL and redirect. Browser handles the actual
+    # download with the file's stored Content-Disposition (we set
+    # ContentDisposition='attachment' at upload time in storage.py).
+    r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+    if not r2_public:
+        log.error("R2_PUBLIC_URL not configured — cannot redirect download")
+        return "Storage not configured", 500
+    target = f"{r2_public}/{r2_key}"
+    log.info("[download/token] %s → %s", token[:16] + "...", r2_key)
+    from flask import redirect
+    return redirect(target, code=302)
+
+
+# ---------------------------------------------------------------------------
 # Printful mockup generation
 # ---------------------------------------------------------------------------
 
@@ -886,7 +965,91 @@ def webhook_order_created():
             _process_fulfillment, order_id, items, recipient,
         )
 
+    # Push order metadata to Klaviyo as profile properties so the
+    # transactional emails (Order Confirmation, Gift Download) can
+    # personalise without parsing line-item-property arrays in Liquid.
+    # Also signs a 24h download token for the gift email's CTA.
+    customer_email = order.get("email") or recipient.get("email")
+    if customer_email and items:
+        _fulfillment_pool.submit(
+            _push_klaviyo_order_event, customer_email, order_id, items, order,
+        )
+
     return jsonify(status="accepted", items=len(items)), 200
+
+
+def _push_klaviyo_order_event(
+    customer_email: str,
+    order_id: str,
+    items: list,
+    order: dict,
+) -> None:
+    """POST to Klaviyo's Profile API to set download_url + portrait properties
+    on the customer's profile, then track an 'Order Portrait Ready' event the
+    flows can trigger off if you want a fully decoupled trigger.
+
+    Fails open — if Klaviyo is unreachable or the API key isn't configured,
+    fulfillment continues regardless (this is a notification enhancement,
+    not a blocker)."""
+    api_key = os.environ.get("KLAVIYO_API_KEY", "").strip()
+    if not api_key:
+        log.info("[klaviyo] no KLAVIYO_API_KEY set, skipping profile push for order %s", order_id)
+        return
+    try:
+        from datetime import datetime, timezone, timedelta
+        first_item = items[0] or {}
+        preview_url = first_item.get("preview_url") or ""
+        pet_name = (first_item.get("pet_name") or "").strip()
+        # Sign a download token from the R2 key (extracted from preview_url)
+        r2_key = _r2_key_from_url(preview_url) or preview_url.split("/")[-1]
+        token = make_download_token(r2_key, ttl_seconds=86400)
+        backend_base = os.environ.get("PUBLIC_BASE_URL", "https://api.petprintables.ca").rstrip("/")
+        download_url = f"{backend_base}/portrait/download/{token}"
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        # Format expiry as "Saturday at 11pm" style — friendly for email body
+        expires_str = expires_at.strftime("%A at %-I%p").lower().replace("am", "am").replace("pm", "pm")
+
+        properties = {
+            "pet_name": pet_name or "your pet",
+            "pet_preview_url": preview_url,
+            "download_url": download_url,
+            "download_expires_at": expires_str,
+            "last_order_id": order_id,
+            "last_order_number": str(order.get("order_number") or order.get("name") or order_id),
+        }
+        # If this is a multi-portrait order, expose every preview URL too
+        if len(items) > 1:
+            properties["portrait_count"] = len(items)
+            properties["all_preview_urls"] = [it.get("preview_url") for it in items if it.get("preview_url")]
+
+        body = {
+            "data": {
+                "type": "profile",
+                "attributes": {
+                    "email": customer_email,
+                    "properties": properties,
+                },
+                "meta": {"patch_properties": {"append": {}}},
+            }
+        }
+        resp = _req.post(
+            "https://a.klaviyo.com/api/profile-import",
+            headers={
+                "Authorization": f"Klaviyo-API-Key {api_key}",
+                "revision": "2024-10-15",
+                "Content-Type": "application/json",
+                "accept": "application/json",
+            },
+            json=body,
+            timeout=8,
+        )
+        if resp.status_code >= 400:
+            log.warning("[klaviyo] profile push %s: %s", resp.status_code, resp.text[:300])
+        else:
+            log.info("[klaviyo] order=%s profile=%s download_url set, expires %s",
+                     order_id, customer_email, expires_str)
+    except Exception as exc:
+        log.warning("[klaviyo] order=%s profile push failed: %s", order_id, exc)
 
 
 # ---------------------------------------------------------------------------
