@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Your portrait is on its way</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Inter:wght@400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* Reset */
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: #FAF8F5; }
+    a { color: #1C1C1C; text-decoration: underline; }
+
+    /* Brand tokens */
+    .brand-cream { background: #FAF8F5; }
+    .brand-card { background: #FFFFFF; }
+    .brand-ink { color: #1C1C1C; }
+    .brand-muted { color: #6B6B63; }
+    .brand-accent { color: #8B7D6B; }
+    .brand-accent-light { background: #F3EDE6; }
+    .brand-border { border: 1px solid #E4DDD4; }
+
+    .serif-heading { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 400; line-height: 1.1; color: #1C1C1C; }
+    .sans { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #1C1C1C; }
+    .eyebrow { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; }
+    .handwritten { font-family: 'Caveat', 'Brush Script MT', cursive; font-size: 22px; line-height: 1.5; color: #2F2F2A; }
+
+    /* CTA */
+    .cta-primary { background: #2F2F2A; color: #FFFFFF !important; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; padding: 16px 32px; text-decoration: none !important; display: inline-block; border-radius: 4px; }
+
+    /* Mobile */
+    @media (max-width: 620px) {
+      .container { width: 100% !important; max-width: 100% !important; }
+      .px-mobile { padding-left: 24px !important; padding-right: 24px !important; }
+      .stack { display: block !important; width: 100% !important; }
+      .h1-mobile { font-size: 32px !important; }
+    }
+  </style>
+</head>
+<body class="brand-cream" style="margin:0;padding:0;background:#FAF8F5;">
+  <!-- Pre-header (hidden in body, shown in inbox preview) -->
+  <div style="display:none;font-size:1px;color:#FAF8F5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    {{ event.line_items.0.properties.pet_name|default:"Your pet"|capitalize }}'s portrait is being prepared. Here's what to expect.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF8F5;">
+    <tr>
+      <td align="center" style="padding:32px 0 16px;">
+
+        <!-- ============ LOGO ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:8px 0 24px;">
+              <span class="serif-heading" style="font-size:24px;color:#1C1C1C;letter-spacing:0.02em;">Pet Printables</span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ HERO IMAGE — pet portrait ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:0;">
+              <a href="{{ event.extra.order_status_url|default:'https://petprintables.ca' }}" style="text-decoration:none;display:block;">
+                <img
+                  src="{{ event.line_items.0.properties._preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
+                  alt="{{ event.line_items.0.properties.pet_name|default:'Your pet' }}'s portrait"
+                  width="600"
+                  style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;"
+                />
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ PET NAME + WELCOME ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#FAF8F5;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:32px 48px 8px;">
+              <p class="eyebrow" style="margin:0 0 12px;">Order confirmed</p>
+              <h1 class="serif-heading h1-mobile" style="margin:0 0 16px;font-size:40px;line-height:1.05;">
+                {{ event.line_items.0.properties.pet_name|default:"They're"|capitalize }} on the way home.
+              </h1>
+              <p class="sans" style="margin:0;font-size:15px;line-height:1.6;color:#6B6B63;max-width:440px;margin-left:auto;margin-right:auto;">
+                Order #{{ event.extra.order_number|default:event.id }}. We'll send tracking the moment it ships, so you'll know exactly when to clear that spot on the wall.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ HANDWRITTEN NOTE ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td class="px-mobile" style="padding:24px 48px 8px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFFDF8;border:1px solid #E4DDD4;border-radius:6px;">
+                <tr>
+                  <td style="padding:32px 36px;">
+                    <p class="eyebrow" style="margin:0 0 16px;color:#8B7D6B;">A note from the team</p>
+                    <p class="handwritten" style="margin:0 0 12px;">
+                      Hi {{ first_name|default:"there" }},
+                    </p>
+                    <p class="handwritten" style="margin:0 0 12px;">
+                      Thank you for trusting us with {{ event.line_items.0.properties.pet_name|default:"your pet" }}. We don't take it lightly when someone asks us to make a piece of their family.
+                    </p>
+                    <p class="handwritten" style="margin:0 0 12px;">
+                      We're going to take good care of this one. {{ event.line_items.0.properties.pet_name|default:"They" }} is going to look right where you put them.
+                    </p>
+                    <p class="handwritten" style="margin:0;">
+                      With care,<br>
+                      The Pet Printables team
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ ORDER SUMMARY ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td class="px-mobile" style="padding:24px 48px 8px;">
+              <p class="eyebrow" style="margin:0 0 16px;text-align:center;">Your order</p>
+
+              <!-- Items -->
+              {% for item in event.extra.line_items %}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom:1px solid #E4DDD4;">
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">{{ item.title|default:item.name }}</p>
+                    {% if item.properties.pet_name %}
+                    <p class="sans" style="margin:0;font-size:13px;color:#6B6B63;">For {{ item.properties.pet_name }}{% if item.variant_title %} · {{ item.variant_title }}{% endif %}</p>
+                    {% elif item.variant_title %}
+                    <p class="sans" style="margin:0;font-size:13px;color:#6B6B63;">{{ item.variant_title }}</p>
+                    {% endif %}
+                  </td>
+                  <td align="right" style="padding:14px 0;vertical-align:top;white-space:nowrap;">
+                    <p class="sans" style="margin:0;font-size:15px;color:#1C1C1C;">${{ item.line_price|default:item.price|floatformat:2 }}</p>
+                  </td>
+                </tr>
+              </table>
+              {% endfor %}
+
+              <!-- Totals -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;">
+                <tr>
+                  <td class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">Subtotal</td>
+                  <td align="right" class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">${{ event.extra.sub_total|default:event.extra.subtotal_price|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                  <td class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">Shipping</td>
+                  <td align="right" class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">${{ event.extra.shipping|default:event.extra.total_shipping_price_set.shop_money.amount|floatformat:2|default:"0.00" }}</td>
+                </tr>
+                {% if event.extra.tax %}
+                <tr>
+                  <td class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">Tax</td>
+                  <td align="right" class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">${{ event.extra.tax|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td class="sans" style="padding:14px 0 6px;font-size:16px;font-weight:600;color:#1C1C1C;border-top:1px solid #E4DDD4;">Total</td>
+                  <td align="right" class="sans" style="padding:14px 0 6px;font-size:16px;font-weight:600;color:#1C1C1C;border-top:1px solid #E4DDD4;">${{ event.extra.value|default:event.extra.total_price|floatformat:2 }} CAD</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ WHAT TO EXPECT ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td class="px-mobile" style="padding:40px 48px 8px;">
+              <p class="eyebrow" style="margin:0 0 20px;text-align:center;">What happens next</p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;width:48px;" class="serif-heading"><span style="font-size:22px;color:#8B7D6B;">1.</span></td>
+                  <td style="padding:14px 0 14px 4px;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">We print it</p>
+                    <p class="sans" style="margin:0;font-size:14px;line-height:1.6;color:#6B6B63;">Museum-grade canvas, gallery-wrapped over a hardwood frame. Takes 1-2 business days.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;width:48px;" class="serif-heading"><span style="font-size:22px;color:#8B7D6B;">2.</span></td>
+                  <td style="padding:14px 0 14px 4px;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">It ships</p>
+                    <p class="sans" style="margin:0;font-size:14px;line-height:1.6;color:#6B6B63;">3-5 business days across Canada, packed in a protective sleeve. You'll get tracking by email.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;width:48px;" class="serif-heading"><span style="font-size:22px;color:#8B7D6B;">3.</span></td>
+                  <td style="padding:14px 0 14px 4px;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">It arrives</p>
+                    <p class="sans" style="margin:0;font-size:14px;line-height:1.6;color:#6B6B63;">Hanging hardware comes pre-installed. One nail in the wall and {{ event.line_items.0.properties.pet_name|default:"they" }}'re home.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ CTA — Track ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:32px 48px 16px;">
+              <a href="{{ event.extra.order_status_url|default:'https://petprintables.ca/account' }}" class="cta-primary" style="background:#2F2F2A;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;padding:16px 32px;text-decoration:none;display:inline-block;border-radius:4px;">TRACK YOUR ORDER</a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" class="px-mobile" style="padding:0 48px 16px;">
+              <p class="sans" style="margin:0;font-size:13px;color:#6B6B63;">
+                Need help? Just reply to this email — you'll reach a real person.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ============ FOOTER ============ -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:48px 48px 32px;border-top:1px solid #E4DDD4;margin-top:32px;">
+              <p class="serif-heading" style="margin:0 0 12px;font-size:18px;color:#1C1C1C;">Pet Printables</p>
+              <p class="sans" style="margin:0 0 8px;font-size:12px;color:#6B6B63;">
+                A modern tribute to unconditional love.
+              </p>
+              <p class="sans" style="margin:0 0 16px;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
+                808 Nelson Street, Vancouver, BC V6Z 2A9
+              </p>
+              <p class="sans" style="margin:0;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
+                {% unsubscribe 'Unsubscribe' %} · <a href="https://petprintables.ca" style="color:#8B7D6B;text-decoration:underline;">petprintables.ca</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
