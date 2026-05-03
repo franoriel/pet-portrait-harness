@@ -52,9 +52,18 @@
           {%- assign parts = entry | split: '|' -%}
           {%- assign slug = parts[0] -%}
           {%- assign label = parts[1] -%}
+          {%- comment -%}
+            Modern style ships under a -v2 filename to bust browser
+            caches that pinned the original (which had stray shape
+            accents). The -v2 asset is the rewritten clean version.
+          {%- endcomment -%}
+          {%- assign asset_name = 'example-' | append: slug | append: '.webp' -%}
+          {%- if slug == 'modern-shape-art' -%}
+            {%- assign asset_name = 'example-modern-shape-art-v2.webp' -%}
+          {%- endif -%}
           <div class="gallery-item" role="listitem" data-category="dogs">
             <img
-              src="{{ 'example-' | append: slug | append: '.webp' | asset_url }}"
+              src="{{ asset_name | asset_url }}"
               alt="{{ label }} style example portrait"
               loading="lazy"
               width="200"

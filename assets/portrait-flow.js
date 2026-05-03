@@ -95,7 +95,7 @@ const STYLES = [
     id: 'modern-shape-art',
     name: 'Modern',
     available: true,
-    exampleImage: 'example-modern-shape-art.webp',
+    exampleImage: 'example-modern-shape-art-v2.webp',
     backgrounds: ['auto'],
   },
   {
