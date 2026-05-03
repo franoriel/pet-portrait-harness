@@ -298,7 +298,7 @@ with a fine-tip pen in a single sitting
 
 COMPOSITION:
 - Chest up, centered horizontally, three-quarter angle, direct gaze
-- Head occupies 65-75% of image height
+- Head occupies 70-78% of image height
 - Pure white background fills the entire canvas edge-to-edge\
 """
 
@@ -320,7 +320,7 @@ STYLE:
 
 COMPOSITION:
 - Chest up, centered horizontally
-- Head occupies 65-75% of image height
+- Head occupies 70-78% of image height
 - Pure white background fills the entire canvas edge-to-edge\
 """
 
@@ -343,7 +343,7 @@ STYLE:
 
 COMPOSITION:
 - Chest up, centered horizontally, three-quarter angle, direct gaze
-- Head occupies 65-75% of image height
+- Head occupies 70-78% of image height
 - Pure white background fills the entire canvas edge-to-edge\
 """
 
@@ -370,9 +370,9 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, direct or three-quarter gaze
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave clean white space above \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean white space above \
 the ears AND below the chest
 - The BACKGROUND (pure white paper) extends edge-to-edge — no reserved panels, \
 bars, color blocks, or empty bands at the top or bottom
@@ -407,9 +407,9 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, facing forward with personality and attitude
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave clean color-block space \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean color-block space \
 above the ears AND below the chest as part of the pop composition
 - The BACKGROUND (single bold color or geometric color blocks) extends \
 edge-to-edge — no reserved panels, bars, or empty bands
@@ -443,9 +443,9 @@ jeweled collar, or regal military sash appropriate to the animal
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and upper body in regal pose, noble and dignified
-- The PET itself (head + upper body) occupies 86-92% of image height — \
-top of head/crown at ~4-7% from top, bottom of body at ~93-96% from top, \
-centered horizontally. Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave \
+- The PET itself (head + upper body) occupies 82-87% of image height — \
+top of head/crown at ~7-10% from top, bottom of body at ~92-94% from top, \
+centered horizontally. Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave \
 moody-background space above the head AND below the body
 - The BACKGROUND (dark moody drapery/column) extends edge-to-edge naturally \
 to all four sides. No reserved panels, bars, color blocks, or empty bands
@@ -522,10 +522,10 @@ composition is just the pet on a single solid background — nothing else.
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, calm symmetrical pose, direct gentle gaze.
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, centered horizontally. Ensure the pet is the dominant \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, centered horizontally. Ensure the pet is the dominant \
 subject filling the canvas confidently, with clean breathing room \
-(~4-7% padding) at the top and sides — no edge bleed on those three sides.
+(~7-10% top padding, ~6-8% side padding) at the top and sides — no edge bleed on those three sides.
 - BOTTOM SILHOUETTE — CRITICAL: the chest/body must terminate in ONE of \
 two ways and never anything in between:
   (a) Taper organically into a soft, curved natural body silhouette \
@@ -575,9 +575,9 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave clean negative space above \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean negative space above \
 the ears AND below the chest as an integral part of the poster composition
 - The BACKGROUND (single solid flat color) extends edge-to-edge behind the \
 pet — one continuous color, NOT split into panels or bands. No reserved \
@@ -613,9 +613,9 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, serene expression, gentle eye contact
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Aura needs room to radiate ABOVE \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Aura needs room to radiate ABOVE \
 the head AND BELOW the chest
 - The BACKGROUND (aura gradient) radiates symmetrically and fills every edge \
 as one continuous smooth wash. No reserved panels, bars, color blocks, or \
@@ -648,9 +648,9 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave clean watercolor wash above \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean watercolor wash above \
 the ears AND below the chest
 - The BACKGROUND (watercolor wash and natural bleed edges) extends to every \
 edge of the canvas. No reserved panels, bars, color blocks, or empty bands
@@ -701,8 +701,8 @@ COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, direct or three-quarter gaze
 - The PET (rendered in ivory linework) occupies ONLY 60-65% of image height \
-— top of ears at ~4-7% from top, bottom of chest at ~93-96% from top, \
-centered horizontally. Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave \
+— top of ears at ~7-10% from top, bottom of chest at ~92-94% from top, \
+centered horizontally. Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave \
 clean dark-field space above the ears AND below the chest
 - The BACKGROUND (solid dark field) extends edge-to-edge — no reserved \
 panels, bars, color blocks, or empty bands
@@ -741,9 +741,9 @@ pigment all the way through — no light paper shows.
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave dark wash above the ears \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave dark wash above the ears \
 AND below the chest
 - The BACKGROUND (deep pigmented dark watercolor wash) extends to every edge \
 of the canvas. No reserved panels, bars, color blocks, or empty bands
@@ -793,9 +793,9 @@ STYLE:
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
-- The PET itself occupies 86-92% of image height — top of ears at \
-~4-7% from top, bottom of chest at ~93-96% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~4-7% padding) on all four sides — no edge bleed. Leave clean dark-field space above \
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean dark-field space above \
 the ears AND below the chest as part of the poster composition
 - The BACKGROUND (single flat black/dark-gray) extends edge-to-edge behind \
 the pet — NOT split into panels or bands. No reserved color blocks, bars, \
@@ -851,57 +851,61 @@ _NO_BORDER_RULE = (
 
 _COMPOSITION_RULE = (
     "\n\nCOMPOSITION — CRITICAL (read twice, follow exactly):\n"
-    "- THE PET MUST BE SMALL IN THE FRAME — DO NOT FILL THE CANVAS WITH THE PET. "
-    "This is the single most important composition rule and overrides any "
-    "other instruction that suggests the pet should be large or dominant. "
-    "The pet's silhouette (top of ears to bottom of chest) must occupy AT "
-    "MOST 60-65% of image height AND AT MOST 65-70% of image width. The "
-    "other 35-40% of the canvas — clean background, evenly distributed top, "
-    "bottom, left, right around the pet — is NOT optional. This is the "
-    "intentional framing. A pet that fills the canvas is a REJECTED output.\n"
-    "- HARD CHECK BEFORE DRAWING: imagine the pet inscribed in a bounding "
-    "box. That bounding box must sit fully within the inner 70% of the "
-    "canvas — its top edge no higher than 17% from canvas top, its bottom "
-    "edge no lower than 83% from canvas top, and its left/right edges "
-    "comfortably inside the canvas with at least 12% clean background on "
-    "each side. NO part of the pet (ears, fur, whiskers, paws, chest, body) "
-    "may touch ANY edge of the canvas. If you can't fit the pet inside that "
-    "inner 70% box, render the pet SMALLER. Never push to an edge.\n"
-    "- 4:5 PORTRAIT ASPECT RATIO: The image canvas is taller than it is wide. "
-    "Compose for that — do NOT output a square or wide image.\n"
-    "- BACKGROUND FILLS THE CANVAS — NOT THE PET: The artwork's BACKGROUND "
-    "(sky, drapery, color field, watercolor wash, gradient — whatever the "
-    "style calls for) extends edge-to-edge on all four sides. Zero white "
-    "margins, zero borders, zero letterbox bars, zero frames, zero panels. "
-    "But that means the BACKGROUND fills the canvas — NOT the pet. The pet "
-    "stays inside its inner 70% bounding box; the background flows around "
-    "it edge-to-edge.\n"
-    "- CENTERED, NATURAL PORTRAIT FRAMING: The pet is centered horizontally "
-    "and vertically in the frame. Eyes naturally land in the upper third of "
-    "the image (around 30-35% from top) — that's correct portrait framing. "
-    "Do not push the face to the exact vertical center.\n"
-    "- WHY THIS MATTERS — SQUARE CROP SURVIVAL: Customers order this as a "
-    "4:5 portrait OR as a 1:1 square canvas (which center-crops the top "
-    "10% AND bottom 10% of your output). With the inner-70% framing above, "
-    "the pet still has comfortable breathing room on every side AFTER the "
-    "1:1 crop. A pet at the canvas edges WILL ship a chest-cut-off, "
-    "ears-clipped square canvas to a customer.\n"
-    "- NO CROPPED FEATURES: ears, whiskers, chin, chest — none clipped by any "
-    "edge of the source image OR by a 1:1 center crop. If you can't fit the "
-    "pet with the breathing room above intact, render the pet smaller — DO NOT "
-    "push them to an edge.\n"
-    "- THE NATURAL BREATHING ROOM SERVES THE NAME: When a pet name is requested, "
-    "it sits in the existing top breathing room — there is no separate "
-    "'reserved top band'. When no name is requested, the same breathing room "
-    "stays as quiet background. The composition works identically either way.\n"
-    "- NO RESERVED BANDS OR PANELS: Never output a solid color bar, empty "
-    "rectangle, letterbox stripe, or framed panel at the top or bottom. The "
-    "artwork's native scenery extends uniformly to every edge, just calmer in "
-    "the breathing room above and below the pet.\n"
-    "- If the style has a dark moody background (e.g. Renaissance, oil paint), "
-    "the dark atmosphere still extends uniformly to all four edges — drapery, "
-    "shadow, or wall continues into the breathing room above and below the "
-    "pet, just calmer there so the pet stays the focal point.\n"
+    "- 4:5 PORTRAIT ASPECT RATIO: The image canvas is taller than it is "
+    "wide. Compose for that. Do NOT output a square or wide image.\n"
+    "- THE PET FILLS THE FRAME CONFIDENTLY. The pet's silhouette (top of "
+    "ears to bottom of chest) occupies 78-86% of image height and roughly "
+    "70-80% of image width. The pet is the dominant subject; the surrounding "
+    "background is generous breathing room on all four sides, not a void.\n"
+    "- BOUNDING-BOX CHECK: imagine the pet inscribed in a bounding box. "
+    "Top of that box sits ~7-10% from canvas top, bottom of the box sits "
+    "~92-94% from canvas top. Left and right edges have at least ~10-12% "
+    "clean background on each side. The pet does NOT touch the canvas "
+    "edges; ears, fur, whiskers, paws, chest must all stay comfortably "
+    "inside the inner frame.\n"
+    "- CENTERED HORIZONTALLY, EYES IN UPPER THIRD: the pet is centered "
+    "left-to-right (its vertical axis of symmetry sits exactly on the "
+    "image's horizontal centre). Eyes land in the upper third of the "
+    "image, around 28-34% from top. Never push the pet left or right of "
+    "centre.\n"
+    "- BACKGROUND IS PERFECTLY UNIFORM, CORNER TO CORNER: the artwork's "
+    "background extends edge-to-edge with no internal variation. NO "
+    "vignette, NO subtle gradient, NO darker centre and lighter edges, "
+    "NO darker edges and lighter centre, NO inner rectangle of one shade "
+    "inside an outer rectangle of another shade, NO mat, NO frame, NO "
+    "border, NO inset panel, NO letterbox bar. The same colour or texture "
+    "you see in one corner you must see in every other corner. The pet is "
+    "the ONLY deviation from the background — nothing else interrupts it.\n"
+    "- NO PASTED-ON LOOK: the pet must read as integral to the artwork — "
+    "no halo, no fringe, no hard outline of a different shade around the "
+    "pet's silhouette, no visible 'cutout' edge that suggests the pet was "
+    "rendered separately and laid on top of a different background. Pet "
+    "and background must feel painted in the same pass.\n"
+    "- SQUARE CROP SURVIVAL: customers order this on 4:5 (e.g. 16x20) AND "
+    "1:1 (e.g. 12x12, 16x16) canvases. The 1:1 product center-crops "
+    "~10% off the top AND ~10% off the bottom of your 4:5 output. With "
+    "the bounding-box numbers above (ears at 7-10%, chest at 92-94%), "
+    "ears will sit just inside the top edge of a 1:1 crop and the chest "
+    "will sit just inside the bottom — the pet still reads complete on "
+    "the square canvas. Never go higher than 7% top-of-ears or lower "
+    "than 94% bottom-of-chest, or the 1:1 crop ships clipped.\n"
+    "- NO CROPPED FEATURES: ears, whiskers, chin, chest must not be "
+    "clipped by any edge of the source image. If you can't fit the pet "
+    "inside the bounding box above intact, render the pet a touch smaller. "
+    "Never push features off any edge.\n"
+    "- THE NATURAL BREATHING ROOM SERVES THE NAME: when a pet name is "
+    "requested, it sits in the existing top breathing room. When no name "
+    "is requested, the same breathing room stays as quiet background. The "
+    "composition works identically either way — there is no separate "
+    "'reserved top band'.\n"
+    "- NO RESERVED BANDS OR PANELS: never output a solid colour bar, empty "
+    "rectangle, letterbox stripe, or framed panel at the top or bottom. "
+    "The artwork's native scenery extends uniformly to every edge, just "
+    "calmer in the breathing room around the pet.\n"
+    "- If the style has a dark moody background (e.g. Renaissance, oil "
+    "paint), the dark atmosphere still extends uniformly to all four "
+    "edges — drapery, shadow, or wall continues into the breathing room "
+    "around the pet, just calmer there so the pet stays the focal point.\n"
 )
 
 
