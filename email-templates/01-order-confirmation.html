@@ -68,7 +68,7 @@
             <td align="center" style="padding:0;">
               <a href="{{ event.extra.order_status_url|default:'https://petprintables.ca' }}" style="text-decoration:none;display:block;">
                 <img
-                  src="{{ event.line_items.0.properties._preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
+                  src="{{ event.line_items.0.properties.preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
                   alt="{{ event.line_items.0.properties.pet_name|default:'Your pet' }}'s portrait"
                   width="600"
                   style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;"

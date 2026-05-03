@@ -1,122 +1,92 @@
 # Klaviyo email runbook — Pet Printables
 
-Two transactional email templates have been uploaded to Klaviyo. This doc covers the remaining work to make them actually fire on real orders.
+Two transactional email templates live in Klaviyo. This doc covers the wiring needed for them to fire on real orders.
 
-## Templates
+## Templates (v2 — production-ready)
 
-| Name in Klaviyo | Template ID | File |
+| Name | Template ID | Edit |
 | --- | --- | --- |
-| `PP — 01 Order Confirmation` | `TC4Ns6` | `01-order-confirmation.html` |
-| `PP — 02 A Gift For You (24h Download)` | `UsWBWn` | `02-gift-download.html` |
+| `PP — 01 Order Confirmation v2` | `UUeDPj` | https://www.klaviyo.com/email-editor/UUeDPj/edit |
+| `PP — 02 A Gift For You v2 (24h Download)` | `SGEuzS` | https://www.klaviyo.com/email-editor/SGEuzS/edit |
 
-Edit either at `https://www.klaviyo.com/email-editor/<TEMPLATE_ID>/edit`.
+⚠️ V1 templates (`TC4Ns6`, `UsWBWn`) had two issues — Liquid variables prefixed with underscores (Klaviyo blocks those) and reliance on Shopify line-item-property paths that didn't render in preview. **Delete the v1 templates from the Klaviyo Templates list** before going live.
 
-## What needs to happen for the templates to work end-to-end
+## Personalisation — uses Klaviyo profile properties (set by backend on order)
 
-### 1. Cart attributes (Shopify-side, frontend) — REQUIRED
+Both templates pull from `person.X` profile properties set on the customer's Klaviyo profile when the order webhook fires. This pattern is reliable, previews correctly, and avoids the Shopify line-item-property parsing trap.
 
-Both templates personalise on `event.line_items.0.properties.pet_name` and `event.line_items.0.properties._preview_url`. Those need to be set as line-item properties on the cart at the moment of add-to-cart.
+| Variable | Set by | Notes |
+| --- | --- | --- |
+| `{{ first_name }}` | Klaviyo Shopify integration | Customer first name |
+| `{{ person.pet_name }}` | Backend on order | The pet's name from the cart attribute |
+| `{{ person.pet_preview_url }}` | Backend on order | Public CDN URL of the generated preview |
+| `{{ person.download_url }}` | Backend on order | Signed URL, 24h TTL — for the gift email's download CTA |
+| `{{ person.download_expires_at }}` | Backend on order | Human-readable expiry timestamp |
+| `{{ event.extra.order_number }}` | Klaviyo Shopify | Order number — comes free with `Placed Order` |
+| `{{ event.extra.order_status_url }}` | Klaviyo Shopify | Track-your-order link — comes free with `Placed Order` |
+| `{{ event.extra.value }}` | Klaviyo Shopify | Order total |
 
-**Today**: the portrait-flow.js add-to-cart call should already be passing pet_name. Verify it also passes the preview image URL as `_preview_url` (underscore prefix hides it from the cart UI). Search `assets/portrait-flow.js` for the add-to-cart payload — it sets `properties.pet_name`. Add `properties._preview_url` alongside it pointing to the CDN URL of the generated preview.
+Every variable has a graceful default so the template renders cleanly even before the backend wiring is complete.
 
-**Optional but recommended**: also set `properties._download_url` and `properties._download_expires_at` once the signed-URL endpoint is built (see #3 below).
+## Backend wiring (one webhook handler does it all)
 
-### 2. Customer metafield — pet name memory
+When a Shopify order is paid, the Pet Printables Railway backend should:
 
-Write the pet name(s) to a customer metafield on order completion so the next order remembers them.
+1. Read line-item properties from the order to get `pet_name` and the preview URL captured at add-to-cart
+2. Generate a signed download URL (HMAC token, 24h expiry) pointing to the high-res file
+3. Compute `download_expires_at` as a human-readable string ("Saturday at 11pm" or similar)
+4. POST to Klaviyo Profile API to set those four properties on the customer's profile:
+   - `pet_name`
+   - `pet_preview_url`
+   - `download_url`
+   - `download_expires_at`
+5. (Optional) POST to Shopify Admin API to append the pet name to a customer metafield (so future orders remember it). See "Memory" section below.
 
-**Approach** (Shopify Flow, no code):
-1. Shopify admin → Apps → Shopify Flow → create new workflow
-2. Trigger: `Order created`
-3. Action: `Update customer metafield`
-4. Namespace: `pet_printables`, Key: `pet_names`, Type: `list.single_line_text`
-5. Value: a Liquid expression that pulls each line item's `pet_name` property:
-   ```liquid
-   {% assign names = "" %}
-   {% for item in order.lineItems %}
-     {% for prop in item.customAttributes %}
-       {% if prop.key == "pet_name" %}
-         {% assign names = names | append: prop.value | append: "," %}
-       {% endif %}
-     {% endfor %}
-   {% endfor %}
-   {{ names | split: "," | uniq | compact | join: ", " }}
-   ```
-6. Save and turn it on.
-
-That metafield is then available as `customer.metafields.pet_printables.pet_names` everywhere in Liquid (welcome-back banner, account page, etc.).
-
-### 3. Signed download URL — REQUIRED for the gift email to work
-
-The "DOWNLOAD HIGH-RES" button needs a URL that:
-- Returns the high-res rendered portrait (not the preview)
-- Expires 24 hours after the email is sent
-- Is unique to the order so links can't be shared / abused indefinitely
-
-**Backend stub** (to be added to `app.py`):
-```python
-@app.route("/api/portrait/download/<token>")
-def portrait_download(token):
-    # Verify signed token, check expiry, look up the high-res file path
-    payload = verify_download_token(token)  # raises if invalid/expired
-    return send_file(payload.high_res_path, as_attachment=True)
-```
-
-**Token signing**: HMAC-sign `{order_id, line_item_id, expires_at}` with a server secret. The Shopify Order webhook (or a Klaviyo flow Update Customer Profile action) writes the token + URL into the order's note attributes or directly onto the line item property `_download_url`.
-
-The signed URL gets injected into the email via the line-item property template variable. No further work in Klaviyo needed once that property is set on the cart.
-
-### 4. Gallery submission landing page — REQUIRED for the "Submit to gallery" button
-
-Email links to `/pages/share-portrait?order=<ID>&token=<TOKEN>`. Build that page:
-1. New Shopify page template `templates/page.share-portrait.json` + matching section
-2. Form: image preview (server-rendered from order id), optional note textarea, submit button
-3. Form posts to `/api/gallery/submit` on the Pet Printables backend (Railway)
-4. Backend stores the submission, queues for moderation, and on approval adds it to the gallery-grid display
-
-Skeleton already lives in `sections/gallery-grid.liquid` — submissions become the `block` source instead of the `default_examples` fallback.
-
-### 5. Social share landing pages — REQUIRED for the share buttons
-
-Email links to `/share/instagram?order=<ID>` and `/share/facebook?order=<ID>`.
-
-- Instagram: web doesn't directly support story-share via URL. The page should detect mobile and either (a) trigger a native share intent with the image attached, or (b) prompt the user to download the image then re-upload to IG. Include the `@mypetprintables` tag prompt visibly on the page.
-- Facebook: same pattern, with the FB share dialog (`https://www.facebook.com/sharer/sharer.php?u=<URL>`).
-
-This can be a single landing page that branches by `?platform=instagram|facebook`.
+The MCP tool `klaviyo_update_profile` is the right call for step 4 — it accepts the profile id (or email lookup) and a `properties` dict.
 
 ## Setting up the flows in Klaviyo (UI work, ~5 min each)
 
-Klaviyo's MCP doesn't expose flow creation, so this is a UI step.
+Klaviyo's MCP doesn't expose flow creation, so this is a one-time UI step.
 
 ### Flow 1: Order Confirmation
-1. Klaviyo → Flows → Create flow → Build from scratch
-2. Trigger: **Metric** → `Placed Order` (Shopify, id `T4dfHg`)
-3. Filter: `event.extra.line_items` properties `_preview_url` is set (or filter on a specific Shopify product tag like `pet-portrait`)
-4. Action: **Email** → choose template `PP — 01 Order Confirmation`
-5. Subject: `{{ event.line_items.0.properties.pet_name|default:"Your" }} portrait is on the way`
-6. Pre-header text matches the `<div style="display:none">` in the template
-7. Send delay: immediate
-8. Save → Live
+1. Klaviyo → Flows → Create from scratch
+2. Trigger: Metric → `Placed Order` (Shopify, id `T4dfHg`)
+3. Action: Email → choose template `PP — 01 Order Confirmation v2`
+4. Subject: `{{ person.pet_name|default:"Your" }} portrait is on its way`
+5. Send delay: immediate
+6. Set Live
 
 ### Flow 2: A Gift For You (24h Download)
 1. Same trigger as above (`Placed Order`)
-2. Same filter
-3. **Time delay: 30 minutes** after the trigger (lets the order confirmation arrive first, primes recipient for a follow-up)
-4. Action: **Email** → choose template `PP — 02 A Gift For You (24h Download)`
-5. Subject: `A small gift for {{ event.line_items.0.properties.pet_name|default:"you" }}`
-6. Save → Live
+2. Time delay: 30 minutes after the trigger
+3. Action: Email → choose template `PP — 02 A Gift For You v2 (24h Download)`
+4. Subject: `A small gift for {{ person.pet_name|default:"you" }}`
+5. Set Live
 
-## Brand voice notes for future emails
+## Memory: customer metafield for repeat-order pet name
 
-- Voice: reflective, warm, declarative — Brianna Wiest meets commerce. See the About page for reference (`sections/about.liquid`).
-- **No em dashes** anywhere in copy. Use periods, semicolons, colons, commas, or restructure the sentence. This is a hard rule.
-- Headings in Cormorant Garamond italic. Body in Inter. Handwritten accents in Caveat (with cursive fallback for clients that strip web fonts).
+Add a Shopify Flow workflow:
+- Trigger: `Order created`
+- Action: `Update customer metafield`
+- Namespace `pet_printables`, key `pet_names`, type `list.single_line_text`
+- Value: Liquid that pulls each line item's `pet_name` property, dedupes, and joins with commas
+
+Once that's set, `customer.metafields.pet_printables.pet_names` is available everywhere in Liquid for welcome-back banners, account pages, etc.
+
+## Brand assets
+
+- Signature image (handwritten "The Pet Printables team" + paw): hosted on Klaviyo CDN at https://d3k81ch9hvuctc.cloudfront.net/company/SPKeMf/images/2d019f06-a2fe-4b25-a371-e7d6f1ad28d8.png. Generated via Nano Banana Pro and stored locally at `email-templates/signature-source.png`.
+- Logo: text-based "Pet Printables" in Cormorant Garamond italic for now; swap for an image if/when one is approved.
+
+## Brand voice rules
+
+- Reflective, warm, declarative — Brianna Wiest meets commerce. See `sections/about.liquid`.
+- **No em dashes** anywhere. Use periods, semicolons, colons, commas.
+- Headings in Cormorant Garamond italic. Body in Inter. Handwritten in Caveat (cursive fallback).
 - Single primary CTA per email. Dark `#2F2F2A` button, white text, all-caps with `letter-spacing: 0.06em`.
-- Cream `#FAF8F5` body background. Cards on `#FFFFFF` or `#F3EDE6` (warm taupe tint) for visual rhythm.
+- Cream `#FAF8F5` body. Cards on `#FFFFFF` or `#F3EDE6` warm taupe tint.
 
 ## Open questions
 
-1. **Memorial flag** — when a customer is ordering a memorial piece, do they self-identify? If yes (cart note, hidden tag), we can branch the order-confirmation flow into a quieter variant.
-2. **Recovery offer** — if you want a 10% nudge in an abandoned-preview flow, name it. I left it out of these two since they're for completed orders.
-3. **Klaviyo brand kit** — uploading your logo + brand colours to Klaviyo's Brand Library will let the inline editor offer them as one-click choices in any future template. Worth doing once.
+1. Memorial flag — do customers self-identify when ordering a memorial? If yes, branch the order-confirmation flow into a quieter variant (no upsell, longer post-delivery silence).
+2. Klaviyo Brand Library — uploading the cream/dark-ink palette + Cormorant Garamond + Inter as approved fonts will make all future template work click-to-pick instead of hand-coded.

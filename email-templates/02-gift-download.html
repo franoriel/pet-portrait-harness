@@ -84,7 +84,7 @@
           <tr>
             <td align="center" style="padding:0;">
               <img
-                src="{{ event.line_items.0.properties._preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
+                src="{{ event.line_items.0.properties.preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
                 alt="{{ event.line_items.0.properties.pet_name|default:'Your pet' }}'s portrait"
                 width="600"
                 style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;"
@@ -97,7 +97,7 @@
         <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
           <tr>
             <td align="center" class="px-mobile" style="padding:32px 48px 8px;">
-              <a href="{{ event.line_items.0.properties._download_url|default:'https://petprintables.ca/portrait/download' }}" class="cta-primary" style="background:#2F2F2A;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;padding:16px 32px;text-decoration:none;display:inline-block;border-radius:4px;">
+              <a href="{{ event.line_items.0.properties.download_url|default:'https://petprintables.ca/portrait/download' }}" class="cta-primary" style="background:#2F2F2A;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;padding:16px 32px;text-decoration:none;display:inline-block;border-radius:4px;">
                 DOWNLOAD HIGH-RES
               </a>
             </td>

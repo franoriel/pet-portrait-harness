@@ -239,6 +239,14 @@ def _name_integration(
             f"SMALL size — a refined design accent, never a billboard. Use {poster_ink}. "
             f"Size: 3.5-4% of image height. Centered."
         ),
+        "charcoal": (
+            f"NAME INTEGRATION — CRITICAL:\n"
+            f"{safe_zone}"
+            f"- Render the name \"{name_upper}\" in fine hand-drawn charcoal lettering "
+            f"matching the sketch medium. Same charcoal grey as the darkest pet shading. "
+            f"Slightly imperfect strokes, like a personal signature. Size: 2.5-3% of "
+            f"image height. Centered. Quiet, sketched, never printed-looking."
+        ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
@@ -594,6 +602,53 @@ Avoid: photography, photorealism, soft edges, gradients, watercolor, painterly s
 3D render, blurry, detailed fur texture, text, watermark, border, \
 solid color bars or panels at image edges, horizontal color-band splits, \
 pet pushed to canvas edges.\
+"""
+
+_CHARCOAL_TEMPLATE = """\
+Transform this photo into a hand-drawn fine-art charcoal pet portrait on warm cream paper.
+
+COLOR ACCURACY — THIS IS CRITICAL:
+- Charcoal is monochromatic — render the pet in soft graphite/charcoal greys, \
+with confident dark accents on the nose, eyes, mouth, and shadow areas, and \
+lighter strokes on bright fur (cheek, brow, chest). The pet's true coat \
+markings still come through as charcoal density variation: a black dog reads \
+as deep saturated charcoal; a white cat reads as soft pencil hatching with \
+mostly cream paper showing through; tabby/spotted/patched coats keep their \
+distinguishing pattern in charcoal density.
+- Eyes are alive — keep small white catchlights and the natural eye colour \
+suggestion through subtle warmth in the iris.
+
+STYLE:
+- Hand-drawn fine-art charcoal sketch on textured warm cream paper, \
+expressive but disciplined.
+- Loose hatching for fur direction; richer charcoal density on the nose, \
+eyes, and shadow areas; lighter strokes on the brighter cheek and chest fur.
+- Slightly rough edges where charcoal strokes end. A few stray strokes near \
+the body suggesting hand-drawn movement and life — never geometric.
+- Loose chest line that organically dissolves into the paper rather than \
+ending in a hard cut.
+- High-end pet portrait artist's piece. Premium, intimate, museum-quality.
+- Fine art illustration style, high resolution 300dpi, print-ready.
+
+COMPOSITION:
+- Centered portrait, 4:5 aspect ratio (portrait orientation).
+- Head and chest, calm pose, direct gentle gaze.
+- The PET itself occupies 82-87% of image height — top of ears at \
+~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed.
+- BOTTOM SILHOUETTE — CRITICAL: the chest must dissolve organically into the \
+paper texture with looser strokes, never end in a flat horizontal cut.
+- BACKGROUND: warm cream paper texture (#F4EFE7 base) with subtle organic \
+paper-fibre grain extending uniformly to all four edges. The same cream tone \
+in every corner. NO rectangles, NO frames, NO inner panel of a different \
+shade, NO mat, NO border, NO letterbox bar, NO geometric splits. Pet and \
+paper are drawn in the same medium in the same pass.
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere.
+
+Avoid: photography, photorealism, oil paint, watercolor, ink wash, neon, \
+saturated colour, gradients, drop shadows, 3D render, cartoon, anime, \
+text, watermark, border, decorative shapes, geometric ornaments, halos, \
+frames, anything other than a charcoal-on-cream sketch of the pet.\
 """
 
 _AURA_GRADIENT_TEMPLATE = """\
@@ -971,6 +1026,7 @@ _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     "renaissance-royalty": {"auto"},
     "bold-graphic-poster": {"auto", "light", "dark"},
     "aura-gradient":       {"auto"},
+    "charcoal":            {"auto", "light"},
 }
 
 
@@ -1054,6 +1110,7 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
     "renaissance-royalty": _static(_RENAISSANCE_ROYALTY_TEMPLATE),
     "bold-graphic-poster": _static(_BOLD_GRAPHIC_POSTER_TEMPLATE),
     "aura-gradient":      _static(_AURA_GRADIENT_TEMPLATE),
+    "charcoal":           _static(_CHARCOAL_TEMPLATE),
 }
 
 
@@ -1136,6 +1193,7 @@ _PORTRAIT_STYLES = [
     "renaissance-royalty",
     "bold-graphic-poster",
     "aura-gradient",
+    "charcoal",
 ]
 
 POST_PROCESS: dict[str, Callable[[Image.Image], Image.Image]] = {
@@ -1158,6 +1216,7 @@ STYLE_FONT_MAP: dict[str, dict] = {
     "renaissance-royalty":  {"family": "Cinzel",             "google": "Cinzel:wght@700",                          "file": "Cinzel-Bold.ttf"},
     "bold-graphic-poster":  {"family": "Oswald",             "google": "Oswald:wght@700",                          "file": "Oswald-Bold.ttf"},
     "aura-gradient":        {"family": "Quicksand",          "google": "Quicksand:wght@700",                       "file": "Quicksand-Bold.ttf"},
+    "charcoal":             {"family": "Caveat",             "google": "Caveat:wght@500",                         "file": "Caveat-Medium.ttf"},
     # Ink-only legacy styles use Libre Baskerville Bold
     "classic":              {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@700",               "file": "LibreBaskerville-Bold.ttf"},
     "minimal":              {"family": "Libre Baskerville",  "google": "Libre+Baskerville:wght@700",               "file": "LibreBaskerville-Bold.ttf"},
@@ -1304,6 +1363,13 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "zone_top": 0.78,
         "letter_spacing": 5,
         "opacity": 1.0,
+    },
+    "charcoal": {
+        "size_ratio": 0.04,
+        "transform": "title",
+        "zone_top": 0.84,
+        "letter_spacing": 4,
+        "opacity": 0.9,
     },
     "aura-gradient": {
         "size_ratio": 0.045,

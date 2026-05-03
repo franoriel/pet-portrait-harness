@@ -289,6 +289,7 @@ def _map_style_id(react_style_id: str) -> str:
         "renaissance-royalty": "renaissance-royalty",
         "bold-graphic-poster": "bold-graphic-poster",
         "aura-gradient": "aura-gradient",
+        "charcoal": "charcoal",
     }
     key = mapping.get(react_style_id, react_style_id)
     if key not in PROMPTS:
