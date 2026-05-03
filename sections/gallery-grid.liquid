@@ -47,7 +47,7 @@
           examples are dog-led) — when real customer pieces are added as
           blocks, set the appropriate category there.
         {%- endcomment -%}
-        {%- assign default_examples = "soft-watercolour|Soft Watercolour;minimal-line-art|Minimal Line Art;modern-shape-art|Modern;neon-pop-art|Neon Pop Art;renaissance-royalty|Renaissance Royalty;bold-graphic-poster|Bold Graphic Poster;aura-gradient|Aura Gradient" | split: ";" -%}
+        {%- assign default_examples = "soft-watercolour|Soft Watercolour;minimal-line-art|Minimal Line Art;modern-shape-art|Modern;charcoal|Charcoal;neon-pop-art|Neon Pop Art;renaissance-royalty|Renaissance Royalty;bold-graphic-poster|Bold Graphic Poster;aura-gradient|Aura Gradient" | split: ";" -%}
         {%- for entry in default_examples -%}
           {%- assign parts = entry | split: '|' -%}
           {%- assign slug = parts[0] -%}

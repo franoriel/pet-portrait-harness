@@ -42,6 +42,7 @@ const STYLE_FONTS = {
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
   'bold-graphic-poster':  { family: 'Oswald',             css: "'Oswald', sans-serif",          google: 'Oswald:wght@700' },
   'aura-gradient':        { family: 'Quicksand',          css: "'Quicksand', sans-serif",       google: 'Quicksand:wght@500;700' },
+  'charcoal':             { family: 'Caveat',             css: "'Caveat', cursive",             google: 'Caveat:wght@400;500;600' },
 };
 
 const FONT_SIZES = [
@@ -143,6 +144,13 @@ const STYLES = [
     backgrounds: ['auto', 'light', 'dark'],
   },
   {
+    id: 'charcoal',
+    name: 'Charcoal',
+    available: true,
+    exampleImage: 'example-charcoal.webp',
+    backgrounds: ['auto', 'light'],
+  },
+  {
     id: 'aura-gradient',
     name: 'Aura Gradient',
     available: true,
@@ -176,6 +184,7 @@ const STYLE_AFFIRMATIONS = {
   'neon-pop-art':        { tag: 'Loud and lovable',     line: 'going to glow — saturated and electric.' },
   'renaissance-royalty': { tag: 'Hall of portraits',    line: 'about to be ennobled, oil-painted in flattering light.' },
   'bold-graphic-poster': { tag: 'Poster-shop energy',   line: 'getting the bold-colour, sharp-lines treatment.' },
+  'charcoal':            { tag: 'Studio classic',       line: 'about to look like a hand-drawn portrait studio piece.' },
   'aura-gradient':       { tag: 'Halo treatment',       line: 'getting the soft-gradient halo treatment.' },
 };
 
@@ -395,6 +404,7 @@ const STYLE_MAP = {
   'neon-pop-art': 'neon-pop-art',
   'renaissance-royalty': 'renaissance-royalty',
   'bold-graphic-poster': 'bold-graphic-poster',
+  'charcoal': 'charcoal',
   'aura-gradient': 'aura-gradient',
 };
 
