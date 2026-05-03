@@ -343,7 +343,11 @@
     }
     .hero--transform::before { display: none; }
     .hero--transform .hero__media--stack {
-      position: relative; aspect-ratio: 1170 / 1071;
+      /* Container aspect deliberately tighter than the asset (1170x1071,
+         which has 165px cream padding baked in on each side) so the
+         cover-crop trims that padding off and the dog reads as the full
+         hero subject instead of floating in side margins. */
+      position: relative; aspect-ratio: 4 / 5;
       width: 100%; height: auto;
       overflow: hidden;
     }
