@@ -599,6 +599,24 @@ const KEYFRAME_CSS = `
   from { opacity: 0; transform: scale(0.94) translateY(8px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
+/* Pulses the floating "Get 10% off" pill in red so it actually catches
+   the eye against the dark footer background. The box-shadow ring grows
+   and fades on each cycle for a soft notification feel — not aggressive. */
+@keyframes pf-pill-pulse-red {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 18px rgba(220,38,38,0.35), 0 0 0 0 rgba(220,38,38,0.55);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 6px 22px rgba(220,38,38,0.55), 0 0 0 10px rgba(220,38,38,0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Honour the OS-level reduced-motion preference — keep the red colour
+     and the dismiss affordance, but stop the scale + shadow animation. */
+  [data-pf-pill] { animation: none !important; }
+}
 @keyframes pf-style-celebrate {
   0%   { opacity: 0; transform: translateY(6px) scale(0.97); }
   60%  { opacity: 1; transform: translateY(-2px) scale(1.015); }
@@ -2637,21 +2655,51 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
 }
 
 /* Floating pill — appears after a customer dismisses the modal so they can
- * still claim the discount without a hard re-prompt. Hidden once they sign up. */
-function NewsletterPill({ onClick, visible }) {
+ * still claim the discount without a hard re-prompt. Hidden once they sign up
+ * OR once they explicitly dismiss the pill via its × button. Pulses red so
+ * it's hard to miss against the footer background. */
+function NewsletterPill({ onClick, onDismiss, visible }) {
   if (!visible) return null;
-  return React.createElement('button', {
-    type: 'button', onClick,
-    'aria-label': 'Reopen the 10% off offer',
+  return React.createElement('div', {
+    'data-pf-pill': '',
+    role: 'group',
+    'aria-label': '10% off offer',
     style: {
       position: 'fixed', bottom: '18px', right: '18px', zIndex: 9998,
-      background: tokens.colorBrand, color: tokens.colorWhite,
-      border: 'none', borderRadius: '999px',
-      padding: '12px 18px', fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
-      cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
-      animation: 'pf-newsletter-pop 0.3s cubic-bezier(.2,1.2,.4,1)',
+      display: 'inline-flex', alignItems: 'stretch',
+      background: '#DC2626', color: tokens.colorWhite,
+      borderRadius: '999px',
+      fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
+      boxShadow: '0 6px 18px rgba(220,38,38,0.35)',
+      animation: 'pf-newsletter-pop 0.3s cubic-bezier(.2,1.2,.4,1), pf-pill-pulse-red 2.4s ease-in-out 0.3s infinite',
+      transformOrigin: 'center',
     },
-  }, 'Get 10% off');
+  },
+    // Main button — opens the modal
+    React.createElement('button', {
+      type: 'button',
+      onClick,
+      'aria-label': 'Reopen the 10% off offer',
+      style: {
+        background: 'transparent', color: 'inherit', border: 'none',
+        padding: '12px 8px 12px 18px',
+        fontFamily: 'inherit', fontWeight: 'inherit', fontSize: 'inherit',
+        cursor: 'pointer', borderRadius: '999px 0 0 999px',
+      },
+    }, 'Get 10% off'),
+    // Dismiss × — closes the pill permanently for this device
+    React.createElement('button', {
+      type: 'button',
+      onClick: (e) => { e.stopPropagation(); if (onDismiss) onDismiss(); },
+      'aria-label': 'Dismiss the 10% off offer',
+      style: {
+        background: 'transparent', color: 'inherit', border: 'none',
+        padding: '12px 14px 12px 6px',
+        fontFamily: 'inherit', fontSize: '16px', lineHeight: '1',
+        cursor: 'pointer', opacity: 0.85, borderRadius: '0 999px 999px 0',
+      },
+    }, '×'),
+  );
 }
 
 /* ── PreviewStep ───────────────────────────────────────────── */
@@ -3510,6 +3558,10 @@ function PortraitFlow() {
     React.createElement(NewsletterPill, {
       visible: !newsletterModalOpen && newsletterStatus === 'skipped',
       onClick: () => setNewsletterModalOpen(true),
+      onDismiss: () => {
+        saveNewsletterStatus('dismissed');
+        setNewsletterStatus('dismissed');
+      },
     }),
   );
 }
