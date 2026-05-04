@@ -708,14 +708,22 @@
   var showName = wantsName;
 
   if (petName) {
+    // Outer wrapper is a column so the toggle row and the inline name
+    // editor stack cleanly. The toggle row itself is its own flex-row
+    // container so the label/buttons stay side-by-side regardless of how
+    // many other rows the wrapper holds.
     var toggleWrap = document.createElement('div');
-    toggleWrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;'
+    toggleWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:12px 16px;'
       + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;background:var(--color-surface, #faf9f7);';
 
+    var toggleRow = document.createElement('div');
+    toggleRow.style.cssText = 'display:flex;align-items:center;gap:10px;';
+    toggleWrap.appendChild(toggleRow);
+
     var toggleLabel = document.createElement('span');
-    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;display:inline-flex;align-items:center;gap:10px;";
+    toggleLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:500;color:var(--color-ink, #1C1C1C);flex:1;min-width:0;display:inline-flex;align-items:center;gap:10px;";
     toggleLabel.innerHTML = '<span>Show name on portrait</span><span data-name-loading style="display:none;font-size:var(--text-xs);color:var(--color-muted, #8a8580);font-weight:500;align-items:center;gap:6px;"></span>';
-    toggleWrap.appendChild(toggleLabel);
+    toggleRow.appendChild(toggleLabel);
 
     // Inject spinner keyframe once per page
     if (!document.getElementById('pdp-toggle-spin-kf')) {
@@ -745,7 +753,8 @@
     var noBtn  = makeToggleBtn('No', !showName);
     btnGroup.appendChild(yesBtn);
     btnGroup.appendChild(noBtn);
-    toggleWrap.appendChild(btnGroup);
+    btnGroup.style.flexShrink = '0';
+    toggleRow.appendChild(btnGroup);
 
     var nameLoadingEl = toggleLabel.querySelector('[data-name-loading]');
     var cycler = null;
@@ -923,10 +932,6 @@
     editorRow.appendChild(editorInput);
     editorRow.appendChild(editorCounter);
     toggleWrap.appendChild(editorRow);
-    // Switch the toggleWrap to a column layout now that we're stacking
-    // the toggle row and the editor row inside it.
-    toggleWrap.style.flexDirection = 'column';
-    toggleWrap.style.alignItems = 'stretch';
 
     function applyNameEverywhere(newName) {
       petName = newName;
