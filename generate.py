@@ -1209,19 +1209,20 @@ def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Ima
     return padded
 
 
-def _horizontally_center_line_art(img: Image.Image) -> Image.Image:
+def _center_line_art(img: Image.Image) -> Image.Image:
     """Re-centers a high-contrast line-art portrait whose subject drifted
-    off-center horizontally. Gemini routinely produces compositions whose
-    visual weight is shifted left or right of true center; for solid-bg
-    line-art styles (minimal-line-art light and dark variants) the
-    foreground line is reliably detectable, so we can find its bounding
-    box and shift the artwork into true horizontal centre — keeping the
-    same canvas size and re-filling the exposed margin with the original
-    background colour.
+    off-center horizontally OR vertically. Gemini routinely produces
+    compositions whose visual weight is shifted left/right of true center
+    AND placed too high in the frame, leaving an empty band of negative
+    space at the bottom. For solid-bg line-art styles (minimal-line-art
+    light and dark variants) the foreground line is reliably detectable,
+    so we can find its bounding box and shift the artwork into true
+    centre on both axes — keeping the same canvas size and re-filling the
+    exposed margin with the original background colour.
 
-    No-op (returns the input unchanged) if the offset is small (<2% of
-    canvas width — already effectively centered) or if no foreground is
-    detected (degenerate frame).
+    No-op (returns the input unchanged) when the offset is below 1.5% of
+    canvas size on each axis (already effectively centered) or when no
+    foreground is detected (degenerate frame).
     """
     rgb = img.convert('RGB')
     w, h = rgb.size
@@ -1260,19 +1261,21 @@ def _horizontally_center_line_art(img: Image.Image) -> Image.Image:
                 if y < fg_min_y: fg_min_y = y
                 if y > fg_max_y: fg_max_y = y
                 found = True
-    if not found or fg_max_x <= fg_min_x:
+    if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
         return img
 
-    # How far is the subject's horizontal centre from the canvas centre?
+    # Compute shift on each axis. Anything below ~1.5% reads as centered.
     subject_cx = (fg_min_x + fg_max_x) / 2
-    canvas_cx = w / 2
-    dx = int(round(canvas_cx - subject_cx))
-    if abs(dx) < int(w * 0.02):
-        return img  # already effectively centred
+    subject_cy = (fg_min_y + fg_max_y) / 2
+    dx = int(round(w / 2 - subject_cx))
+    dy = int(round(h / 2 - subject_cy))
+    if abs(dx) < int(w * 0.015): dx = 0
+    if abs(dy) < int(h * 0.015): dy = 0
+    if dx == 0 and dy == 0:
+        return img
 
-    # Shift artwork by dx; expose margin gets bg-coloured fill.
     shifted = Image.new('RGB', (w, h), bg_color)
-    shifted.paste(rgb, (dx, 0))
+    shifted.paste(rgb, (dx, dy))
     return shifted
 
 
@@ -1294,10 +1297,11 @@ def _portrait_post_process(img: Image.Image) -> Image.Image:
 
 def _line_art_post_process(img: Image.Image) -> Image.Image:
     """Post-process for the minimal-line-art style (light + dark variants).
-    Centers the line work horizontally before the standard crop pipeline,
-    so Gemini's tendency to drift the subject left or right doesn't ship.
+    Centers the line work on both axes before the standard crop pipeline,
+    so Gemini's tendency to drift the subject (right-shifted, top-heavy
+    with empty space at the bottom) doesn't reach the customer.
     """
-    img = _horizontally_center_line_art(img)
+    img = _center_line_art(img)
     return _portrait_post_process(img)
 
 
