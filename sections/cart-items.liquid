@@ -436,12 +436,12 @@
                     loading="lazy"
                     style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--color-border);"
                   >
-                  <span style="flex:1;">
-                    <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
-                      Matching fridge magnet{%- if source_pet_name != '' %} of {{ source_pet_name }}{%- endif -%}
+                  <span style="flex:1;min-width:0;">
+                    <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
+                      <span style="flex:1;min-width:0;">Matching fridge magnet{%- if source_pet_name != '' %} of {{ source_pet_name }}{%- endif -%}</span>
                       <span
                         data-magnet-price
-                        style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:var(--text-sm);"
+                        style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:var(--text-sm);white-space:nowrap;"
                       ></span>
                     </span>
                     <span style="display:block;font-size:var(--text-sm);color:var(--color-muted);margin-top:3px;">

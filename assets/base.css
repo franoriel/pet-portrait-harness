@@ -59,6 +59,13 @@ body {
   color: var(--color-ink);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
+  /* Defensive: a single overflowing child (e.g. a long unbreakable string,
+     a fixed-width button on a narrow viewport, an off-screen drawer) used
+     to widen the body past the viewport on mobile, which made the footer
+     stop short of the right edge (cream gap on the right) and made the
+     cart card look like it was missing its right padding. `clip` (vs.
+     `hidden`) preserves position:sticky behavior on descendants. */
+  overflow-x: clip;
 }
 
 /* Long-form paragraph utility — caps line length for readability.
@@ -1755,8 +1762,9 @@ textarea.form-input { min-height: 120px; resize: vertical; }
   .cart-page__item-img { width: 110px; height: 110px; }
 }
 .cart-page__item-img img { width: 100%; height: 100%; object-fit: cover; }
-.cart-page__item-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.cart-page__item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .cart-page__item-header { display: flex; justify-content: space-between; gap: 12px; }
+.cart-page__item-header > div:first-child { min-width: 0; flex: 1; }
 .cart-page__item-title { font-family: var(--font-heading); font-size: var(--text-base); font-weight: 600; }
 .cart-page__item-title:hover { color: var(--color-primary); }
 .cart-page__item-variant,.cart-page__item-prop { font-size: var(--text-sm); color: var(--color-muted); }
@@ -1789,6 +1797,7 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .cart-summary__trust { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; font-size: var(--text-xs); color: var(--color-muted); }
 .cart-empty { padding: 64px 0; text-align: center; }
 .cart-empty__icon { font-size: var(--text-3xl); margin-bottom: 16px; }
+.cart-empty .btn { max-width: 100%; }
 
 /* ── Cart drawer ─────────────────────────────────────────────── */
 .cart-drawer {
