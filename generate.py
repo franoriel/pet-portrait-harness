@@ -375,41 +375,53 @@ COMPOSITION:
 """
 
 _MINIMAL_LINE_ART_TEMPLATE = """\
-Transform this photo into a minimal line art pet portrait.
+Transform this photo into a SINGLE-LINE continuous-line pet portrait — \
+the kind of minimalist one-stroke ink drawing where the entire animal is \
+captured in ONE unbroken, flowing line, as if the pen never lifted off \
+the page from start to finish.
 
-MONOCHROME — THIS IS CRITICAL:
-- The artwork MUST be strictly BLACK AND WHITE ONLY. Pure black ink (#000000) \
-lines on a warm off-white (#FAF8F5) background. Absolutely NO color anywhere \
-in the image — not in the pet, not in the eyes, not in the background, not \
-anywhere. Ignore the original coat color; render everything as black linework.
-- Use the pet's coat markings/patches/patterns as a guide for WHERE lines go, \
-but DO NOT color-fill them. All markings are expressed purely through line \
-placement and density, not tonal or color variation.
+ONE CONTINUOUS LINE — THIS IS CRITICAL:
+- The whole portrait reads as ONE UNINTERRUPTED LINE. There are no \
+separate strokes, no detached marks, no "floating" features — every \
+element of the pet (each ear, each eye, the snout, the chest contour, \
+fur indications) is reached by continuing that same single line.
+- The line may LOOP, curve back on itself, double-back, and cross over \
+itself — but it must remain CONNECTED throughout the entire drawing. \
+Think Picasso's iconic continuous-line animal sketches, or the modern \
+"one-line drawing" / "monoline" aesthetic seen in editorial line-art \
+illustration: elegant, gestural, confident, one fluid motion.
+- Eyes, nostrils, and mouth are NOT drawn as separate dots or marks — \
+they are formed by the line briefly looping around to imply the feature, \
+then continuing onward. Same for whiskers and fur direction.
+- Use the pet's actual coat markings only as a SUGGESTION for where the \
+line might curve or loop to hint at pattern. Never render markings as \
+filled shapes or as a second separate line.
 
-STYLE:
-- Clean, confident single-weight ink lines on the warm off-white background
-- High contrast — bold pure-black linework against the light background
-- Minimal detail: capture the essence of the pet in as few strokes as possible
-- No shading, no fills, no gradients, no gray tones — pure linework only
-- Suggest fur direction with sparse, deliberate strokes
-- Fine art illustration quality, high resolution 300dpi, print-ready
+LINE QUALITY:
+- Single, even, uniform line weight from start to finish — neither \
+tapering nor varying. Smooth controlled pen pressure throughout.
+- Pure black ink (#000000) on a warm off-white (#FAF8F5) background.
+- Strictly two-tone: one black line + the light background. ABSOLUTELY \
+NO color anywhere, NO grey shading, NO fills, NO crosshatching, NO \
+stippling, NO sketchy multi-pass strokes.
 
 COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, direct or three-quarter gaze
-- The PET itself occupies 82-87% of image height — top of ears at \
-~7-10% from top, bottom of chest at ~92-94% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean white space above \
-the ears AND below the chest
-- The BACKGROUND (pure white paper) extends edge-to-edge — no reserved panels, \
-bars, color blocks, or empty bands at the top or bottom
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+- Centered portrait, 4:5 aspect ratio (portrait orientation).
+- Head and chest, direct or three-quarter gaze.
+- The PET (formed by the single line) occupies 75-85% of image height — \
+top of ears at ~7-10% from top, bottom of chest at ~92-94% from top, \
+centered horizontally. Generous breathing room (~7-10% top, ~6-8% sides) \
+— no edge bleed.
+- BACKGROUND (warm off-white) extends edge-to-edge — no reserved panels, \
+bars, color blocks, or empty bands.
+- Do NOT include any text, words, letters, watermarks, or signatures.
 
-Avoid: ANY color whatsoever, colored ink, colored background, colored eyes, \
-colored fur, sepia, tinted, duotone, photography, photorealism, cartoon, \
-anime, 3D render, gray shading, crosshatching, stippling, color fills, text, \
-watermark, border, solid color bars or panels at image edges, pet pushed \
-to canvas edges.\
+Avoid: multiple separate strokes, broken or interrupted lines, sketchy \
+hatched marks, detached features (floating eyes, separate whisker dots), \
+filled shapes, varying line weight, ANY color, sepia, tinted, duotone, \
+gray shading, crosshatching, stippling, photography, photorealism, \
+cartoon, anime, 3D render, text, watermark, border, solid color bars or \
+panels at image edges, pet pushed to canvas edges.\
 """
 
 _NEON_POP_ART_TEMPLATE = """\
@@ -756,43 +768,54 @@ def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
 # ---------------------------------------------------------------------------
 
 _MINIMAL_LINE_ART_DARK_TEMPLATE = """\
-Transform this photo into a minimal WHITE-INK pet portrait drawn on black paper \
-— a single-weight brush or pen illustration rendered in warm ivory ink on a \
-solid deep background.
+Transform this photo into a SINGLE-LINE continuous-line pet portrait \
+rendered in warm ivory ink on a solid deep-dark field — the same \
+one-stroke aesthetic as the light version, but inverted: one unbroken \
+ivory line laid down on top of black/charcoal/navy paper.
 
-TWO-TONE WHITE-INK ILLUSTRATION — THIS IS CRITICAL:
-- The linework is warm ivory / cream (#F3EFE4). The surface it sits on is a \
-SOLID DEEP DARK field — pick ONE and hold it across the entire image: deep \
-charcoal (#1A1A1A), midnight navy (#0E1424), or rich forest (#0F1F14).
-- Reference styles to lean into: fine white-ink brush drawing on black paper, \
-editorial minimalist ink-on-dark illustration. The pet is drawn IN ivory \
-strokes, directly on top of the dark surface.
-- Pure two-tone only: ivory strokes + one dark background color. Pet markings \
-are expressed through line placement and density, never as filled shapes.
+ONE CONTINUOUS LINE — THIS IS CRITICAL:
+- The whole portrait reads as ONE UNINTERRUPTED IVORY LINE. There are no \
+separate strokes, no detached marks, no "floating" features — every \
+element of the pet (each ear, each eye, the snout, the chest contour, \
+fur indications) is reached by continuing that same single line.
+- The line may LOOP, curve back, double-back, and cross over itself — \
+but it must remain CONNECTED throughout. Think Picasso's continuous-line \
+animal sketches translated into white-ink-on-black-paper. Elegant, \
+gestural, confident — one fluid motion of the pen.
+- Eyes, nostrils, and mouth are NOT drawn as separate dots — they are \
+formed by the line briefly looping around to imply the feature, then \
+continuing onward.
+- Use the pet's actual coat markings only as a SUGGESTION for where the \
+line might curve or loop. Never render markings as filled shapes or as \
+a second separate line.
 
-STYLE:
-- Clean, confident single-weight ivory strokes on the solid dark field
-- High contrast — the warm-ivory linework reads cleanly against the dark surface
-- Minimal detail: capture the essence of the pet in as few strokes as possible
-- Suggest fur direction with sparse, deliberate strokes
-- Fine art illustration quality, high resolution 300dpi, print-ready
+LINE QUALITY & MEDIUM:
+- Single, even, uniform line weight from start to finish.
+- Linework is warm ivory / cream (#F3EFE4). Surface is a SOLID DEEP DARK \
+field — pick ONE and hold it across the whole image: deep charcoal \
+(#1A1A1A), midnight navy (#0E1424), or rich forest (#0F1F14).
+- Strictly two-tone: ivory line + one dark background. NO secondary colors, \
+NO grey shading, NO fills, NO crosshatching, NO stippling, NO sketchy \
+multi-pass strokes.
 
 COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, direct or three-quarter gaze
-- The PET (rendered in ivory linework) occupies ONLY 60-65% of image height \
-— top of ears at ~7-10% from top, bottom of chest at ~92-94% from top, \
-centered horizontally. Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~7-10% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave \
-clean dark-field space above the ears AND below the chest
-- The BACKGROUND (solid dark field) extends edge-to-edge — no reserved \
-panels, bars, color blocks, or empty bands
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+- Centered portrait, 4:5 aspect ratio (portrait orientation).
+- Head and chest, direct or three-quarter gaze.
+- The PET (formed by the single ivory line) occupies 75-85% of image \
+height — top of ears at ~7-10% from top, bottom of chest at ~92-94% from \
+top, centered horizontally. Generous breathing room (~7-10% top, ~6-8% \
+sides) — no edge bleed.
+- BACKGROUND (solid dark field) extends edge-to-edge — no reserved panels, \
+bars, color blocks, or empty bands.
+- Do NOT include any text, words, letters, watermarks, or signatures.
 
-Avoid: white or off-white backgrounds, black ink on light paper, color fills, \
-chalkboard / blackboard texture (this is ink on paper, not chalk on a board), \
-photography, photorealism, cartoon, anime, 3D render, gray shading, \
-crosshatching, stippling, text, watermark, border, solid color bars or panels \
-at image edges.\
+Avoid: white or off-white backgrounds, black ink on light paper, multiple \
+separate strokes, broken or interrupted lines, sketchy hatched marks, \
+detached features (floating eyes, separate whisker dots), filled shapes, \
+varying line weight, color fills, chalkboard / blackboard texture (this \
+is ink on paper, not chalk on a board), photography, photorealism, \
+cartoon, anime, 3D render, gray shading, crosshatching, stippling, text, \
+watermark, border, solid color bars or panels at image edges.\
 """
 
 _WATERCOLOR_DARK_TEMPLATE = """\
