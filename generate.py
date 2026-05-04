@@ -97,15 +97,23 @@ def _name_integration(
     # POSITION & SAFETY ENVELOPE
     # The source image is 4:5. Customers can order 1:1 (square canvas), 3:4,
     # or 4:5. A center-crop from 4:5 → 1:1 removes the top 10% and bottom 10%
-    # of source height. To guarantee the name stays visible on EVERY aspect
-    # ratio AND leaves a proper top margin above it on the visible face, the
-    # name's vertical center must sit between 18% and 24% of source height:
-    #   - On 4:5 orders: name at 18-24% of print → visible with generous top margin.
-    #   - On 1:1 orders (center crop): name ends up at 10-17.5% of the square
-    #     crop — still with clear top margin, not touching the edge.
-    #   - On 3:4 orders (horizontal crop only): name position unchanged.
-    # The pet's face stays at 50% of source so it lands at the visual center
-    # of the visible face on every variant.
+    # of source height — i.e. source y=0.10 maps to the TOP edge of the
+    # square print. Anything above source y=0.10 is gone; anything between
+    # source y=0.10 and y=0.22 lands inside the canvas's printer-safe top
+    # margin (12% of the cropped face) and risks clipping.
+    #
+    # We anchor positioning by the TOP of the tallest rendered glyph (not
+    # by the center) so font choice and ascender height can't push letters
+    # off the canvas. The rule below tells Gemini:
+    #   - TOP of the tallest letter must be ≥22% of source height from the
+    #     top edge → after 1:1 crop, letter top sits at ≥15% of the print,
+    #     comfortably inside the 12% safe margin even at the largest text
+    #     style (Bold Poster, ~4% letter height + ~2% ascent buffer).
+    #   - Vertical CENTER of the name lands between 26-32% of source →
+    #     post 1:1 crop = 20-27.5% of the print → a calm upper-third
+    #     placement on every aspect ratio (1:1, 3:4, 4:5).
+    # Past failure mode: a center range of 10-13% of source put the letter
+    # tops at or above the 1:1 crop edge and shipped clipped names.
     safe_zone = (
         "- POSITION — CRITICAL: Place the name in the most aesthetically "
         "pleasing area of NEGATIVE SPACE in the artwork — the calm, "
@@ -128,13 +136,24 @@ def _name_integration(
         "its padding, must sit comfortably within the inner 76% of the "
         "canvas so it cannot be cropped, clipped, or wrapped on a gallery-"
         "wrap canvas at any product aspect ratio (square, 3:4, 4:5).\n"
+        "- TOP-EDGE CLEARANCE — ABSOLUTE, NON-NEGOTIABLE: measure the TOP "
+        "of the tallest rendered glyph (cap height + any ascender, accent, "
+        "serif, brush flick, or letter shadow — NOT the baseline, NOT the "
+        "center). That top edge MUST sit at least 22% of the image height "
+        "below the top of the source canvas. If you are at all unsure how "
+        "tall your chosen font's ascenders are, place the name LOWER, never "
+        "higher. This rule is what keeps the name from getting clipped on "
+        "the 1:1 square print, which crops 10% off the top of the source.\n"
         "- If the upper area is the chosen negative-space pocket, the name's "
-        "vertical CENTER should sit between 10% and 13% of the image height "
-        "from the TOP edge — comfortably inside the 12-15% breathing room "
-        "above the pet's ears, AND inside the 10-90% safe zone that survives "
-        "a 1:1 square center-crop on the printed canvas. NEVER place the "
-        "name at the very bottom of the image, near the pet's paws, or "
-        "directly overlapping the pet's ears, eyes, or fur.\n"
+        "vertical CENTER must sit between 26% and 32% of the image height "
+        "from the TOP edge — far enough below the canvas top that a 1:1 "
+        "square center-crop cannot touch the letters, while still reading "
+        "as a calm caption in the upper third of the visible print. NEVER "
+        "place the name at the very top of the source (above 22% from top), "
+        "at the very bottom, near the pet's paws, or directly overlapping "
+        "the pet's ears, eyes, or fur. If the pet's head crowds the 26-32% "
+        "band, render the pet a touch smaller — do NOT push the name up "
+        "into the unsafe top zone.\n"
         "- SINGLE LINE ONLY — never wrap, break, or stack the name across "
         "two lines. The complete name must read on one continuous baseline.\n"
         "- WIDTH CONSTRAINT — CRITICAL: the entire name (including any "
