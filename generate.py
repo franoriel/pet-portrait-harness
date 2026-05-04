@@ -1209,6 +1209,73 @@ def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Ima
     return padded
 
 
+def _horizontally_center_line_art(img: Image.Image) -> Image.Image:
+    """Re-centers a high-contrast line-art portrait whose subject drifted
+    off-center horizontally. Gemini routinely produces compositions whose
+    visual weight is shifted left or right of true center; for solid-bg
+    line-art styles (minimal-line-art light and dark variants) the
+    foreground line is reliably detectable, so we can find its bounding
+    box and shift the artwork into true horizontal centre — keeping the
+    same canvas size and re-filling the exposed margin with the original
+    background colour.
+
+    No-op (returns the input unchanged) if the offset is small (<2% of
+    canvas width — already effectively centered) or if no foreground is
+    detected (degenerate frame).
+    """
+    rgb = img.convert('RGB')
+    w, h = rgb.size
+
+    # Sample corners to learn the background colour and decide whether
+    # the subject is dark-on-light or light-on-dark.
+    corner_size = max(8, min(w, h) // 50)
+    corner_pixels = []
+    for x0, y0 in [(0, 0), (w - corner_size, 0), (0, h - corner_size), (w - corner_size, h - corner_size)]:
+        for px in rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata():
+            corner_pixels.append(px)
+    if not corner_pixels:
+        return img
+    avg_r = sum(p[0] for p in corner_pixels) / len(corner_pixels)
+    avg_g = sum(p[1] for p in corner_pixels) / len(corner_pixels)
+    avg_b = sum(p[2] for p in corner_pixels) / len(corner_pixels)
+    bg_color = (int(avg_r), int(avg_g), int(avg_b))
+    bg_lum = 0.299 * avg_r + 0.587 * avg_g + 0.114 * avg_b
+    light_bg = bg_lum > 128
+
+    # Threshold: pixel is "foreground" if it differs from corner luminance
+    # by more than 60 (out of 255). This catches ink lines on either polarity.
+    grey = rgb.convert('L')
+    px = grey.load()
+    fg_min_x, fg_max_x = w, 0
+    fg_min_y, fg_max_y = h, 0
+    found = False
+    # Sample every 2px to keep this fast on hi-res sources.
+    for y in range(0, h, 2):
+        for x in range(0, w, 2):
+            v = px[x, y]
+            is_fg = (v < bg_lum - 60) if light_bg else (v > bg_lum + 60)
+            if is_fg:
+                if x < fg_min_x: fg_min_x = x
+                if x > fg_max_x: fg_max_x = x
+                if y < fg_min_y: fg_min_y = y
+                if y > fg_max_y: fg_max_y = y
+                found = True
+    if not found or fg_max_x <= fg_min_x:
+        return img
+
+    # How far is the subject's horizontal centre from the canvas centre?
+    subject_cx = (fg_min_x + fg_max_x) / 2
+    canvas_cx = w / 2
+    dx = int(round(canvas_cx - subject_cx))
+    if abs(dx) < int(w * 0.02):
+        return img  # already effectively centred
+
+    # Shift artwork by dx; expose margin gets bg-coloured fill.
+    shifted = Image.new('RGB', (w, h), bg_color)
+    shifted.paste(rgb, (dx, 0))
+    return shifted
+
+
 def _portrait_post_process(img: Image.Image) -> Image.Image:
     """Standard post-process for all portrait styles: 4:5 crop + minimum size.
     NOTE: callers should add background padding via add_background_padding()
@@ -1223,6 +1290,15 @@ def _portrait_post_process(img: Image.Image) -> Image.Image:
             (int(img.width * scale), int(img.height * scale)), Image.LANCZOS
         )
     return img
+
+
+def _line_art_post_process(img: Image.Image) -> Image.Image:
+    """Post-process for the minimal-line-art style (light + dark variants).
+    Centers the line work horizontally before the standard crop pipeline,
+    so Gemini's tendency to drift the subject left or right doesn't ship.
+    """
+    img = _horizontally_center_line_art(img)
+    return _portrait_post_process(img)
 
 
 # All colour/painterly styles share the same 4:5 crop + min-size pipeline.
@@ -1241,6 +1317,11 @@ _PORTRAIT_STYLES = [
 POST_PROCESS: dict[str, Callable[[Image.Image], Image.Image]] = {
     style: _portrait_post_process for style in _PORTRAIT_STYLES
 }
+# minimal-line-art needs the extra horizontal-centering safety net — the
+# single-line aesthetic is high-contrast enough to detect reliably, and
+# Gemini's drift on this style is the most visually obvious because the
+# background is uniform negative space.
+POST_PROCESS["minimal-line-art"] = _line_art_post_process
 
 
 # ---------------------------------------------------------------------------
