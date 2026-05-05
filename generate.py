@@ -1730,35 +1730,35 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
         "size_ratio": 0.025,    # font size as fraction of image width
         "transform": "title",   # title case
-        "zone_top": 0.05,       # top margin for name (fraction of height)
+        "zone_top": 0.09,       # top margin for name (fraction of height)
         "letter_spacing": 0,    # extra spacing between chars (0 = natural)
         "opacity": 0.85,        # text opacity (for softer styles)
     },
     "minimal-line-art": {
         "size_ratio": 0.035,
         "transform": "upper",
-        "zone_top": 0.04,
+        "zone_top": 0.09,
         "letter_spacing": 6,
         "opacity": 1.0,
     },
     "modern-shape-art": {
         "size_ratio": 0.024,
         "transform": "upper",
-        "zone_top": 0.04,
+        "zone_top": 0.09,
         "letter_spacing": 10,
         "opacity": 1.0,
     },
     "neon-pop-art": {
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.04,
+        "zone_top": 0.09,
         "letter_spacing": 4,
         "opacity": 1.0,
     },
     "renaissance-royalty": {
         "size_ratio": 0.04,
         "transform": "upper",
-        "zone_top": 0.04,
+        "zone_top": 0.09,
         "letter_spacing": 8,
         "opacity": 0.9,
     },
@@ -1772,7 +1772,7 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
     "charcoal": {
         "size_ratio": 0.04,
         "transform": "title",
-        "zone_top": 0.04,
+        "zone_top": 0.09,
         "letter_spacing": 4,
         "opacity": 0.9,
     },
@@ -1789,7 +1789,7 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
 _DEFAULT_TEXT_CONFIG = {
     "size_ratio": 0.045,
     "transform": "title",
-    "zone_top": 0.05,
+    "zone_top": 0.09,
     "letter_spacing": 0,
     "opacity": 1.0,
 }
@@ -1870,7 +1870,7 @@ def _build_watermark_logo(color: tuple) -> Image.Image:
     src = Image.open(logo_path).convert("L")
     # Ink density: dark source pixels → high ink, white background → 0
     ink = src.point(lambda p: 255 - p)
-    OPACITY = 0.32
+    OPACITY = 0.18
     alpha = ink.point(lambda p: int(p * OPACITY))
     rgba = Image.new("RGBA", src.size, color + (0,))
     rgba.putalpha(alpha)
