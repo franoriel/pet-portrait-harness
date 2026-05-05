@@ -1741,52 +1741,57 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 0.85,
     },
     "minimal-line-art": {
-        "size_ratio": 0.035,
-        "transform": "upper",
-        "zone_top": 0.13,
-        "letter_spacing": 6,
-        "opacity": 1.0,
-    },
-    "modern-shape-art": {
-        "size_ratio": 0.024,
-        "transform": "upper",
-        "zone_top": 0.13,
-        "letter_spacing": 10,
-        "opacity": 1.0,
-    },
-    "neon-pop-art": {
+        # Letter-spacing was 6 on top of FONT_SIZE_SCALE["small"]=0.7 —
+        # combined with size_ratio 0.035 the name read as 4 disconnected
+        # dots across the canvas. Tuned to a readable but still airy
+        # tracked-letter look.
         "size_ratio": 0.06,
         "transform": "upper",
         "zone_top": 0.13,
-        "letter_spacing": 4,
+        "letter_spacing": 2,
         "opacity": 1.0,
     },
-    "renaissance-royalty": {
-        "size_ratio": 0.04,
+    "modern-shape-art": {
+        # Same fix as minimal — 0.024 / spacing 10 was illegible.
+        "size_ratio": 0.05,
         "transform": "upper",
         "zone_top": 0.13,
-        "letter_spacing": 8,
-        "opacity": 0.9,
+        "letter_spacing": 3,
+        "opacity": 1.0,
     },
-    "bold-graphic-poster": {
+    "neon-pop-art": {
         "size_ratio": 0.07,
         "transform": "upper",
         "zone_top": 0.13,
-        "letter_spacing": 5,
+        "letter_spacing": 2,
+        "opacity": 1.0,
+    },
+    "renaissance-royalty": {
+        "size_ratio": 0.06,
+        "transform": "upper",
+        "zone_top": 0.13,
+        "letter_spacing": 3,
+        "opacity": 0.9,
+    },
+    "bold-graphic-poster": {
+        "size_ratio": 0.08,
+        "transform": "upper",
+        "zone_top": 0.13,
+        "letter_spacing": 2,
         "opacity": 1.0,
     },
     "charcoal": {
-        "size_ratio": 0.04,
-        "transform": "title",
-        "zone_top": 0.13,
-        "letter_spacing": 4,
-        "opacity": 0.9,
-    },
-    "aura-gradient": {
-        "size_ratio": 0.045,
+        "size_ratio": 0.07,
         "transform": "title",
         "zone_top": 0.13,
         "letter_spacing": 2,
+        "opacity": 0.9,
+    },
+    "aura-gradient": {
+        "size_ratio": 0.07,
+        "transform": "title",
+        "zone_top": 0.13,
+        "letter_spacing": 1,
         "opacity": 0.85,
     },
 }
