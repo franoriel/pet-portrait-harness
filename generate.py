@@ -1729,14 +1729,17 @@ def _detect_text_color(image: Image.Image) -> tuple:
 STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
         # Sacramento is a thin handwritten script — needs more height
-        # than serifs to read at the same x-height. zone_top sits below
-        # the 12% printer-safe margin AND the 1:1 center-crop line so
-        # the name survives the square canvas variants (12x12, 16x16),
-        # landing roughly halfway between the visible canvas top and
-        # the subject's head (typically ~28-30% from source top).
+        # than serifs to read at the same x-height, hence the bumped
+        # size_ratio. zone_top sits inside the thin clean-white band
+        # above the wash; pushing it lower (e.g. 0.17) lands the name
+        # directly on top of the wash where it's illegible. Square
+        # canvas variants will clip the name with the current source —
+        # fixing that needs either a watercolor prompt change to reserve
+        # more top padding, or a client-side name overlay outside the
+        # cropped image area.
         "size_ratio": 0.07,
         "transform": "title",
-        "zone_top": 0.17,
+        "zone_top": 0.06,
         "letter_spacing": 0,
         "opacity": 0.85,
     },
