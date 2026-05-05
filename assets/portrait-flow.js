@@ -3212,11 +3212,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             src: displayImage,
             alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
             style: {
-              position: 'absolute',
-              inset: (wantsName && namedPreviewUrl) ? 0 : '4%',
-              width: (wantsName && namedPreviewUrl) ? '100%' : '92%',
-              height: (wantsName && namedPreviewUrl) ? '100%' : '92%',
-              objectFit: (wantsName && namedPreviewUrl) ? 'cover' : 'contain',
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover',
               objectPosition: (wantsName && namedPreviewUrl) ? 'center 20%' : 'center center',
               display: 'block',
             },
