@@ -385,6 +385,14 @@
     var cropTopFrac = 0.05;
     var cropBotFrac = 0.10;
     var cropSideFrac = 0.05;
+    // For square (1:1) faces, the 4:5 source is taller-relative than the
+    // face, so object-fit:cover scales by width and centre-crops the
+    // source top and bottom. With default object-position the top ~8% of
+    // source gets clipped — which is exactly where the name sits. Anchor
+    // the source TOP to the img top on square crops so the name is
+    // preserved. Tall aspects (3:4, 4:5) don't have this problem because
+    // the source fits height-wise without vertical cropping.
+    var coverPosition = (widthIn === heightIn) ? 'center top' : 'center center';
     var hScale = 100 / (1 - 2 * cropSideFrac);                     // e.g. 125
     var vScale = 100 / (1 - cropTopFrac - cropBotFrac);             // e.g. 161.3 (named) or 122 (no-name)
     var leftPct = -cropSideFrac * hScale;                          // e.g. -12.5
@@ -401,7 +409,7 @@
     portraitImg.style.cssText = 'position:absolute;'
       + 'left:' + leftPct + '%;top:' + topPct + '%;'
       + 'width:' + hScale + '%;height:' + vScale + '%;'
-      + 'object-fit:cover;object-position:center;display:block;';
+      + 'object-fit:cover;object-position:' + coverPosition + ';display:block;';
     cropWindow.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
