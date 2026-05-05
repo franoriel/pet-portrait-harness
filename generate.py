@@ -1858,36 +1858,44 @@ def composite_name(
 # Image utilities
 # ---------------------------------------------------------------------------
 
-_WATERMARK_LOGO: Image.Image | None = None
+_WATERMARK_LOGO_LIGHT: Image.Image | None = None   # white — for dark backgrounds
+_WATERMARK_LOGO_DARK: Image.Image | None = None    # dark grey — for light backgrounds
 
 
-def _get_watermark_logo(target_width: int) -> Image.Image:
-    """Return the Pet Printables wordmark as a white RGBA tile at the given width.
-
-    Uses the black-on-white wordmark PNG: inverts it so the letterforms
-    become white, then maps darkness → alpha so transparent backgrounds
-    let artwork show through.  Cached after first load.
-    """
-    global _WATERMARK_LOGO
-    # Use the black wordmark (white bg, dark text) — easier to key out.
+def _build_watermark_logo(color: tuple) -> Image.Image:
+    """Build a single-color RGBA watermark logo from the black-on-white source PNG."""
     logo_path = Path(__file__).parent / "assets" / "watermark-logo.png"
-    if _WATERMARK_LOGO is None and logo_path.exists():
-        src = Image.open(logo_path).convert("L")   # greyscale
-        # Invert: white bg → 0, dark text → 255
-        inverted = src.point(lambda p: 255 - p)
-        # Build RGBA: white letterforms, alpha proportional to ink density.
-        # Opacity target ~45% so it's clearly visible without overwhelming art.
-        OPACITY = 0.45
-        alpha = inverted.point(lambda p: int(p * OPACITY))
-        rgba = Image.new("RGBA", src.size, (255, 255, 255, 0))
-        rgba.putalpha(alpha)
-        _WATERMARK_LOGO = rgba
+    if not logo_path.exists():
+        return Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    src = Image.open(logo_path).convert("L")
+    # Ink density: dark source pixels → high ink, white background → 0
+    ink = src.point(lambda p: 255 - p)
+    OPACITY = 0.55
+    alpha = ink.point(lambda p: int(p * OPACITY))
+    rgba = Image.new("RGBA", src.size, color + (0,))
+    rgba.putalpha(alpha)
+    return rgba
 
-    if _WATERMARK_LOGO is None:
-        return Image.new("RGBA", (target_width, target_width // 3), (0, 0, 0, 0))
 
-    logo_h = int(target_width * _WATERMARK_LOGO.height / _WATERMARK_LOGO.width)
-    return _WATERMARK_LOGO.resize((target_width, logo_h), Image.LANCZOS)
+def _get_watermark_logo(target_width: int, dark: bool = False) -> Image.Image:
+    """Return the Pet Printables wordmark at target_width.
+
+    dark=True → dark grey letterforms (for light-background images).
+    dark=False → white letterforms (for dark-background images).
+    Both variants are cached after first load.
+    """
+    global _WATERMARK_LOGO_LIGHT, _WATERMARK_LOGO_DARK
+    if dark:
+        if _WATERMARK_LOGO_DARK is None:
+            _WATERMARK_LOGO_DARK = _build_watermark_logo((30, 30, 30))
+        logo = _WATERMARK_LOGO_DARK
+    else:
+        if _WATERMARK_LOGO_LIGHT is None:
+            _WATERMARK_LOGO_LIGHT = _build_watermark_logo((255, 255, 255))
+        logo = _WATERMARK_LOGO_LIGHT
+
+    logo_h = int(target_width * logo.height / logo.width)
+    return logo.resize((target_width, logo_h), Image.LANCZOS)
 
 
 def apply_preview_watermark(image: Image.Image) -> Image.Image:
@@ -1906,9 +1914,14 @@ def apply_preview_watermark(image: Image.Image) -> Image.Image:
     base = rgb.convert("RGBA")
     w, h = base.size
 
+    # Sample overall brightness to choose white (dark images) or dark grey (light images).
+    grey = base.convert("L")
+    avg_brightness = sum(grey.getdata()) // (w * h)
+    use_dark_logo = avg_brightness > 148
+
     # Logo tile width = ~28% of the image width — readable but not overwhelming.
     logo_w = max(80, int(w * 0.28))
-    logo = _get_watermark_logo(logo_w)
+    logo = _get_watermark_logo(logo_w, dark=use_dark_logo)
     lw, lh = logo.size
 
     # Tile onto a diagonal overlay: draw onto a square whose side equals the
