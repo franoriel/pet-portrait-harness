@@ -1736,7 +1736,7 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         # square canvas variants (12x12, 16x16).
         "size_ratio": 0.08,
         "transform": "title",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 0,
         "opacity": 0.85,
     },
@@ -1747,7 +1747,7 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         # tracked-letter look.
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 1.0,
     },
@@ -1755,42 +1755,42 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         # Same fix as minimal — 0.024 / spacing 10 was illegible.
         "size_ratio": 0.05,
         "transform": "upper",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
     "neon-pop-art": {
         "size_ratio": 0.07,
         "transform": "upper",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 1.0,
     },
     "renaissance-royalty": {
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 3,
         "opacity": 0.9,
     },
     "bold-graphic-poster": {
         "size_ratio": 0.08,
         "transform": "upper",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 1.0,
     },
     "charcoal": {
         "size_ratio": 0.07,
         "transform": "title",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 0.9,
     },
     "aura-gradient": {
         "size_ratio": 0.07,
         "transform": "title",
-        "zone_top": 0.13,
+        "zone_top": 0.11,
         "letter_spacing": 1,
         "opacity": 0.85,
     },
@@ -1800,7 +1800,7 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
 _DEFAULT_TEXT_CONFIG = {
     "size_ratio": 0.045,
     "transform": "title",
-    "zone_top": 0.09,
+    "zone_top": 0.11,
     "letter_spacing": 0,
     "opacity": 1.0,
 }
@@ -1852,15 +1852,19 @@ def composite_name(
     font_size_key: str = "small",
 ) -> Image.Image:
     """
-    Composite the pet name onto the bottom of the image.
-    Uses per-style config for font size, casing, positioning, and opacity
-    so the text feels integrated with each artistic style.
+    Composite the pet name onto the artwork itself, in the natural
+    breathing room above the pet's head.
+
+    Earlier versions reserved a 22% white band at the top and dropped the
+    name into that band. That made the result read as "art print on
+    white paper" instead of a wrapped canvas product — the band was
+    visually disconnected from the artwork. Now the name sits directly on
+    the source: positioned roughly halfway between the top of the canvas
+    and where the pet's head begins (~22% of source after
+    add_background_padding), with auto-detected text colour for contrast
+    against whatever's behind it.
     """
-    # Reserve a clean white band at the top before placing the name. Most
-    # style prompts fill the canvas edge-to-edge, so without this the name
-    # would land on top of the artwork. Only applied when a name is being
-    # composited — the no-name preview stays edge-to-edge.
-    img = _reserve_top_band(image)
+    img = image.copy() if image.mode == "RGB" else image.convert("RGB")
     w, h = img.size
 
     # Get style-specific config
@@ -1898,10 +1902,15 @@ def composite_name(
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
 
-    # zone_top is the top margin as a fraction of height; center text in that band
-    top_margin = int(h * cfg["zone_top"])
+    # zone_top is now the VERTICAL CENTRE of the name as a fraction of
+    # canvas height — interpreted as "halfway between the top of the
+    # canvas and the top of the pet's head." For default 0.11 (and a pet
+    # that lands at ~22% of source after add_background_padding), the
+    # name sits exactly between top edge and pet, with breathing room
+    # both sides. The rendered text is centred on this point regardless
+    # of font size, so a tall script and a thin sans-serif both align.
     text_x = (w - text_w) // 2
-    text_y = top_margin
+    text_y = max(0, int(h * cfg["zone_top"]) - text_h // 2)
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
 
