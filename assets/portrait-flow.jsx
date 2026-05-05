@@ -757,15 +757,6 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
           React.createElement('div', {
             style: { width: '100%', height: '140px', background: style.gradientPlaceholder, position: 'relative' },
           },
-            // Badge
-            style.badge && React.createElement('span', {
-              style: {
-                position: 'absolute', top: '8px', left: '8px',
-                ...s.smallCaps, fontSize: '9px', letterSpacing: '0.1em',
-                color: tokens.colorWhite, background: tokens.colorSuccess,
-                borderRadius: '3px', padding: '3px 7px',
-              },
-            }, style.badge),
             // Selected checkmark
             selected && React.createElement('div', {
               style: {
@@ -796,6 +787,15 @@ function StyleStep({ state, selectStyle, onGenerate, canGenerate, onBack }) {
           ),
           // Card body
           React.createElement('div', { style: { padding: '12px 14px 16px' } },
+            style.badge && React.createElement('span', {
+              style: {
+                display: 'inline-block',
+                ...s.smallCaps, fontSize: '9px', letterSpacing: '0.1em',
+                color: tokens.colorWhite, background: tokens.colorSuccess,
+                borderRadius: '3px', padding: '3px 7px',
+                margin: '0 0 6px',
+              },
+            }, style.badge),
             React.createElement('p', {
               style: {
                 fontFamily: fontSans, fontWeight: 500, fontSize: '14px',

@@ -374,10 +374,16 @@
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    // object-fit:cover + top gravity keeps the name (composited at the top of
-    // the portrait) and the pet's face visible across all aspect ratios.
+    // The composited portrait has a 22% white name band on top and ~12%
+    // padding on every side. Without compensation, those white regions land
+    // inside the canvas face and the result reads as "image pasted on a
+    // canvas." We zoom the img past the face bounds so the artwork bleeds
+    // off the canvas edges — the way a real wrapped canvas actually prints.
+    // Origin is biased high (50% 22%) so the name in the top band stays
+    // visible after the scale instead of being pushed off the top.
     portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
-      + 'object-fit:cover;object-position:center top;display:block;';
+      + 'object-fit:cover;object-position:center top;display:block;'
+      + 'transform:scale(1.5);transform-origin:50% 22%;';
     canvasFace.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
