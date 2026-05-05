@@ -3211,7 +3211,15 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('img', {
             src: displayImage,
             alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
-            style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', display: 'block' },
+            style: {
+              position: 'absolute',
+              inset: (wantsName && namedPreviewUrl) ? 0 : '4%',
+              width: (wantsName && namedPreviewUrl) ? '100%' : '92%',
+              height: (wantsName && namedPreviewUrl) ? '100%' : '92%',
+              objectFit: (wantsName && namedPreviewUrl) ? 'cover' : 'contain',
+              objectPosition: (wantsName && namedPreviewUrl) ? 'center 20%' : 'center center',
+              display: 'block',
+            },
           }),
           // Canvas weave texture
           React.createElement('div', {
