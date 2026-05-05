@@ -36,7 +36,7 @@ const fontSans  = "'Inter', sans-serif";
 
 const STYLE_FONTS = {
   'soft-watercolour':     { family: 'Playfair Display',   css: "'Playfair Display', serif",     google: 'Playfair+Display:wght@400;500;700' },
-  'minimal-line-art':     { family: 'Raleway',            css: "'Raleway', sans-serif",         google: 'Raleway:wght@300;600' },
+  'minimal-line-art':     { family: 'Caveat',             css: "'Caveat', cursive",             google: 'Caveat:wght@400;700' },
   'modern-shape-art':     { family: 'Barlow Condensed',   css: "'Barlow Condensed', sans-serif", google: 'Barlow+Condensed:wght@700' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
@@ -2891,6 +2891,12 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         style: { width: '100%', display: 'block' },
       }),
     ),
+    React.createElement('p', {
+      style: {
+        fontFamily: fontSans, fontSize: 'var(--text-xs)', textAlign: 'center',
+        color: tokens.colorMuted, margin: '-8px auto 20px', letterSpacing: '0.02em',
+      },
+    }, 'Watermark will not appear on your final print.'),
 
     // Right column on desktop (heading + chip + bridge + actions),
     // stacks below the preview on mobile.
