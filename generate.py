@@ -1870,7 +1870,7 @@ def _build_watermark_logo(color: tuple) -> Image.Image:
     src = Image.open(logo_path).convert("L")
     # Ink density: dark source pixels → high ink, white background → 0
     ink = src.point(lambda p: 255 - p)
-    OPACITY = 0.55
+    OPACITY = 0.32
     alpha = ink.point(lambda p: int(p * OPACITY))
     rgba = Image.new("RGBA", src.size, color + (0,))
     rgba.putalpha(alpha)
