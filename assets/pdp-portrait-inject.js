@@ -382,17 +382,27 @@
     //   y: 0.05 → 0.90  (leave a small top breather above the name; remove
     //                    the bottom padding entirely)
     //   x: 0.05 → 0.95  (sides are mostly clean already after the 4:5 crop)
-    var cropTopFrac = 0.05;
-    var cropBotFrac = 0.10;
-    var cropSideFrac = 0.05;
-    // For square (1:1) faces, the 4:5 source is taller-relative than the
-    // face, so object-fit:cover scales by width and centre-crops the
-    // source top and bottom. With default object-position the top ~8% of
-    // source gets clipped — which is exactly where the name sits. Anchor
-    // the source TOP to the img top on square crops so the name is
-    // preserved. Tall aspects (3:4, 4:5) don't have this problem because
-    // the source fits height-wise without vertical cropping.
-    var coverPosition = (widthIn === heightIn) ? 'center top' : 'center center';
+    // Per-aspect crop tuning so the watercolour fills the canvas convincingly:
+    //
+    //   Square (12×12, 16×16): a 4:5 source on a 1:1 face is taller-relative,
+    //     so object-fit:cover already strips ~20% off the bottom. Adding any
+    //     extra top/bottom crop ON TOP of that clips into the name and pet.
+    //     We zero the top/bot crop and just trim the small side padding —
+    //     anchored top-aligned so the name survives the cover crop.
+    //
+    //   Tall (12×16, 16×20): the source fits the face height naturally, so
+    //     to make the watercolour bleed off the canvas sides (and the pet
+    //     hold visual weight) we crop the sides much more aggressively. The
+    //     splash extends to source x≈15%/85%; cropSideFrac=0.15 means face
+    //     x=0% lands at source x=15%, full-bleed.
+    var isSquare = (widthIn === heightIn);
+    var cropTopFrac = isSquare ? 0 : 0.05;
+    var cropBotFrac = isSquare ? 0 : 0.10;
+    var cropSideFrac = isSquare ? 0.05 : 0.15;
+    // Always top-anchor so the name (composited at source y≈11%) lands inside
+    // the visible region on every face aspect, rather than being centre-cropped
+    // out the top by object-fit:cover.
+    var coverPosition = 'center top';
     var hScale = 100 / (1 - 2 * cropSideFrac);                     // e.g. 125
     var vScale = 100 / (1 - cropTopFrac - cropBotFrac);             // e.g. 161.3 (named) or 122 (no-name)
     var leftPct = -cropSideFrac * hScale;                          // e.g. -12.5
