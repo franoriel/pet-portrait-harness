@@ -351,8 +351,13 @@
       width: 100%; height: auto;
       overflow: hidden;
     }
-    .hero-frame--1, .hero-frame--2,
-    .hero-frame--3 { object-position: center center; }
+    .hero-frame--1, .hero-frame--3 { object-position: center center; }
+    /* The watercolor mobile asset has the dog at ~40% of its width
+       (left of asset center) — so a center-center crop puts the subject
+       at ~38% of viewport, reading visibly left-shifted. Pull the
+       visible window leftward inside the asset so the dog lands at
+       true viewport centre. */
+    .hero-frame--2 { object-position: 18% center; }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
