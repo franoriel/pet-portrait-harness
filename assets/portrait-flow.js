@@ -3233,7 +3233,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             style: {
               position: 'absolute', inset: 0, width: '100%', height: '100%',
               objectFit: 'cover',
-              objectPosition: (wantsName && namedPreviewUrl) ? 'center 20%' : 'center center',
+              objectPosition: (wantsName && namedPreviewUrl) ? 'center top' : 'center center',
               display: 'block',
             },
           }),
