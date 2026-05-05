@@ -1322,52 +1322,68 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
 # ---------------------------------------------------------------------------
 
 def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Image.Image:
-    """Pad the image with the detected background color so the pet has
-    breathing room around it.
+    """Pad the image by replicating its edge pixels outward.
 
     Gemini is strongly biased toward dominant-subject framing for pet
     portraits — it routinely renders the pet filling the canvas edge-to-edge
     no matter how aggressively the prompt asks otherwise. After many prompt
     iterations failed to consistently move the framing, we add the breathing
-    room programmatically: sample the 4 corners (which are almost always
-    pure background regardless of style), use the average as a fill color,
-    and composite the original onto a padded canvas.
+    room programmatically.
 
-    This adds ~12% padding on every side, which means a 1:1 center crop on
-    the customer's framed canvas variant still leaves the pet comfortably
-    away from any edge.
+    Earlier versions sampled 4 corner regions and filled the padding with a
+    solid averaged colour. That worked for white/cream-bg styles but failed
+    on saturated-bg styles (neon-pop-art) and gradient-bg styles
+    (aura-gradient): tiny edge-gradient/anti-alias drift between the corner
+    sample and the actual edge pixels produced a visible "double-frame"
+    artefact (outer ring around an inner colour field) on the printed
+    canvas — readable as "image inside a frame", not "wrapped canvas".
 
-    Edge case: styles with organic background variation (e.g. watercolor
-    bleed edges, gradient washes) will show a slight seam where the padding
-    meets the original. Acceptable trade-off vs cropped pets.
+    This version replicates the actual edge pixels outward via a small set
+    of 1-pixel strips per edge. Each padding region inherits the edge's
+    real colour at that position, so:
+      • solid bg (neon, poster, charcoal, line art) → pad stays solid
+      • gradient bg (aura, watercolour wash) → pad extends the gradient
+      • white/cream paper bg (watercolour, charcoal) → pad stays white
+    No more visible seams between artwork and padding.
+
+    Final canvas grows by 2× pad on each axis; the original image sits in
+    the centre untouched.
     """
     img = img.convert('RGB')
     w, h = img.size
-    sample_size = max(12, min(w, h) // 25)
-
-    # Sample 4 corner regions and average the pixel values.
-    pixel_sum = [0, 0, 0]
-    pixel_count = 0
-    corners = [
-        (0, 0),
-        (w - sample_size, 0),
-        (0, h - sample_size),
-        (w - sample_size, h - sample_size),
-    ]
-    for x0, y0 in corners:
-        region = img.crop((x0, y0, x0 + sample_size, y0 + sample_size))
-        for px in region.getdata():
-            pixel_sum[0] += px[0]
-            pixel_sum[1] += px[1]
-            pixel_sum[2] += px[2]
-            pixel_count += 1
-    bg = tuple(int(c / pixel_count) for c in pixel_sum)
-
     pad_w = int(w * padding_ratio)
     pad_h = int(h * padding_ratio)
-    padded = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h), bg)
-    padded.paste(img, (pad_w, pad_h))
-    return padded
+
+    out = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h))
+
+    # Centre: the original artwork
+    out.paste(img, (pad_w, pad_h))
+
+    # Top edge: stretch the top 1-pixel row up into the top padding band.
+    top_strip = img.crop((0, 0, w, 1)).resize((w, pad_h), Image.NEAREST)
+    out.paste(top_strip, (pad_w, 0))
+
+    # Bottom edge
+    bot_strip = img.crop((0, h - 1, w, h)).resize((w, pad_h), Image.NEAREST)
+    out.paste(bot_strip, (pad_w, pad_h + h))
+
+    # Left edge
+    left_strip = img.crop((0, 0, 1, h)).resize((pad_w, h), Image.NEAREST)
+    out.paste(left_strip, (0, pad_h))
+
+    # Right edge
+    right_strip = img.crop((w - 1, 0, w, h)).resize((pad_w, h), Image.NEAREST)
+    out.paste(right_strip, (pad_w + w, pad_h))
+
+    # 4 corners — replicate the single corner pixel into the corner block.
+    # This keeps any corner gradient consistent with the adjacent edge
+    # strips it borders.
+    out.paste(img.crop((0, 0, 1, 1)).resize((pad_w, pad_h), Image.NEAREST), (0, 0))
+    out.paste(img.crop((w - 1, 0, w, 1)).resize((pad_w, pad_h), Image.NEAREST), (pad_w + w, 0))
+    out.paste(img.crop((0, h - 1, 1, h)).resize((pad_w, pad_h), Image.NEAREST), (0, pad_h + h))
+    out.paste(img.crop((w - 1, h - 1, w, h)).resize((pad_w, pad_h), Image.NEAREST), (pad_w + w, pad_h + h))
+
+    return out
 
 
 def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
