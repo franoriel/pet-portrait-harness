@@ -352,18 +352,13 @@
       overflow: hidden;
     }
     .hero-frame--3 { object-position: center center; }
-    /* The photo and watercolor mobile assets both have the dog left of
-       asset centre, so a center-center crop puts the subject at ~38-42%
-       of viewport, reading visibly left-shifted. Pull the visible
-       window leftward inside the asset so the dog lands at true
-       viewport centre on each frame. The canvas-on-wall frame (--3)
-       is composed left-weighted on purpose (vase + console) and stays
-       on center center.
-
-       Per-frame numbers tuned by measuring the dog's actual horizontal
-       position in each mobile asset; not interchangeable. */
-    .hero-frame--1 { object-position: 0% center; }
-    .hero-frame--2 { object-position: 0% center; }
+    /* Frames 1 and 2 mobile assets are pre-cropped (760x1071) so the
+       dog already sits right-of-asset-centre. Asset aspect (0.71) is
+       narrower than the container's 4/5 (0.8), so cover scales by
+       width with no horizontal crop — the dog's position in the asset
+       maps 1:1 to its position in the viewport. No per-frame
+       object-position override needed; default center handles the
+       slight vertical crop cleanly. */
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
