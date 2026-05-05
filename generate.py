@@ -163,10 +163,15 @@ def _name_integration(
         "size further until the whole name fits comfortably with the full "
         "padding still intact. It is better to render the name SMALLER than "
         "to bleed past the safe zone, clip a letter, or shrink the padding.\n"
-        "- SIZE — CRITICAL: Render the name SMALL and refined — a delicate, "
-        "editorial accent, never a banner or a headline. The name should "
-        "feel like a quiet caption that complements the pet, not competes "
-        "with it. When in doubt, make it smaller.\n"
+        "- SIZE — ABSOLUTE MAXIMUM: The TOTAL rendered height of the name "
+        "block — including ALL ascenders, descenders, calligraphic "
+        "flourishes, swashes, shadows, and ornamentation — must NEVER "
+        "exceed 3% of image height. At 1024px tall, that is ≤30px for the "
+        "entire name block top-to-bottom. Cap-height of a single uppercase "
+        "letter must be ≤20px. The pet's head must appear at least 15× "
+        "taller than the name's cap-height — the name is a quiet footnote, "
+        "not a title. If it looks like a headline, a chapter heading, or a "
+        "poster element, it is already far too large. Make it smaller.\n"
         "- The full name must be 100% visible — no letter, accent, or "
         "descender may be cropped, faded into the canvas edge, or run off "
         "the image. If you cannot fit the name with full padding intact, "
@@ -212,22 +217,37 @@ def _name_integration(
         "watercolor": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" in a refined MODERN EDITORIAL DISPLAY "
-            f"SERIF — Wagon Display / Playfair Display feel: high-contrast strokes "
-            f"(noticeable thick/thin variation), elegant tapered terminals, "
-            f"contemporary proportions, no italic. Title case (first letter "
-            f"capitalised, rest lowercase). Use {watercolor_ink} for contrast but "
-            f"keep the strokes REFINED — not bold display weight, more like a "
-            f"book-weight editorial header. Slight natural ink bleed at letter "
-            f"edges is okay (this is still a watercolor). Size: SMALL and "
-            f"refined, 2.5-3.5% of image height. Centered. Magazine-editorial feel."
+            f"- Render the name \"{name}\" as DAINTY, FANCY HAND-PAINTED "
+            f"WATERCOLOR CALLIGRAPHY — a delicate copperplate / Spencerian / "
+            f"flourished script feel: very fine hairline upstrokes, slightly "
+            f"thicker downstrokes (the natural pressure variation of a pointed "
+            f"watercolor brush), graceful tapered entry and exit strokes, "
+            f"tasteful curling flourishes on the first letter and the final "
+            f"letter only — never overwrought. Title case (first letter "
+            f"capitalised, rest lowercase). The lettering must clearly read as "
+            f"painted in the SAME watercolor medium as the rest of the artwork "
+            f"— same brush, same paper, same hand. Slight natural watercolor "
+            f"bleed and a faint hairline ink halo at letter edges is welcome.\n"
+            f"- MONOCHROME — use a SINGLE ink tone only ({watercolor_ink}); no "
+            f"second colour, no gradient, no multi-hue lettering. The whole "
+            f"name reads as one continuous watercolor mark in one ink.\n"
+            f"- TINY AND REFINED — the name is an engraver's mark on the "
+            f"back of a fine print, not a headline above the painting. "
+            f"Cap-height: 1.5-2% of image height (≤20px at 1024px). The "
+            f"ENTIRE name block including all flourishes, ascenders, and "
+            f"descenders must stay within 2.5% of image height total — "
+            f"NEVER larger than 3%. Flourishes are decorative micro-details "
+            f"only; they do NOT justify making the name taller or wider. "
+            f"The dog/cat/pet is the star — the name is a whisper beside it. "
+            f"Centered. Editorial, intimate, hand-painted."
         ),
         "minimal-line-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in clean geometric sans-serif capitals "
             f"(Futura/Avenir feel). Wide letter-spacing (~0.15em). Thin-to-medium weight, "
-            f"NOT bold. {minimal_ink}. Size: 2-2.5% of image height. Centered."
+            f"NOT bold. {minimal_ink}. Size: 1.6-2% of image height — tiny refined "
+            f"caption, never larger than 2.2%. Centered."
         ),
         "modern-shape-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -242,64 +262,70 @@ def _name_integration(
             f"clean negative space — never overlapping any shape. Use a single "
             f"deep neutral ink (charcoal #1f1f1f, deep navy #1d2a44, or warm black "
             f"#181614) sampled to read clearly against the calmest patch of "
-            f"background. Size: 3-4% of image height (taller than the previous "
-            f"sans because the condensed letterforms read smaller at the same "
-            f"height). Centered. Quietly bold, modern, editorial."
+            f"background. Size: 2.4-3% of image height — refined, never larger "
+            f"than 3.2%. Centered. Quietly bold, modern, editorial."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as a small accent in a bold sans-serif with "
             f"thin black outline and a single solid pop color (hot pink, electric blue, or yellow). "
-            f"Understated — not a huge banner. Size: 3-3.5% of image height. Centered."
+            f"Understated — not a huge banner. Size: 2.4-3% of image height — never "
+            f"larger than 3.2%. Centered."
         ),
         "renaissance-royalty": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in fine Trajan-style classical Roman capitals. "
             f"Thin serifs, refined proportions. Use antique gold #8B7355 OR deep burnt umber "
-            f"#3a2414 for strong contrast. Size: 2-3% of image height. Centered. Elegant, not loud."
+            f"#3a2414 for strong contrast. Size: 1.8-2.4% of image height — never "
+            f"larger than 2.6%. Centered. Elegant, not loud."
         ),
         "bold-graphic-poster": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in a bold geometric sans-serif, but kept at a "
             f"SMALL size — a refined design accent, never a billboard. Use {poster_ink}. "
-            f"Size: 3.5-4% of image height. Centered."
+            f"Size: 2.6-3.2% of image height — never larger than 3.4%. Centered."
         ),
         "charcoal": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" in fine hand-drawn charcoal lettering "
             f"matching the sketch medium. Same charcoal grey as the darkest pet shading. "
-            f"Slightly imperfect strokes, like a personal signature. Size: 2.5-3% of "
-            f"image height. Centered. Quiet, sketched, never printed-looking."
+            f"Slightly imperfect strokes, like a personal signature. Size: 2-2.5% of "
+            f"image height — never larger than 2.8%. Centered. Quiet, sketched, "
+            f"never printed-looking."
         ),
         "aura-gradient": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name}\" in a delicate rounded sans-serif (Quicksand feel), "
             f"thin weight. Deep purple #4a2c5a with optional subtle glow. "
-            f"Size: 2-3% of image height. Centered. Airy, minimal."
+            f"Size: 1.8-2.4% of image height — never larger than 2.6%. Centered. "
+            f"Airy, minimal."
         ),
         # Legacy ink-only styles (classic/minimal/naturalist)
         "classic": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as fine single-stroke pen capitals with wide "
-            f"letter-spacing. Solid black #000000. Size: 2-2.5% of image height. Centered. Refined."
+            f"letter-spacing. Solid black #000000. Size: 1.6-2% of image height — never "
+            f"larger than 2.2%. Centered. Refined."
         ),
         "minimal": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as tiny sans-serif capitals with extreme "
-            f"letter-spacing. Solid jet black #000000. Size: 1.5-2% of image height. Centered."
+            f"letter-spacing. Solid jet black #000000. Size: 1.2-1.6% of image height — "
+            f"never larger than 1.8%. Centered."
         ),
         "naturalist": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
             f"- Render the name \"{name_upper}\" as Victorian field-guide lettering with fine "
-            f"hairlines. Solid black ink (#000000) only. Size: 4-5% of image height. Centered."
+            f"hairlines. Solid black ink (#000000) only. Size: 2.4-3% of image height — "
+            f"never larger than 3.4%. Centered."
         ),
     }
 
@@ -549,7 +575,9 @@ charcoal/near-black tones. A brown dog stays in warm caramel/sienna tones. \
 A white cat stays in soft ivory/cream tones. Tabby/spotted/patched coats \
 keep their distinguishing markings, simplified into clean shape blocks.
 - Match the animal's actual eye color from the photo, simplified to a clean \
-flat shape.
+flat shape. Eyes must look WARM, SOFT, and GENTLE — relaxed lids, a calm \
+expression, never wide-open, staring, piercing, or intense. The gaze is \
+friendly and inviting, not unsettling.
 
 STYLE:
 - Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets contemporary \
@@ -575,7 +603,7 @@ composition is just the pet on a single solid background — nothing else.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
-- Head and chest, calm symmetrical pose, direct gentle gaze.
+- Head and chest, calm symmetrical pose, soft warm gaze — relaxed eyes, not wide or staring.
 - The PET itself occupies 78-83% of image height — top of ears at \
 ~15-18% from top, centered horizontally. Ensure the pet is the dominant \
 subject filling the canvas confidently, with clean breathing room \
@@ -746,19 +774,33 @@ STYLE:
 - Warm soft lighting, no harsh shadows
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+WATERCOLOR WASH COVERAGE — CRITICAL:
+- The painted watercolor wash (the soft wet bleeds, washes, and color halo \
+that surround the pet) MUST extend organically toward the LEFT and RIGHT \
+edges of the canvas, reaching at least ~85-90% of the image width with \
+visible painterly color, bleed, and atmospheric tint. Never confine the \
+wash to a narrow column directly behind the pet — never leave large strips \
+of bare untouched white paper at the left or right margins. The wash \
+breathes outward from the pet in soft, irregular, organic petals; the \
+edges of the canvas can fade back to clean paper, but the painted area is \
+clearly wider than the pet itself.
+- The wash also extends generously ABOVE the pet (so the breathing room \
+above the ears reads as soft watercolor atmosphere, not a blank white \
+band) and BELOW the chest where applicable.
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
 - The PET itself occupies 82-87% of image height — top of ears at \
 ~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean watercolor wash above \
-the ears AND below the chest
+Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed.
 - The BACKGROUND (watercolor wash and natural bleed edges) extends to every \
 edge of the canvas. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
 
 Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
-blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border.\
+blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border, \
+narrow watercolor wash column with bare white paper at the sides.\
 """
 
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
@@ -849,6 +891,13 @@ pigment all the way through — no light paper shows.
 - Painterly fur texture with subtle fine ink linework on facial features
 - Warm focused lighting on the pet so it reads clearly against the dark wash
 - Fine art illustration style, high resolution 300dpi, print-ready
+
+WATERCOLOR WASH COVERAGE — CRITICAL:
+- The deep pigmented wash MUST cover the FULL canvas — every edge, every \
+corner, including the LEFT and RIGHT margins around the pet. Never leave \
+narrow strips of light or untinted paper at the sides. The dark wash is \
+unbroken, edge-to-edge, with organic painterly variation in tone but \
+never a hard boundary.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
@@ -961,22 +1010,24 @@ _NO_BORDER_RULE = (
     "fill the canvas cleanly with no visible paper boundaries."
 )
 
-_COMPOSITION_RULE = (
+_COMPOSITION_RULE_WITH_NAME = (
     "\n\nCOMPOSITION — CRITICAL (read twice, follow exactly):\n"
     "- 4:5 PORTRAIT ASPECT RATIO: The image canvas is taller than it is "
     "wide. Compose for that. Do NOT output a square or wide image.\n"
-    "- THE PET FILLS THE FRAME CONFIDENTLY, GROUNDED TOWARD THE BOTTOM. "
+    "- THE PET IS THE PRIMARY SUBJECT AND MUST DOMINATE THE CANVAS. "
     "The pet's silhouette (top of ears to bottom of chest) occupies "
-    "78-83% of image height and roughly 70-80% of image width. The pet "
-    "is the dominant subject AND its visual weight rests in the lower "
-    "two-thirds of the canvas — the empty negative space lives ABOVE the "
-    "pet (room for the name), not below it.\n"
+    "78-83% of image height and roughly 76-84% of image width. The "
+    "name is a tiny accent (≤3% of image height); the pet takes up "
+    "the vast majority of the image. If the name and the pet look "
+    "remotely similar in visual weight, the name is too large — "
+    "reduce it. The pet's visual weight rests in the lower two-thirds "
+    "of the canvas; the SMALL name sits in the negative space ABOVE.\n"
     "- BOUNDING-BOX CHECK: imagine the pet inscribed in a bounding box. "
     "Top of that box sits ~15-18% from canvas top (generous airspace "
     "above the ears), bottom of the box sits ~96-99% from canvas top "
     "(the chest fills nearly to the bottom edge of the source canvas — "
     "the bottom margin is intentionally tight). Left and right edges "
-    "keep ~10-12% clean background on each side. Ears, fur, whiskers, "
+    "keep ~8-12% clean background on each side. Ears, fur, whiskers, "
     "chin must stay inside the inner frame; the chest may sit close to "
     "the bottom edge so the composition reads grounded, never floating.\n"
     "- CENTERED HORIZONTALLY, EYES IN MIDDLE THIRD: the pet is centered "
@@ -1026,11 +1077,9 @@ _COMPOSITION_RULE = (
     "clipped by any edge of the source image. If you can't fit the pet "
     "inside the bounding box above intact, render the pet a touch smaller. "
     "Never push features off any edge.\n"
-    "- THE NATURAL BREATHING ROOM SERVES THE NAME: when a pet name is "
-    "requested, it sits in the existing top breathing room. When no name "
-    "is requested, the same breathing room stays as quiet background. The "
-    "composition works identically either way — there is no separate "
-    "'reserved top band'.\n"
+    "- THE NATURAL BREATHING ROOM SERVES THE NAME: the empty space above "
+    "the pet exists so the name has a calm pocket of negative space to sit "
+    "in. Do not fill it with extra props, foliage, or decorative motifs.\n"
     "- NO RESERVED BANDS OR PANELS: never output a solid colour bar, empty "
     "rectangle, letterbox stripe, or framed panel at the top or bottom. "
     "The artwork's native scenery extends uniformly to every edge, just "
@@ -1040,6 +1089,92 @@ _COMPOSITION_RULE = (
     "edges — drapery, shadow, or wall continues into the breathing room "
     "around the pet, just calmer there so the pet stays the focal point.\n"
 )
+
+
+# When no name is being rendered, the pet should grow to fill more of the
+# canvas — the breathing room above the ears no longer needs to host a
+# name, so it shrinks. The painterly/watercolor wash, oil-paint atmosphere,
+# poster background, etc. also extends further toward the edges.
+_COMPOSITION_RULE_NO_NAME = (
+    "\n\nCOMPOSITION — CRITICAL (read twice, follow exactly):\n"
+    "- 4:5 PORTRAIT ASPECT RATIO: The image canvas is taller than it is "
+    "wide. Compose for that. Do NOT output a square or wide image.\n"
+    "- THE PET FILLS THE FRAME GENEROUSLY. Because there is no name to "
+    "host, the pet grows to take up more of the canvas. The pet's "
+    "silhouette (top of ears to bottom of chest) occupies 86-92% of image "
+    "height and roughly 82-90% of image width. The pet is unambiguously "
+    "the dominant subject — the surrounding negative space is a quiet "
+    "frame, not a reserved zone.\n"
+    "- BOUNDING-BOX CHECK: imagine the pet inscribed in a bounding box. "
+    "Top of that box sits ~6-10% from canvas top (a slim, comfortable "
+    "airspace above the ears — NOT a tall reserved band), bottom of the "
+    "box sits ~96-99% from canvas top (the chest fills nearly to the "
+    "bottom edge). Left and right edges keep only ~5-9% clean background "
+    "on each side. Ears, fur, whiskers, chin must stay inside the inner "
+    "frame; the chest may sit close to the bottom edge so the composition "
+    "reads grounded, never floating.\n"
+    "- THE STYLE'S NATIVE BACKGROUND ALSO FILLS MORE OF THE CANVAS. "
+    "Watercolor wash, oil-paint atmosphere, poster colour field, charcoal "
+    "paper, neon flat field — whatever the style's medium is — extends "
+    "edge-to-edge organically, with no large empty white margins around "
+    "the pet. The painted/printed surface should reach all four edges.\n"
+    "- CENTERED HORIZONTALLY, EYES IN UPPER-MIDDLE: the pet is centered "
+    "left-to-right (its vertical axis of symmetry sits exactly on the "
+    "image's horizontal centre). Eyes land around 30-38% from top — a "
+    "touch higher than the with-name composition because the pet is "
+    "larger overall. Never push the pet left or right of centre.\n"
+    "- BACKGROUND EXTENDS EDGE-TO-EDGE WITHOUT GEOMETRIC ARTIFACTS: the "
+    "artwork's background fills the canvas to all four edges. ANY variation "
+    "in the background (watercolour bleed, oil-paint atmosphere, soft "
+    "radial glow, etc.) must be ORGANIC and intrinsic to the style's "
+    "medium — never geometric. STRICTLY forbidden: NO inner rectangle of "
+    "one shade inside an outer rectangle of another shade, NO mat, NO "
+    "frame, NO border, NO inset panel, NO letterbox bar, NO horizontal or "
+    "vertical colour-band splits, NO checker zones, NO sharp-edged colour "
+    "blocks behind the pet. If the chosen style calls for a flat solid "
+    "background (modern shape art, bold poster, neon pop, minimal line "
+    "art), that background is perfectly uniform from corner to corner — "
+    "the same colour in every corner, no vignette, no subtle gradient.\n"
+    "- NO PASTED-ON LOOK: the pet must read as integral to the artwork — "
+    "no halo, no fringe, no hard outline of a different shade around the "
+    "pet's silhouette, no visible 'cutout' edge that suggests the pet was "
+    "rendered separately and laid on top of a different background. Pet "
+    "and background must feel painted in the same pass, in the same medium.\n"
+    "- ASPECT-RATIO CROP SURVIVAL: customers order this on 4:5, 3:4, AND "
+    "1:1 canvases. On 1:1 the source is centre-cropped (~10% off the top "
+    "AND bottom). With ears at 6-10% of source, the airspace above remains "
+    "tight but readable in the cropped square (~0-3% of the printed face). "
+    "Never push ears higher than 5% from canvas top, or the 1:1 crop ships "
+    "with the head clipped.\n"
+    "- NO CROPPED FEATURES: ears, whiskers, chin, chest must not be "
+    "clipped by any edge of the source image. If you can't fit the pet "
+    "inside the bounding box above intact, render the pet a touch smaller. "
+    "Never push features off any edge.\n"
+    "- DO NOT INCLUDE ANY TEXT: no name, no letters, no words, no "
+    "watermarks, no signatures anywhere in the image. The breathing room "
+    "above the pet stays as quiet, unbroken background.\n"
+    "- NO RESERVED BANDS OR PANELS: never output a solid colour bar, empty "
+    "rectangle, letterbox stripe, or framed panel at the top or bottom. "
+    "The artwork's native scenery extends uniformly to every edge.\n"
+    "- If the style has a dark moody background (e.g. Renaissance, oil "
+    "paint), the dark atmosphere still extends uniformly to all four "
+    "edges — drapery, shadow, or wall continues all the way to every "
+    "corner.\n"
+)
+
+
+# Backwards-compat alias — prefer _composition_rule(has_name=...) at new
+# call sites.
+_COMPOSITION_RULE = _COMPOSITION_RULE_WITH_NAME
+
+
+def _composition_rule(has_name: bool) -> str:
+    """Pick the composition rule block based on whether a pet name is being
+    rendered. With name: the pet is sized to leave a calm pocket of negative
+    space at the top for the name. Without name: the pet grows to fill more
+    of the canvas and the style's native background reaches further toward
+    the edges."""
+    return _COMPOSITION_RULE_WITH_NAME if has_name else _COMPOSITION_RULE_NO_NAME
 
 
 # Background-mode overrides — injected after the style prompt so the customer's
@@ -1159,7 +1294,7 @@ def build_prompt_with_name(
     name_block = _name_integration(style_id, pet_name, background_mode)
     return (
         base.rstrip()
-        + _COMPOSITION_RULE
+        + _composition_rule(has_name=True)
         + "\n\n" + name_block
         + _NO_BORDER_RULE
     )
@@ -1233,6 +1368,107 @@ def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Ima
     padded = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h), bg)
     padded.paste(img, (pad_w, pad_h))
     return padded
+
+
+def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
+    """Reframe a modern-shape-art portrait so the pet fills the canvas
+    confidently with exact target margins regardless of how much empty
+    background the AI included.
+
+    Steps:
+      1. Sample 4 corners to detect the solid background color.
+      2. Scan every 3rd pixel to find the pet's bounding box (pixels
+         whose color distance from the background exceeds the threshold).
+      3. Profile the bottom silhouette: if the last-foreground-pixel y across
+         columns varies by < 2.5% of pet height, bottom is a flat cut → 0%
+         margin.  Otherwise tapered/organic → 8% bottom margin.
+      4. Compose a new canvas with:
+           - top    : 10 % of pet height
+           - sides  : 8 % of pet width (each side)
+           - bottom : 0 % (flat cut)  OR  8 % of pet height (tapered)
+    Falls back to a simple symmetric pad if no pet is detected.
+    """
+    rgb = img.convert('RGB')
+    w, h = rgb.size
+    BG_TOL = 40  # Euclidean color distance → background vs. pet
+
+    # --- 1. Background color from 4 corners ---
+    corner_size = max(8, min(w, h) // 40)
+    cp: list = []
+    for x0, y0 in [(0, 0), (w - corner_size, 0),
+                   (0, h - corner_size), (w - corner_size, h - corner_size)]:
+        cp.extend(rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata())
+    if not cp:
+        return add_background_padding(img, padding_ratio=0.10)
+    bg_r = sum(p[0] for p in cp) / len(cp)
+    bg_g = sum(p[1] for p in cp) / len(cp)
+    bg_b = sum(p[2] for p in cp) / len(cp)
+    bg = (int(bg_r), int(bg_g), int(bg_b))
+
+    # --- 2. Find pet bounding box ---
+    px_load = rgb.load()
+    step = 3  # sample every 3rd pixel for speed
+    fg_min_x, fg_max_x = w, 0
+    fg_min_y, fg_max_y = h, 0
+    found = False
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            p = px_load[x, y]
+            d = ((p[0]-bg_r)**2 + (p[1]-bg_g)**2 + (p[2]-bg_b)**2) ** 0.5
+            if d > BG_TOL:
+                if x < fg_min_x: fg_min_x = x
+                if x > fg_max_x: fg_max_x = x
+                if y < fg_min_y: fg_min_y = y
+                if y > fg_max_y: fg_max_y = y
+                found = True
+
+    if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
+        return add_background_padding(img, padding_ratio=0.10)
+
+    # Add a small inset so we don't clip anti-aliased edges.
+    inset = step * 2
+    fg_min_x = max(0, fg_min_x - inset)
+    fg_min_y = max(0, fg_min_y - inset)
+    fg_max_x = min(w, fg_max_x + inset)
+    fg_max_y = min(h, fg_max_y + inset)
+
+    pet_w = fg_max_x - fg_min_x
+    pet_h = fg_max_y - fg_min_y
+
+    # --- 3. Flat-bottom detection via bottom silhouette profile ---
+    # For each column across the pet, find the lowest foreground pixel.
+    # A flat horizontal cut produces near-constant y values; a tapered /
+    # organic silhouette produces high variance.
+    profile_ys: list = []
+    col_step = max(step, pet_w // 40)  # ~40 sample columns across the pet
+    scan_bottom = min(fg_max_y, h - 1)
+    for x in range(fg_min_x, fg_max_x, col_step):
+        for y in range(scan_bottom, fg_min_y, -step):
+            p = px_load[x, y]
+            d = ((p[0]-bg_r)**2 + (p[1]-bg_g)**2 + (p[2]-bg_b)**2) ** 0.5
+            if d > BG_TOL:
+                profile_ys.append(y)
+                break
+
+    flat_bottom = False
+    if profile_ys:
+        mean_y = sum(profile_ys) / len(profile_ys)
+        std_dev = (sum((y - mean_y) ** 2 for y in profile_ys) / len(profile_ys)) ** 0.5
+        # Flat if std dev < 2.5% of pet height
+        flat_bottom = std_dev < pet_h * 0.025
+
+    bottom_frac = 0.0 if flat_bottom else 0.08
+
+    # --- 4. Compose new canvas ---
+    pad_top    = int(pet_h * 0.10)
+    pad_side   = int(pet_w * 0.08)
+    pad_bottom = int(pet_h * bottom_frac)
+
+    canvas_w = pet_w + 2 * pad_side
+    canvas_h = pet_h + pad_top + pad_bottom
+    canvas = Image.new('RGB', (canvas_w, canvas_h), bg)
+    canvas.paste(rgb.crop((fg_min_x, fg_min_y, fg_max_x, fg_max_y)), (pad_side, pad_top))
+    return canvas
 
 
 def _center_line_art(img: Image.Image) -> Image.Image:
@@ -1321,6 +1557,21 @@ def _portrait_post_process(img: Image.Image) -> Image.Image:
     return img
 
 
+def _modern_shape_art_post_process(img: Image.Image) -> Image.Image:
+    """Post-process for modern-shape-art.  Uses bottom gravity for the 4:5
+    crop so a flat horizontal chest cut is never clipped off the bottom edge
+    (all excess height is removed from the top, where we have breathing room).
+    """
+    img = crop_to_ratio(img, PORTRAIT_RATIO, gravity="bottom")
+    min_w, min_h = PORTRAIT_MIN_SIZE
+    if img.width < min_w or img.height < min_h:
+        scale = max(min_w / img.width, min_h / img.height)
+        img = img.resize(
+            (int(img.width * scale), int(img.height * scale)), Image.LANCZOS
+        )
+    return img
+
+
 def _line_art_post_process(img: Image.Image) -> Image.Image:
     """Post-process for the minimal-line-art style (light + dark variants).
     Centers the line work on both axes before the standard crop pipeline,
@@ -1352,6 +1603,7 @@ POST_PROCESS: dict[str, Callable[[Image.Image], Image.Image]] = {
 # Gemini's drift on this style is the most visually obvious because the
 # background is uniform negative space.
 POST_PROCESS["minimal-line-art"] = _line_art_post_process
+POST_PROCESS["modern-shape-art"] = _modern_shape_art_post_process
 
 
 # ---------------------------------------------------------------------------
@@ -1476,7 +1728,7 @@ def _detect_text_color(image: Image.Image) -> tuple:
 # Per-style text rendering config — controls how the name looks on each style
 STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
-        "size_ratio": 0.05,     # font size as fraction of image width
+        "size_ratio": 0.025,    # font size as fraction of image width (~1.4% of height on 4:5)
         "transform": "title",   # title case
         "zone_top": 0.82,       # where the text zone starts (fraction of height)
         "letter_spacing": 0,    # extra spacing between chars (0 = natural)
@@ -1490,10 +1742,10 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        "size_ratio": 0.035,
+        "size_ratio": 0.024,
         "transform": "upper",
         "zone_top": 0.84,
-        "letter_spacing": 4,
+        "letter_spacing": 10,
         "opacity": 1.0,
     },
     "neon-pop-art": {
@@ -1606,8 +1858,40 @@ def composite_name(
 # Image utilities
 # ---------------------------------------------------------------------------
 
+_WATERMARK_LOGO: Image.Image | None = None
+
+
+def _get_watermark_logo(target_width: int) -> Image.Image:
+    """Return the Pet Printables wordmark as a white RGBA tile at the given width.
+
+    Uses the black-on-white wordmark PNG: inverts it so the letterforms
+    become white, then maps darkness → alpha so transparent backgrounds
+    let artwork show through.  Cached after first load.
+    """
+    global _WATERMARK_LOGO
+    # Use the black wordmark (white bg, dark text) — easier to key out.
+    logo_path = Path(__file__).parent / "assets" / "watermark-logo.png"
+    if _WATERMARK_LOGO is None and logo_path.exists():
+        src = Image.open(logo_path).convert("L")   # greyscale
+        # Invert: white bg → 0, dark text → 255
+        inverted = src.point(lambda p: 255 - p)
+        # Build RGBA: white letterforms, alpha proportional to ink density.
+        # Opacity target ~45% so it's clearly visible without overwhelming art.
+        OPACITY = 0.45
+        alpha = inverted.point(lambda p: int(p * OPACITY))
+        rgba = Image.new("RGBA", src.size, (255, 255, 255, 0))
+        rgba.putalpha(alpha)
+        _WATERMARK_LOGO = rgba
+
+    if _WATERMARK_LOGO is None:
+        return Image.new("RGBA", (target_width, target_width // 3), (0, 0, 0, 0))
+
+    logo_h = int(target_width * _WATERMARK_LOGO.height / _WATERMARK_LOGO.width)
+    return _WATERMARK_LOGO.resize((target_width, logo_h), Image.LANCZOS)
+
+
 def apply_preview_watermark(image: Image.Image) -> Image.Image:
-    """Tile a translucent diagonal "PREVIEW" stamp across the image so a
+    """Tile a translucent diagonal Pet Printables logo across the image so a
     customer can't simply screenshot or right-click-save the on-page
     preview and skip the purchase. The watermark is heavy enough to be
     obviously present in a screenshot but light enough that the customer
@@ -1622,48 +1906,27 @@ def apply_preview_watermark(image: Image.Image) -> Image.Image:
     base = rgb.convert("RGBA")
     w, h = base.size
 
-    # Watermark layer is the same size as the image so we can composite
-    # cleanly. Drawn on a transparent layer first, then alpha-blended.
-    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
+    # Logo tile width = ~28% of the image width — readable but not overwhelming.
+    logo_w = max(80, int(w * 0.28))
+    logo = _get_watermark_logo(logo_w)
+    lw, lh = logo.size
 
-    # Font size scales with the image so watermarks read at any zoom.
-    # ~6% of the image width hits a sweet spot between visible and
-    # not-overwhelming.
-    font_size = max(18, int(w * 0.06))
-    try:
-        font_path = _get_font_path()  # Libre Baskerville Bold from cache
-        font = ImageFont.truetype(str(font_path), font_size) if font_path else ImageFont.load_default()
-    except Exception:
-        font = ImageFont.load_default()
-
-    text = "PREVIEW"
-    # Measure once
-    try:
-        tb = draw.textbbox((0, 0), text, font=font)
-        text_w = tb[2] - tb[0]
-        text_h = tb[3] - tb[1]
-    except Exception:
-        text_w, text_h = font_size * len(text) // 2, font_size
-
-    # Tile the stamp across a rotated overlay. We draw onto a larger
-    # rectangle, rotate it, then crop back to the image — this gives us
-    # full coverage with the rotation included.
+    # Tile onto a diagonal overlay: draw onto a square whose side equals the
+    # image diagonal, rotate, then center-crop back to image dimensions.
     diag = int((w * w + h * h) ** 0.5)
     tile = Image.new("RGBA", (diag, diag), (0, 0, 0, 0))
-    tdraw = ImageDraw.Draw(tile)
 
-    # Spacing between watermark instances (horizontal + vertical).
-    step_x = text_w + font_size * 4   # generous horizontal gap
-    step_y = font_size * 5            # generous vertical gap
-    fill = (255, 255, 255, 64)        # white, ~25% opacity — visible on
-                                      # both light and dark backgrounds
+    step_x = lw + lw // 2    # 1.5× logo width between centres horizontally
+    step_y = lh + lh // 2    # 1.5× logo height between centres vertically
 
-    for y in range(0, diag, step_y):
-        # Stagger every other row so the diagonal lines look natural
-        offset = (y // step_y) * (step_x // 2)
-        for x in range(-step_x, diag + step_x, step_x):
-            tdraw.text((x + offset, y), text, font=font, fill=fill)
+    for ty in range(-lh, diag + lh, step_y):
+        # Stagger every other row by half a step so stamps don't align in columns
+        row_index = (ty + lh) // step_y
+        x_offset = (row_index % 2) * (step_x // 2)
+        for tx in range(-lw + x_offset, diag + lw, step_x):
+            # Paste without mask: copies all 4 channels as-is so the logo's
+            # alpha is not premultiplied against itself (which halves it twice).
+            tile.paste(logo, (tx, ty))
 
     rotated = tile.rotate(-30, resample=Image.BICUBIC, expand=False)
     # Center-crop the rotated overlay back to image size
@@ -1908,7 +2171,7 @@ def call_gemini(
     else:
         prompt = (
             _resolve_prompt_body(style, style_vars, background_mode)
-            + _COMPOSITION_RULE
+            + _composition_rule(has_name=False)
             + _NO_BORDER_RULE
         )
 
@@ -2037,7 +2300,13 @@ def _generate_inner(
     # Gemini routinely ignores prompt-based size constraints and renders
     # pets edge-to-edge — this guarantees breathing room programmatically.
     if style in _PORTRAIT_STYLES:
-        padded = add_background_padding(ai_image_no_name, padding_ratio=0.12)
+        if style == "modern-shape-art":
+            # Smart reframe: detect pet bounding box and compose with exact
+            # target margins (10% top, 8% sides, 0% bottom if flat cut).
+            # This handles both edge-to-edge and over-padded AI outputs.
+            padded = _modern_shape_art_reframe(ai_image_no_name)
+        else:
+            padded = add_background_padding(ai_image_no_name, padding_ratio=0.12)
         ai_image_no_name.close()
         ai_image_no_name = padded
 
@@ -2112,18 +2381,17 @@ def generate_with_name_on_demand(
         import uuid as _uuid
         uid = _uuid.uuid4().hex[:10]
 
-        log.info("[generate_with_name] %s '%s' (on-demand)", style, pet_name)
+        log.info("[generate_with_name] %s '%s' (PIL composite)", style, pet_name)
 
-        composited_bytes = add_name_to_image(
-            no_name_image_bytes, style, pet_name, background_mode=background_mode
-        )
-
-        ai_image = Image.open(BytesIO(composited_bytes))
-        ai_image.load()
-        processed = POST_PROCESS.get(style, lambda img: img)(ai_image)
-        if processed is not ai_image:
-            ai_image.close()
-        composited = processed
+        # Use PIL for name compositing — gives exact pixel control over
+        # font size and position, unlike Gemini which renders the name
+        # far too large regardless of prompt constraints.
+        base_image = Image.open(BytesIO(no_name_image_bytes))
+        base_image.load()
+        processed = POST_PROCESS.get(style, lambda img: img)(base_image)
+        if processed is not base_image:
+            base_image.close()
+        composited = composite_name(processed, pet_name, style=style)
 
         safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
         comp_path = out / f"{uid}_{style}_{safe_name}_named.png"
