@@ -1441,6 +1441,34 @@ p { color: var(--color-ink); }
 
   /* Sticky CTA bar above bottom safe area */
   .sticky-cta-bar { z-index: 95; }
+
+  /* Cart summary — outer card padding was 24px which compounded with
+     each nested upsell sub-card's own 14px inline padding, putting
+     inner content ~38px from the card edge while the CHECKOUT button
+     (.btn--full) sat at ~24px. Trim the outer padding so the visual
+     "stair-step" between sub-card content and button content closes. */
+  .cart-summary { padding: 16px; }
+  .cart-summary__title { margin-bottom: 14px; }
+
+  /* Sub-cards inside the summary use inline `padding:14px` set in the
+     liquid templates — !important to win specificity. Slimmer padding
+     makes their content align more closely with the buttons below. */
+  .cart-summary__priority,
+  .cart-summary__estimator,
+  .digital-files-upsell,
+  .magnet-upsell,
+  .free-ship-tracker { padding: 12px !important; }
+
+  /* Magnet size pills are nested under the magnet label with an inline
+     padding-left:30px so they line up under the title on desktop. On
+     phones that extra inset crowds them against the card's right edge —
+     drop to 0 so the pills can use the full sub-card width. */
+  .magnet-upsell [data-magnet-sizes] { padding-left: 0 !important; }
+
+  /* Cart page bottom gap — --section-gap is 64px which leaves an
+     awkwardly large empty band between the trust signals and the
+     footer on phones. Tighten on the cart specifically. */
+  .cart-page { padding-bottom: 32px; }
 }
 
 /* ============================================================
