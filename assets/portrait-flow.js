@@ -37,7 +37,7 @@ const fontSans  = "'Inter', sans-serif";
 const STYLE_FONTS = {
   'soft-watercolour':     { family: 'Playfair Display',   css: "'Playfair Display', serif",     google: 'Playfair+Display:wght@400;500;700' },
   'minimal-line-art':     { family: 'Raleway',            css: "'Raleway', sans-serif",         google: 'Raleway:wght@300;600' },
-  'modern-shape-art':     { family: 'Bebas Neue',         css: "'Bebas Neue', sans-serif",      google: 'Bebas+Neue' },
+  'modern-shape-art':     { family: 'Barlow Condensed',   css: "'Barlow Condensed', sans-serif", google: 'Barlow+Condensed:wght@700' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
   'bold-graphic-poster':  { family: 'Oswald',             css: "'Oswald', sans-serif",          google: 'Oswald:wght@700' },
@@ -1000,9 +1000,18 @@ function usePortraitFlow() {
       // fetch the image from the stored URL and create a File from it
       let imageFile = state.photo;
       if (!imageFile && (state.originalPhotoUrl || state.imageFilename)) {
-        // Use original photo URL (not the generated portrait) for re-generation
-        const imgUrl = state.originalPhotoUrl
-          || `${API_BASE}/preview/${state.imageFilename}`;
+        // Use the original uploaded photo URL for re-generation — never the
+        // generated portrait, which would fail photo-terms validation.
+        const imgUrl = state.originalPhotoUrl || '';
+        if (!imgUrl) {
+          update({
+            stage: STAGES.UPLOAD, generationStatus: 'idle',
+            generationError: 'We couldn\'t find your original photo.',
+            generationErrorTips: ['Please upload your pet photo again to regenerate.'],
+          });
+          generatingRef.current = false;
+          return;
+        }
         try {
           const resp = await fetch(imgUrl);
           if (!resp.ok) throw new Error('fetch failed');
@@ -1010,9 +1019,9 @@ function usePortraitFlow() {
           imageFile = new File([blob], 'pet-photo.jpg', { type: blob.type || 'image/jpeg' });
         } catch (e) {
           update({
-            stage: STAGES.STYLE, generationStatus: 'idle',
+            stage: STAGES.UPLOAD, generationStatus: 'idle',
             generationError: 'Could not reload your photo.',
-            generationErrorTips: ['Please upload it again, then pick your style.'],
+            generationErrorTips: ['Please upload your pet photo again to regenerate.'],
           });
           generatingRef.current = false;
           return;
@@ -2158,7 +2167,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           // makes narrow caps feel airy without forcing them apart. Keep
           // this preview visually aligned with the actual rendered output.
           textTransform: state.selectedStyleId === 'modern-shape-art' ? 'uppercase' : 'none',
-          letterSpacing: state.selectedStyleId === 'modern-shape-art' ? '0.06em' : '0.04em',
+          letterSpacing: state.selectedStyleId === 'modern-shape-art' ? '0.18em' : '0.04em',
           transition: 'all 0.3s ease',
         },
       }, state.petName),
@@ -3043,7 +3052,10 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
     setGeneratingNamedPreview(true);
     const API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-    const imageUrl = (state.previewCdnUrls && state.previewCdnUrls[0])
+    // Prefer the full-res no-name PNG so PIL compositing works on the
+    // original print-quality image rather than an 800px WebP thumbnail.
+    const imageUrl = state.noNamePrintFileUrl
+      || (state.previewCdnUrls && state.previewCdnUrls[0])
       || (state.previewImages && state.previewImages[0])
       || '';
 

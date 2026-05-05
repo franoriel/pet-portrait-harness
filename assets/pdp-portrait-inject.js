@@ -288,23 +288,30 @@
       + 'background:radial-gradient(ellipse at 30% 20%, rgba(255,250,240,0.18) 0%, transparent 60%);';
     container.appendChild(lightGradient);
 
-    // Canvas wrapper — sized to variant aspect ratio, max 72% of container
+    // Canvas wrapper — sized proportionally to variant dimensions.
+    // Larger sizes fill more of the container so the visual scale matches reality.
+    var MAX_CANVAS_DIM = 20; // largest available canvas dimension (inches)
+    var MAX_PCT = 72;        // container % for the largest canvas
+    var MIN_PCT = 56;        // container % for the smallest canvas (12")
+    var maxDim = Math.max(widthIn, heightIn);
+    var scaledPct = MIN_PCT + ((maxDim - 12) / (MAX_CANVAS_DIM - 12)) * (MAX_PCT - MIN_PCT);
+
     var productAspect = heightIn / widthIn;
     var canvasStyleW, canvasStyleH;
     if (productAspect >= 1) {
-      // Portrait/square: constrain by height (max 72% of container height)
-      canvasStyleH = 72;
+      // Portrait/square: constrain by height
+      canvasStyleH = scaledPct;
       canvasStyleW = canvasStyleH / productAspect;
     } else {
       // Landscape (unused currently): constrain by width
-      canvasStyleW = 72;
+      canvasStyleW = scaledPct;
       canvasStyleH = canvasStyleW * productAspect;
     }
 
     var canvasWrap = document.createElement('div');
     canvasWrap.style.cssText = 'position:relative;'
       + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
-      + 'max-width:72%;max-height:72%;';
+      + 'max-width:' + scaledPct + '%;max-height:' + scaledPct + '%;';
     container.appendChild(canvasWrap);
 
     // Deeper ground shadow if framed (heavier object)
