@@ -559,10 +559,16 @@ def job_status(job_id):
             status="processing",
         )
     elif status == "complete":
+        # Field semantics:
+        #   composited / raw_preview → watermarked WebPs the customer sees
+        #   raw / composited_png_cdn → un-watermarked PNGs for fulfillment.
+        #   The frontend should prefer raw_preview over raw for any UI
+        #   surface; raw is kept for backward-compat with older clients.
         return jsonify(
             job_id=job_id,
             status="complete",
             raw=job.get("raw", ""),
+            raw_preview=job.get("raw_preview", "") or job.get("raw", ""),
             composited=job.get("composited", ""),
             composited_png_cdn=job.get("composited_png_cdn", ""),
             download=job.get("download", ""),
@@ -1311,7 +1317,7 @@ def admin_style_smoke_test(style_id: str):
 
     # ── Step 1: generate the no-name composited via the production path ──
     try:
-        _raw_path, comp_path, web_path = generate_portrait(
+        _raw_path, comp_path, web_path, _raw_web_path = generate_portrait(
             photo_path, pet_name, style=harness_style,
             style_vars=None, background_mode="auto",
         )
@@ -1663,34 +1669,44 @@ def _process_job(job: dict):
     try:
         worker_bg = job.get("background_mode") or "auto"
         log.info("[worker] job=%s style=%s bg_mode=%s", job_id, job["style"], worker_bg)
-        raw_path, comp_path, web_path = generate(
+        raw_path, comp_path, web_path, raw_web_path = generate(
             str(upload_path),
             job["pet_name"],
             job["style"],
             background_mode=worker_bg,
         )
 
-        # Upload raw + comp + web in parallel. raw_path is the no-name version,
-        # needed by the cart's _No Name URL property so a customer toggling
-        # "Show Name = No" gets a true no-name print rather than the comp
-        # (with-name) image they were previously aliased to.
+        # Upload all four assets in parallel.
+        # - raw_path  / comp_path: hi-res PNGs, NO watermark, used by
+        #   Printful fulfillment. Never displayed to the customer.
+        # - web_path / raw_web_path: small WebPs, watermarked with
+        #   "PREVIEW", shown to the customer in the browser. Splitting
+        #   into two so the toggle "Show name = No" still serves a
+        #   watermarked preview instead of falling through to the un-
+        #   watermarked raw PNG.
         raw_fut = _fulfillment_pool.submit(upload_portrait, raw_path)
         comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
         web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
+        raw_web_fut = _fulfillment_pool.submit(upload_portrait, raw_web_path)
         raw_cdn = raw_fut.result()
         comp_cdn = comp_fut.result()
         web_cdn = web_fut.result()
+        raw_web_cdn = raw_web_fut.result()
 
         # Mark complete as soon as the preview URLs are ready. The original
         # photo (used only by fulfillment at order time) uploads in the
         # background — the customer sees the preview several seconds sooner.
+        # Field semantics:
+        #   composited / raw_preview → watermarked WebPs for customer UI
+        #   raw / composited_png_cdn → un-watermarked PNGs for Printful
         update_job(
             job_id,
             status="complete",
-            raw=raw_cdn or f"/preview/{raw_path.name}",
-            composited=web_cdn or f"/preview/{web_path.name}",  # frontend gets fast WebP
-            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",  # full-res PNG for Printful
-            download=f"/download/{comp_path.name}",  # full-res PNG for download
+            raw=raw_cdn or f"/preview/{raw_path.name}",                       # un-watermarked PNG, fulfillment
+            raw_preview=raw_web_cdn or f"/preview/{raw_web_path.name}",        # watermarked WebP, customer no-name preview
+            composited=web_cdn or f"/preview/{web_path.name}",                 # watermarked WebP, customer with-name preview
+            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",       # un-watermarked PNG, fulfillment
+            download=f"/download/{comp_path.name}",                            # full-res PNG for download (un-watermarked — gated, see /download)
             filename=comp_path.name,
             cdn="1" if comp_cdn else "0",
         )

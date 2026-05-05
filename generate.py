@@ -1606,9 +1606,88 @@ def composite_name(
 # Image utilities
 # ---------------------------------------------------------------------------
 
-def save_web_preview(image: Image.Image, out_path: Path, max_width: int = 800) -> Path:
+def apply_preview_watermark(image: Image.Image) -> Image.Image:
+    """Tile a translucent diagonal "PREVIEW" stamp across the image so a
+    customer can't simply screenshot or right-click-save the on-page
+    preview and skip the purchase. The watermark is heavy enough to be
+    obviously present in a screenshot but light enough that the customer
+    can still meaningfully evaluate the artwork.
+
+    This function only runs for the customer-facing web previews
+    (small WebPs displayed on the PDP, in the cart, in the order admin).
+    The hi-res PNG print files that go to Printful are NEVER watermarked
+    — fulfillment renders the original artwork.
     """
-    Save a fast-loading web preview: resize to max_width, convert to WebP at q80.
+    rgb = image if image.mode == "RGB" else image.convert("RGB")
+    base = rgb.convert("RGBA")
+    w, h = base.size
+
+    # Watermark layer is the same size as the image so we can composite
+    # cleanly. Drawn on a transparent layer first, then alpha-blended.
+    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+
+    # Font size scales with the image so watermarks read at any zoom.
+    # ~6% of the image width hits a sweet spot between visible and
+    # not-overwhelming.
+    font_size = max(18, int(w * 0.06))
+    try:
+        font_path = _get_font_path()  # Libre Baskerville Bold from cache
+        font = ImageFont.truetype(str(font_path), font_size) if font_path else ImageFont.load_default()
+    except Exception:
+        font = ImageFont.load_default()
+
+    text = "PREVIEW"
+    # Measure once
+    try:
+        tb = draw.textbbox((0, 0), text, font=font)
+        text_w = tb[2] - tb[0]
+        text_h = tb[3] - tb[1]
+    except Exception:
+        text_w, text_h = font_size * len(text) // 2, font_size
+
+    # Tile the stamp across a rotated overlay. We draw onto a larger
+    # rectangle, rotate it, then crop back to the image — this gives us
+    # full coverage with the rotation included.
+    diag = int((w * w + h * h) ** 0.5)
+    tile = Image.new("RGBA", (diag, diag), (0, 0, 0, 0))
+    tdraw = ImageDraw.Draw(tile)
+
+    # Spacing between watermark instances (horizontal + vertical).
+    step_x = text_w + font_size * 4   # generous horizontal gap
+    step_y = font_size * 5            # generous vertical gap
+    fill = (255, 255, 255, 64)        # white, ~25% opacity — visible on
+                                      # both light and dark backgrounds
+
+    for y in range(0, diag, step_y):
+        # Stagger every other row so the diagonal lines look natural
+        offset = (y // step_y) * (step_x // 2)
+        for x in range(-step_x, diag + step_x, step_x):
+            tdraw.text((x + offset, y), text, font=font, fill=fill)
+
+    rotated = tile.rotate(-30, resample=Image.BICUBIC, expand=False)
+    # Center-crop the rotated overlay back to image size
+    rx = (rotated.width - w) // 2
+    ry = (rotated.height - h) // 2
+    overlay = rotated.crop((rx, ry, rx + w, ry + h))
+
+    out = Image.alpha_composite(base, overlay).convert("RGB")
+    return out
+
+
+def save_web_preview(
+    image: Image.Image,
+    out_path: Path,
+    max_width: int = 800,
+    watermark: bool = True,
+) -> Path:
+    """
+    Save a fast-loading web preview: resize to max_width, optionally
+    overlay a "PREVIEW" watermark, then convert to WebP at q80.
+
+    The watermark is on by default because every WebP this function
+    produces is shown to a customer in the browser. Pass watermark=False
+    only when generating a non-customer preview (internal QA, debug).
 
     Typical output: ~60-120 KB vs 2-5 MB for the full PNG.
     Returns the path to the saved .webp file.
@@ -1619,10 +1698,13 @@ def save_web_preview(image: Image.Image, out_path: Path, max_width: int = 800) -
     if w > max_width:
         scale = max_width / w
         img = img.resize((max_width, int(h * scale)), Image.LANCZOS)
+    if watermark:
+        img = apply_preview_watermark(img)
     img.save(preview_path, "WEBP", quality=80)
-    log.info("           web  → %s (%dx%d, %d KB)",
+    log.info("           web  → %s (%dx%d, %d KB)%s",
              preview_path.name, img.width, img.height,
-             preview_path.stat().st_size // 1024)
+             preview_path.stat().st_size // 1024,
+             " [watermarked]" if watermark else "")
     return preview_path
 
 
@@ -1891,7 +1973,7 @@ def generate(
     output_dir: Optional[Path] = None,
     style_vars: Optional[dict] = None,
     background_mode: Optional[str] = "auto",
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path]:
     """
     Generate a portrait and composite the pet name onto it.
 
@@ -1900,7 +1982,13 @@ def generate(
     which app.py maps to a 503 response so the frontend can retry.
 
     Returns:
-        (raw_path, composited_path, web_preview_path)
+        (raw_path, composited_path, web_preview_path, raw_web_preview_path)
+
+        - raw_path / composited_path: hi-res PNGs for Printful fulfillment.
+          NEVER shown to the customer directly — these have no watermark.
+        - web_preview_path / raw_web_preview_path: small WebPs for
+          customer display (with-name and no-name respectively). Both
+          carry the diagonal "PREVIEW" watermark.
     """
     if not _generation_semaphore.acquire(timeout=2):
         raise RuntimeError("BUSY")
@@ -1977,11 +2065,25 @@ def _generate_inner(
     log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
              comp_path, composited.width, composited.height)
 
-    # Optimized web preview (small WebP for fast frontend display)
-    web_path = save_web_preview(composited, comp_path)
+    # Optimized web preview (small WebP for fast frontend display).
+    # The customer-facing WebP is watermarked with "PREVIEW" so a
+    # screenshot or right-click-save can't be passed off as the print
+    # file. The hi-res PNG (raw_path / comp_path) stays un-watermarked
+    # because that's what Printful prints.
+    web_path = save_web_preview(composited, comp_path, watermark=True)
+
+    # ALSO save a watermarked no-name web preview. Customers toggle
+    # "Show name" on the PDP — when they pick "No", the UI swaps to
+    # this URL. Without it the toggle would fall back to the un-
+    # watermarked raw PNG, defeating the whole point of the watermark.
+    raw_web_path = save_web_preview(
+        ai_image_no_name,
+        raw_path,
+        watermark=True,
+    )
     composited.close()
 
-    return raw_path, comp_path, web_path
+    return raw_path, comp_path, web_path, raw_web_path
 
 
 # ---------------------------------------------------------------------------
@@ -2068,8 +2170,8 @@ def main():
             "COLOR_PALETTE": args.color_palette,
         }.items() if v is not None}
 
-    raw_path, comp_path, web_path = generate(args.photo_path, args.pet_name, args.style,
-                                             style_vars=style_vars)
+    raw_path, comp_path, web_path, raw_web_path = generate(args.photo_path, args.pet_name, args.style,
+                                                            style_vars=style_vars)
     print(f"\nRaw output:   {raw_path}")
     print(f"Composited:   {comp_path}")
     print(f"Web preview:  {web_path}")
