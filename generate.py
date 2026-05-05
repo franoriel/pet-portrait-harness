@@ -212,10 +212,15 @@ def _name_integration(
         "watercolor": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name}\" as DELICATE hand-written calligraphy (thin brush, "
-            f"flowing script). Use {watercolor_ink} for contrast but with "
-            f"a LIGHT, refined stroke — not bold. Slight natural bleed at letter edges is okay. "
-            f"Size: SMALL and refined, 2-3% of image height. Centered. Minimalist, editorial feel."
+            f"- Render the name \"{name}\" in a refined MODERN EDITORIAL DISPLAY "
+            f"SERIF — Wagon Display / Playfair Display feel: high-contrast strokes "
+            f"(noticeable thick/thin variation), elegant tapered terminals, "
+            f"contemporary proportions, no italic. Title case (first letter "
+            f"capitalised, rest lowercase). Use {watercolor_ink} for contrast but "
+            f"keep the strokes REFINED — not bold display weight, more like a "
+            f"book-weight editorial header. Slight natural ink bleed at letter "
+            f"edges is okay (this is still a watercolor). Size: SMALL and "
+            f"refined, 2.5-3.5% of image height. Centered. Magazine-editorial feel."
         ),
         "minimal-line-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -227,15 +232,19 @@ def _name_integration(
         "modern-shape-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
             f"{safe_zone}"
-            f"- Render the name \"{name_upper}\" in ALL CAPS (uppercase only) "
-            f"using a modern geometric sans-serif (Space Grotesk / Archivo / Inter "
-            f"feel), medium weight, with comfortable wide letter-spacing (~0.10em) "
-            f"so the caps breathe. Treat the name as a small typographic accent "
-            f"placed in clean negative space — never overlapping any shape. Use a "
-            f"single deep neutral ink (charcoal #1f1f1f, deep navy #1d2a44, or "
-            f"warm black #181614) sampled to read clearly against the calmest "
-            f"patch of background. Size: 2-3% of image height. Centered. Quiet, "
-            f"modern, editorial."
+            f"- Render the name \"{name_upper}\" in ALL CAPS using a TALL, NARROW, "
+            f"CONDENSED display sans-serif — Humane / Bebas Neue / Anton feel: "
+            f"tightly compressed letterforms, very high cap-height-to-width ratio, "
+            f"single uniform stroke weight, no italics, no contrast strokes. Modern "
+            f"editorial-magazine-cover aesthetic. Comfortable letter-spacing "
+            f"(~0.06em) so the tall narrow caps still breathe without feeling "
+            f"crammed. Treat the name as a confident typographic anchor placed in "
+            f"clean negative space — never overlapping any shape. Use a single "
+            f"deep neutral ink (charcoal #1f1f1f, deep navy #1d2a44, or warm black "
+            f"#181614) sampled to read clearly against the calmest patch of "
+            f"background. Size: 3-4% of image height (taller than the previous "
+            f"sans because the condensed letterforms read smaller at the same "
+            f"height). Centered. Quietly bold, modern, editorial."
         ),
         "neon-pop-art": (
             f"NAME INTEGRATION — CRITICAL:\n"
@@ -1336,9 +1345,9 @@ _font_cache: dict[str, ImageFont.FreeTypeFont] = {}
 
 # Style → Google Font mapping (must match frontend STYLE_FONTS)
 STYLE_FONT_MAP: dict[str, dict] = {
-    "watercolor":           {"family": "Dancing Script",     "google": "Dancing+Script:wght@700",                  "file": "DancingScript-Bold.ttf"},
+    "watercolor":           {"family": "Playfair Display",   "google": "Playfair+Display:wght@500",                "file": "PlayfairDisplay-Medium.ttf"},
     "minimal-line-art":     {"family": "Raleway",            "google": "Raleway:wght@600",                         "file": "Raleway-SemiBold.ttf"},
-    "modern-shape-art":     {"family": "Space Grotesk",      "google": "Space+Grotesk:wght@500",                   "file": "SpaceGrotesk-Medium.ttf"},
+    "modern-shape-art":     {"family": "Bebas Neue",         "google": "Bebas+Neue",                               "file": "BebasNeue-Regular.ttf"},
     "neon-pop-art":         {"family": "Bungee",             "google": "Bungee",                                   "file": "Bungee-Regular.ttf"},
     "renaissance-royalty":  {"family": "Cinzel",             "google": "Cinzel:wght@700",                          "file": "Cinzel-Bold.ttf"},
     "bold-graphic-poster":  {"family": "Oswald",             "google": "Oswald:wght@700",                          "file": "Oswald-Bold.ttf"},
