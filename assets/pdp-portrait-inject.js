@@ -388,7 +388,14 @@
     // The named cropTopFrac is bigger because the source has a 22% name
     // band plus ~8% top padding to skip; the no-name source only has the
     // 12% padding ring.
-    var hasNameBand = (data.wantsName !== false && !!data.namedPreviewUrl);
+    // hasNameBand is true when the previewUrl carries the 22% white name
+    // band — i.e. when the customer chose to include the name. The robust
+    // signal is petName itself: if there's a name AND the customer hasn't
+    // opted out (wantsName !== false), the source has the band, period.
+    // Don't rely on data.namedPreviewUrl being populated — sessions stored
+    // before that field existed have the name baked into previewDataUrls
+    // instead, and the old check would silently fall back to no-band crop.
+    var hasNameBand = !!petName && wantsName;
     var cropTopFrac = hasNameBand ? 0.30 : 0.10;
     var cropBotFrac = 0.08;
     var cropSideFrac = 0.10;
