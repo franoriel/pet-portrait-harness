@@ -371,34 +371,20 @@
 
     // Portrait image (the user's pet).
     //
-    // The composited portrait carries a 22% white name band on top and
-    // ~12% padding on every side — those whites destroy the wrapped-
-    // canvas illusion when shown on the face. We crop them out using a
-    // wrapping div + an oversized img: the wrapper is the face viewport
-    // with overflow:hidden, the img is sized so its 125% × 161% window
-    // covers the artwork and the white margins fall off-screen. Pure CSS
-    // — no canvas, no CORS dependency, no per-aspect tuning. The name in
-    // the top band is intentionally dropped from the canvas mockup; the
-    // bare portrait slide above the size chips still carries the full
-    // composition with the name.
+    // The source carries a ~10% padding ring (added by add_background_padding
+    // server-side); after the 4:5 crop in POST_PROCESS that mostly survives
+    // on top/bottom and is stripped from the sides. The name is composited
+    // directly onto the artwork at ~y=11% (no separate band — see the
+    // composite_name change in generate.py). We crop just enough to remove
+    // the visible padding ring without slicing into the name or the pet.
     //
     // Crop region (in source-space fractions):
-    //   named source:    y 0.30 → 0.92, x 0.10 → 0.90
-    //   no-name source:  y 0.10 → 0.92, x 0.10 → 0.90
-    // The named cropTopFrac is bigger because the source has a 22% name
-    // band plus ~8% top padding to skip; the no-name source only has the
-    // 12% padding ring.
-    // hasNameBand is true when the previewUrl carries the 22% white name
-    // band — i.e. when the customer chose to include the name. The robust
-    // signal is petName itself: if there's a name AND the customer hasn't
-    // opted out (wantsName !== false), the source has the band, period.
-    // Don't rely on data.namedPreviewUrl being populated — sessions stored
-    // before that field existed have the name baked into previewDataUrls
-    // instead, and the old check would silently fall back to no-band crop.
-    var hasNameBand = !!petName && wantsName;
-    var cropTopFrac = hasNameBand ? 0.30 : 0.10;
-    var cropBotFrac = 0.08;
-    var cropSideFrac = 0.10;
+    //   y: 0.05 → 0.90  (leave a small top breather above the name; remove
+    //                    the bottom padding entirely)
+    //   x: 0.05 → 0.95  (sides are mostly clean already after the 4:5 crop)
+    var cropTopFrac = 0.05;
+    var cropBotFrac = 0.10;
+    var cropSideFrac = 0.05;
     var hScale = 100 / (1 - 2 * cropSideFrac);                     // e.g. 125
     var vScale = 100 / (1 - cropTopFrac - cropBotFrac);             // e.g. 161.3 (named) or 122 (no-name)
     var leftPct = -cropSideFrac * hScale;                          // e.g. -12.5
