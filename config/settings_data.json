@@ -35,7 +35,7 @@
       "header": {
         "type": "header",
         "settings": {
-          "logo": "shopify://shop_images/Pet_Printables_Logo_Affinity_Black.svg",
+          "logo": "shopify://shop_images/wordmark_black.svg",
           "menu": "main-menu"
         }
       },
