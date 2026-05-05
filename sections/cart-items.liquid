@@ -422,6 +422,15 @@
               data-show-name="{{ source_show_name | escape }}"
               style="margin:12px 0;padding:14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);"
             >
+              {%- comment -%}
+                Magnet thumbnail and copy intentionally use the no-name
+                version of the portrait. Magnets ship as image-only — the
+                pet name is NOT printed on the magnet (the canvas is the
+                "named" piece). We tell the customer here so the choice
+                is informed and the cart preview matches what ships.
+              {%- endcomment -%}
+              {%- assign magnet_thumb_url = source_no_name_url -%}
+              {%- if magnet_thumb_url == '' -%}{%- assign magnet_thumb_url = source_portrait_url -%}{%- endif -%}
               <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
                 <input
                   type="checkbox"
@@ -431,21 +440,21 @@
                 >
                 <span style="flex:1;line-height:1.45;display:flex;gap:10px;align-items:center;">
                   <img
-                    src="{{ source_portrait_url }}"
-                    alt="{{ source_pet_name | default: 'Pet portrait' | escape }} preview"
+                    src="{{ magnet_thumb_url }}"
+                    alt="Matching fridge magnet preview (image only, no name)"
                     loading="lazy"
                     style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--color-border);"
                   >
                   <span style="flex:1;min-width:0;">
                     <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:var(--text-base);font-weight:600;color:var(--color-ink);">
-                      <span style="flex:1;min-width:0;">Matching fridge magnet{%- if source_pet_name != '' %} of {{ source_pet_name }}{%- endif -%}</span>
+                      <span style="flex:1;min-width:0;">Matching fridge magnet</span>
                       <span
                         data-magnet-price
                         style="margin-left:auto;font-weight:600;color:var(--color-primary);font-size:var(--text-sm);white-space:nowrap;"
                       ></span>
                     </span>
                     <span style="display:block;font-size:var(--text-sm);color:var(--color-muted);margin-top:3px;">
-                      Same portrait, printed on a flexible fridge magnet. Ships with your order.
+                      Same portrait, image only — the pet name is not printed on the magnet. Ships with your order.
                     </span>
                     <span
                       data-magnet-status
@@ -924,10 +933,17 @@
       if (d.petName) props['Pet Name'] = d.petName;
       if (d.style) props['_Style'] = d.style;
       if (d.jobId) props['_Job ID'] = d.jobId;
-      if (d.showName) props['_Show Name'] = d.showName;
-      if (d.portraitUrl) props['_Portrait URL'] = d.portraitUrl;
-      if (d.printUrl) props['_Print File URL'] = d.printUrl;
-      if (d.noNameUrl) props['_No Name URL'] = d.noNameUrl;
+      // Magnets are image-only — the pet name is never printed on the
+      // magnet, regardless of what the parent canvas line is set to.
+      // Force these properties so fulfillment uses the no-name artwork
+      // and the cart UI / order admin show the magnet as no-name too.
+      var noNameUrl = d.noNameUrl || d.portraitUrl || '';
+      props['_Show Name'] = 'No';
+      if (noNameUrl) {
+        props['_Portrait URL'] = noNameUrl;
+        props['_Print File URL'] = noNameUrl;
+        props['_No Name URL'] = noNameUrl;
+      }
       // Tag the line item so fulfillment routes it to the magnet pipeline.
       // Shopify line items don't carry a product handle, so without this the
       // backend defaults to canvas and the order can't be fulfilled.
