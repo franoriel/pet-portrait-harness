@@ -3008,6 +3008,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
   const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
   const [nameError, setNameError] = useState(null);
+  const [localName, setLocalName] = useState(state.petName || '');
   const [loadingPhaseIdx, setLoadingPhaseIdx] = useState(0);
 
   // Progressive loading copy — cycles so a 10-15s /add-name call feels
@@ -3049,8 +3050,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
     setWantsName(enabled);
     setNameError(null);
     if (!enabled) return;
-    if (!state.petName) {
-      setNameError('Please go back and enter your pet\u2019s name first.');
+    if (!localName.trim()) {
+      setNameError('Please enter your pet\u2019s name above first.');
       return;
     }
     if (namedPreviewUrl) return; // already have it
@@ -3071,14 +3072,14 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       return;
     }
 
-    console.log('[PetPrintables] Calling /add-name', { imageUrl, petName: state.petName, style: state.selectedStyleId });
+    console.log('[PetPrintables] Calling /add-name', { imageUrl, petName: localName, style: state.selectedStyleId });
 
     fetch(`${API_BASE}/add-name`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image_url: imageUrl,
-        pet_name: state.petName,
+        pet_name: localName,
         style: state.selectedStyleId,
         background_mode: state.backgroundMode || 'auto',
       }),
@@ -3100,7 +3101,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       setNameError(err.message || 'Could not add name. Please try again.');
       setGeneratingNamedPreview(false);
     });
-  }, [namedPreviewUrl, state.petName, state.selectedStyleId, state.previewCdnUrls, state.previewImages, generatingNamedPreview]);
+  }, [namedPreviewUrl, localName, state.selectedStyleId, state.previewCdnUrls, state.previewImages, generatingNamedPreview]);
 
   // Go to PDP with all params
   const handleContinue = useCallback(() => {
@@ -3228,7 +3229,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         },
           React.createElement('img', {
             src: displayImage,
-            alt: state.petName ? `Portrait of ${state.petName}` : 'Your portrait',
+            alt: localName ? `Portrait of ${localName}` : 'Your portrait',
             style: {
               position: 'absolute', inset: 0, width: '100%', height: '100%',
               objectFit: 'cover',
@@ -3362,10 +3363,25 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       ),
     ),
 
-    // 3. NAME toggle
-    state.petName && React.createElement('div', { style: { marginBottom: '28px' } },
+    // 3. NAME toggle — always visible; inline input when no name was set at step 1
+    React.createElement('div', { style: { marginBottom: '28px' } },
       React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
-        `Add "${state.petName}" to the portrait?`
+        localName.trim() ? `Add "${localName}" to the portrait?` : 'Add your pet\'s name to the portrait?'
+      ),
+      !localName.trim() && React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '10px' } },
+        React.createElement('input', {
+          type: 'text',
+          placeholder: "Pet's name (optional)",
+          value: localName,
+          maxLength: 20,
+          onChange: (e) => { setLocalName(e.target.value); setNamedPreviewUrl(null); setNameError(null); },
+          style: {
+            flex: 1, padding: '10px 14px',
+            border: `1px solid ${tokens.colorBorder}`, borderRadius: tokens.radiusCard,
+            fontFamily: fontSans, fontSize: 'var(--text-sm)', color: tokens.colorBrand,
+            outline: 'none', background: tokens.colorWhite,
+          },
+        }),
       ),
       React.createElement('div', { style: { display: 'flex', gap: '10px' } },
         optionCard(
