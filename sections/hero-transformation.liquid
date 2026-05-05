@@ -352,13 +352,16 @@
       overflow: hidden;
     }
     .hero-frame--3 { object-position: center center; }
-    /* Frames 1 and 2 mobile assets are pre-cropped (760x1071) so the
-       dog already sits right-of-asset-centre. Asset aspect (0.71) is
-       narrower than the container's 4/5 (0.8), so cover scales by
-       width with no horizontal crop — the dog's position in the asset
-       maps 1:1 to its position in the viewport. No per-frame
-       object-position override needed; default center handles the
-       slight vertical crop cleanly. */
+    /* Frames 1 and 2 mobile assets (1470x1071) have 300px of extra
+       cream padding baked onto the LEFT — so the dog sits right-of-
+       asset-centre while the right side keeps its original ~165px
+       cream padding (no "cropped" feel near the right edge). Asset
+       aspect (1.372) is wider than the container's 4/5 (0.8), so
+       cover crops horizontally; object-position 45% biases the visible
+       window slightly leftward inside the asset, landing the dog at
+       ~54% of viewport (clearly right of centre, naturally framed). */
+    .hero-frame--1 { object-position: 45% center; }
+    .hero-frame--2 { object-position: 45% center; }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
