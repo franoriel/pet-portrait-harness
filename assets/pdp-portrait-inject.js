@@ -373,51 +373,43 @@
     //
     // The composited portrait carries a 22% white name band on top and
     // ~12% padding on every side — those whites destroy the wrapped-
-    // canvas illusion when shown on the face. CSS scale+origin tricks are
-    // fragile because the visible source region depends on the face
-    // aspect (cover crops differently for square vs tall faces) and
-    // because browsers cache the JS aggressively. Instead, we crop the
-    // source to its artwork bounds in a hidden canvas and use the
-    // cropped data URL as the face image. Result: watercolour fills the
-    // face edge-to-edge with no white margin, no zoom hacks, no per-
-    // aspect tuning. The name in the top band is intentionally dropped
-    // from the canvas mockup; the bare portrait slide above the size
-    // chips still carries the full composition with the name.
+    // canvas illusion when shown on the face. We crop them out using a
+    // wrapping div + an oversized img: the wrapper is the face viewport
+    // with overflow:hidden, the img is sized so its 125% × 161% window
+    // covers the artwork and the white margins fall off-screen. Pure CSS
+    // — no canvas, no CORS dependency, no per-aspect tuning. The name in
+    // the top band is intentionally dropped from the canvas mockup; the
+    // bare portrait slide above the size chips still carries the full
+    // composition with the name.
     //
     // Crop region (in source-space fractions):
-    //   y: 0.30 → 0.92  (skip 22% name band + ~8% top padding;
-    //                    leave 8% bottom padding)
-    //   x: 0.10 → 0.90  (skip ~10% padding each side)
-    // The cropped region is ~62% × 80% of source — close enough to a
-    // 4:5 portrait that it scales into 1:1 / 3:4 / 4:5 faces gracefully.
+    //   named source:    y 0.30 → 0.92, x 0.10 → 0.90
+    //   no-name source:  y 0.10 → 0.92, x 0.10 → 0.90
+    // The named cropTopFrac is bigger because the source has a 22% name
+    // band plus ~8% top padding to skip; the no-name source only has the
+    // 12% padding ring.
+    var hasNameBand = (data.wantsName !== false && !!data.namedPreviewUrl);
+    var cropTopFrac = hasNameBand ? 0.30 : 0.10;
+    var cropBotFrac = 0.08;
+    var cropSideFrac = 0.10;
+    var hScale = 100 / (1 - 2 * cropSideFrac);                     // e.g. 125
+    var vScale = 100 / (1 - cropTopFrac - cropBotFrac);             // e.g. 161.3 (named) or 122 (no-name)
+    var leftPct = -cropSideFrac * hScale;                          // e.g. -12.5
+    var topPct = -cropTopFrac * vScale;                            // e.g. -48.4 (named) or -12.2 (no-name)
+
+    var cropWindow = document.createElement('div');
+    cropWindow.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
+    canvasFace.appendChild(cropWindow);
+
     var portraitImg = document.createElement('img');
+    portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
-      + 'object-fit:cover;object-position:center center;display:block;';
-    canvasFace.appendChild(portraitImg);
-
-    var sourceForFace = new Image();
-    sourceForFace.crossOrigin = 'anonymous';
-    sourceForFace.onload = function () {
-      try {
-        var sw = sourceForFace.naturalWidth, sh = sourceForFace.naturalHeight;
-        var cropX = Math.round(sw * 0.10);
-        var cropY = Math.round(sh * 0.30);
-        var cropW = Math.round(sw * 0.80);
-        var cropH = Math.round(sh * 0.62);
-        var off = document.createElement('canvas');
-        off.width = cropW; off.height = cropH;
-        off.getContext('2d').drawImage(sourceForFace, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-        portraitImg.src = off.toDataURL('image/jpeg', 0.92);
-      } catch (e) {
-        // CORS or other error — fall back to the uncropped source. We'd
-        // rather show a slightly-imperfect mockup than no portrait at all.
-        portraitImg.src = portraitSrc;
-      }
-    };
-    sourceForFace.onerror = function () { portraitImg.src = portraitSrc; };
-    sourceForFace.src = portraitSrc;
+    portraitImg.style.cssText = 'position:absolute;'
+      + 'left:' + leftPct + '%;top:' + topPct + '%;'
+      + 'width:' + hScale + '%;height:' + vScale + '%;'
+      + 'object-fit:cover;object-position:center;display:block;';
+    cropWindow.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
     var weave = document.createElement('div');
