@@ -369,6 +369,7 @@
             {%- assign source_portrait_url = '' -%}
             {%- assign source_print_url = '' -%}
             {%- assign source_no_name_url = '' -%}
+            {%- assign source_no_name_preview_url = '' -%}
             {%- assign source_pet_name = '' -%}
             {%- assign source_style = '' -%}
             {%- assign source_job_id = '' -%}
@@ -389,6 +390,9 @@
                   {%- endif -%}
                   {%- if property.first == '_No Name URL' and property.last != blank -%}
                     {%- assign source_no_name_url = property.last -%}
+                  {%- endif -%}
+                  {%- if property.first == '_No Name Preview URL' and property.last != blank -%}
+                    {%- assign source_no_name_preview_url = property.last -%}
                   {%- endif -%}
                   {%- if property.first == 'Pet Name' -%}
                     {%- assign source_pet_name = property.last -%}
@@ -416,6 +420,7 @@
               data-portrait-url="{{ source_portrait_url | escape }}"
               data-print-url="{{ source_print_url | escape }}"
               data-no-name-url="{{ source_no_name_url | escape }}"
+              data-no-name-preview-url="{{ source_no_name_preview_url | escape }}"
               data-pet-name="{{ source_pet_name | escape }}"
               data-style="{{ source_style | escape }}"
               data-job-id="{{ source_job_id | escape }}"
@@ -428,8 +433,14 @@
                 pet name is NOT printed on the magnet (the canvas is the
                 "named" piece). We tell the customer here so the choice
                 is informed and the cart preview matches what ships.
+
+                Display thumbnail prefers the WATERMARKED no-name preview
+                (_No Name Preview URL) over the un-watermarked print file
+                (_No Name URL) — the un-watermarked PNG goes only to
+                Printful, never to a customer-facing surface.
               {%- endcomment -%}
-              {%- assign magnet_thumb_url = source_no_name_url -%}
+              {%- assign magnet_thumb_url = source_no_name_preview_url -%}
+              {%- if magnet_thumb_url == '' -%}{%- assign magnet_thumb_url = source_no_name_url -%}{%- endif -%}
               {%- if magnet_thumb_url == '' -%}{%- assign magnet_thumb_url = source_portrait_url -%}{%- endif -%}
               <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
                 <input
@@ -937,12 +948,19 @@
       // magnet, regardless of what the parent canvas line is set to.
       // Force these properties so fulfillment uses the no-name artwork
       // and the cart UI / order admin show the magnet as no-name too.
-      var noNameUrl = d.noNameUrl || d.portraitUrl || '';
+      // _Portrait URL feeds the customer-facing cart thumbnail and must
+      // therefore be the WATERMARKED no-name preview. _Print File URL
+      // and _No Name URL feed Printful and must therefore be the
+      // UN-WATERMARKED hi-res no-name PNG. d.noNamePreviewUrl is the
+      // watermarked WebP, d.noNameUrl is the un-watermarked print PNG.
+      var noNamePrintUrl = d.noNameUrl || d.portraitUrl || '';
+      var noNamePreviewUrl = d.noNamePreviewUrl || noNamePrintUrl;
       props['_Show Name'] = 'No';
-      if (noNameUrl) {
-        props['_Portrait URL'] = noNameUrl;
-        props['_Print File URL'] = noNameUrl;
-        props['_No Name URL'] = noNameUrl;
+      if (noNamePreviewUrl) props['_Portrait URL'] = noNamePreviewUrl;
+      if (noNamePrintUrl) {
+        props['_Print File URL'] = noNamePrintUrl;
+        props['_No Name URL'] = noNamePrintUrl;
+        props['_No Name Preview URL'] = noNamePreviewUrl;
       }
       // Tag the line item so fulfillment routes it to the magnet pipeline.
       // Shopify line items don't carry a product handle, so without this the

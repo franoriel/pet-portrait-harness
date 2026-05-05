@@ -1020,6 +1020,14 @@
     // Falls back to preview URL if the hi-res isn't available (shouldn't happen).
     var printFileUrl = data.printFileUrl || previewUrlForCart;
 
+    // Hi-res no-name print PNG for Printful — un-watermarked, used when
+    // the customer toggles "Show Name = No" on the cart line. cdnUrls[1]
+    // is now the WATERMARKED no-name preview, NOT a print-quality file,
+    // so we must use data.noNamePrintFileUrl which is the un-watermarked
+    // PNG. Fallback to printFileUrl (with-name PNG) is still a hi-res
+    // file even if Gemini hasn't been re-run.
+    var noNamePrintFileUrl = data.noNamePrintFileUrl || printFileUrl;
+
     var props = {
       'Pet Name': petName,
       '_Style': data.styleId || '',
@@ -1027,9 +1035,10 @@
       '_Show Name': wantsName ? 'Yes' : 'No',
       '_Frame': wantsFrame ? 'Framed' : 'No frame',
       '_Job ID': data.jobId || '',
-      '_Portrait URL': previewUrlForCart,      // preview for display (with or without name)
-      '_Print File URL': printFileUrl,         // hi-res for Printful
-      '_No Name URL': cdnUrls[1] || cdnUrls[0] || '',  // index 1 = raw (no-name) per /status response shape; falls back to comp if raw upload was missing
+      '_Portrait URL': previewUrlForCart,                    // watermarked preview for display
+      '_Print File URL': printFileUrl,                       // un-watermarked hi-res PNG for Printful
+      '_No Name URL': noNamePrintFileUrl,                    // un-watermarked hi-res no-name PNG for Printful
+      '_No Name Preview URL': cdnUrls[1] || cdnUrls[0] || '', // watermarked no-name WebP for cart display (e.g. magnet upsell thumbnail)
     };
     Object.keys(props).forEach(function (key) {
       var input = document.createElement('input');

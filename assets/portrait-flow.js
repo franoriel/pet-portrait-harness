@@ -334,6 +334,10 @@ function saveSession(state) {
       imageFilename: state.imageFilename || '',
       originalPhotoUrl: state.originalPhotoUrl || '',
       printFileUrl: state.printFileUrl || '',
+      // Un-watermarked hi-res no-name PNG URL — used by Printful when
+      // the customer toggles "Show name = No". Kept distinct from the
+      // previewCdnUrls (which are watermarked) so neither side leaks.
+      noNamePrintFileUrl: state.noNamePrintFileUrl || '',
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) { /* quota exceeded — silently fail */ }
@@ -454,11 +458,16 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
   const jobId = submitData.job_id;
 
   if (!jobId) {
-    // Legacy backend — response already contains the result
-    const previews = [submitData.composited, submitData.raw]
+    // Legacy backend — response already contains the result.
+    // Prefer raw_preview (watermarked WebP) over raw (un-watermarked PNG)
+    // for the no-name preview shown to the customer. Falls back to raw
+    // if the backend hasn't been redeployed yet with the watermark patch.
+    const absolutize = (p) => p && (p.startsWith('http') ? p : `${API_BASE}${p}`);
+    const previews = [submitData.composited, submitData.raw_preview || submitData.raw]
       .filter(Boolean)
-      .map(p => p.startsWith('http') ? p : `${API_BASE}${p}`);
-    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '' };
+      .map(absolutize);
+    const noNamePrintFileUrl = absolutize(submitData.raw) || '';
+    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '', noNamePrintFileUrl };
   }
 
   // Step 2: Poll /status/<job_id> until complete.
@@ -478,15 +487,23 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
     const status = await pollRes.json();
 
     if (status.status === 'complete') {
-      const previews = [status.composited, status.raw]
+      // Prefer the watermarked no-name WebP (raw_preview) over the
+      // un-watermarked no-name PNG (raw) for any UI surface. The
+      // un-watermarked PNG is the fulfillment file and shouldn't be
+      // shown to the customer directly.
+      const absolutize = (p) => p && (p.startsWith('http') ? p : `${API_BASE}${p}`);
+      const previews = [status.composited, status.raw_preview || status.raw]
         .filter(Boolean)
-        .map(p => p.startsWith('http') ? p : `${API_BASE}${p}`);
+        .map(absolutize);
       const originalPhoto = status.original_cdn || '';
       // Hi-res PNG URL for Printful fulfillment (3000x3750+ @ 300 DPI)
-      const printFileUrl = status.composited_png_cdn
-        ? (status.composited_png_cdn.startsWith('http') ? status.composited_png_cdn : `${API_BASE}${status.composited_png_cdn}`)
-        : '';
-      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl };
+      const printFileUrl = absolutize(status.composited_png_cdn) || '';
+      // Hi-res no-name PNG URL for Printful fulfillment when the
+      // customer toggles "Show name = No". Kept separate from the
+      // watermarked preview so fulfillment never receives a watermarked
+      // file, and the customer never sees an un-watermarked one.
+      const noNamePrintFileUrl = absolutize(status.raw) || '';
+      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl, noNamePrintFileUrl };
     }
 
     if (status.status === 'failed') {
@@ -1019,6 +1036,7 @@ function usePortraitFlow() {
         previewCdnUrls: result.previews,  // always save original URLs as fallback
         originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
         printFileUrl: result.printFileUrl || '',  // hi-res PNG for Printful
+        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // hi-res no-name PNG for Printful
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null, generationErrorTips: null,
       };
