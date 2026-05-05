@@ -574,6 +574,7 @@ def job_status(job_id):
             download=job.get("download", ""),
             filename=job.get("filename", ""),
             cdn=job.get("cdn", False),
+            original_cdn=job.get("original_cdn", ""),
         )
     else:  # failed
         return jsonify(

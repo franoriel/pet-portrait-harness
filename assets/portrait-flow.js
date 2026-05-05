@@ -35,7 +35,7 @@ const fontSans  = "'Inter', sans-serif";
 // Fonts are loaded on-demand via Google Fonts CSS
 
 const STYLE_FONTS = {
-  'soft-watercolour':     { family: 'Playfair Display',   css: "'Playfair Display', serif",     google: 'Playfair+Display:wght@400;500;700' },
+  'soft-watercolour':     { family: 'Sacramento',         css: "'Sacramento', cursive",         google: 'Sacramento' },
   'minimal-line-art':     { family: 'Caveat',             css: "'Caveat', cursive",             google: 'Caveat:wght@400;700' },
   'modern-shape-art':     { family: 'Barlow Condensed',   css: "'Barlow Condensed', sans-serif", google: 'Barlow+Condensed:wght@700' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },

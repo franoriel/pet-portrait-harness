@@ -1614,7 +1614,7 @@ _font_cache: dict[str, ImageFont.FreeTypeFont] = {}
 
 # Style → Google Font mapping (must match frontend STYLE_FONTS)
 STYLE_FONT_MAP: dict[str, dict] = {
-    "watercolor":           {"family": "Playfair Display",   "google": "Playfair+Display:wght@500",                "file": "PlayfairDisplay-Medium.ttf"},
+    "watercolor":           {"family": "Sacramento",         "google": "Sacramento",                               "file": "Sacramento-Regular.ttf"},
     "minimal-line-art":     {"family": "Raleway",            "google": "Raleway:wght@600",                         "file": "Raleway-SemiBold.ttf"},
     "modern-shape-art":     {"family": "Bebas Neue",         "google": "Bebas+Neue",                               "file": "BebasNeue-Regular.ttf"},
     "neon-pop-art":         {"family": "Bungee",             "google": "Bungee",                                   "file": "Bungee-Regular.ttf"},
@@ -1728,11 +1728,17 @@ def _detect_text_color(image: Image.Image) -> tuple:
 # Per-style text rendering config — controls how the name looks on each style
 STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
-        "size_ratio": 0.025,    # font size as fraction of image width
-        "transform": "title",   # title case
-        "zone_top": 0.09,       # top margin for name (fraction of height)
-        "letter_spacing": 0,    # extra spacing between chars (0 = natural)
-        "opacity": 0.85,        # text opacity (for softer styles)
+        # Sacramento is a thin handwritten script — needs more height
+        # than serifs to read at the same x-height. zone_top sits below
+        # the 12% printer-safe margin AND the 1:1 center-crop line so
+        # the name survives the square canvas variants (12x12, 16x16),
+        # landing roughly halfway between the visible canvas top and
+        # the subject's head (typically ~28-30% from source top).
+        "size_ratio": 0.07,
+        "transform": "title",
+        "zone_top": 0.17,
+        "letter_spacing": 0,
+        "opacity": 0.85,
     },
     "minimal-line-art": {
         "size_ratio": 0.035,
