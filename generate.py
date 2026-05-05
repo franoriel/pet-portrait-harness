@@ -1701,13 +1701,13 @@ def get_font(size: int, style: Optional[str] = None) -> ImageFont.FreeTypeFont:
 
 def _detect_text_color(image: Image.Image) -> tuple:
     """
-    Sample the bottom 20% of the image to determine if text should be
+    Sample the top 15% of the image to determine if text should be
     light or dark for good contrast.
     Returns (text_rgb, line_rgba) tuple.
     """
     w, h = image.size
-    zone_top = int(h * 0.80)
-    bottom = image.crop((0, zone_top, w, h))
+    zone_bottom = int(h * 0.15)
+    bottom = image.crop((0, 0, w, zone_bottom))
     # Average the pixel values
     pixels = list(bottom.getdata())
     if not pixels:
@@ -1728,58 +1728,58 @@ def _detect_text_color(image: Image.Image) -> tuple:
 # Per-style text rendering config — controls how the name looks on each style
 STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
-        "size_ratio": 0.025,    # font size as fraction of image width (~1.4% of height on 4:5)
+        "size_ratio": 0.025,    # font size as fraction of image width
         "transform": "title",   # title case
-        "zone_top": 0.82,       # where the text zone starts (fraction of height)
+        "zone_top": 0.05,       # top margin for name (fraction of height)
         "letter_spacing": 0,    # extra spacing between chars (0 = natural)
         "opacity": 0.85,        # text opacity (for softer styles)
     },
     "minimal-line-art": {
         "size_ratio": 0.035,
         "transform": "upper",
-        "zone_top": 0.84,
+        "zone_top": 0.04,
         "letter_spacing": 6,
         "opacity": 1.0,
     },
     "modern-shape-art": {
         "size_ratio": 0.024,
         "transform": "upper",
-        "zone_top": 0.84,
+        "zone_top": 0.04,
         "letter_spacing": 10,
         "opacity": 1.0,
     },
     "neon-pop-art": {
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.80,
+        "zone_top": 0.04,
         "letter_spacing": 4,
         "opacity": 1.0,
     },
     "renaissance-royalty": {
         "size_ratio": 0.04,
         "transform": "upper",
-        "zone_top": 0.83,
+        "zone_top": 0.04,
         "letter_spacing": 8,
         "opacity": 0.9,
     },
     "bold-graphic-poster": {
         "size_ratio": 0.07,
         "transform": "upper",
-        "zone_top": 0.78,
+        "zone_top": 0.05,
         "letter_spacing": 5,
         "opacity": 1.0,
     },
     "charcoal": {
         "size_ratio": 0.04,
         "transform": "title",
-        "zone_top": 0.84,
+        "zone_top": 0.04,
         "letter_spacing": 4,
         "opacity": 0.9,
     },
     "aura-gradient": {
         "size_ratio": 0.045,
         "transform": "title",
-        "zone_top": 0.83,
+        "zone_top": 0.05,
         "letter_spacing": 2,
         "opacity": 0.85,
     },
@@ -1789,7 +1789,7 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
 _DEFAULT_TEXT_CONFIG = {
     "size_ratio": 0.045,
     "transform": "title",
-    "zone_top": 0.82,
+    "zone_top": 0.05,
     "letter_spacing": 0,
     "opacity": 1.0,
 }
@@ -1844,10 +1844,10 @@ def composite_name(
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
 
-    zone_top = int(h * cfg["zone_top"])
-    zone_center = zone_top + (h - zone_top) // 2
+    # zone_top is the top margin as a fraction of height; center text in that band
+    top_margin = int(h * cfg["zone_top"])
     text_x = (w - text_w) // 2
-    text_y = zone_center - text_h // 2
+    text_y = top_margin
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
 

@@ -207,7 +207,7 @@
   // ── Style → font mapping (must match portrait-flow.js) ──
   var STYLE_FONTS = {
     'soft-watercolour':     "'Dancing Script', cursive",
-    'minimal-line-art':     "'Raleway', sans-serif",
+    'minimal-line-art':     "'Caveat', cursive",
     'modern-shape-art':     "'Space Grotesk', sans-serif",
     'neon-pop-art':         "'Bungee', sans-serif",
     'renaissance-royalty':  "'Cinzel', serif",
@@ -221,7 +221,7 @@
   // Load Google Font for the style
   var GOOGLE_FONTS = {
     'soft-watercolour':     'Dancing+Script:wght@700',
-    'minimal-line-art':     'Raleway:wght@300;600',
+    'minimal-line-art':     'Caveat:wght@400;700',
     'modern-shape-art':     'Space+Grotesk:wght@400;500;700',
     'neon-pop-art':         'Bungee',
     'renaissance-royalty':  'Cinzel:wght@700',
@@ -374,10 +374,10 @@
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
-    // object-fit:cover + bottom gravity anchors the pet's flat base to the
-    // canvas edge consistently across all aspect ratios (square, 3:4, 4:5).
+    // object-fit:cover + top gravity keeps the name (composited at the top of
+    // the portrait) and the pet's face visible across all aspect ratios.
     portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
-      + 'object-fit:cover;object-position:center bottom;display:block;';
+      + 'object-fit:cover;object-position:center top;display:block;';
     canvasFace.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
