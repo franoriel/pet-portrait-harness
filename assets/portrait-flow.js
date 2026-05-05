@@ -35,9 +35,9 @@ const fontSans  = "'Inter', sans-serif";
 // Fonts are loaded on-demand via Google Fonts CSS
 
 const STYLE_FONTS = {
-  'soft-watercolour':     { family: 'Dancing Script',     css: "'Dancing Script', cursive",     google: 'Dancing+Script:wght@700' },
+  'soft-watercolour':     { family: 'Playfair Display',   css: "'Playfair Display', serif",     google: 'Playfair+Display:wght@400;500;700' },
   'minimal-line-art':     { family: 'Raleway',            css: "'Raleway', sans-serif",         google: 'Raleway:wght@300;600' },
-  'modern-shape-art':     { family: 'Space Grotesk',      css: "'Space Grotesk', sans-serif",   google: 'Space+Grotesk:wght@400;500;700' },
+  'modern-shape-art':     { family: 'Bebas Neue',         css: "'Bebas Neue', sans-serif",      google: 'Bebas+Neue' },
   'neon-pop-art':         { family: 'Bungee',             css: "'Bungee', sans-serif",          google: 'Bungee' },
   'renaissance-royalty':  { family: 'Cinzel',             css: "'Cinzel', serif",               google: 'Cinzel:wght@700' },
   'bold-graphic-poster':  { family: 'Oswald',             css: "'Oswald', sans-serif",          google: 'Oswald:wght@700' },
@@ -2135,11 +2135,12 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           fontWeight: 700,
           fontSize: `${Math.round(24 * (FONT_SIZES.find(f => f.id === (state.fontSize || 'small')) || FONT_SIZES[0]).scale)}px`,
           color: tokens.colorBrand, margin: '0 0 0',
-          // modern-shape-art renders the name in ALL CAPS with wider tracking;
-          // every other style uses the printed casing as-is. Keep this preview
-          // visually aligned with the actual rendered output.
+          // modern-shape-art now uses Bebas Neue (Humane-like condensed
+          // display sans). Letter-spacing trimmed to 0.06em — wider tracking
+          // makes narrow caps feel airy without forcing them apart. Keep
+          // this preview visually aligned with the actual rendered output.
           textTransform: state.selectedStyleId === 'modern-shape-art' ? 'uppercase' : 'none',
-          letterSpacing: state.selectedStyleId === 'modern-shape-art' ? '0.10em' : '0.04em',
+          letterSpacing: state.selectedStyleId === 'modern-shape-art' ? '0.06em' : '0.04em',
           transition: 'all 0.3s ease',
         },
       }, state.petName),
