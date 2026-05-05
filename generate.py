@@ -1728,67 +1728,64 @@ def _detect_text_color(image: Image.Image) -> tuple:
 # Per-style text rendering config — controls how the name looks on each style
 STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
-        # Sacramento is a thin handwritten script — needs more height
-        # than serifs to read at the same x-height, hence the bumped
-        # size_ratio. zone_top sits inside the thin clean-white band
-        # above the wash; pushing it lower (e.g. 0.17) lands the name
-        # directly on top of the wash where it's illegible. Square
-        # canvas variants will clip the name with the current source —
-        # fixing that needs either a watercolor prompt change to reserve
-        # more top padding, or a client-side name overlay outside the
-        # cropped image area.
-        "size_ratio": 0.07,
+        # Sacramento is a thin handwritten script — bumped size_ratio
+        # because scripts have low x-height and look small at serif
+        # sizing. zone_top sits inside the reserved white band added
+        # by _reserve_top_band (band = top 22% of canvas) and is below
+        # the 10% line so the name survives the 1:1 center crop on
+        # square canvas variants (12x12, 16x16).
+        "size_ratio": 0.08,
         "transform": "title",
-        "zone_top": 0.06,
+        "zone_top": 0.13,
         "letter_spacing": 0,
         "opacity": 0.85,
     },
     "minimal-line-art": {
         "size_ratio": 0.035,
         "transform": "upper",
-        "zone_top": 0.09,
+        "zone_top": 0.13,
         "letter_spacing": 6,
         "opacity": 1.0,
     },
     "modern-shape-art": {
         "size_ratio": 0.024,
         "transform": "upper",
-        "zone_top": 0.09,
+        "zone_top": 0.13,
         "letter_spacing": 10,
         "opacity": 1.0,
     },
     "neon-pop-art": {
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.09,
+        "zone_top": 0.13,
         "letter_spacing": 4,
         "opacity": 1.0,
     },
     "renaissance-royalty": {
         "size_ratio": 0.04,
         "transform": "upper",
-        "zone_top": 0.09,
+        "zone_top": 0.13,
         "letter_spacing": 8,
         "opacity": 0.9,
     },
     "bold-graphic-poster": {
         "size_ratio": 0.07,
         "transform": "upper",
-        "zone_top": 0.05,
+        "zone_top": 0.13,
         "letter_spacing": 5,
         "opacity": 1.0,
     },
     "charcoal": {
         "size_ratio": 0.04,
         "transform": "title",
-        "zone_top": 0.09,
+        "zone_top": 0.13,
         "letter_spacing": 4,
         "opacity": 0.9,
     },
     "aura-gradient": {
         "size_ratio": 0.045,
         "transform": "title",
-        "zone_top": 0.05,
+        "zone_top": 0.13,
         "letter_spacing": 2,
         "opacity": 0.85,
     },
@@ -1804,6 +1801,45 @@ _DEFAULT_TEXT_CONFIG = {
 }
 
 
+# Fraction of the canvas reserved as a clean white band at the top when a
+# name is composited. 0.22 means the artwork is scaled to 78% height and
+# inset below a 22% white band. The band size is chosen so that a name
+# placed at zone_top ≥ 0.11 still survives the 10% top crop applied when
+# a 4:5 source is shown on a 1:1 canvas (12x12 / 16x16 variants) — and
+# so the name has visible white margin around it on every aspect.
+_NAME_BAND_RATIO = 0.22
+
+
+def _reserve_top_band(image: Image.Image, band_ratio: float = _NAME_BAND_RATIO) -> Image.Image:
+    """Inset the artwork below a clean white band reserved for the name.
+
+    Most style prompts ask for edge-to-edge artwork (no reserved panels),
+    which leaves no room to composite a name without overlapping. This
+    helper rebuilds the canvas with a white band on top and the original
+    artwork scaled to fit the remainder, so every style has a consistent
+    space for the name regardless of how the source was generated.
+
+    The output is the same dimensions as the input — downstream cropping
+    logic (square / portrait variants) doesn't need to change.
+    """
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    w, h = image.size
+    band_h = int(h * band_ratio)
+    art_h = h - band_h
+
+    scale = art_h / h
+    new_w = int(w * scale)
+    new_h = art_h
+    scaled = image.resize((new_w, new_h), Image.LANCZOS)
+
+    canvas = Image.new("RGB", (w, h), (255, 255, 255))
+    art_x = (w - new_w) // 2
+    art_y = band_h
+    canvas.paste(scaled, (art_x, art_y))
+    return canvas
+
+
 def composite_name(
     image: Image.Image,
     pet_name: str,
@@ -1815,7 +1851,11 @@ def composite_name(
     Uses per-style config for font size, casing, positioning, and opacity
     so the text feels integrated with each artistic style.
     """
-    img = image.copy() if image.mode == "RGB" else image.convert("RGB")
+    # Reserve a clean white band at the top before placing the name. Most
+    # style prompts fill the canvas edge-to-edge, so without this the name
+    # would land on top of the artwork. Only applied when a name is being
+    # composited — the no-name preview stays edge-to-edge.
+    img = _reserve_top_band(image)
     w, h = img.size
 
     # Get style-specific config
