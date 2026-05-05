@@ -375,15 +375,43 @@
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
     // The composited portrait has a 22% white name band on top and ~12%
-    // padding on every side. Without compensation, those white regions land
-    // inside the canvas face and the result reads as "image pasted on a
-    // canvas." We zoom the img past the face bounds so the artwork bleeds
-    // off the canvas edges — the way a real wrapped canvas actually prints.
-    // Origin is biased high (50% 22%) so the name in the top band stays
-    // visible after the scale instead of being pushed off the top.
+    // padding on every side. The watercolour splash sits in the lower 60%
+    // of the source (roughly source y=30% to 92%). Without compensation,
+    // those white regions land inside the canvas face and the result reads
+    // as "image pasted on canvas." Two moves fix it:
+    //
+    // 1. object-position is "center 100%" (anchor source bottom to face
+    //    bottom) for square (1:1) crops so the splash isn't pushed low
+    //    when the bottom 20% of the 4:5 source gets clipped. For taller
+    //    aspects (3:4, 4:5) the source already fits vertically, so we use
+    //    the default "center" anchor.
+    // 2. transform:scale(2) zooms past the face bounds in every direction,
+    //    bleeding the splash off all four edges — how a real wrapped
+    //    canvas actually prints. Origin is the face centre so the splash
+    //    is symmetric. The name in the top white band is cropped on the
+    //    canvas mockup; that's deliberate. The bare portrait slide ahead
+    //    of these mockups in the gallery still shows the full composition
+    //    with the name. Keeping the wrapped-canvas illusion convincing
+    //    matters more here than duplicating the name.
+    // Per-aspect tuning so the watercolour splash full-bleeds the canvas
+    // face on every product variant:
+    //
+    //   1:1 (12×12, 16×16): face is squarer than the 4:5 source. cover
+    //     crops the bottom 20% of source. Anchor "center bottom" so the
+    //     splash isn't pushed low. Origin (50%, 50%) + scale 2 fills the
+    //     pet face entirely.
+    //
+    //   3:4 (12×16) and 4:5 (16×20): source fits vertically (no crop).
+    //     The white name band at source y=0–22% would land at the top of
+    //     the face. Origin biased to (50%, 62%) — the vertical centre of
+    //     the watercolour splash itself — pushes everything above into a
+    //     bleed and brings the splash up to fill the face.
+    var isSquare = (widthIn === heightIn);
+    var objectPosY = isSquare ? '100%' : '50%';
+    var transformOriginY = isSquare ? '50%' : '62%';
     portraitImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'
-      + 'object-fit:cover;object-position:center top;display:block;'
-      + 'transform:scale(1.5);transform-origin:50% 22%;';
+      + 'object-fit:cover;object-position:center ' + objectPosY + ';display:block;'
+      + 'transform:scale(2);transform-origin:50% ' + transformOriginY + ';';
     canvasFace.appendChild(portraitImg);
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
