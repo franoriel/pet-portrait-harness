@@ -1752,10 +1752,14 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        # Same fix as minimal — 0.024 / spacing 10 was illegible.
+        # zone_top is 0.04 (vs 0.16 for every other style) because
+        # _modern_shape_art_reframe puts the pet at source y≈9% — much
+        # higher than add_background_padding(0.12) which lands the pet at
+        # y≈22%. With 0.16 the name would composite ON the pet's head;
+        # 0.04 keeps it in the slim 9%-tall top airspace.
         "size_ratio": 0.05,
         "transform": "upper",
-        "zone_top": 0.16,
+        "zone_top": 0.04,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
