@@ -352,17 +352,16 @@
       overflow: hidden;
     }
     .hero-frame--3 { object-position: center center; }
-    /* Frames 1 and 2 mobile assets (1670x1071) have 500px of extra
-       cream extension baked onto the LEFT — pushing the dog visibly
-       right of asset centre while showing more wall/floor breathing
-       room on the left so the framing reads as a wider scene rather
-       than a crop. Asset aspect (1.559) is wider than the container's
-       4/5 (0.8); cover crops horizontally; object-position 50% (the
-       default) shows the centre of the extended asset — the seam
-       between the padded extension and the original photo lands well
-       to the left of the dog, hidden in the cream. */
-    .hero-frame--1 { object-position: 50% center; }
-    .hero-frame--2 { object-position: 50% center; }
+    /* Frames 1 and 2 mobile assets are cropped to their painted/photo
+       content (818x1071, aspect 0.764) — no blank cream margins. Asset
+       aspect is narrower than the container's 4/5 (0.8), so cover
+       scales by width: the full asset width fills the viewport with a
+       tiny vertical crop. The dog lands at its natural ~38% of the
+       cropped asset = ~38% of viewport. Can't push it further right
+       without re-exposing the blank cream margins that read as
+       "cropped" — the source photo composes the dog left-of-frame. */
+    .hero-frame--1 { object-position: center center; }
+    .hero-frame--2 { object-position: center center; }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
