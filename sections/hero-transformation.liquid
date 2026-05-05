@@ -352,16 +352,17 @@
       overflow: hidden;
     }
     .hero-frame--3 { object-position: center center; }
-    /* Frames 1 and 2 mobile assets (1470x1071) have 300px of extra
-       cream padding baked onto the LEFT — so the dog sits right-of-
-       asset-centre while the right side keeps its original ~165px
-       cream padding (no "cropped" feel near the right edge). Asset
-       aspect (1.372) is wider than the container's 4/5 (0.8), so
-       cover crops horizontally; object-position 45% biases the visible
-       window slightly leftward inside the asset, landing the dog at
-       ~54% of viewport (clearly right of centre, naturally framed). */
-    .hero-frame--1 { object-position: 45% center; }
-    .hero-frame--2 { object-position: 45% center; }
+    /* Frames 1 and 2 mobile assets (1670x1071) have 500px of extra
+       cream extension baked onto the LEFT — pushing the dog visibly
+       right of asset centre while showing more wall/floor breathing
+       room on the left so the framing reads as a wider scene rather
+       than a crop. Asset aspect (1.559) is wider than the container's
+       4/5 (0.8); cover crops horizontally; object-position 50% (the
+       default) shows the centre of the extended asset — the seam
+       between the padded extension and the original photo lands well
+       to the left of the dog, hidden in the cream. */
+    .hero-frame--1 { object-position: 50% center; }
+    .hero-frame--2 { object-position: 50% center; }
     .hero-frame__stage { bottom: 12px; right: 12px; padding: 6px 10px; gap: 8px; }
     .hero-frame__stage-label { font-size: 11px; }
     .hero--transform .hero__layout {
