@@ -635,11 +635,22 @@ _MODERN_SHAPE_ART_TEMPLATE = """\
 Transform this photo into a modern, clean, minimalist shape-art pet portrait.
 
 COLOR ACCURACY — THIS IS CRITICAL:
-- Reinterpret the animal's fur/coat color as a small palette of FLAT shape \
-fills that clearly read as the pet's true color. A black dog stays in deep \
-charcoal/near-black tones. A brown dog stays in warm caramel/sienna tones. \
-A white cat stays in soft ivory/cream tones. Tabby/spotted/patched coats \
-keep their distinguishing markings, simplified into clean shape blocks.
+- Reinterpret the animal's fur/coat color as a TINY palette of FLAT shape \
+fills — exactly 2-3 colours TOTAL on the entire pet, not more. One \
+dominant coat tone fills almost the whole silhouette; one slightly \
+darker tone marks the snout / nose / a single shadow plane; optionally \
+one third tone marks a clearly-visible coat patch from the photo (a \
+white chest blaze, a tan saddle, a calico patch). That is the entire \
+coat palette — DO NOT subdivide the body into smaller and smaller \
+shadow planes the way a rendered illustration would. A black dog reads \
+as one deep charcoal silhouette with maybe a slightly darker snout and \
+a small chest patch — nothing else inside the body. A brown dog reads \
+as one warm caramel silhouette + snout + (optional) chest patch.
+- Tabby / spotted / patched coats: keep ONLY the most distinguishing \
+1-2 markings from the photo, rendered as large simple shape blocks. \
+NEVER invent stripes, swirls, marble veins, or pattern flourishes that \
+aren't on the actual pet — the recent failure mode is body-wide tiger \
+striping that doesn't exist on the real animal.
 - COLOR HARMONY — CRITICAL: the pet's coat palette and the {{MODERN_BG_NAME}} \
 background must read as ONE intentional, harmonious palette — never as two \
 unrelated images stacked. Treat the whole composition like a curated \
@@ -675,21 +686,30 @@ ear angle, snout, and coat planes, not from eyes. The face still \
 reads as the specific pet through its overall structure.
 
 STYLE:
-- Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets contemporary \
-Bauhaus. Confident geometric shapes that simplify the pet into clean planes.
-- FLAT color fills only — no gradients, no painterly texture, no airbrush, no \
-photographic detail, no brush strokes.
-- Crisp clean edges between shapes. Soft organic curves where appropriate \
-(ears, cheeks, brow), sharp geometric edges where appropriate (collars, jaw line).
+- Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets \
+contemporary Bauhaus. Think pictogram-level simplification: if the \
+result wouldn't work as a 2-colour silkscreen logo, it's too detailed.
+- FLAT color fills only — no gradients, no painterly texture, no \
+airbrush, no photographic detail, no brush strokes, no soft edges.
+- Crisp clean edges between shapes. Soft organic curves where \
+appropriate (ear outline, cheek line, head silhouette), sharp \
+geometric edges where appropriate (collars, jaw line).
+- LOW-DIMENSION, FLAT FACE — CRITICAL: Inside the silhouette, the \
+face stays almost entirely flat. NO brow furrows, NO forehead \
+wrinkles, NO chin folds, NO multiple shadow planes carving up the \
+muzzle, NO highlight ridges along the nose bridge, NO fur striation, \
+NO whiskers, NO mouth crease lines, NO under-jaw shading. The snout / \
+nose is ONE darker shape; the rest of the face is one continuous coat \
+tone. A 3-year-old should be able to recognise the breed from the \
+silhouette alone — that's the depth target.
 - Restrained modern palette: the BACKGROUND is the customer's chosen \
-colour {{MODERN_BG_NAME}} ({{MODERN_BG_HEX}}). The pet's coat uses 4-6 \
-flat tones derived from the animal's true colour. Pet tones must read \
-clearly against the {{MODERN_BG_NAME}} background — pick coat shades that \
-contrast comfortably with {{MODERN_BG_HEX}} so the pet doesn't disappear \
-into the background. Quietly confident, never garish.
+colour {{MODERN_BG_NAME}} ({{MODERN_BG_HEX}}). The pet's coat uses \
+exactly 2-3 flat tones (see COLOR ACCURACY). Pet tones must read \
+clearly against the {{MODERN_BG_NAME}} background — pick coat shades \
+that contrast comfortably with {{MODERN_BG_HEX}}. Quietly confident, \
+never garish.
 - Generous NEGATIVE SPACE — at least 35% of the canvas is calm, unbroken \
-background so the pet shapes have room to breathe. The negative space is the \
-hero alongside the pet.
+background so the pet shapes have room to breathe.
 - THE PET IS THE ONLY SUBJECT. Do NOT add decorative elements, abstract \
 shapes, accents, arcs, circles, dots, lines, foliage, geometric ornaments, \
 patterns, halos, frames, or any other graphic elements around the pet. The \
@@ -725,15 +745,19 @@ field of {{MODERN_BG_HEX}} behind the pet.
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere.
 
 Avoid: photography, photorealism, painterly brush strokes, oil paint, \
-watercolor bleed, film grain, sepia, gradients, drop shadows, 3D render, \
-cartoon, anime, neon, busy patterns, ornate details, ANY rendered eyes \
-(realistic, stylised, almond, oval, dot, slit, closed-line, glowing, \
-or any eye mark whatsoever), iris, pupil, sclera, catchlight, eyelash, \
-under-eye shading, whiskers, individual fur strands, hatching, stripe \
-patterns that don't exist on the actual pet, text, watermark, border, \
-solid color bars or panels at image edges, decorative shapes, abstract \
-accents, arcs, circles, dots, lines, foliage, halos, frames, patterns, \
-geometric ornaments, anything other than the pet on a solid background.\
+watercolor bleed, film grain, sepia, gradients, drop shadows, 3D \
+render, cartoon, anime, neon, busy patterns, ornate details, ANY \
+rendered eyes (realistic, stylised, almond, oval, dot, slit, \
+closed-line, glowing, or any eye mark whatsoever), iris, pupil, \
+sclera, catchlight, eyelash, under-eye shading, whiskers, individual \
+fur strands, hatching, brow furrows, forehead wrinkles, chin folds, \
+multiple shadow planes inside the silhouette, nose-bridge highlights, \
+fur striations, mouth crease lines, made-up tiger / zebra / marble \
+stripe patterns that aren't on the actual pet, more than 3 coat \
+tones, text, watermark, border, solid color bars or panels at image \
+edges, decorative shapes, abstract accents, arcs, circles, dots, \
+lines, foliage, halos, frames, patterns, geometric ornaments, \
+anything other than the pet on a solid background.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
