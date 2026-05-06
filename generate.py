@@ -1607,12 +1607,19 @@ def _modern_shape_art_reframe(
     if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
         return add_background_padding(img, padding_ratio=0.10)
 
-    # Add a small inset so we don't clip anti-aliased edges.
-    inset = step * 2
-    fg_min_x = max(0, fg_min_x - inset)
-    fg_min_y = max(0, fg_min_y - inset)
-    fg_max_x = min(w, fg_max_x + inset)
-    fg_max_y = min(h, fg_max_y + inset)
+    # Add inset so we don't clip anti-aliased edges. Antialiased ear
+    # tips on a cream background can fall below BG_TOL — without a
+    # margin, the bbox cuts into the visible silhouette and re-padding
+    # places the ears flush against the canvas edge. 1.5% of bbox
+    # dimension gives the soft fade room to be preserved.
+    bbox_w = fg_max_x - fg_min_x
+    bbox_h = fg_max_y - fg_min_y
+    inset_x = max(step * 2, int(bbox_w * 0.015))
+    inset_y = max(step * 2, int(bbox_h * 0.015))
+    fg_min_x = max(0, fg_min_x - inset_x)
+    fg_min_y = max(0, fg_min_y - inset_y)
+    fg_max_x = min(w, fg_max_x + inset_x)
+    fg_max_y = min(h, fg_max_y + inset_y)
 
     pet_w = fg_max_x - fg_min_x
     pet_h = fg_max_y - fg_min_y
@@ -1891,10 +1898,17 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
     falls through to a plain crop_to_ratio.
     """
     if style_id == "modern-shape-art":
-        # No-name derivative for each aspect — pet packed tight against
-        # the canvas. composite_name re-runs the reframe with a larger
-        # pad_top_ratio when a name is added so the band only opens up
-        # for the with-name variant.
+        # 1:1 derivative needs more breathing room than 4:5 — a square
+        # face has the ears flush against the canvas edge if we use
+        # the same tight pad. composite_name re-runs the reframe with
+        # a larger pad_top_ratio when a name is added to open the band.
+        if target_aspect == PRINT_ASPECT_1_1:
+            return _modern_shape_art_reframe(
+                img,
+                pad_top_ratio=0.18,
+                pad_side_ratio=0.06,
+                target_aspect=PRINT_ASPECT_1_1,
+            )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
@@ -2375,10 +2389,14 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
     """
     is_square = image.height > 0 and abs((image.width / image.height) - 1.0) < 0.05
     if is_square:
+        # Square with name needs a generous top band — name has to fit
+        # WITH visible breathing room above (not flush to the canvas
+        # top edge) AND clear margin below before the ears start.
+        # pad_top_ratio 0.45 lands the head at y≈31% of canvas.
         return _modern_shape_art_reframe(
             image,
-            pad_top_ratio=0.30,
-            pad_side_ratio=0.02,
+            pad_top_ratio=0.45,
+            pad_side_ratio=0.06,
             target_aspect=PRINT_ASPECT_1_1,
         )
     return _modern_shape_art_reframe(
@@ -2454,11 +2472,13 @@ def composite_name(
     #
     # Modern style: 4:5 with-name reframe (pad_top_ratio 0.20) lands the
     # head at y≈17%, so the cfg zone_top 0.085 puts the name halfway
-    # above. 1:1 with-name (pad_top_ratio 0.30) lands the head at y≈23%,
-    # so we bump zone_top to 0.115 when we detect the square aspect.
+    # above. 1:1 with-name (pad_top_ratio 0.45) lands the head at y≈31%,
+    # so we bump zone_top to 0.155 when we detect the square aspect —
+    # halfway between canvas top and head, with clear breathing room
+    # both above and below the name.
     zone_top_frac = cfg["zone_top"]
     if style == "modern-shape-art" and h > 0 and abs((w / h) - 1.0) < 0.05:
-        zone_top_frac = 0.115
+        zone_top_frac = 0.155
     text_x = (w - text_w) // 2
     text_y = max(0, int(h * zone_top_frac) - text_h // 2)
 
