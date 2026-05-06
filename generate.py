@@ -1646,6 +1646,23 @@ def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
     pad_side   = int(pet_w * 0.08)
     pad_bottom = int(pet_h * bottom_frac)
 
+    # Target the 4:5 print ratio exactly so the downstream post-process
+    # never needs to crop into the pet:
+    #   - taller than 4:5 (long-bodied pet): expand sides so the bottom-
+    #     gravity crop doesn't eat into the head/ears.
+    #   - wider than 4:5 (head-shot or square bbox): expand top so the
+    #     side crop doesn't eat into the ears/shoulders. Adding to the
+    #     top preserves the flat-bottom rule.
+    target_w, target_h = PORTRAIT_RATIO  # (4, 5)
+    natural_w = pet_w + 2 * pad_side
+    natural_h = pet_h + pad_top + pad_bottom
+    if natural_w * target_h < natural_h * target_w:
+        needed_w = (natural_h * target_w + target_h - 1) // target_h
+        pad_side += (needed_w - natural_w + 1) // 2
+    elif natural_w * target_h > natural_h * target_w:
+        needed_h = (natural_w * target_h + target_w - 1) // target_w
+        pad_top += needed_h - natural_h
+
     canvas_w = pet_w + 2 * pad_side
     canvas_h = pet_h + pad_top + pad_bottom
     canvas = Image.new('RGB', (canvas_w, canvas_h), bg)
@@ -1723,21 +1740,34 @@ def _center_line_art(img: Image.Image) -> Image.Image:
     return shifted
 
 
-def _tight_crop_to_4_5(img: Image.Image, bg_tol: int = 35) -> Image.Image:
+def _tight_crop_to_aspect(
+    img: Image.Image,
+    target_aspect: tuple = (4, 5),
+    bg_tol: int = 35,
+) -> Image.Image:
     """Detect the artwork's bounding box, crop to it, then pad
-    symmetrically to a 4:5 frame with edge-replicated padding.
+    symmetrically to the target aspect with edge-replicated padding.
 
     Why: Gemini frequently composes the artwork off-centre within the
-    raw 4:5 frame, leaving a band of background colour on one side.
-    The canvas mockup (cover-cropped at any size) then displays the
-    artwork visibly shifted, with the bg colour bleeding in on the
-    opposite edge. By centring the bbox in the print file itself,
-    the mockup always shows the artwork properly positioned and the
-    customer's printed canvas matches the on-screen mockup exactly.
+    raw frame, leaving a band of background colour on one side. The
+    canvas mockup (cover-cropped at any size) then displays the artwork
+    visibly shifted, with the bg colour bleeding in on the opposite
+    edge. By centring the bbox in the print file itself, the mockup
+    always shows the artwork properly positioned and the customer's
+    printed canvas matches the on-screen mockup exactly.
 
-    No-op when the bbox already covers ≥95% of the frame (artwork is
-    already tight) or when no foreground is detectable (degenerate).
+    Generating per-aspect derivatives (e.g. a 1:1 alongside the 4:5
+    master) means each canvas variant gets a print file composed for
+    its exact aspect — no cover-crop loss when the customer picks a
+    square size against a 4:5 master.
 
+    No-op when the bbox already covers ≥95% of the frame and the
+    current aspect is within 1% of the target (artwork is already
+    tight and correctly shaped) or when no foreground is detectable
+    (degenerate).
+
+    target_aspect: (width, height) tuple. (4, 5) for tall canvas/poster,
+        (1, 1) for square canvas, (3, 4) for some posters.
     bg_tol: Euclidean RGB distance from the corner-sampled background
         colour above which a pixel counts as artwork. Tuned for clear
         contrast between artwork and bg; styles with low-contrast or
@@ -1786,22 +1816,24 @@ def _tight_crop_to_4_5(img: Image.Image, bg_tol: int = 35) -> Image.Image:
     bbox_w = fg_max_x - fg_min_x
     bbox_h = fg_max_y - fg_min_y
 
+    target_aspect_ratio = target_aspect[0] / target_aspect[1]
+    cur_frame_aspect = w / h
     coverage = (bbox_w * bbox_h) / (w * h)
-    if coverage >= 0.95:
+    aspect_ok = abs(cur_frame_aspect - target_aspect_ratio) / target_aspect_ratio < 0.01
+    if coverage >= 0.95 and aspect_ok:
         return img
 
     cropped = rgb.crop((fg_min_x, fg_min_y, fg_max_x, fg_max_y))
     cw, ch = cropped.size
 
-    # Compute the smallest 4:5 canvas that wraps the bbox
-    target_aspect = 4 / 5  # W/H
+    # Compute the smallest target-aspect canvas that wraps the bbox
     cur_aspect = cw / ch
-    if cur_aspect > target_aspect:
+    if cur_aspect > target_aspect_ratio:
         target_w = cw
-        target_h = int(round(cw / target_aspect))
+        target_h = int(round(cw / target_aspect_ratio))
     else:
         target_h = ch
-        target_w = int(round(ch * target_aspect))
+        target_w = int(round(ch * target_aspect_ratio))
 
     pad_x = (target_w - cw) // 2
     pad_y = (target_h - ch) // 2
@@ -1859,8 +1891,63 @@ def _tight_crop_post_process(img: Image.Image) -> Image.Image:
     watercolor, etc.) so the canvas mockup displays the artwork
     centred and edge-to-edge instead of shifted with bg bleed.
     """
-    img = _tight_crop_to_4_5(img)
+    img = _tight_crop_to_aspect(img, target_aspect=(4, 5))
     return _portrait_post_process(img)
+
+
+# Per-aspect derivative helpers — used to produce a 1:1 (square)
+# print file alongside the standard 4:5 master so square canvas
+# variants (12×12, 16×16) get a print composed for their exact
+# aspect instead of cover-cropping a 4:5 source and losing the
+# pet's bottom (or the name area at the top).
+PRINT_ASPECT_4_5 = (4, 5)
+PRINT_ASPECT_1_1 = (1, 1)
+
+
+def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") -> Image.Image:
+    """Produce a per-aspect derivative of the given (already padded)
+    portrait. Modern uses its own bbox-aware reframe; other styles
+    use the generic tight-crop. Aura-gradient skips bbox detection
+    entirely (gradient bg defeats corner-sample bg detection) and
+    falls through to a plain crop_to_ratio.
+    """
+    if style_id == "modern-shape-art":
+        # _modern_shape_art_reframe produces a tight composition; then
+        # crop to target aspect with bottom gravity (preserves chest cut).
+        reframed = _modern_shape_art_reframe(img)
+        return crop_to_ratio(reframed, target_aspect, gravity="bottom")
+    if style_id == "aura-gradient":
+        return crop_to_ratio(img, target_aspect)
+    return _tight_crop_to_aspect(img, target_aspect=target_aspect)
+
+
+def _save_aspect_derivative(
+    src_img: Image.Image,
+    out_dir: Path,
+    filename: str,
+    style_id: str,
+    target_aspect: tuple,
+) -> Path:
+    """Derive a per-aspect crop of src_img and save as a 300-DPI PNG.
+    Min-size scaling matches the standard portrait pipeline so the
+    derivative is print-ready without a separate upscale step.
+    """
+    derived = derive_aspect(src_img, target_aspect, style_id)
+    min_w, min_h = PORTRAIT_MIN_SIZE
+    if derived.width < min_w or derived.height < min_h:
+        scale = max(min_w / derived.width, min_h / derived.height)
+        derived = derived.resize(
+            (int(derived.width * scale), int(derived.height * scale)),
+            Image.LANCZOS,
+        )
+    out_path = out_dir / filename
+    derived.save(out_path, "PNG", dpi=(300, 300))
+    log.info(
+        "           %dx%d derivative → %s (%dx%d @ 300 DPI)",
+        target_aspect[0], target_aspect[1], out_path.name,
+        derived.width, derived.height,
+    )
+    return out_path
 
 
 def _modern_shape_art_post_process(img: Image.Image) -> Image.Image:
@@ -2858,17 +2945,25 @@ def _generate_inner(
         ai_image_no_name.close()
         ai_image_no_name = padded
 
-    # Per-style post-processing (crop + upscale to print size)
+    # Per-style post-processing — produces the 4:5 master (the
+    # default print aspect for tall canvas variants 12×16, 16×20).
     processed_no_name = POST_PROCESS.get(style, lambda img: img)(ai_image_no_name)
     if processed_no_name is not ai_image_no_name:
         ai_image_no_name.close()
     ai_image_no_name = processed_no_name
 
-    # Save the hi-res no-name version (same file used for both paths)
+    # Save the hi-res no-name 4:5 master.
     raw_path = out / f"{uid}_{style}_raw.png"
     ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
     log.info("           raw (no name) → %s (%dx%d @ 300 DPI)",
              raw_path, ai_image_no_name.width, ai_image_no_name.height)
+
+    # 1:1 derivative for square canvas variants (12×12, 16×16). Built
+    # from the 4:5 master with style-aware aspect cropping so the
+    # square print fills the canvas with no aspect-mismatch loss.
+    raw_path_1x1 = _save_aspect_derivative(
+        ai_image_no_name, out, f"{uid}_{style}_raw_1x1.png", style, PRINT_ASPECT_1_1
+    )
 
     # For preview purposes, the "composited" (with-name) version is
     # initially the SAME as the no-name version. It'll be upgraded
@@ -2881,6 +2976,12 @@ def _generate_inner(
     composited.save(comp_path, "PNG", dpi=(300, 300))
     log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
              comp_path, composited.width, composited.height)
+    # 1:1 derivative for the no-name preview's "with-name" placeholder
+    # (it's the same image as raw_path_1x1 since no name has been
+    # composited yet — generate_with_name_on_demand re-derives later).
+    comp_path_1x1 = out / f"{uid}_{style}_{safe_name}_1x1.png"
+    import shutil as _shutil
+    _shutil.copy2(raw_path_1x1, comp_path_1x1)
 
     # Optimized web preview (small WebP for fast frontend display).
     # The customer-facing WebP is watermarked with "PREVIEW" so a
@@ -2900,7 +3001,7 @@ def _generate_inner(
     )
     composited.close()
 
-    return raw_path, comp_path, web_path, raw_web_path
+    return raw_path, comp_path, web_path, raw_web_path, raw_path_1x1, comp_path_1x1
 
 
 # ---------------------------------------------------------------------------
@@ -2913,11 +3014,15 @@ def generate_with_name_on_demand(
     style: str,
     output_dir: Optional[Path] = None,
     background_mode: Optional[str] = "auto",
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, Path]:
     """Add the pet's name to an already-generated no-name portrait.
     Called at add-to-cart time to halve the up-front Gemini cost.
 
-    Returns: (comp_path, web_preview_path)
+    Returns: (comp_path_4x5, web_preview_path, comp_path_1x1)
+
+    The 1:1 derivative is composited from the same name-applied source
+    so both square and tall canvas variants get a print file with the
+    name baked in at the correct position for each aspect.
     """
     if not _generation_semaphore.acquire(timeout=2):
         raise RuntimeError("BUSY")
@@ -2948,8 +3053,16 @@ def generate_with_name_on_demand(
                  comp_path, composited.width, composited.height)
 
         web_path = save_web_preview(composited, comp_path)
+
+        # 1:1 derivative with the name baked in. Derived from the
+        # same name-composited 4:5 image so the name lands at the same
+        # relative position in the square print as in the tall print.
+        comp_path_1x1 = _save_aspect_derivative(
+            composited, out, f"{uid}_{style}_{safe_name}_named_1x1.png",
+            style, PRINT_ASPECT_1_1,
+        )
         composited.close()
-        return comp_path, web_path
+        return comp_path, web_path, comp_path_1x1
     finally:
         _generation_semaphore.release()
 
