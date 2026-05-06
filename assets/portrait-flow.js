@@ -663,7 +663,8 @@ const KEYFRAME_CSS = `
     max-width: 1080px;
     margin: 0 auto;
   }
-  .pf-preview-grid__media { grid-column: 1; margin: 0 !important; max-width: 100% !important; }
+  .pf-preview-grid__media-col { grid-column: 1; }
+  .pf-preview-grid__media { margin: 0 auto !important; max-width: 100% !important; }
   .pf-preview-grid__copy  { grid-column: 2; text-align: left; }
   .pf-preview-grid__copy .pf-preview-grid__center { text-align: center; }
   /* Step indicator stays at the very top, full width above the grid. */
@@ -2868,25 +2869,30 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       React.createElement(StepIndicator, { current: 3 }),
     ),
 
-    // Main preview (single, large) — left column on desktop, top on mobile
-    React.createElement('div', {
-      className: 'pf-preview-grid__media',
-      style: {
-        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 16px', borderRadius: tokens.radiusCard,
-        overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
+    // Left column on desktop (image + watermark caption), stacks above
+    // the copy block on mobile. Wrapping image + caption together keeps
+    // them in the same grid cell — without this, the caption auto-flows
+    // into column 2, pushing the heading/CTA into row 3 with a gap.
+    React.createElement('div', { className: 'pf-preview-grid__media-col' },
+      React.createElement('div', {
+        className: 'pf-preview-grid__media',
+        style: {
+          width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 12px', borderRadius: tokens.radiusCard,
+          overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
+        },
       },
-    },
-      React.createElement('img', {
-        src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
-        style: { width: '100%', display: 'block' },
-      }),
+        React.createElement('img', {
+          src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
+          style: { width: '100%', display: 'block' },
+        }),
+      ),
+      React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', textAlign: 'center',
+          color: tokens.colorMuted, margin: '0 auto 20px', letterSpacing: '0.02em',
+        },
+      }, 'Watermark will not appear on your final print.'),
     ),
-    React.createElement('p', {
-      style: {
-        fontFamily: fontSans, fontSize: 'var(--text-xs)', textAlign: 'center',
-        color: tokens.colorMuted, margin: '-8px auto 20px', letterSpacing: '0.02em',
-      },
-    }, 'Watermark will not appear on your final print.'),
 
     // Right column on desktop (heading + chip + bridge + actions),
     // stacks below the preview on mobile.
