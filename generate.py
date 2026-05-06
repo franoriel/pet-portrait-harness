@@ -646,11 +646,27 @@ shadow planes the way a rendered illustration would. A black dog reads \
 as one deep charcoal silhouette with maybe a slightly darker snout and \
 a small chest patch — nothing else inside the body. A brown dog reads \
 as one warm caramel silhouette + snout + (optional) chest patch.
-- Tabby / spotted / patched coats: keep ONLY the most distinguishing \
-1-2 markings from the photo, rendered as large simple shape blocks. \
-NEVER invent stripes, swirls, marble veins, or pattern flourishes that \
-aren't on the actual pet — the recent failure mode is body-wide tiger \
-striping that doesn't exist on the real animal.
+- DO NOT HALLUCINATE MARKINGS — CRITICAL: the source photo is the \
+SINGLE SOURCE OF TRUTH for what's on the pet's coat. Before adding \
+ANY second tone or shape inside the silhouette, verify it corresponds \
+to a real, clearly-visible feature on the actual pet in the photo. \
+If the photo shows a solid-colour dog, the result is a SOLID-COLOUR \
+silhouette — one tone, full stop. Acceptable second-tone uses (only \
+if visible in the photo): a real white chest blaze, a real tan \
+saddle on a black-and-tan dog, a real visible calico patch, the \
+muzzle if it's noticeably darker than the body. Tabby / spotted / \
+patched coats keep ONLY the 1-2 most distinguishing real markings, \
+rendered as large simple shape blocks.
+- ABSOLUTELY FORBIDDEN — invented patterns the AI adds because "shape \
+art needs visual interest": tiger / zebra / brindle stripes that \
+aren't on the actual pet, decorative swirls, marble veins, brushy \
+texture suggesting fur direction, abstract colour-block panels, \
+geometric facets, and any other coat detail that does not appear in \
+the source photo. If you find yourself drawing a second tone purely \
+to "add interest," DELETE IT and leave the silhouette flat. Boring \
+flat silhouette > invented pattern. The recent failure mode is a \
+solid-coloured pet rendered with body-wide tiger striping — this \
+must NEVER happen.
 - COLOR HARMONY — CRITICAL: the pet's coat palette and the {{MODERN_BG_NAME}} \
 background must read as ONE intentional, harmonious palette — never as two \
 unrelated images stacked. Treat the whole composition like a curated \
