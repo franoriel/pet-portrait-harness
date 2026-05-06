@@ -2434,8 +2434,19 @@ def composite_name(
     # name sits exactly between top edge and pet, with breathing room
     # both sides. The rendered text is centred on this point regardless
     # of font size, so a tall script and a thin sans-serif both align.
+    #
+    # Modern style: the pet head sits at ~30% of canvas height on 4:5
+    # sources (where zone_top 0.15 places the name halfway above), but
+    # at ~13% on 1:1 derivatives (the bottom-gravity 4:5→1:1 crop drops
+    # the top 20%, pulling the head closer to the top edge). Detect a
+    # near-square aspect and use a tighter zone_top on those, so the
+    # name on a 1:1 print still sits roughly halfway between the top
+    # edge and the head instead of colliding with it.
+    zone_top_frac = cfg["zone_top"]
+    if style == "modern-shape-art" and h > 0 and abs((w / h) - 1.0) < 0.05:
+        zone_top_frac = 0.06
     text_x = (w - text_w) // 2
-    text_y = max(0, int(h * cfg["zone_top"]) - text_h // 2)
+    text_y = max(0, int(h * zone_top_frac) - text_h // 2)
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
 
@@ -3033,6 +3044,8 @@ def generate_with_name_on_demand(
         processed = POST_PROCESS.get(style, lambda img: img)(base_image)
         if processed is not base_image:
             base_image.close()
+
+        # 4:5 with name — composite onto the post-processed master.
         composited = composite_name(processed, pet_name, style=style)
 
         safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
@@ -3043,14 +3056,30 @@ def generate_with_name_on_demand(
 
         web_path = save_web_preview(composited, comp_path)
 
-        # 1:1 derivative with the name baked in. Derived from the
-        # same name-composited 4:5 image so the name lands at the same
-        # relative position in the square print as in the tall print.
-        comp_path_1x1 = _save_aspect_derivative(
-            composited, out, f"{uid}_{style}_{safe_name}_named_1x1.png",
-            style, PRINT_ASPECT_1_1,
-        )
+        # 1:1 derivative with the name baked in. Derive the 1:1 master
+        # from the NO-NAME source first, then composite the name on the
+        # 1:1 separately. Compositing on the 4:5 first and then deriving
+        # 1:1 would crop the top 20% of source — eating the name, which
+        # sits in that band on 4:5. composite_name detects the square
+        # aspect and uses a tighter zone_top so the name lands halfway
+        # between the canvas top and the (now closer-to-top) pet head.
+        derived_1x1 = derive_aspect(processed, PRINT_ASPECT_1_1, style)
+        min_w, min_h = PORTRAIT_MIN_SIZE
+        if derived_1x1.width < min_w or derived_1x1.height < min_h:
+            scale = max(min_w / derived_1x1.width, min_h / derived_1x1.height)
+            derived_1x1 = derived_1x1.resize(
+                (int(derived_1x1.width * scale), int(derived_1x1.height * scale)),
+                Image.LANCZOS,
+            )
+        composited_1x1 = composite_name(derived_1x1, pet_name, style=style)
+        comp_path_1x1 = out / f"{uid}_{style}_{safe_name}_named_1x1.png"
+        composited_1x1.save(comp_path_1x1, "PNG", dpi=(300, 300))
+        log.info("           comp 1x1 (with name) → %s (%dx%d @ 300 DPI)",
+                 comp_path_1x1, composited_1x1.width, composited_1x1.height)
+
         composited.close()
+        composited_1x1.close()
+        derived_1x1.close()
         return comp_path, web_path, comp_path_1x1
     finally:
         _generation_semaphore.release()
