@@ -324,25 +324,21 @@
   // aspect ratio exactly (no misalignment). The linen surface + shadow
   // + canvas weave texture sell the realism.
   function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1) {
-    // Outer container: square 1:1 lifestyle shot
+    // Outer container: square 1:1 slide. Transparent — the gallery slide
+    // surface shows around the portrait so we never have a flat white
+    // square sitting on linen. (Linen backdrop and white canvas-face
+    // fill removed: those read as unprofessional / paste-on-linen for
+    // any style whose own background isn't edge-to-edge cream.)
     var container = document.createElement('div');
-    container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
-      + 'overflow:hidden;position:relative;'
-      + "background-image:url(" + _assetBase + "linen-texture.webp);"
-      + 'background-size:cover;background-position:center;'
+    container.style.cssText = 'width:100%;aspect-ratio:1/1;'
+      + 'position:relative;background:transparent;'
       + 'display:flex;align-items:center;justify-content:center;';
 
-    // Subtle directional light from upper-left (matches Printful style)
-    var lightGradient = document.createElement('div');
-    lightGradient.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
-      + 'background:radial-gradient(ellipse at 30% 20%, rgba(255,250,240,0.18) 0%, transparent 60%);';
-    container.appendChild(lightGradient);
-
-    // Canvas wrapper — sized proportionally to variant dimensions.
+    // Canvas wrapper sized proportionally to variant dimensions.
     // Larger sizes fill more of the container so the visual scale matches reality.
     var MAX_CANVAS_DIM = 20; // largest available canvas dimension (inches)
-    var MAX_PCT = 72;        // container % for the largest canvas
-    var MIN_PCT = 56;        // container % for the smallest canvas (12")
+    var MAX_PCT = 84;        // container % for the largest canvas
+    var MIN_PCT = 70;        // container % for the smallest canvas (12")
     var maxDim = Math.max(widthIn, heightIn);
     var scaledPct = MIN_PCT + ((maxDim - 12) / (MAX_CANVAS_DIM - 12)) * (MAX_PCT - MIN_PCT);
 
@@ -358,24 +354,20 @@
       canvasStyleH = canvasStyleW * productAspect;
     }
 
+    // The canvas wrap holds either the unframed portrait or the framed
+    // wood frame. A drop-shadow filter on the wrap puts the shadow
+    // around the actual visible artwork silhouette (not around an
+    // invisible bounding box), so removing the white canvas-face fill
+    // doesn't lose the "product on a wall" depth cue.
     var canvasWrap = document.createElement('div');
     canvasWrap.style.cssText = 'position:relative;'
       + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
-      + 'max-width:' + scaledPct + '%;max-height:' + scaledPct + '%;';
-    container.appendChild(canvasWrap);
-
-    // Deeper ground shadow if framed (heavier object)
-    var groundShadow = document.createElement('div');
-    groundShadow.style.cssText = 'position:absolute;inset:0;'
+      + 'max-width:' + scaledPct + '%;max-height:' + scaledPct + '%;'
+      + 'border-radius:2px;overflow:visible;'
       + (isFramedProduct
-        ? 'box-shadow:6px 8px 16px rgba(40,28,18,0.18),'
-          +          '12px 18px 40px rgba(40,28,18,0.14),'
-          +          '18px 26px 56px rgba(40,28,18,0.10);'
-        : 'box-shadow:4px 6px 12px rgba(60,45,30,0.12),'
-          +          '8px 12px 32px rgba(60,45,30,0.10),'
-          +          '12px 20px 48px rgba(60,45,30,0.06);')
-      + 'border-radius:1px;';
-    canvasWrap.appendChild(groundShadow);
+        ? 'filter:drop-shadow(6px 10px 18px rgba(40,28,18,0.22)) drop-shadow(0 2px 4px rgba(40,28,18,0.18));'
+        : 'filter:drop-shadow(4px 8px 16px rgba(60,45,30,0.18)) drop-shadow(0 1px 3px rgba(60,45,30,0.14));');
+    container.appendChild(canvasWrap);
 
     // If framed: wood frame border wrapping the canvas face
     // If unframed: just the canvas face
@@ -403,18 +395,22 @@
         + "background-image:repeating-linear-gradient(90deg, transparent 0 3px, rgba(0,0,0,0.4) 3px 3.5px, transparent 3.5px 8px);";
       frame.appendChild(woodGrain);
 
-      // Inner mat / inset shadow recess where canvas sits
+      // Recess where the printed canvas sits. No fill colour: the
+      // portrait covers it entirely so any style's own background sells
+      // the canvas face (no flat white rectangle peeking through).
       canvasFace = document.createElement('div');
       canvasFace.style.cssText = 'position:absolute;inset:6%;overflow:hidden;'
-        + 'background:#fefdfb;'
+        + 'background:transparent;'
         + 'box-shadow:inset 0 2px 6px rgba(0,0,0,0.30),'
         +           'inset 0 -1px 2px rgba(0,0,0,0.15);';
       canvasWrap.appendChild(canvasFace);
     } else {
-      // Unframed — canvas face fills the wrap
+      // Unframed: portrait IS the canvas face. No fill colour at all so
+      // we never expose a flat white rectangle for styles whose own
+      // background isn't pure cream.
       canvasFace = document.createElement('div');
       canvasFace.style.cssText = 'position:absolute;inset:0;overflow:hidden;'
-        + 'background:#fefdfb;'
+        + 'background:transparent;'
         + 'border-radius:1px;';
       canvasWrap.appendChild(canvasFace);
     }

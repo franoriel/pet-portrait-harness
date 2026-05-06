@@ -685,10 +685,6 @@ const KEYFRAME_CSS = `
   .pf-style-grid .pf-style-card-thumb {
     aspect-ratio: 4 / 5 !important;
   }
-  .pf-style-grid .pf-style-card-label {
-    padding: 8px 10px !important;
-    font-size: 0.85rem !important;
-  }
 }
 `;
 
@@ -1867,11 +1863,12 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           'aria-label': `${style.name}${!style.available ? ' \u2014 available soon' : ''}`,
           onClick: () => style.available && selectStyle(style.id),
           style: {
-            border: selected ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
-            borderRadius: tokens.radiusCard, background: selected ? tokens.colorAccentLight : tokens.colorWhite,
+            border: selected ? `2px solid ${tokens.colorAccent}` : 'none',
+            borderRadius: tokens.radiusCard, background: 'transparent',
             padding: 0, cursor: style.available ? 'pointer' : 'default',
             textAlign: 'left', outline: 'none', overflow: 'hidden', transition: 'all 0.2s',
             position: 'relative',
+            boxShadow: selected ? 'none' : '0 1px 2px rgba(40,28,18,0.06), 0 4px 12px rgba(40,28,18,0.06)',
           },
         },
           // Thumbnail — real example portrait. Source images are 4:5
@@ -1882,13 +1879,34 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           // pet was rendered higher in the source than others.
           React.createElement('div', {
             className: 'pf-style-card-thumb',
-            style: { width: '100%', aspectRatio: '4/5', background: tokens.colorSurface, position: 'relative', overflow: 'hidden' },
+            style: { width: '100%', aspectRatio: '4/5', position: 'relative', overflow: 'hidden' },
           },
             style.exampleImage && React.createElement('img', {
               src: _pfAssetBase + style.exampleImage, alt: style.name + ' example',
               loading: 'lazy',
               style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
             }),
+            // Label overlay \u2014 gradient + light text at the bottom of the
+            // image so the card never has a flat white footer next to the
+            // artwork.
+            React.createElement('div', {
+              className: 'pf-style-card-label',
+              style: {
+                position: 'absolute', left: 0, right: 0, bottom: 0,
+                padding: '32px 12px 12px',
+                background: 'linear-gradient(to top, rgba(20,14,8,0.78) 0%, rgba(20,14,8,0.45) 55%, rgba(20,14,8,0) 100%)',
+                pointerEvents: 'none',
+              },
+            },
+              React.createElement('p', {
+                style: {
+                  fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
+                  color: tokens.colorWhite,
+                  margin: 0, lineHeight: 1.25,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+                },
+              }, style.name),
+            ),
             // Selected checkmark
             selected && React.createElement('div', {
               style: {
@@ -1897,13 +1915,14 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
                 background: tokens.colorAccent, color: tokens.colorWhite,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'var(--text-xs)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
               },
             }, '\u2713'),
             // Available soon overlay
             !style.available && React.createElement('div', {
               style: {
                 position: 'absolute', inset: 0,
-                background: 'rgba(250, 248, 245, 0.6)',
+                background: 'rgba(20,14,8,0.45)',
                 backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               },
@@ -1916,18 +1935,6 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
                 },
               }, 'Coming soon'),
             ),
-          ),
-          // Card body — style name only (font preview removed; the
-          // style itself is the preview, and the script font on the
-          // card was reading as decorative noise rather than info).
-          React.createElement('div', { style: { padding: '8px 8px 10px' } },
-            React.createElement('p', {
-              style: {
-                fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
-                color: selected ? tokens.colorAccent : tokens.colorBrand,
-                margin: 0, lineHeight: 1.3,
-              },
-            }, style.name),
           ),
         );
       }),
