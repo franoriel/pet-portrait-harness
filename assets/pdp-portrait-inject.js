@@ -268,6 +268,56 @@
   var _scriptTag = document.querySelector('script[src*="pdp-portrait-inject"]');
   if (_scriptTag) _assetBase = _scriptTag.src.replace(/pdp-portrait-inject[^/]*$/, '');
 
+  // ── Tap-to-zoom lightbox for the gallery hero ──────
+  // The product gallery slide is locked to a 1:1 aspect ratio (see
+  // base.css) so the flex track doesn't jump between mismatched
+  // image sizes. That means any 4:5 source rendered into the slide
+  // gets cover-cropped by 12.5% on top and bottom — fine for the
+  // 1:1 derivative but problematic for legacy URLs without a 1:1
+  // file. The lightbox lets the customer see the full uncropped
+  // composition even when the slide is forced to crop.
+  function openPortraitZoom(src, petName) {
+    if (!src) return;
+    var existing = document.getElementById('pp-portrait-zoom');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'pp-portrait-zoom';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', petName ? 'Full preview of ' + petName : 'Full portrait preview');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,18,16,0.92);'
+      + 'display:flex;align-items:center;justify-content:center;padding:6vw;'
+      + 'cursor:zoom-out;';
+    var fullImg = document.createElement('img');
+    fullImg.src = src;
+    fullImg.alt = petName ? 'Full portrait of ' + petName : 'Full portrait preview';
+    fullImg.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;'
+      + 'display:block;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.6);'
+      + 'object-fit:contain;background:#fefdfb;';
+    overlay.appendChild(fullImg);
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close preview');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = 'position:absolute;top:16px;right:16px;width:44px;height:44px;'
+      + 'border-radius:50%;border:none;background:rgba(255,255,255,0.95);color:#1c1c1c;'
+      + 'font-size:28px;line-height:1;cursor:pointer;display:flex;align-items:center;'
+      + 'justify-content:center;font-family:sans-serif;font-weight:300;';
+    overlay.appendChild(closeBtn);
+
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    overlay.addEventListener('click', close);
+    closeBtn.addEventListener('click', function (e) { e.stopPropagation(); close(); });
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(overlay);
+  }
+
   // ── Client-side product mockup — CSS-composed canvas ─────
   // Strategy: no pre-photographed canvas background. Instead, build
   // the canvas from scratch in CSS so it always matches the variant
@@ -497,11 +547,29 @@
     slide.setAttribute('role', 'listitem');
 
     var img = document.createElement('img');
-    img.src = previewUrl;
+    // The gallery slide is locked to a 1:1 aspect ratio (see base.css)
+    // and uses object-fit:cover, which trims 12.5% off the top and
+    // bottom of a 4:5 source — exactly where the name band sits. Use
+    // the 1:1 derivative for the hero whenever we have it so the full
+    // composed layout (pet + name) is visible without cropping.
+    var heroSrc = (data.wantsName !== false && data.namedPreviewUrl1x1)
+      ? data.namedPreviewUrl1x1
+      : previewUrl;
+    img.src = heroSrc;
     img.alt = petName ? 'Portrait of ' + petName : 'Your custom pet portrait';
     img.loading = 'eager';
     img.style.cssText = 'width:100%;display:block;border-radius:16px;';
     slide.appendChild(img);
+
+    // Tap-to-zoom on the hero slide — the gallery's 1:1 cover-crop can
+    // trim a 4:5 source if no 1:1 derivative is available, and the
+    // customer should always have an escape hatch to see the full
+    // composition. Listener sits on the slide because base.css disables
+    // pointer-events on the img itself.
+    slide.style.cursor = 'zoom-in';
+    slide.addEventListener('click', function () {
+      openPortraitZoom(heroSrc, petName);
+    });
 
     // Remove generic Shopify product images FIRST (they show wrong dog)
     var existingSlides = Array.from(gallery.querySelectorAll('.product-gallery__slide'));
@@ -857,15 +925,18 @@
     }
 
     function renderActiveImage(url) {
+      // Hero slide is locked to a 1:1 aspect ratio — feed it the 1:1
+      // derivative when we have one so the name band isn't cropped.
+      var url1x1 = data.namedPreviewUrl1x1 || null;
+      var heroUrl = (showName && url1x1) ? url1x1 : url;
       var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
-      if (mainImg) mainImg.src = url;
-      if (thumb) thumb.src = url;
+      if (mainImg) mainImg.src = heroUrl;
+      if (thumb) thumb.src = heroUrl;
       // Square variants need the 1:1 derivative — cover-cropping the
       // 4:5 master onto a square face clips the name band off the top.
       // Source-aspect change means the slide's cropping math is wrong
       // for the new src, so rebuild client mockup slides instead of
       // just swapping the src on the inner <img>.
-      var url1x1 = data.namedPreviewUrl1x1 || null;
       var sizesMap = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
       gallery.querySelectorAll('.product-gallery__slide--mockup').forEach(function (slide) {
         var sizeKey = slide.getAttribute('data-variant-size') || '';

@@ -605,16 +605,20 @@ fills that clearly read as the pet's true color. A black dog stays in deep \
 charcoal/near-black tones. A brown dog stays in warm caramel/sienna tones. \
 A white cat stays in soft ivory/cream tones. Tabby/spotted/patched coats \
 keep their distinguishing markings, simplified into clean shape blocks.
-- EYES — abstract vector shapes, NOT realistic eyes. Render each eye as ONE \
-single flat dark shape (a simple oval, almond, or rounded slot). NO iris \
-ring, NO visible pupil, NO white sclera, NO catchlight, NO eyelash detail, \
-NO under-eye shading, NO glossy highlight or wet reflection. The eye reads \
-as a graphic mark on the face, the way a Matisse cut-out or Charley Harper \
-illustration would suggest an eye — recognisable but unmistakably flat \
-and stylised, never photographic and never staring. Keep both eyes calm \
-and symmetrical; if a closed-eye / squint shape suits the pose, render the \
-eye as a single soft curved line instead — NEVER add depth, sparkle, or \
-realistic detail to the eye.
+- EYES — flat vector shapes that read as WARM and HAPPY, never blank or \
+staring. Render each eye as a soft almond / gentle curve, NOT a perfect \
+black oval. The eye colour is a deep WARM BROWN drawn from the coat \
+palette (charcoal-brown, espresso, warm umber) — NEVER pure black, which \
+reads cold and lifeless. The shape itself conveys warmth: the bottom \
+edge curves up slightly like a smiling-eye / soft squint, the outer \
+corner sits a touch lower than the inner corner so the gaze feels \
+relaxed and friendly rather than wide-open. Eyes are kept small and \
+unobtrusive — the pet's overall silhouette and coat are the hero, not \
+the eyes. NO iris ring, NO visible pupil, NO white sclera, NO catchlight, \
+NO glossy highlight, NO eyelash detail, NO under-eye shading. If a fully \
+closed / contented squint suits the pose, render the eye as a single \
+soft upward-curving line (like a relaxed 😌). Both eyes are symmetrical \
+and never wide-open or alert.
 
 STYLE:
 - Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets contemporary \
@@ -669,10 +673,12 @@ Avoid: photography, photorealism, painterly brush strokes, oil paint, \
 watercolor bleed, film grain, sepia, gradients, drop shadows, 3D render, \
 cartoon, anime, neon, busy patterns, ornate details, realistic eyes, \
 visible iris ring, white sclera, glossy eye highlight, catchlight, \
-eyelash detail, under-eye rendering, text, watermark, border, solid \
-color bars or panels at image edges, decorative shapes, abstract \
-accents, arcs, circles, dots, lines, foliage, halos, frames, patterns, \
-geometric ornaments, anything other than the pet on a solid background.\
+eyelash detail, under-eye rendering, pure-black eyes, wide-open or \
+staring eyes, blank doll eyes, dead-eyed expression, text, watermark, \
+border, solid color bars or panels at image edges, decorative shapes, \
+abstract accents, arcs, circles, dots, lines, foliage, halos, frames, \
+patterns, geometric ornaments, anything other than the pet on a solid \
+background.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
