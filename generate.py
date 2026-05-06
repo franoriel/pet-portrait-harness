@@ -1733,19 +1733,22 @@ def _modern_shape_art_reframe(
     img: Image.Image,
     pad_top_ratio: float = 0.05,
     pad_side_ratio: float = 0.02,
+    pad_bottom_ratio: float = 0.0,
     target_aspect: tuple = PORTRAIT_RATIO,
 ) -> Image.Image:
     """Reframe a modern-shape-art portrait so the pet fills the canvas
     confidently with exact target margins regardless of how much empty
     background the AI included.
 
-    pad_top_ratio / pad_side_ratio are expressed as fractions of pet
-    height / pet width. Defaults (0.05 / 0.02) target the no-name 4:5
-    master — pet dominates the canvas with a thin cream halo. When a
-    name is composited, composite_name re-runs this reframe on the
-    no-name master with a larger pad_top_ratio so a name band opens up
-    above the pet without re-rendering. The 1:1 derivative similarly
-    runs the tight reframe for no-name and a generous one for with-name.
+    pad_top_ratio / pad_side_ratio / pad_bottom_ratio are fractions of
+    pet height / width. Defaults (0.05 / 0.02 / 0.0) target the no-name
+    4:5 master — pet dominates with a thin cream halo and the chest
+    cut sits flush at the canvas bottom (where the gallery wrap takes
+    only ~6.75% of total height on a 4:5, leaving the chest visible on
+    the front face). The 1:1 derivative needs a non-zero
+    pad_bottom_ratio because the wrap eats ~8.6% of total height per
+    edge on a square — without it the chest cut wraps around to the
+    side of the canvas instead of staying on the front.
     """
     rgb = img.convert('RGB')
     w, h = rgb.size
@@ -1802,15 +1805,16 @@ def _modern_shape_art_reframe(
     pet_h = fg_max_y - fg_min_y
 
     # --- 3. Compose new canvas ---
-    # pad_bottom is always 0 for modern: the silhouette (flat chest cut,
-    # fluffy fade, tongue/collar dangle, whatever the bbox includes)
-    # sits flush with the canvas bottom. Even if the bbox extends past
-    # the visible body — e.g. through a tongue or collar tag — the
-    # surrounding cream blends seamlessly with the canvas, so there's
-    # no perceived "floating".
+    # pad_bottom defaults to 0 for the 4:5 master — the silhouette
+    # (flat chest cut, fluffy fade, tongue/collar dangle) sits flush
+    # with the canvas bottom and the gallery wrap on a 4:5 only takes
+    # ~6.75% per edge, leaving the chest visible on the front face.
+    # The 1:1 derivative passes pad_bottom_ratio>0 because the wrap on
+    # a square eats ~8.6% per edge — flush would mean the chest wraps
+    # to the side of the canvas instead of staying on the front.
     pad_top    = int(pet_h * pad_top_ratio)
     pad_side   = int(pet_w * pad_side_ratio)
-    pad_bottom = 0
+    pad_bottom = int(pet_h * pad_bottom_ratio)
 
     # Target the requested print ratio exactly so downstream cropping
     # never needs to eat into the pet:
@@ -2126,13 +2130,16 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
     if style_id == "modern-shape-art":
         # 1:1 derivative needs more breathing room than 4:5 — a square
         # face has the ears flush against the canvas edge if we use
-        # the same tight pad. composite_name re-runs the reframe with
-        # a larger pad_top_ratio when a name is added to open the band.
+        # the same tight pad, and the gallery wrap eats ~8.6% per edge
+        # on a square so the chest needs explicit bottom padding too.
+        # composite_name re-runs the reframe with a larger
+        # pad_top_ratio when a name is added to open the band.
         if target_aspect == PRINT_ASPECT_1_1:
             return _modern_shape_art_reframe(
                 img,
                 pad_top_ratio=0.18,
                 pad_side_ratio=0.06,
+                pad_bottom_ratio=0.16,
                 target_aspect=PRINT_ASPECT_1_1,
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
@@ -2637,12 +2644,15 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
     if is_square:
         # Square with name needs a generous top band — name has to fit
         # WITH visible breathing room above (not flush to the canvas
-        # top edge) AND clear margin below before the ears start.
-        # pad_top_ratio 0.45 lands the head at y≈31% of canvas.
+        # top edge) AND clear margin below before the ears start. The
+        # wrap canvas eats ~8.6% per edge on a square so pad_bottom is
+        # also non-zero — without it the chest cut wraps around the
+        # side of the canvas instead of staying on the front face.
         return _modern_shape_art_reframe(
             image,
             pad_top_ratio=0.45,
             pad_side_ratio=0.06,
+            pad_bottom_ratio=0.16,
             target_aspect=PRINT_ASPECT_1_1,
         )
     return _modern_shape_art_reframe(
