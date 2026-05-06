@@ -29,7 +29,7 @@ from typing import Callable, Optional
 
 from google import genai
 from google.genai import types
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 log = logging.getLogger(__name__)
 
@@ -440,6 +440,33 @@ tapering nor varying. Smooth controlled pen pressure throughout.
 NO color anywhere, NO grey shading, NO fills, NO crosshatching, NO \
 stippling, NO sketchy multi-pass strokes.
 
+DETAIL ECONOMY — line activity must be UNIFORM across the figure:
+- Do NOT pack one region (e.g. a single paw) with dense busy curls while \
+leaving another region (e.g. the opposite limb, the back, or the chest) \
+as a bare outline. Each anatomical area receives roughly the same line \
+density. If one paw gets toe definition, the other paw gets toe definition; \
+if the chest gets fur indication, the back does too. Asymmetric detail \
+reads as the algorithm giving up — it is the #1 thing that ruins this style.
+- Treat the WHOLE figure with the same calm, gestural pace from first \
+mark to last. No scribbled "panic regions". No bare regions. Confident \
+even rhythm throughout.
+
+WHERE THE LINE ENDS — CRITICAL:
+- The line tapers to a CLEAN stopping point ON the figure's silhouette \
+itself — at the back of the chest, along the underside of the body, or \
+where a second ear meets the head. The line MUST NOT extend past the \
+body's outline into the empty background.
+- Below the lowest body element (paws, chest line, seated bottom) the \
+canvas is COMPLETELY EMPTY background — no lines, no marks, no straight \
+or curved extensions, no "phantom" vertical or horizontal strokes \
+dropping into negative space. The single most common failure mode is a \
+straight vertical line falling below the figure into the white space — \
+this MUST NOT happen.
+- Body contours CLOSE back to the silhouette. Chest, belly, and limb \
+outlines never trail off into the background — they always loop back to \
+meet another part of the contour. Open contours that bleed into negative \
+space are forbidden.
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, direct or three-quarter gaze.
@@ -453,10 +480,14 @@ bars, color blocks, or empty bands.
 
 Avoid: multiple separate strokes, broken or interrupted lines, sketchy \
 hatched marks, detached features (floating eyes, separate whisker dots), \
-filled shapes, varying line weight, ANY color, sepia, tinted, duotone, \
-gray shading, crosshatching, stippling, photography, photorealism, \
-cartoon, anime, 3D render, text, watermark, border, solid color bars or \
-panels at image edges, pet pushed to canvas edges.\
+phantom vertical or horizontal stray lines hanging below the figure, \
+line endings that trail off into empty background, asymmetric detail \
+(one paw busy with toes, opposite limb left bare), open contours that \
+never close back to the silhouette, filled shapes, varying line weight, \
+ANY color, sepia, tinted, duotone, gray shading, crosshatching, \
+stippling, photography, photorealism, cartoon, anime, 3D render, text, \
+watermark, border, solid color bars or panels at image edges, pet \
+pushed to canvas edges.\
 """
 
 _NEON_POP_ART_TEMPLATE = """\
@@ -849,6 +880,31 @@ field — pick ONE and hold it across the whole image: deep charcoal \
 NO grey shading, NO fills, NO crosshatching, NO stippling, NO sketchy \
 multi-pass strokes.
 
+DETAIL ECONOMY — line activity must be UNIFORM across the figure:
+- Do NOT pack one region (e.g. a single paw) with dense busy curls while \
+leaving another region (e.g. the opposite limb, the back, or the chest) \
+as a bare outline. Each anatomical area receives roughly the same line \
+density. If one paw gets toe definition, the other paw gets toe definition. \
+Asymmetric detail reads as the algorithm giving up — it is the #1 thing \
+that ruins this style.
+- Treat the WHOLE figure with the same calm, gestural pace from first \
+mark to last. No scribbled "panic regions". No bare regions. Confident \
+even rhythm throughout.
+
+WHERE THE LINE ENDS — CRITICAL:
+- The line tapers to a CLEAN stopping point ON the figure's silhouette \
+itself — at the back of the chest, along the underside of the body, or \
+where a second ear meets the head. The line MUST NOT extend past the \
+body's outline into the empty dark field.
+- Below the lowest body element (paws, chest line, seated bottom) the \
+canvas is COMPLETELY EMPTY dark field — no lines, no marks, no straight \
+or curved extensions, no "phantom" vertical or horizontal ivory strokes \
+dropping into negative space. The single most common failure mode is a \
+straight vertical line falling below the figure — this MUST NOT happen.
+- Body contours CLOSE back to the silhouette. Chest, belly, and limb \
+outlines never trail off into the dark field — they always loop back to \
+meet another part of the contour.
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, direct or three-quarter gaze.
@@ -862,11 +918,15 @@ bars, color blocks, or empty bands.
 
 Avoid: white or off-white backgrounds, black ink on light paper, multiple \
 separate strokes, broken or interrupted lines, sketchy hatched marks, \
-detached features (floating eyes, separate whisker dots), filled shapes, \
-varying line weight, color fills, chalkboard / blackboard texture (this \
-is ink on paper, not chalk on a board), photography, photorealism, \
-cartoon, anime, 3D render, gray shading, crosshatching, stippling, text, \
-watermark, border, solid color bars or panels at image edges.\
+detached features (floating eyes, separate whisker dots), phantom \
+vertical or horizontal stray lines hanging below the figure, line \
+endings that trail off into empty dark field, asymmetric detail (one paw \
+busy with toes, opposite limb left bare), open contours that never close \
+back to the silhouette, filled shapes, varying line weight, color fills, \
+chalkboard / blackboard texture (this is ink on paper, not chalk on a \
+board), photography, photorealism, cartoon, anime, 3D render, gray \
+shading, crosshatching, stippling, text, watermark, border, solid color \
+bars or panels at image edges.\
 """
 
 _WATERCOLOR_DARK_TEMPLATE = """\
@@ -1321,7 +1381,11 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
 # Per-style post-processing hooks
 # ---------------------------------------------------------------------------
 
-def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Image.Image:
+def add_background_padding(
+    img: Image.Image,
+    padding_ratio: float = 0.12,
+    solid_bg_color: Optional[tuple] = None,
+) -> Image.Image:
     """Pad the image by replicating its edge pixels outward.
 
     Gemini is strongly biased toward dominant-subject framing for pet
@@ -1349,35 +1413,137 @@ def add_background_padding(img: Image.Image, padding_ratio: float = 0.12) -> Ima
     Final canvas grows by 2× pad on each axis; the original image sits in
     the centre untouched.
     """
+    from PIL import ImageDraw
     img = img.convert('RGB')
     w, h = img.size
     pad_w = int(w * padding_ratio)
     pad_h = int(h * padding_ratio)
 
-    out = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h))
+    # Solid-bg shortcut: when the caller knows the style has a uniform
+    # edge-to-edge background colour (e.g. neon-pop-art, bold-graphic-
+    # poster) it can pass solid_bg_color to skip edge replication
+    # entirely. Edge replication produces colour streaks when the AI
+    # renders the pet touching an edge — for solid-bg styles, "fill the
+    # padding with the known bg colour" is both simpler and visibly
+    # cleaner.
+    if solid_bg_color is not None:
+        out = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h), solid_bg_color)
+        out.paste(img, (pad_w, pad_h))
+        return out
 
-    # Centre: the original artwork
+    out = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h))
     out.paste(img, (pad_w, pad_h))
 
-    # Top edge: stretch the top 1-pixel row up into the top padding band.
-    top_strip = img.crop((0, 0, w, 1)).resize((w, pad_h), Image.NEAREST)
-    out.paste(top_strip, (pad_w, 0))
+    # Padding strategy: each band is a blend between two layers.
+    #   1. EDGE REPLICATION  — the 1-pixel-wide source edge, stretched
+    #      across the band. This carries gradient direction and matches
+    #      the artwork's exact colour at the seam, so there's no visible
+    #      transition between artwork and padding.
+    #   2. SOLID SAMPLE      — the average colour of the source edge,
+    #      filled uniformly across the band. This kills colour streaks
+    #      that appear when the AI renders the pet touching an edge
+    #      (neon-pop-art's "chest at bottom" composition is the classic
+    #      offender).
+    # The mask blends from 100% replication at the inner seam (where the
+    # padding meets the artwork) to 100% solid at the outer rim (where
+    # the canvas wrap finishes). The result: smooth seam with the
+    # artwork, clean uniform colour where the wrap actually shows.
 
-    # Bottom edge
-    bot_strip = img.crop((0, h - 1, w, h)).resize((w, pad_h), Image.NEAREST)
-    out.paste(bot_strip, (pad_w, pad_h + h))
+    def _band_mean(strip):
+        # Pick the dominant background colour via 4-bits-per-channel
+        # histogram mode. Why not mean or median:
+        #   • mean → muddy mid-tone if the pet covers an edge
+        #   • median → fails when the pet covers >50% of the edge (the
+        #     median picks a pet colour instead of the bg)
+        #   • mode → robust because the pet body is split across several
+        #     distinct colours (pink, blue, green in neon-pop-art) while
+        #     the bg sits in a single concentrated colour bin, so the bg
+        #     wins the bin count even when the pet covers the majority
+        #     of the strip.
+        # Falls back to median on edges where no single bin dominates
+        # (smooth gradient like aura-gradient — every pixel is slightly
+        # different so no colour bin is large).
+        # Down-sample the strip first; we only need a coarse colour
+        # signal and the source can be 3000×4000 native print res.
+        if max(strip.size) > 200:
+            from PIL import Image as _Img
+            strip = strip.resize(
+                (max(1, strip.size[0] * 200 // max(strip.size)),
+                 max(1, strip.size[1] * 200 // max(strip.size))),
+                _Img.LANCZOS,
+            )
+        pixels = list(strip.getdata())
+        n = len(pixels)
+        counts: dict = {}
+        for r, g, b in pixels:
+            key = (r >> 4, g >> 4, b >> 4)
+            counts[key] = counts.get(key, 0) + 1
+        mode_key, mode_count = max(counts.items(), key=lambda kv: kv[1])
+        if mode_count >= n * 0.20:
+            # Use the bin centre as the representative colour.
+            return (
+                (mode_key[0] << 4) | 0x08,
+                (mode_key[1] << 4) | 0x08,
+                (mode_key[2] << 4) | 0x08,
+            )
+        rs = sorted(p[0] for p in pixels)
+        gs = sorted(p[1] for p in pixels)
+        bs = sorted(p[2] for p in pixels)
+        return (rs[n // 2], gs[n // 2], bs[n // 2])
 
-    # Left edge
-    left_strip = img.crop((0, 0, 1, h)).resize((pad_w, h), Image.NEAREST)
-    out.paste(left_strip, (0, pad_h))
+    def _vertical_blend_mask(width, height, replicate_at_top):
+        """White (= solid) at one end, black (= replicate) at the other.
+        replicate_at_top=True: replicate edge sits at top (y=0)."""
+        m = Image.new('L', (width, height), 0)
+        d = ImageDraw.Draw(m)
+        for y in range(height):
+            t = y / max(1, height - 1)
+            alpha = int(255 * t) if replicate_at_top else int(255 * (1 - t))
+            d.line([(0, y), (width - 1, y)], fill=alpha)
+        return m
 
-    # Right edge
-    right_strip = img.crop((w - 1, 0, w, h)).resize((pad_w, h), Image.NEAREST)
-    out.paste(right_strip, (pad_w + w, pad_h))
+    def _horizontal_blend_mask(width, height, replicate_at_left):
+        m = Image.new('L', (width, height), 0)
+        d = ImageDraw.Draw(m)
+        for x in range(width):
+            t = x / max(1, width - 1)
+            alpha = int(255 * t) if replicate_at_left else int(255 * (1 - t))
+            d.line([(x, 0), (x, height - 1)], fill=alpha)
+        return m
 
-    # 4 corners — replicate the single corner pixel into the corner block.
-    # This keeps any corner gradient consistent with the adjacent edge
-    # strips it borders.
+    # ── Top band (replicate edge sits at the bottom of the band, abutting artwork) ──
+    top_strip_1px = img.crop((0, 0, w, 1))
+    top_replicated = top_strip_1px.resize((w, pad_h), Image.NEAREST)
+    top_solid = Image.new('RGB', (w, pad_h), _band_mean(top_strip_1px))
+    top_band = Image.composite(top_solid, top_replicated,
+                                _vertical_blend_mask(w, pad_h, replicate_at_top=False))
+    out.paste(top_band, (pad_w, 0))
+
+    # ── Bottom band (replicate edge sits at the top of the band) ──
+    bot_strip_1px = img.crop((0, h - 1, w, h))
+    bot_replicated = bot_strip_1px.resize((w, pad_h), Image.NEAREST)
+    bot_solid = Image.new('RGB', (w, pad_h), _band_mean(bot_strip_1px))
+    bot_band = Image.composite(bot_solid, bot_replicated,
+                                _vertical_blend_mask(w, pad_h, replicate_at_top=True))
+    out.paste(bot_band, (pad_w, pad_h + h))
+
+    # ── Left band (replicate edge sits at the right of the band) ──
+    left_strip_1px = img.crop((0, 0, 1, h))
+    left_replicated = left_strip_1px.resize((pad_w, h), Image.NEAREST)
+    left_solid = Image.new('RGB', (pad_w, h), _band_mean(left_strip_1px))
+    left_band = Image.composite(left_solid, left_replicated,
+                                 _horizontal_blend_mask(pad_w, h, replicate_at_left=False))
+    out.paste(left_band, (0, pad_h))
+
+    # ── Right band (replicate edge sits at the left of the band) ──
+    right_strip_1px = img.crop((w - 1, 0, w, h))
+    right_replicated = right_strip_1px.resize((pad_w, h), Image.NEAREST)
+    right_solid = Image.new('RGB', (pad_w, h), _band_mean(right_strip_1px))
+    right_band = Image.composite(right_solid, right_replicated,
+                                  _horizontal_blend_mask(pad_w, h, replicate_at_left=True))
+    out.paste(right_band, (pad_w + w, pad_h))
+
+    # ── Corners: solid sample of the corner pixel ──
     out.paste(img.crop((0, 0, 1, 1)).resize((pad_w, pad_h), Image.NEAREST), (0, 0))
     out.paste(img.crop((w - 1, 0, w, 1)).resize((pad_w, pad_h), Image.NEAREST), (pad_w + w, 0))
     out.paste(img.crop((0, h - 1, 1, h)).resize((pad_w, pad_h), Image.NEAREST), (0, pad_h + h))
@@ -1588,12 +1754,141 @@ def _modern_shape_art_post_process(img: Image.Image) -> Image.Image:
     return img
 
 
+def _remove_orphan_strokes(img: Image.Image) -> Image.Image:
+    """Remove disconnected stray ink fragments from a minimal-line-art result.
+
+    The aesthetic promise is ONE continuous connected line. Gemini sometimes
+    leaves orphan fragments — a phantom vertical drop below the figure, a
+    detached eye dot, a stray paw — which break the promise. We find the
+    largest connected ink component (the line itself) and erase everything
+    else by repainting it with the background colour.
+
+    Conservative: if the largest component is less than 70% of total ink
+    mass, do nothing — the result is unusual and we'd risk gouging real
+    linework. Same logic for orphans below 0.05% of total ink (those are
+    antialiasing speckle, not visible artifacts).
+    """
+    rgb = img.convert('RGB')
+    w, h = rgb.size
+
+    corner_size = max(8, min(w, h) // 50)
+    corner_pixels = []
+    for x0, y0 in [(0, 0), (w - corner_size, 0), (0, h - corner_size), (w - corner_size, h - corner_size)]:
+        for px in rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata():
+            corner_pixels.append(px)
+    if not corner_pixels:
+        return img
+    avg_r = sum(p[0] for p in corner_pixels) / len(corner_pixels)
+    avg_g = sum(p[1] for p in corner_pixels) / len(corner_pixels)
+    avg_b = sum(p[2] for p in corner_pixels) / len(corner_pixels)
+    bg_color = (int(avg_r), int(avg_g), int(avg_b))
+    bg_lum = 0.299 * avg_r + 0.587 * avg_g + 0.114 * avg_b
+    light_bg = bg_lum > 128
+
+    # Downscale for component analysis — keeps BFS tractable on hi-res sources.
+    target = 1024
+    if max(w, h) > target:
+        scale = target / max(w, h)
+        sw = max(1, int(round(w * scale)))
+        sh = max(1, int(round(h * scale)))
+        small = rgb.resize((sw, sh), Image.LANCZOS)
+    else:
+        sw, sh = w, h
+        small = rgb
+
+    grey_data = small.convert('L').tobytes()
+    n = sw * sh
+    fg = bytearray(n)
+    fg_total = 0
+    if light_bg:
+        thr = bg_lum - 60
+        for i in range(n):
+            if grey_data[i] < thr:
+                fg[i] = 1
+                fg_total += 1
+    else:
+        thr = bg_lum + 60
+        for i in range(n):
+            if grey_data[i] > thr:
+                fg[i] = 1
+                fg_total += 1
+
+    if fg_total == 0:
+        return img
+
+    # 8-connected components via iterative BFS over a flat index buffer.
+    visited = bytearray(n)
+    components: list[list[int]] = []
+    for start in range(n):
+        if not fg[start] or visited[start]:
+            continue
+        comp: list[int] = []
+        stack = [start]
+        visited[start] = 1
+        while stack:
+            idx = stack.pop()
+            comp.append(idx)
+            x = idx % sw
+            y = idx // sw
+            for dy in (-1, 0, 1):
+                ny = y + dy
+                if ny < 0 or ny >= sh:
+                    continue
+                row = ny * sw
+                for dx in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx = x + dx
+                    if nx < 0 or nx >= sw:
+                        continue
+                    nidx = row + nx
+                    if fg[nidx] and not visited[nidx]:
+                        visited[nidx] = 1
+                        stack.append(nidx)
+        components.append(comp)
+
+    if len(components) <= 1:
+        return img
+
+    components.sort(key=len, reverse=True)
+    main = components[0]
+    if len(main) < fg_total * 0.7:
+        return img
+
+    speckle_threshold = max(8, int(fg_total * 0.0005))
+    significant = [c for c in components[1:] if len(c) >= speckle_threshold]
+    if not significant:
+        return img
+
+    del_data = bytearray(n)
+    for comp in significant:
+        for idx in comp:
+            del_data[idx] = 255
+    del_small = Image.frombytes('L', (sw, sh), bytes(del_data))
+    # Slight dilation catches antialiased fringe around each orphan.
+    del_small = del_small.filter(ImageFilter.MaxFilter(3))
+
+    if (sw, sh) != (w, h):
+        del_full = del_small.resize((w, h), Image.NEAREST)
+    else:
+        del_full = del_small
+
+    bg_layer = Image.new('RGB', (w, h), bg_color)
+    rgb.paste(bg_layer, (0, 0), del_full)
+    log.info(
+        "minimal-line-art: removed %d orphan stroke(s) (%d px / %d total ink px)",
+        len(significant), sum(len(c) for c in significant), fg_total,
+    )
+    return rgb
+
+
 def _line_art_post_process(img: Image.Image) -> Image.Image:
     """Post-process for the minimal-line-art style (light + dark variants).
-    Centers the line work on both axes before the standard crop pipeline,
-    so Gemini's tendency to drift the subject (right-shifted, top-heavy
-    with empty space at the bottom) doesn't reach the customer.
+    Removes disconnected stray fragments (phantom vertical lines, detached
+    paws, floating eye dots) and centers the line work on both axes before
+    the standard crop pipeline.
     """
+    img = _remove_orphan_strokes(img)
     img = _center_line_art(img)
     return _portrait_post_process(img)
 
@@ -2401,6 +2696,29 @@ def _generate_inner(
             # target margins (10% top, 8% sides, 0% bottom if flat cut).
             # This handles both edge-to-edge and over-padded AI outputs.
             padded = _modern_shape_art_reframe(ai_image_no_name)
+        elif style in ("neon-pop-art", "bold-graphic-poster"):
+            # Solid-bg styles: the prompt asks for a single saturated
+            # colour edge-to-edge. Edge replication produces streaks when
+            # the pet touches an edge (especially the bottom, which the
+            # composition rule explicitly allows). Sample the bg colour
+            # from the top corners — pet never reaches there — and fill
+            # the padding ring with that solid colour.
+            sw, sh = ai_image_no_name.size
+            cs = max(8, min(sw, sh) // 50)
+            corners = (
+                ai_image_no_name.crop((0, 0, cs, cs)).getdata(),
+                ai_image_no_name.crop((sw - cs, 0, sw, cs)).getdata(),
+            )
+            pixels = list(corners[0]) + list(corners[1])
+            n = len(pixels)
+            bg = (
+                sum(p[0] for p in pixels) // n,
+                sum(p[1] for p in pixels) // n,
+                sum(p[2] for p in pixels) // n,
+            )
+            padded = add_background_padding(
+                ai_image_no_name, padding_ratio=0.12, solid_bg_color=bg
+            )
         else:
             padded = add_background_padding(ai_image_no_name, padding_ratio=0.12)
         ai_image_no_name.close()
