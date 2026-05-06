@@ -385,36 +385,28 @@
     // If unframed: just the canvas face
     var canvasFace;
     if (isFramedProduct) {
-      // Outer frame (dark walnut wood)
+      // Solid walnut frame. The previous gradient stack (5-stop wood
+      // gradient + diagonal highlight + grain stripes + inset bevel)
+      // produced visible "second frame" striping on the right edge
+      // when paired with dark portraits — the gradient stops compressed
+      // into thin stripes that read as concentric frames. A single
+      // solid colour reads cleanly behind any portrait.
       var frame = document.createElement('div');
       frame.style.cssText = 'position:absolute;inset:0;padding:6%;box-sizing:border-box;'
-        // Wood grain gradient — layered for depth
-        + 'background:'
-        +   'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, transparent 50%),'
-        +   'linear-gradient(90deg, #2a1d10 0%, #3a2818 30%, #4a3422 50%, #3a2818 70%, #2a1d10 100%);'
-        + 'border-radius:1px;'
-        // Inner bevel shadow
+        + 'background:#3a2818;border-radius:1px;'
         + 'box-shadow:'
-        +   'inset 0 1px 0 rgba(255,255,255,0.12),'
-        +   'inset 0 -1px 0 rgba(0,0,0,0.25),'
-        +   'inset 2px 2px 4px rgba(255,255,255,0.04),'
-        +   'inset -2px -2px 4px rgba(0,0,0,0.30);';
+        +   'inset 0 1px 0 rgba(255,255,255,0.10),'
+        +   'inset 0 -1px 0 rgba(0,0,0,0.30);';
       canvasWrap.appendChild(frame);
 
-      // Fine subtle wood grain lines (horizontal)
-      var woodGrain = document.createElement('div');
-      woodGrain.style.cssText = 'position:absolute;inset:0;pointer-events:none;opacity:0.12;'
-        + "background-image:repeating-linear-gradient(90deg, transparent 0 3px, rgba(0,0,0,0.4) 3px 3.5px, transparent 3.5px 8px);";
-      frame.appendChild(woodGrain);
-
-      // Recess where the printed canvas sits. No fill colour: the
+      // Recess where the printed canvas sits. No fill colour — the
       // portrait covers it entirely so any style's own background sells
-      // the canvas face (no flat white rectangle peeking through).
+      // the canvas face. A subtle inset shadow at the top sells the
+      // recess depth without competing with the portrait's own edges.
       canvasFace = document.createElement('div');
       canvasFace.style.cssText = 'position:absolute;inset:6%;overflow:hidden;'
         + 'background:transparent;'
-        + 'box-shadow:inset 0 2px 6px rgba(0,0,0,0.30),'
-        +           'inset 0 -1px 2px rgba(0,0,0,0.15);';
+        + 'box-shadow:inset 0 2px 5px rgba(0,0,0,0.28);';
       canvasWrap.appendChild(canvasFace);
     } else {
       // Unframed: portrait IS the canvas face. No fill colour at all so
@@ -505,14 +497,19 @@
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
     canvasFace.appendChild(weave);
 
-    // Canvas edge highlight (thin line at top where wrap meets face)
-    var edgeHighlight = document.createElement('div');
-    edgeHighlight.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
-      + 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),'
-      +           'inset 0 -1px 0 rgba(0,0,0,0.06),'
-      +           'inset 1px 0 0 rgba(255,255,255,0.3),'
-      +           'inset -1px 0 0 rgba(0,0,0,0.04);';
-    canvasFace.appendChild(edgeHighlight);
+    // Canvas edge highlight — only on the unframed canvas (the wood
+    // frame already provides clear edge separation, and the 4-sided
+    // 1px highlight reads as a "second inner frame" against dark
+    // portraits like a black French Bulldog on a dark wood frame).
+    if (!isFramedProduct) {
+      var edgeHighlight = document.createElement('div');
+      edgeHighlight.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),'
+        +           'inset 0 -1px 0 rgba(0,0,0,0.06),'
+        +           'inset 1px 0 0 rgba(255,255,255,0.3),'
+        +           'inset -1px 0 0 rgba(0,0,0,0.04);';
+      canvasFace.appendChild(edgeHighlight);
+    }
 
     // Size label — glass morphism pill with W × H × D dimensions
     var sizeLabel = document.createElement('div');
