@@ -605,6 +605,28 @@ fills that clearly read as the pet's true color. A black dog stays in deep \
 charcoal/near-black tones. A brown dog stays in warm caramel/sienna tones. \
 A white cat stays in soft ivory/cream tones. Tabby/spotted/patched coats \
 keep their distinguishing markings, simplified into clean shape blocks.
+- COLOR HARMONY — CRITICAL: the pet's coat palette and the {{MODERN_BG_NAME}} \
+background must read as ONE intentional, harmonious palette — never as two \
+unrelated images stacked. Treat the whole composition like a curated \
+mood-board swatch:
+  · Match temperature: a WARM background (cream, clay, terracotta, mustard, \
+  warm charcoal) pairs with warm-leaning coat tones (caramel, sienna, warm \
+  espresso, ivory). A COOL background (sage, navy) pairs with cooler-leaning \
+  coat tones (taupe, ash brown, slate, soft greige). If the pet's true color \
+  is warm but the background is cool (or vice-versa), bridge them by gently \
+  shifting the coat shadows / mid-tones a half-step toward the background's \
+  temperature so the pet sits IN the scene, not pasted onto it.
+  · Echo the background: at least one secondary coat tone (a shadow plane, \
+  fur edge, or chest fluff) should subtly reference the background hue — a \
+  whisper of {{MODERN_BG_NAME}} desaturated and tucked into the coat — so \
+  the eye reads continuity across the image.
+  · Confident contrast, never muddy: the primary coat tones still read \
+  clearly against {{MODERN_BG_HEX}} (no disappearing pet, no value-clash \
+  vibration). Aim for a relaxed museum-poster feel — the kind of palette \
+  that would look intentional in a Charley Harper print or a curated \
+  Pinterest moodboard.
+  · NEVER drop saturated primaries (pure red, pure blue, pure green, hot \
+  pink) into the coat — those break the muted curated feel.
 - EYES — flat vector shapes that read as WARM and HAPPY, never blank or \
 staring. Render each eye as a soft almond / gentle curve, NOT a perfect \
 black oval. The eye colour is a deep WARM BROWN drawn from the coat \
