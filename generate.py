@@ -1723,6 +1723,119 @@ def _center_line_art(img: Image.Image) -> Image.Image:
     return shifted
 
 
+def _tight_crop_to_4_5(img: Image.Image, bg_tol: int = 35) -> Image.Image:
+    """Detect the artwork's bounding box, crop to it, then pad
+    symmetrically to a 4:5 frame with edge-replicated padding.
+
+    Why: Gemini frequently composes the artwork off-centre within the
+    raw 4:5 frame, leaving a band of background colour on one side.
+    The canvas mockup (cover-cropped at any size) then displays the
+    artwork visibly shifted, with the bg colour bleeding in on the
+    opposite edge. By centring the bbox in the print file itself,
+    the mockup always shows the artwork properly positioned and the
+    customer's printed canvas matches the on-screen mockup exactly.
+
+    No-op when the bbox already covers ≥95% of the frame (artwork is
+    already tight) or when no foreground is detectable (degenerate).
+
+    bg_tol: Euclidean RGB distance from the corner-sampled background
+        colour above which a pixel counts as artwork. Tuned for clear
+        contrast between artwork and bg; styles with low-contrast or
+        gradient backgrounds (aura-gradient) should not use this.
+    """
+    rgb = img.convert('RGB')
+    w, h = rgb.size
+
+    corner_size = max(8, min(w, h) // 50)
+    cp: list = []
+    for x0, y0 in [(0, 0), (w - corner_size, 0),
+                   (0, h - corner_size), (w - corner_size, h - corner_size)]:
+        cp.extend(rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata())
+    if not cp:
+        return img
+    bg_r = sum(p[0] for p in cp) / len(cp)
+    bg_g = sum(p[1] for p in cp) / len(cp)
+    bg_b = sum(p[2] for p in cp) / len(cp)
+    bg_color = (int(bg_r), int(bg_g), int(bg_b))
+    tol_sq = bg_tol * bg_tol
+
+    px = rgb.load()
+    step = max(1, min(w, h) // 400)
+    fg_min_x, fg_max_x = w, 0
+    fg_min_y, fg_max_y = h, 0
+    found = False
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            p = px[x, y]
+            d = (p[0] - bg_r) ** 2 + (p[1] - bg_g) ** 2 + (p[2] - bg_b) ** 2
+            if d > tol_sq:
+                if x < fg_min_x: fg_min_x = x
+                if x > fg_max_x: fg_max_x = x
+                if y < fg_min_y: fg_min_y = y
+                if y > fg_max_y: fg_max_y = y
+                found = True
+    if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
+        return img
+
+    # Inset preserves anti-aliased edges
+    inset = step * 2
+    fg_min_x = max(0, fg_min_x - inset)
+    fg_min_y = max(0, fg_min_y - inset)
+    fg_max_x = min(w, fg_max_x + inset)
+    fg_max_y = min(h, fg_max_y + inset)
+    bbox_w = fg_max_x - fg_min_x
+    bbox_h = fg_max_y - fg_min_y
+
+    coverage = (bbox_w * bbox_h) / (w * h)
+    if coverage >= 0.95:
+        return img
+
+    cropped = rgb.crop((fg_min_x, fg_min_y, fg_max_x, fg_max_y))
+    cw, ch = cropped.size
+
+    # Compute the smallest 4:5 canvas that wraps the bbox
+    target_aspect = 4 / 5  # W/H
+    cur_aspect = cw / ch
+    if cur_aspect > target_aspect:
+        target_w = cw
+        target_h = int(round(cw / target_aspect))
+    else:
+        target_h = ch
+        target_w = int(round(ch * target_aspect))
+
+    pad_x = (target_w - cw) // 2
+    pad_y = (target_h - ch) // 2
+
+    out = Image.new('RGB', (target_w, target_h), bg_color)
+    out.paste(cropped, (pad_x, pad_y))
+
+    # Edge-replicate strips so any soft fade or texture continues
+    # smoothly into the padding rather than abutting a flat bg fill.
+    pad_left = pad_x
+    pad_right = target_w - pad_x - cw
+    pad_top = pad_y
+    pad_bot = target_h - pad_y - ch
+    if pad_left > 0:
+        out.paste(cropped.crop((0, 0, 1, ch)).resize((pad_left, ch), Image.NEAREST), (0, pad_y))
+    if pad_right > 0:
+        out.paste(cropped.crop((cw - 1, 0, cw, ch)).resize((pad_right, ch), Image.NEAREST), (pad_x + cw, pad_y))
+    if pad_top > 0:
+        out.paste(cropped.crop((0, 0, cw, 1)).resize((cw, pad_top), Image.NEAREST), (pad_x, 0))
+    if pad_bot > 0:
+        out.paste(cropped.crop((0, ch - 1, cw, ch)).resize((cw, pad_bot), Image.NEAREST), (pad_x, pad_y + ch))
+    # Corners — replicate the corner pixel
+    if pad_left > 0 and pad_top > 0:
+        out.paste(cropped.crop((0, 0, 1, 1)).resize((pad_left, pad_top), Image.NEAREST), (0, 0))
+    if pad_right > 0 and pad_top > 0:
+        out.paste(cropped.crop((cw - 1, 0, cw, 1)).resize((pad_right, pad_top), Image.NEAREST), (pad_x + cw, 0))
+    if pad_left > 0 and pad_bot > 0:
+        out.paste(cropped.crop((0, ch - 1, 1, ch)).resize((pad_left, pad_bot), Image.NEAREST), (0, pad_y + ch))
+    if pad_right > 0 and pad_bot > 0:
+        out.paste(cropped.crop((cw - 1, ch - 1, cw, ch)).resize((pad_right, pad_bot), Image.NEAREST), (pad_x + cw, pad_y + ch))
+
+    return out
+
+
 def _portrait_post_process(img: Image.Image) -> Image.Image:
     """Standard post-process for all portrait styles: 4:5 crop + minimum size.
     NOTE: callers should add background padding via add_background_padding()
@@ -1737,6 +1850,17 @@ def _portrait_post_process(img: Image.Image) -> Image.Image:
             (int(img.width * scale), int(img.height * scale)), Image.LANCZOS
         )
     return img
+
+
+def _tight_crop_post_process(img: Image.Image) -> Image.Image:
+    """Tight-crop to artwork bbox + re-pad to 4:5 before the standard
+    crop pipeline. Used for styles where the AI sometimes leaves
+    asymmetric background bands around the artwork (charcoal,
+    watercolor, etc.) so the canvas mockup displays the artwork
+    centred and edge-to-edge instead of shifted with bg bleed.
+    """
+    img = _tight_crop_to_4_5(img)
+    return _portrait_post_process(img)
 
 
 def _modern_shape_art_post_process(img: Image.Image) -> Image.Image:
@@ -1915,6 +2039,16 @@ POST_PROCESS: dict[str, Callable[[Image.Image], Image.Image]] = {
 # background is uniform negative space.
 POST_PROCESS["minimal-line-art"] = _line_art_post_process
 POST_PROCESS["modern-shape-art"] = _modern_shape_art_post_process
+# Tight-crop styles where the AI sometimes leaves asymmetric bg bands
+# around the artwork. Detect the bbox, crop to it, re-pad symmetrically
+# to 4:5 with edge replication. Result: centred artwork that fills the
+# canvas mockup and matches what gets sent to Printful exactly.
+# Aura-gradient is excluded — its gradient bg defeats corner-sample
+# bg detection (corners differ; tol-based fg masking would catch
+# the entire image as fg).
+for _style in ("watercolor", "charcoal", "neon-pop-art",
+               "renaissance-royalty", "bold-graphic-poster"):
+    POST_PROCESS[_style] = _tight_crop_post_process
 
 
 # ---------------------------------------------------------------------------
