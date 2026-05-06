@@ -1617,42 +1617,22 @@ def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
     pet_w = fg_max_x - fg_min_x
     pet_h = fg_max_y - fg_min_y
 
-    # --- 3. Flat-bottom detection via bottom silhouette profile ---
-    # For each column across the pet, find the lowest foreground pixel.
-    # A flat horizontal cut produces near-constant y values; a tapered /
-    # organic silhouette produces high variance.
-    profile_ys: list = []
-    col_step = max(step, pet_w // 40)  # ~40 sample columns across the pet
-    scan_bottom = min(fg_max_y, h - 1)
-    for x in range(fg_min_x, fg_max_x, col_step):
-        for y in range(scan_bottom, fg_min_y, -step):
-            p = px_load[x, y]
-            d = ((p[0]-bg_r)**2 + (p[1]-bg_g)**2 + (p[2]-bg_b)**2) ** 0.5
-            if d > BG_TOL:
-                profile_ys.append(y)
-                break
-
-    flat_bottom = False
-    if profile_ys:
-        mean_y = sum(profile_ys) / len(profile_ys)
-        std_dev = (sum((y - mean_y) ** 2 for y in profile_ys) / len(profile_ys)) ** 0.5
-        # Flat if std dev < 2.5% of pet height
-        flat_bottom = std_dev < pet_h * 0.025
-
-    bottom_frac = 0.0 if flat_bottom else 0.08
-
-    # --- 4. Compose new canvas ---
-    # pad_top is 0.45 so tall and wide pet bboxes both end up with the
-    # head at ~31% from canvas top in the final 4:5 frame. The 4:5
-    # expansion math below collapses both cases to the same head
-    # position, which gives a uniform composition AND lets the name
-    # sit at zone_top 0.25 — close to the head on the 4:5 view, and
-    # far enough from the source top that the 1:1 derivative (drops
-    # the top 20% of source for square canvases) doesn't crop the name.
-    # Trade-off: tall pets appear ~14% smaller in-frame than before.
-    pad_top    = int(pet_h * 0.45)
+    # --- 3. Compose new canvas ---
+    # pad_bottom is always 0 for modern: the silhouette (flat chest cut,
+    # fluffy fade, tongue/collar dangle, whatever the bbox includes)
+    # sits flush with the canvas bottom. Even if the bbox extends past
+    # the visible body — e.g. through a tongue or collar tag — the
+    # surrounding cream blends seamlessly with the canvas, so there's
+    # no perceived "floating".
+    #
+    # pad_top is 0.43 so the pet fills ~70% of canvas height on tall
+    # bboxes (canvas_h = 1.43 * pet_h). Wide bboxes get a small extra
+    # top expansion to hit the 4:5 ratio, ending at ~69% pet height.
+    # The remaining ~30% top airspace is split by zone_top so the name
+    # sits roughly halfway between the canvas top and the pet's head.
+    pad_top    = int(pet_h * 0.43)
     pad_side   = int(pet_w * 0.08)
-    pad_bottom = int(pet_h * bottom_frac)
+    pad_bottom = 0
 
     # Target the 4:5 print ratio exactly so the downstream post-process
     # never needs to crop into the pet:
@@ -2292,16 +2272,15 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        # _modern_shape_art_reframe now lands the pet at y≈31% on every
-        # composition (pad_top 0.45 + 4:5 expansion collapses tall and
-        # wide cases to the same head position). zone_top 0.25 places
-        # the name centred just above the head with 6% breathing room,
-        # AND far enough below the source top that the square (1:1)
-        # mockup — which top-anchor crops the top 20% of source —
-        # doesn't clip the name. Survives both 4:5 and 1:1 displays.
+        # _modern_shape_art_reframe lands the pet's head at y≈30% on
+        # tall bboxes and y≈31% on wide/square ones (pad_top 0.43,
+        # pad_bottom 0). zone_top 0.15 places the name roughly halfway
+        # between the canvas top and the pet's head — visibly distinct
+        # from the head, with comfortable breathing room above and a
+        # ~12% gap below before the head starts.
         "size_ratio": 0.075,
         "transform": "upper",
-        "zone_top": 0.25,
+        "zone_top": 0.15,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
