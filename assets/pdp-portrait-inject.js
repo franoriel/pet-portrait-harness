@@ -390,15 +390,18 @@
     //     We zero the top/bot crop and just trim the small side padding —
     //     anchored top-aligned so the name survives the cover crop.
     //
-    //   Tall (12×16, 16×20): the source fits the face height naturally, so
-    //     to make the watercolour bleed off the canvas sides (and the pet
-    //     hold visual weight) we crop the sides much more aggressively. The
-    //     splash extends to source x≈15%/85%; cropSideFrac=0.15 means face
-    //     x=0% lands at source x=15%, full-bleed.
+    //   Tall (12×16, 16×20): don't crop the sides. Aggressive side cropping
+    //     was previously used to make the watercolour wash bleed off the
+    //     canvas edges, but it assumes the source's wash is perfectly
+    //     centred. Real generated portraits aren't always symmetric, and
+    //     a centre-cropped asymmetric source reads as the portrait being
+    //     pushed to one side with white space on the other. Showing the
+    //     full source width keeps any natural margin symmetric inside
+    //     the canvas face — closer to what the printed product looks like.
     var isSquare = (widthIn === heightIn);
     var cropTopFrac = isSquare ? 0 : 0.05;
     var cropBotFrac = isSquare ? 0 : 0.10;
-    var cropSideFrac = isSquare ? 0.05 : 0.15;
+    var cropSideFrac = isSquare ? 0.05 : 0;
     // Always top-anchor so the name (composited at source y≈11%) lands inside
     // the visible region on every face aspect, rather than being centre-cropped
     // out the top by object-fit:cover.
