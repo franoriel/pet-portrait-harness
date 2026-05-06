@@ -605,10 +605,16 @@ fills that clearly read as the pet's true color. A black dog stays in deep \
 charcoal/near-black tones. A brown dog stays in warm caramel/sienna tones. \
 A white cat stays in soft ivory/cream tones. Tabby/spotted/patched coats \
 keep their distinguishing markings, simplified into clean shape blocks.
-- Match the animal's actual eye color from the photo, simplified to a clean \
-flat shape. Eyes must look WARM, SOFT, and GENTLE — relaxed lids, a calm \
-expression, never wide-open, staring, piercing, or intense. The gaze is \
-friendly and inviting, not unsettling.
+- EYES — abstract vector shapes, NOT realistic eyes. Render each eye as ONE \
+single flat dark shape (a simple oval, almond, or rounded slot). NO iris \
+ring, NO visible pupil, NO white sclera, NO catchlight, NO eyelash detail, \
+NO under-eye shading, NO glossy highlight or wet reflection. The eye reads \
+as a graphic mark on the face, the way a Matisse cut-out or Charley Harper \
+illustration would suggest an eye — recognisable but unmistakably flat \
+and stylised, never photographic and never staring. Keep both eyes calm \
+and symmetrical; if a closed-eye / squint shape suits the pose, render the \
+eye as a single soft curved line instead — NEVER add depth, sparkle, or \
+realistic detail to the eye.
 
 STYLE:
 - Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets contemporary \
@@ -634,7 +640,9 @@ composition is just the pet on a single solid background — nothing else.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
-- Head and chest, calm symmetrical pose, soft warm gaze — relaxed eyes, not wide or staring.
+- Head and chest, calm symmetrical pose. Eyes are flat graphic marks (per \
+the EYES rule above), not realistic — the face reads as confident shape \
+art, not a photograph.
 - The PET itself occupies 78-83% of image height — top of ears at \
 ~15-18% from top, centered horizontally. Ensure the pet is the dominant \
 subject filling the canvas confidently, with clean breathing room \
@@ -659,11 +667,12 @@ field of {{MODERN_BG_HEX}} behind the pet.
 
 Avoid: photography, photorealism, painterly brush strokes, oil paint, \
 watercolor bleed, film grain, sepia, gradients, drop shadows, 3D render, \
-cartoon, anime, neon, busy patterns, ornate details, text, watermark, \
-border, solid color bars or panels at image edges, decorative shapes, \
-abstract accents, arcs, circles, dots, lines, foliage, halos, frames, \
-patterns, geometric ornaments, anything other than the pet on a solid \
-background.\
+cartoon, anime, neon, busy patterns, ornate details, realistic eyes, \
+visible iris ring, white sclera, glossy eye highlight, catchlight, \
+eyelash detail, under-eye rendering, text, watermark, border, solid \
+color bars or panels at image edges, decorative shapes, abstract \
+accents, arcs, circles, dots, lines, foliage, halos, frames, patterns, \
+geometric ornaments, anything other than the pet on a solid background.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
