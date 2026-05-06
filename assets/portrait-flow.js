@@ -3033,7 +3033,14 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const activeSize = availableSizes.find(s => s.id === selectedSize) || availableSizes[0];
   const currentPrice = wantsFrame ? activeSize.priceFramed : activeSize.price;
   const currentVariantId = wantsFrame ? activeSize.variantIdFramed : activeSize.variantId;
-  const displayImage = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
+  // Square sizes (12×12, 16×16) need the 1:1 derivative when a name
+  // is composited — the 4:5 master cover-cropped onto a square face
+  // (objectFit:'cover'+'center center') trims 12.5% off the top and
+  // bottom, which is exactly where the name band lives.
+  const isSquareSize = activeSize && activeSize.id && /(\d+)x\1$/.test(activeSize.id);
+  const displayImage = (wantsName && namedPreviewUrl)
+    ? ((isSquareSize && namedPreviewUrl1x1) ? namedPreviewUrl1x1 : namedPreviewUrl)
+    : mainImage;
 
   // When user toggles frame on, ensure selectedSize is valid in the new list
   useEffect(() => {
