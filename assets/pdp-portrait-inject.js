@@ -273,7 +273,7 @@
   // the canvas from scratch in CSS so it always matches the variant
   // aspect ratio exactly (no misalignment). The linen surface + shadow
   // + canvas weave texture sell the realism.
-  function createClientMockup(portraitSrc, widthIn, heightIn, label) {
+  function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1) {
     // Outer container: square 1:1 lifestyle shot
     var container = document.createElement('div');
     container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
@@ -399,9 +399,24 @@
     //     full source width keeps any natural margin symmetric inside
     //     the canvas face — closer to what the printed product looks like.
     var isSquare = (widthIn === heightIn);
-    var cropTopFrac = isSquare ? 0 : 0.05;
-    var cropBotFrac = isSquare ? 0 : 0.10;
-    var cropSideFrac = isSquare ? 0.05 : 0;
+    // When the source is the 1:1 derivative (already composed for a
+    // square face — pet, chest cut, and name band all in their final
+    // positions) no cropping is needed. Otherwise the source is the
+    // 4:5 master and we trim the small bg padding ring.
+    var cropTopFrac, cropBotFrac, cropSideFrac;
+    if (srcIs1x1) {
+      cropTopFrac = 0;
+      cropBotFrac = 0;
+      cropSideFrac = 0;
+    } else if (isSquare) {
+      cropTopFrac = 0;
+      cropBotFrac = 0;
+      cropSideFrac = 0.05;
+    } else {
+      cropTopFrac = 0.05;
+      cropBotFrac = 0.10;
+      cropSideFrac = 0;
+    }
     // Always top-anchor so the name (composited at source y≈11%) lands inside
     // the visible region on every face aspect, rather than being centre-cropped
     // out the top by object-fit:cover.
@@ -518,8 +533,13 @@
       mockupSlide.setAttribute('role', 'listitem');
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
-      if (hasAllPrintful) {
-        // All Printful mockups ready — use them for consistency
+      // Square sizes (12×12, 16×16) always render client-side from the
+      // 1:1 derivative when we have it — the Printful mockup is built
+      // from the 4:5 master and center-crops the name band off the top
+      // on square faces. Tall sizes prefer Printful when available.
+      var isSquareVariant = dim.w === dim.h;
+      var useSquareSrc = isSquareVariant && data.wantsName !== false && !!data.namedPreviewUrl1x1;
+      if (hasAllPrintful && !useSquareSrc) {
         var mockupImg = document.createElement('img');
         mockupImg.src = printfulByVariant[sizeKey].url;
         mockupImg.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
@@ -527,8 +547,8 @@
         mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
         mockupSlide.appendChild(mockupImg);
       } else {
-        // Client-side mockup for all variants
-        var clientMockup = createClientMockup(previewUrl, dim.w, dim.h, sizeKey);
+        var srcForVariant = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
+        var clientMockup = createClientMockup(srcForVariant, dim.w, dim.h, sizeKey, useSquareSrc);
         mockupSlide.appendChild(clientMockup);
       }
 
@@ -558,6 +578,12 @@
             if (m.placement !== 'default') return;
             var nums = m.variant.match(/(\d+)\D+(\d+)/);
             var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
+            // Square variants: skip the Printful replacement when we
+            // have a 1:1 derivative for the client-side mockup —
+            // Printful renders the 4:5 master onto the square face and
+            // center-crops it, clipping the name band off the top.
+            var isSq = nums && nums[1] === nums[2];
+            if (isSq && data.namedPreviewUrl1x1) return;
             var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
             if (slideEl) {
               slideEl.innerHTML = '';
@@ -886,15 +912,19 @@
         var newUrl = resp.composited_png_cdn || resp.composited;
         if (!newUrl) throw new Error('No image URL returned');
         withTextUrl = newUrl;
+        var newUrl1x1 = resp.composited_png_1x1_cdn || resp.composited_1x1 || null;
 
         // Persist for future PDP loads so we don't re-fetch on refresh
         try {
           var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
           sess.namedPreviewUrl = newUrl;
+          if (newUrl1x1) sess.namedPreviewUrl1x1 = newUrl1x1;
           sess.petName = petName;
           sess.printFileUrl = resp.composited_png_cdn || sess.printFileUrl;
           localStorage.setItem(LS_KEY, JSON.stringify(sess));
         } catch (_) {}
+        // Live data ref so the gallery rebuild below picks up the new URL
+        data.namedPreviewUrl1x1 = newUrl1x1 || data.namedPreviewUrl1x1;
 
         if (showName) renderActiveImage(newUrl);
         updateHiddenProps(showName, resp.composited_png_cdn || newUrl, newUrl);

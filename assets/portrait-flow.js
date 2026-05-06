@@ -3003,6 +3003,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const [wantsFrame, setWantsFrame] = useState(false);
   const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
   const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
+  const [namedPreviewUrl1x1, setNamedPreviewUrl1x1] = useState(null);
   const [nameError, setNameError] = useState(null);
   const [localName, setLocalName] = useState(state.petName || '');
   const [loadingPhaseIdx, setLoadingPhaseIdx] = useState(0);
@@ -3090,6 +3091,11 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       const url = resp.composited || resp.composited_png_cdn;
       if (!url) throw new Error('No image returned');
       setNamedPreviewUrl(url);
+      // Capture the 1:1 derivative URL too — square canvas variants
+      // (12×12, 16×16) need to render their PDP mockup from this file
+      // rather than cover-cropping the 4:5 master and clipping the name.
+      const url1x1 = resp.composited_png_1x1_cdn || resp.composited_1x1 || null;
+      if (url1x1) setNamedPreviewUrl1x1(url1x1);
       setGeneratingNamedPreview(false);
     })
     .catch(err => {
@@ -3110,6 +3116,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       session.wantsName = wantsName;
       session.wantsFrame = wantsFrame;
       if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
+      if (namedPreviewUrl1x1) session.namedPreviewUrl1x1 = namedPreviewUrl1x1;
       localStorage.setItem(LS_KEY, JSON.stringify(session));
     } catch {}
     // Framed + unframed live on separate Shopify products
