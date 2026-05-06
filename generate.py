@@ -852,16 +852,30 @@ of bare untouched white paper at the left or right margins. The wash \
 breathes outward from the pet in soft, irregular, organic petals; the \
 edges of the canvas can fade back to clean paper, but the painted area is \
 clearly wider than the pet itself.
-- The wash also extends generously ABOVE the pet (so the breathing room \
-above the ears reads as soft watercolor atmosphere, not a blank white \
-band) and BELOW the chest where applicable.
+- The wash extends BELOW the chest where applicable, and may breathe \
+sideways into the upper corners — but the TOP of the canvas above the \
+pet is treated as a calm clean-paper area (see NAME SAFE ZONE).
+
+NAME SAFE ZONE — CRITICAL: A handwritten pet name will be composited \
+into the TOP of the finished image. Reserve the upper ~22% of the canvas \
+as a CALM, OPEN paper area suitable for legible script:
+- The pet's head, ears, fur fly-aways, watercolor splatters, dark wash \
+strokes, and ink linework MUST stay BELOW y=22% of the canvas. The top \
+of the tallest ear sits at y≈25-28% — never closer to the canvas top.
+- Within the top ~22% the paper should remain mostly clean — at most a \
+gentle wash of soft colour (3-8% opacity tint, no visible brush detail, \
+no splatters, no dark accents, no ink). Think of an artist leaving \
+breathing room above the subject for a calligraphed name.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5). It is \
+what keeps the pet's eyes/ears from being overwritten by the script.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed.
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing \
+room above the ears; the pet still feels confidently present below it.
 - The BACKGROUND (watercolor wash and natural bleed edges) extends to every \
 edge of the canvas. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
@@ -996,13 +1010,25 @@ narrow strips of light or untinted paper at the sides. The dark wash is \
 unbroken, edge-to-edge, with organic painterly variation in tone but \
 never a hard boundary.
 
+NAME SAFE ZONE — CRITICAL: A handwritten pet name will be composited \
+into the TOP of the finished image. Reserve the upper ~22% of the canvas \
+for legible script:
+- The pet's head, ears, fur fly-aways, ink linework, and bright accent \
+splatters MUST stay BELOW y=22% of the canvas. Top of the tallest ear \
+sits at y≈25-28% — never closer to the canvas top.
+- Within the top ~22%, the dark wash continues edge-to-edge but stays \
+calm and uniform (no strong tonal variation, no splatter, no light \
+catchlights, no painterly detail). Think of a calm wash zone that \
+reads as breathing room above the subject.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Slight natural vignette
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave dark wash above the ears \
-AND below the chest
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing \
+room above the ears.
 - The BACKGROUND (deep pigmented dark watercolor wash) extends to every edge \
 of the canvas. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
@@ -1918,6 +1944,52 @@ def _tight_crop_post_process(img: Image.Image) -> Image.Image:
     return _portrait_post_process(img)
 
 
+def _watercolor_post_process(img: Image.Image) -> Image.Image:
+    """Watercolor reserves the top ~22% of the canvas as a NAME SAFE
+    ZONE (calm paper / wash, no detail) per the prompt. The generic
+    tight-crop helper would treat that calm zone as background and
+    crop it away, putting the pet's ears at y=0% on the master and
+    forcing the script to overlap the head. Skip the tight-crop and
+    just run the standard 4:5 crop + min-size resize so the safe
+    zone survives intact.
+    """
+    return _portrait_post_process(img)
+
+
+def _pad_sides_to_aspect(img: Image.Image, target_aspect: tuple) -> Image.Image:
+    """Pad an image with edge-replicated side strips to reach a wider
+    target aspect WITHOUT cropping any height. Used for watercolor's
+    1:1 derivative so the top NAME SAFE ZONE is preserved vertically
+    (a tight-crop centre-pad would lose it). If the source is already
+    wider-or-equal to the target aspect this is a no-op.
+    """
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    w, h = img.size
+    target_w, target_h = target_aspect
+    # Width needed at the source's height to hit the target aspect.
+    needed_w = int(round(h * target_w / target_h))
+    if needed_w <= w:
+        return img
+    pad_total = needed_w - w
+    pad_left = pad_total // 2
+    pad_right = pad_total - pad_left
+    out = Image.new("RGB", (needed_w, h), (255, 255, 255))
+    out.paste(img, (pad_left, 0))
+    if pad_left > 0:
+        # Replicate a 4-pixel-wide strip rather than 1px so any natural
+        # watercolor wash variation reads as continuous wash, not a
+        # streaky single-line replication.
+        strip_w = min(4, w)
+        left_strip = img.crop((0, 0, strip_w, h)).resize((pad_left, h), Image.LANCZOS)
+        out.paste(left_strip, (0, 0))
+    if pad_right > 0:
+        strip_w = min(4, w)
+        right_strip = img.crop((w - strip_w, 0, w, h)).resize((pad_right, h), Image.LANCZOS)
+        out.paste(right_strip, (pad_left + w, 0))
+    return out
+
+
 # Per-aspect derivative helpers — used to produce a 1:1 (square)
 # print file alongside the standard 4:5 master so square canvas
 # variants (12×12, 16×16) get a print composed for their exact
@@ -1947,6 +2019,11 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
                 target_aspect=PRINT_ASPECT_1_1,
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
+    if style_id == "watercolor":
+        # Pad sides to preserve the top NAME SAFE ZONE — a centred
+        # tight-crop would drop the calm-paper band and put the pet's
+        # ears flush against the new canvas top.
+        return _pad_sides_to_aspect(img, target_aspect)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
     return _tight_crop_to_aspect(img, target_aspect=target_aspect)
@@ -2164,9 +2241,12 @@ POST_PROCESS["modern-shape-art"] = _modern_shape_art_post_process
 # Aura-gradient is excluded — its gradient bg defeats corner-sample
 # bg detection (corners differ; tol-based fg masking would catch
 # the entire image as fg).
-for _style in ("watercolor", "charcoal", "neon-pop-art",
+for _style in ("charcoal", "neon-pop-art",
                "renaissance-royalty", "bold-graphic-poster"):
     POST_PROCESS[_style] = _tight_crop_post_process
+# Watercolor uses its own post-process — see _watercolor_post_process.
+# The standard tight-crop would eat the top NAME SAFE ZONE.
+POST_PROCESS["watercolor"] = _watercolor_post_process
 
 
 # ---------------------------------------------------------------------------
@@ -2293,13 +2373,15 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
         # Sacramento is a thin handwritten script — bumped size_ratio
         # because scripts have low x-height and look small at serif
-        # sizing. zone_top sits inside the reserved white band added
-        # by _reserve_top_band (band = top 22% of canvas) and is below
-        # the 10% line so the name survives the 1:1 center crop on
-        # square canvas variants (12x12, 16x16).
+        # sizing. The watercolor prompt reserves the top ~22% of the
+        # canvas as a NAME SAFE ZONE (clean paper / calm wash, pet
+        # below y=22%). zone_top 0.11 lands the script's vertical
+        # centre inside that band — comfortably above the pet's ears
+        # (which sit at y≈25-28%) and well clear of the 1:1 centre
+        # crop edge on square canvas variants.
         "size_ratio": 0.08,
         "transform": "title",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 0,
         "opacity": 0.85,
     },
