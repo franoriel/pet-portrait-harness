@@ -1642,13 +1642,15 @@ def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
     bottom_frac = 0.0 if flat_bottom else 0.08
 
     # --- 4. Compose new canvas ---
-    # pad_top is 0.20 (was 0.10) so the top airspace is large enough to
-    # fit a readable, lower-positioned name on tall pets. With 0.10 the
-    # tall-pet airspace was only ~9% of canvas height, forcing the name
-    # tiny and pinned against the top edge to avoid colliding with the
-    # head; 0.20 gives ~17% airspace, which the modern STYLE_TEXT_CONFIG
-    # uses to position a 0.075 size_ratio name at zone_top 0.09.
-    pad_top    = int(pet_h * 0.20)
+    # pad_top is 0.45 so tall and wide pet bboxes both end up with the
+    # head at ~31% from canvas top in the final 4:5 frame. The 4:5
+    # expansion math below collapses both cases to the same head
+    # position, which gives a uniform composition AND lets the name
+    # sit at zone_top 0.25 — close to the head on the 4:5 view, and
+    # far enough from the source top that the 1:1 derivative (drops
+    # the top 20% of source for square canvases) doesn't crop the name.
+    # Trade-off: tall pets appear ~14% smaller in-frame than before.
+    pad_top    = int(pet_h * 0.45)
     pad_side   = int(pet_w * 0.08)
     pad_bottom = int(pet_h * bottom_frac)
 
@@ -2290,15 +2292,16 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        # _modern_shape_art_reframe now lands the pet at y≈17% on tall
-        # bboxes and y≈25-31% on wide/square bboxes (pad_top 0.20). That
-        # gives enough airspace for a name centred at 9% of canvas height
-        # at 7.5% size_ratio — readable and visibly lower than the old
-        # 0.04/0.05 pinned-to-top treatment, without colliding with the
-        # head on either composition.
+        # _modern_shape_art_reframe now lands the pet at y≈31% on every
+        # composition (pad_top 0.45 + 4:5 expansion collapses tall and
+        # wide cases to the same head position). zone_top 0.25 places
+        # the name centred just above the head with 6% breathing room,
+        # AND far enough below the source top that the square (1:1)
+        # mockup — which top-anchor crops the top 20% of source —
+        # doesn't clip the name. Survives both 4:5 and 1:1 displays.
         "size_ratio": 0.075,
         "transform": "upper",
-        "zone_top": 0.09,
+        "zone_top": 0.25,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
