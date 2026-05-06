@@ -527,8 +527,23 @@
         mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
         mockupSlide.appendChild(mockupImg);
       } else {
-        // Client-side mockup for all variants
-        var clientMockup = createClientMockup(previewUrl, dim.w, dim.h, sizeKey);
+        // Client-side mockup. Pick the source whose aspect matches the
+        // canvas variant so the mockup matches the print exactly:
+        // square variants use the 1×1 derivative; tall variants and
+        // posters use the 4:5 master (or the watermarked preview as
+        // a last-resort fallback for sessions without per-aspect files).
+        var isSquareVariant = (dim.w === dim.h);
+        var mockupSrc;
+        if (isSquareVariant) {
+          mockupSrc = (wantsName !== false)
+            ? (data.printFileUrl1x1 || data.printFileUrl || previewUrl)
+            : (data.noNamePrintFileUrl1x1 || data.noNamePrintFileUrl || previewUrl);
+        } else {
+          mockupSrc = (wantsName !== false)
+            ? (data.printFileUrl || previewUrl)
+            : (data.noNamePrintFileUrl || previewUrl);
+        }
+        var clientMockup = createClientMockup(mockupSrc, dim.w, dim.h, sizeKey);
         mockupSlide.appendChild(clientMockup);
       }
 
@@ -893,6 +908,10 @@
           sess.namedPreviewUrl = newUrl;
           sess.petName = petName;
           sess.printFileUrl = resp.composited_png_cdn || sess.printFileUrl;
+          // Per-aspect 1:1 named print file — used by Printful for
+          // square canvas variants. Backend may omit this field if it
+          // hasn't been redeployed yet; keep prior value as fallback.
+          sess.printFileUrl1x1 = resp.composited_png_1x1_cdn || sess.printFileUrl1x1;
           localStorage.setItem(LS_KEY, JSON.stringify(sess));
         } catch (_) {}
 
@@ -1070,17 +1089,18 @@
       || cdnUrls[0]
       || (data.imageFilename ? (API_BASE + '/preview/' + data.imageFilename) : '');
 
-    // Hi-res print-ready PNG (3000x3750+ @ 300 DPI) for Printful fulfillment
-    // Falls back to preview URL if the hi-res isn't available (shouldn't happen).
+    // Per-aspect print-ready PNGs (3000x3750+ @ 300 DPI) for Printful
+    // fulfillment. The 4:5 master serves tall canvas variants (12×16,
+    // 16×20) and posters; the 1:1 derivative serves square canvas
+    // variants (12×12, 16×16). Splitting these means each canvas
+    // variant gets a print file composed for its exact aspect — no
+    // cover-crop loss when the customer picks a square size.
     var printFileUrl = data.printFileUrl || previewUrlForCart;
-
-    // Hi-res no-name print PNG for Printful — un-watermarked, used when
-    // the customer toggles "Show Name = No" on the cart line. cdnUrls[1]
-    // is now the WATERMARKED no-name preview, NOT a print-quality file,
-    // so we must use data.noNamePrintFileUrl which is the un-watermarked
-    // PNG. Fallback to printFileUrl (with-name PNG) is still a hi-res
-    // file even if Gemini hasn't been re-run.
     var noNamePrintFileUrl = data.noNamePrintFileUrl || printFileUrl;
+    // 1:1 fields fall back to the 4:5 master so older sessions
+    // generated before per-aspect files existed still ship a print.
+    var printFileUrl1x1 = data.printFileUrl1x1 || printFileUrl;
+    var noNamePrintFileUrl1x1 = data.noNamePrintFileUrl1x1 || printFileUrl1x1 || noNamePrintFileUrl;
 
     var props = {
       'Pet Name': petName,
@@ -1090,8 +1110,10 @@
       '_Frame': wantsFrame ? 'Framed' : 'No frame',
       '_Job ID': data.jobId || '',
       '_Portrait URL': previewUrlForCart,                    // watermarked preview for display
-      '_Print File URL': printFileUrl,                       // un-watermarked hi-res PNG for Printful
-      '_No Name URL': noNamePrintFileUrl,                    // un-watermarked hi-res no-name PNG for Printful
+      '_Print File URL': printFileUrl,                       // 4:5 un-watermarked PNG for Printful (tall variants)
+      '_Print File URL 1x1': printFileUrl1x1,                // 1:1 un-watermarked PNG for Printful (square variants)
+      '_No Name URL': noNamePrintFileUrl,                    // 4:5 no-name PNG for Printful
+      '_No Name URL 1x1': noNamePrintFileUrl1x1,             // 1:1 no-name PNG for Printful
       '_No Name Preview URL': cdnUrls[1] || cdnUrls[0] || '', // watermarked no-name WebP for cart display (e.g. magnet upsell thumbnail)
     };
     Object.keys(props).forEach(function (key) {

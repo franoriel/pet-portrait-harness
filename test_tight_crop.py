@@ -7,7 +7,7 @@ tight-crop function, writes both to disk for visual comparison.
 from pathlib import Path
 from PIL import Image, ImageDraw
 
-from generate import _tight_crop_to_4_5
+from generate import _tight_crop_to_aspect
 
 
 OUT_DIR = Path(__file__).parent / "output" / "tight_crop_test"
@@ -47,14 +47,16 @@ def main():
         "charcoal_off_centre": make_off_centre_charcoal_like(),
         "watercolour_off_centre": make_off_centre_watercolour_like(),
     }
+    targets = [("4x5", (4, 5)), ("1x1", (1, 1))]
     for name, src in cases.items():
         src.save(OUT_DIR / f"{name}_BEFORE.png")
-        result = _tight_crop_to_4_5(src)
-        result.save(OUT_DIR / f"{name}_AFTER.png")
-        sw, sh = src.size
-        rw, rh = result.size
-        print(f"{name}: {sw}x{sh} ({sw/sh:.3f}) → {rw}x{rh} ({rw/rh:.3f})")
-    print(f"\nWrote {len(cases) * 2} images to {OUT_DIR}")
+        for tag, aspect in targets:
+            result = _tight_crop_to_aspect(src, target_aspect=aspect)
+            result.save(OUT_DIR / f"{name}_AFTER_{tag}.png")
+            sw, sh = src.size
+            rw, rh = result.size
+            print(f"{name} → {tag}: {sw}x{sh} ({sw/sh:.3f}) → {rw}x{rh} ({rw/rh:.3f})")
+    print(f"\nWrote {len(cases) * (1 + len(targets))} images to {OUT_DIR}")
 
 
 if __name__ == "__main__":

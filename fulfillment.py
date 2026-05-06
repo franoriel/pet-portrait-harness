@@ -628,6 +628,12 @@ def parse_order_items(order: dict) -> list[dict]:
             or ""
         )
 
+        # Per-aspect print URLs. The 1×1 derivatives ship with square
+        # canvas variants (12×12, 16×16) so the print fills the canvas
+        # without aspect-mismatch loss; tall variants and posters
+        # continue to use the 4:5 master. Older orders placed before
+        # per-aspect files existed only have the 4:5 fields — those
+        # fall back transparently in _resolve_print_url() below.
         items.append({
             "pet_name": props.get("Pet Name", props.get("Pet name", "Pet")),
             "style": props.get("Style", props.get("_Style", "soft-watercolour")),
@@ -637,6 +643,8 @@ def parse_order_items(order: dict) -> list[dict]:
             "preview_url": preview_url,
             "print_file_url": props.get("_Print File URL", ""),
             "no_name_url": props.get("_No Name URL", ""),
+            "print_file_url_1x1": props.get("_Print File URL 1x1", ""),
+            "no_name_url_1x1": props.get("_No Name URL 1x1", ""),
             "product_type": product_type,
             "size": size,
             "quantity": li.get("quantity", 1),

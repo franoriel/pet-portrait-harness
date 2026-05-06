@@ -809,22 +809,26 @@ def add_name():
             chunks.append(chunk)
         no_name_bytes = b"".join(chunks)
 
-        comp_path, web_path = generate_with_name_on_demand(
+        comp_path, web_path, comp_path_1x1 = generate_with_name_on_demand(
             no_name_image_bytes=no_name_bytes,
             pet_name=pet_name,
             style=style,
             background_mode=background_mode,
         )
 
-        # Upload both to R2 for fast CDN delivery — parallelized to cut latency.
+        # Upload all three (4:5 named PNG, watermarked WebP preview,
+        # 1:1 named PNG) to R2 in parallel.
         comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
         web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
+        comp_1x1_fut = _fulfillment_pool.submit(upload_portrait, comp_path_1x1)
         comp_cdn = comp_fut.result()
         web_cdn = web_fut.result()
+        comp_1x1_cdn = comp_1x1_fut.result()
 
         return jsonify(
             composited=web_cdn or f"/preview/{web_path.name}",
             composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",
+            composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",
             filename=comp_path.name,
         )
     except RuntimeError as e:
@@ -1318,7 +1322,7 @@ def admin_style_smoke_test(style_id: str):
 
     # ── Step 1: generate the no-name composited via the production path ──
     try:
-        _raw_path, comp_path, web_path, _raw_web_path = generate_portrait(
+        _raw_path, comp_path, web_path, _raw_web_path, _raw_path_1x1, _comp_path_1x1 = generate_portrait(
             photo_path, pet_name, style=harness_style,
             style_vars=None, background_mode="auto",
         )
@@ -1485,6 +1489,25 @@ def _process_fulfillment(order_id: str, items: list, recipient: dict):
         # largest item's size.
         from collections import defaultdict
         groups: dict[tuple, list[tuple[dict, str]]] = defaultdict(list)
+
+        def _pick_source_url(item: dict, aspect: tuple, show_name_lc: str) -> str:
+            """Pick the pre-rendered print URL whose aspect matches the
+            target product. Square variants (1:1) prefer the 1×1
+            derivative; everything else uses the 4:5 master. Falls back
+            to the 4:5 fields if 1×1 isn't present (orders placed
+            before per-aspect generation existed)."""
+            no_name = show_name_lc == "no"
+            if aspect == (1, 1):
+                primary = (
+                    item.get("no_name_url_1x1") if no_name else item.get("print_file_url_1x1")
+                ) or ""
+                if primary:
+                    return primary
+            return (
+                item.get("no_name_url") if no_name and item.get("no_name_url")
+                else item.get("preview_url", "")
+            )
+
         for item in items:
             try:
                 product_key = build_product_key(item["product_type"], item["size"])
@@ -1495,13 +1518,9 @@ def _process_fulfillment(order_id: str, items: list, recipient: dict):
                 log.error("Order #%s — unknown product_key %s, skipping", order_id, product_key)
                 continue
 
-            show_name = (item.get("show_name") or "Yes").strip()
-            if show_name.lower() == "no" and item.get("no_name_url"):
-                source_url = item["no_name_url"]
-            else:
-                source_url = item.get("preview_url", "")
-
             aspect = PRODUCT_RATIOS[product_key]
+            show_name = (item.get("show_name") or "Yes").strip()
+            source_url = _pick_source_url(item, aspect, show_name.lower())
             creative_key = (
                 item["pet_name"],
                 item["style"],
@@ -1561,16 +1580,14 @@ def _process_fulfillment(order_id: str, items: list, recipient: dict):
             if product_key not in PRINT_SIZES:
                 continue
             show_name = (item.get("show_name") or "Yes").strip()
-            source_url = (
-                item.get("no_name_url") if show_name.lower() == "no" and item.get("no_name_url")
-                else item.get("preview_url", "")
-            )
+            aspect = PRODUCT_RATIOS[product_key]
+            source_url = _pick_source_url(item, aspect, show_name.lower())
             creative_key = (
                 item["pet_name"],
                 item["style"],
                 show_name.lower(),
                 source_url,
-                PRODUCT_RATIOS[product_key],
+                aspect,
             )
             print_url = creative_print_url.get(creative_key)
             if not print_url:
@@ -1670,16 +1687,22 @@ def _process_job(job: dict):
     try:
         worker_bg = job.get("background_mode") or "auto"
         log.info("[worker] job=%s style=%s bg_mode=%s", job_id, job["style"], worker_bg)
-        raw_path, comp_path, web_path, raw_web_path = generate(
+        (raw_path, comp_path, web_path, raw_web_path,
+         raw_path_1x1, comp_path_1x1) = generate(
             str(upload_path),
             job["pet_name"],
             job["style"],
             background_mode=worker_bg,
         )
 
-        # Upload all four assets in parallel.
-        # - raw_path  / comp_path: hi-res PNGs, NO watermark, used by
-        #   Printful fulfillment. Never displayed to the customer.
+        # Upload all six assets in parallel.
+        # - raw_path  / comp_path: hi-res 4:5 PNGs, NO watermark, used by
+        #   Printful fulfillment for tall canvas variants (12×16, 16×20)
+        #   and posters. Never displayed to the customer.
+        # - raw_path_1x1 / comp_path_1x1: hi-res 1:1 PNGs, NO watermark,
+        #   used by Printful for square canvas variants (12×12, 16×16).
+        #   Composed for the 1:1 aspect so the print fills the canvas
+        #   with no aspect-mismatch loss.
         # - web_path / raw_web_path: small WebPs, watermarked with
         #   "PREVIEW", shown to the customer in the browser. Splitting
         #   into two so the toggle "Show name = No" still serves a
@@ -1689,24 +1712,31 @@ def _process_job(job: dict):
         comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
         web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
         raw_web_fut = _fulfillment_pool.submit(upload_portrait, raw_web_path)
+        raw_1x1_fut = _fulfillment_pool.submit(upload_portrait, raw_path_1x1)
+        comp_1x1_fut = _fulfillment_pool.submit(upload_portrait, comp_path_1x1)
         raw_cdn = raw_fut.result()
         comp_cdn = comp_fut.result()
         web_cdn = web_fut.result()
         raw_web_cdn = raw_web_fut.result()
+        raw_1x1_cdn = raw_1x1_fut.result()
+        comp_1x1_cdn = comp_1x1_fut.result()
 
         # Mark complete as soon as the preview URLs are ready. The original
         # photo (used only by fulfillment at order time) uploads in the
         # background — the customer sees the preview several seconds sooner.
         # Field semantics:
         #   composited / raw_preview → watermarked WebPs for customer UI
-        #   raw / composited_png_cdn → un-watermarked PNGs for Printful
+        #   raw / composited_png_cdn → un-watermarked 4:5 PNGs for Printful
+        #   raw_1x1 / composited_png_1x1_cdn → un-watermarked 1:1 PNGs
         update_job(
             job_id,
             status="complete",
-            raw=raw_cdn or f"/preview/{raw_path.name}",                       # un-watermarked PNG, fulfillment
+            raw=raw_cdn or f"/preview/{raw_path.name}",                       # 4:5 un-watermarked PNG, fulfillment
             raw_preview=raw_web_cdn or f"/preview/{raw_web_path.name}",        # watermarked WebP, customer no-name preview
             composited=web_cdn or f"/preview/{web_path.name}",                 # watermarked WebP, customer with-name preview
-            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",       # un-watermarked PNG, fulfillment
+            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",       # 4:5 un-watermarked PNG, fulfillment
+            raw_1x1=raw_1x1_cdn or f"/preview/{raw_path_1x1.name}",             # 1:1 no-name un-watermarked PNG
+            composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",  # 1:1 with-name un-watermarked PNG
             download=f"/download/{comp_path.name}",                            # full-res PNG for download (un-watermarked — gated, see /download)
             filename=comp_path.name,
             cdn="1" if comp_cdn else "0",

@@ -337,6 +337,12 @@ function saveSession(state) {
       // the customer toggles "Show name = No". Kept distinct from the
       // previewCdnUrls (which are watermarked) so neither side leaks.
       noNamePrintFileUrl: state.noNamePrintFileUrl || '',
+      // 1:1 derivatives — used by Printful for square canvas variants
+      // (12×12, 16×16). Composed for the 1:1 aspect so the print fills
+      // the canvas with no aspect-mismatch loss. Falls back to the 4:5
+      // master at consume time if absent (older sessions).
+      printFileUrl1x1: state.printFileUrl1x1 || '',
+      noNamePrintFileUrl1x1: state.noNamePrintFileUrl1x1 || '',
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) { /* quota exceeded — silently fail */ }
@@ -466,7 +472,9 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
       .filter(Boolean)
       .map(absolutize);
     const noNamePrintFileUrl = absolutize(submitData.raw) || '';
-    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '', noNamePrintFileUrl };
+    const printFileUrl1x1 = absolutize(submitData.composited_png_1x1_cdn) || '';
+    const noNamePrintFileUrl1x1 = absolutize(submitData.raw_1x1) || '';
+    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '', noNamePrintFileUrl, printFileUrl1x1, noNamePrintFileUrl1x1 };
   }
 
   // Step 2: Poll /status/<job_id> until complete.
@@ -502,7 +510,11 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
       // watermarked preview so fulfillment never receives a watermarked
       // file, and the customer never sees an un-watermarked one.
       const noNamePrintFileUrl = absolutize(status.raw) || '';
-      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl, noNamePrintFileUrl };
+      // Per-aspect 1:1 derivatives — used for square canvas variants
+      // (12×12, 16×16). Fulfillment picks by Printful variant size.
+      const printFileUrl1x1 = absolutize(status.composited_png_1x1_cdn) || '';
+      const noNamePrintFileUrl1x1 = absolutize(status.raw_1x1) || '';
+      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl, noNamePrintFileUrl, printFileUrl1x1, noNamePrintFileUrl1x1 };
     }
 
     if (status.status === 'failed') {
@@ -866,6 +878,9 @@ function usePortraitFlow() {
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
     printFileUrl: saved?.printFileUrl || '',
+    noNamePrintFileUrl: saved?.noNamePrintFileUrl || '',
+    printFileUrl1x1: saved?.printFileUrl1x1 || '',
+    noNamePrintFileUrl1x1: saved?.noNamePrintFileUrl1x1 || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
     pendingPhoto: pending,  // hold pending for later conversion to File
@@ -1043,8 +1058,10 @@ function usePortraitFlow() {
         previewDataUrls: validDataUrls,
         previewCdnUrls: result.previews,  // always save original URLs as fallback
         originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
-        printFileUrl: result.printFileUrl || '',  // hi-res PNG for Printful
-        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // hi-res no-name PNG for Printful
+        printFileUrl: result.printFileUrl || '',  // 4:5 hi-res PNG for Printful (tall variants)
+        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // 4:5 hi-res no-name PNG for Printful
+        printFileUrl1x1: result.printFileUrl1x1 || '',  // 1:1 hi-res PNG for Printful (square variants)
+        noNamePrintFileUrl1x1: result.noNamePrintFileUrl1x1 || '',  // 1:1 hi-res no-name PNG for Printful
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null, generationErrorTips: null,
       };
@@ -3026,7 +3043,15 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const activeSize = availableSizes.find(s => s.id === selectedSize) || availableSizes[0];
   const currentPrice = wantsFrame ? activeSize.priceFramed : activeSize.price;
   const currentVariantId = wantsFrame ? activeSize.variantIdFramed : activeSize.variantId;
-  const displayImage = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
+  // Pick the source whose aspect matches the selected canvas variant
+  // so the review-step mockup matches the print exactly. Square sizes
+  // use the 1×1 derivative; tall sizes and the watermarked named
+  // preview keep the standard fallback chain.
+  const isSquareCanvas = activeSize && activeSize.id && activeSize.id.split('x').length === 2 &&
+    Number(activeSize.id.split('x')[0]) === Number(activeSize.id.split('x')[1]);
+  const tallSrc = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
+  const squareSrc = (wantsName ? state.printFileUrl1x1 : state.noNamePrintFileUrl1x1) || tallSrc;
+  const displayImage = isSquareCanvas ? squareSrc : tallSrc;
 
   // When user toggles frame on, ensure selectedSize is valid in the new list
   useEffect(() => {
@@ -3085,6 +3110,14 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       if (!url) throw new Error('No image returned');
       setNamedPreviewUrl(url);
       setGeneratingNamedPreview(false);
+      // Persist the per-aspect named print files so the PDP picks
+      // the right one for the selected canvas variant.
+      try {
+        const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        if (resp.composited_png_cdn) session.printFileUrl = resp.composited_png_cdn;
+        if (resp.composited_png_1x1_cdn) session.printFileUrl1x1 = resp.composited_png_1x1_cdn;
+        localStorage.setItem(LS_KEY, JSON.stringify(session));
+      } catch {}
     })
     .catch(err => {
       console.error('[PetPrintables] Add-name failed:', err);
