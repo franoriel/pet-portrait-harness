@@ -2952,54 +2952,43 @@ def _generate_inner(
         ai_image_no_name.close()
     ai_image_no_name = processed_no_name
 
-    # Save the hi-res no-name 4:5 master.
+    # Save the hi-res no-name 4:5 master and the watermarked WebP that
+    # the customer actually sees on the preview screen. Everything else
+    # — the with-name PNG (comp_path), the with-name WebP (web_path),
+    # and both 1:1 derivatives — is byte-identical to one of these two
+    # files at preview time:
+    #   - comp_path / comp_path_1x1: no name has been composited yet;
+    #     generate_with_name_on_demand() produces the real with-name
+    #     files at add-to-cart time.
+    #   - web_path: same content as raw_web_path; it'd be a duplicate
+    #     watermarked WebP.
+    #   - raw_path_1x1: an aspect derivative the cart doesn't reference
+    #     anymore (the JS revert dropped per-aspect plumbing — Printful
+    #     gets the 4:5 master regardless of canvas variant).
+    #
+    # Skipping the redundant saves removes ~2-4s of synchronous work
+    # before the customer sees the preview. Aliasing the unused outputs
+    # to raw_path / raw_web_path keeps the 6-tuple return shape; the
+    # worker dedupes by file path before submitting CDN uploads, so the
+    # CDN only sees two unique objects per generation.
     raw_path = out / f"{uid}_{style}_raw.png"
     ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
     log.info("           raw (no name) → %s (%dx%d @ 300 DPI)",
              raw_path, ai_image_no_name.width, ai_image_no_name.height)
 
-    # 1:1 derivative for square canvas variants (12×12, 16×16). Built
-    # from the 4:5 master with style-aware aspect cropping so the
-    # square print fills the canvas with no aspect-mismatch loss.
-    raw_path_1x1 = _save_aspect_derivative(
-        ai_image_no_name, out, f"{uid}_{style}_raw_1x1.png", style, PRINT_ASPECT_1_1
-    )
-
-    # For preview purposes, the "composited" (with-name) version is
-    # initially the SAME as the no-name version. It'll be upgraded
-    # by generate_with_name_on_demand() when user adds to cart.
-    composited = ai_image_no_name
-
-    safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
-    comp_path = out / f"{uid}_{style}_{safe_name}.png"
-    # Save with 300 DPI metadata so Printful reads the correct print quality
-    composited.save(comp_path, "PNG", dpi=(300, 300))
-    log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
-             comp_path, composited.width, composited.height)
-    # 1:1 derivative for the no-name preview's "with-name" placeholder
-    # (it's the same image as raw_path_1x1 since no name has been
-    # composited yet — generate_with_name_on_demand re-derives later).
-    comp_path_1x1 = out / f"{uid}_{style}_{safe_name}_1x1.png"
-    import shutil as _shutil
-    _shutil.copy2(raw_path_1x1, comp_path_1x1)
-
-    # Optimized web preview (small WebP for fast frontend display).
-    # The customer-facing WebP is watermarked with "PREVIEW" so a
-    # screenshot or right-click-save can't be passed off as the print
-    # file. The hi-res PNG (raw_path / comp_path) stays un-watermarked
-    # because that's what Printful prints.
-    web_path = save_web_preview(composited, comp_path, watermark=True)
-
-    # ALSO save a watermarked no-name web preview. Customers toggle
-    # "Show name" on the PDP — when they pick "No", the UI swaps to
-    # this URL. Without it the toggle would fall back to the un-
-    # watermarked raw PNG, defeating the whole point of the watermark.
     raw_web_path = save_web_preview(
         ai_image_no_name,
         raw_path,
         watermark=True,
     )
-    composited.close()
+
+    # Aliases — same files, different roles. The frontend is fine with
+    # this at preview time because /add-name regenerates the named PNG
+    # and WebP fresh before the customer ever sees a name on the print.
+    comp_path = raw_path
+    raw_path_1x1 = raw_path
+    comp_path_1x1 = raw_path
+    web_path = raw_web_path
 
     return raw_path, comp_path, web_path, raw_web_path, raw_path_1x1, comp_path_1x1
 

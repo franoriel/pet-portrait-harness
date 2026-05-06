@@ -1695,31 +1695,26 @@ def _process_job(job: dict):
             background_mode=worker_bg,
         )
 
-        # Upload all six assets in parallel.
-        # - raw_path  / comp_path: hi-res 4:5 PNGs, NO watermark, used by
-        #   Printful fulfillment for tall canvas variants (12×16, 16×20)
-        #   and posters. Never displayed to the customer.
-        # - raw_path_1x1 / comp_path_1x1: hi-res 1:1 PNGs, NO watermark,
-        #   used by Printful for square canvas variants (12×12, 16×16).
-        #   Composed for the 1:1 aspect so the print fills the canvas
-        #   with no aspect-mismatch loss.
-        # - web_path / raw_web_path: small WebPs, watermarked with
-        #   "PREVIEW", shown to the customer in the browser. Splitting
-        #   into two so the toggle "Show name = No" still serves a
-        #   watermarked preview instead of falling through to the un-
-        #   watermarked raw PNG.
-        raw_fut = _fulfillment_pool.submit(upload_portrait, raw_path)
-        comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
-        web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
-        raw_web_fut = _fulfillment_pool.submit(upload_portrait, raw_web_path)
-        raw_1x1_fut = _fulfillment_pool.submit(upload_portrait, raw_path_1x1)
-        comp_1x1_fut = _fulfillment_pool.submit(upload_portrait, comp_path_1x1)
-        raw_cdn = raw_fut.result()
-        comp_cdn = comp_fut.result()
-        web_cdn = web_fut.result()
-        raw_web_cdn = raw_web_fut.result()
-        raw_1x1_cdn = raw_1x1_fut.result()
-        comp_1x1_cdn = comp_1x1_fut.result()
+        # Upload the unique files in parallel. _generate_inner aliases
+        # the with-name and 1:1 outputs to the no-name 4:5 PNG / WebP
+        # at preview time (no name has been composited yet, no per-
+        # aspect plumbing in the cart), so the six paths typically
+        # collapse to two distinct files. Dedup by path so we don't
+        # push the same bytes to CDN multiple times — which would
+        # otherwise waste bandwidth and burn extra pool slots.
+        unique_paths = {raw_path, comp_path, web_path,
+                        raw_web_path, raw_path_1x1, comp_path_1x1}
+        upload_futures = {
+            p: _fulfillment_pool.submit(upload_portrait, p)
+            for p in unique_paths
+        }
+        upload_cdn = {p: f.result() for p, f in upload_futures.items()}
+        raw_cdn = upload_cdn[raw_path]
+        comp_cdn = upload_cdn[comp_path]
+        web_cdn = upload_cdn[web_path]
+        raw_web_cdn = upload_cdn[raw_web_path]
+        raw_1x1_cdn = upload_cdn[raw_path_1x1]
+        comp_1x1_cdn = upload_cdn[comp_path_1x1]
 
         # Mark complete as soon as the preview URLs are ready. The original
         # photo (used only by fulfillment at order time) uploads in the
