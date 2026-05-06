@@ -1912,25 +1912,17 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
               }, 'Coming soon'),
             ),
           ),
-          // Card body — style name + font preview
+          // Card body — style name only (font preview removed; the
+          // style itself is the preview, and the script font on the
+          // card was reading as decorative noise rather than info).
           React.createElement('div', { style: { padding: '8px 8px 10px' } },
             React.createElement('p', {
               style: {
-                fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
+                fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-sm)',
                 color: selected ? tokens.colorAccent : tokens.colorBrand,
-                margin: '0 0 2px', lineHeight: 1.3,
+                margin: 0, lineHeight: 1.3,
               },
             }, style.name),
-            // Show pet name preview in the style's font (or "Abc" if no name)
-            React.createElement('p', {
-              style: {
-                fontFamily: (STYLE_FONTS[style.id] || {}).css || fontSerif,
-                fontWeight: 700, fontSize: 'var(--text-sm)',
-                color: tokens.colorMuted,
-                margin: 0, lineHeight: 1.2,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              },
-            }, state.petName || 'Abc'),
           ),
         );
       }),
@@ -3038,7 +3030,14 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   // (objectFit:'cover'+'center center') trims 12.5% off the top and
   // bottom, which is exactly where the name band lives.
   const isSquareSize = activeSize && activeSize.id && /(\d+)x\1$/.test(activeSize.id);
-  const displayImage = (wantsName && namedPreviewUrl)
+  // Some styles look best without a name — neon's saturated field, the
+  // renaissance moody drapery, and the aura's soft halo all leave no
+  // calm zone for a script without breaking the aesthetic. Customers
+  // can still order these without a name.
+  const NAMELESS_STYLES = new Set(['neon-pop-art', 'renaissance-royalty', 'aura-gradient']);
+  const styleAllowsName = !NAMELESS_STYLES.has(state.selectedStyleId);
+  const effectiveWantsName = wantsName && styleAllowsName;
+  const displayImage = (effectiveWantsName && namedPreviewUrl)
     ? ((isSquareSize && namedPreviewUrl1x1) ? namedPreviewUrl1x1 : namedPreviewUrl)
     : mainImage;
 
@@ -3120,7 +3119,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       session.selectedSize = activeSize.id;
       session.selectedVariantId = currentVariantId;
       session.selectedPrice = currentPrice;
-      session.wantsName = wantsName;
+      session.wantsName = effectiveWantsName;
       session.wantsFrame = wantsFrame;
       if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
       if (namedPreviewUrl1x1) session.namedPreviewUrl1x1 = namedPreviewUrl1x1;
@@ -3373,12 +3372,35 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       ),
     ),
 
-    // 3. NAME toggle — always visible; inline input when no name was set at step 1
+    // 3. NAME toggle — for styles that don't carry type well (neon,
+    // renaissance, aura) we replace the toggle with a brand-voiced
+    // note explaining why and ship the portrait without a name.
     React.createElement('div', { style: { marginBottom: '28px' } },
-      React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
+      !styleAllowsName && React.createElement('div', {
+        style: {
+          padding: '14px 16px', borderRadius: tokens.radiusCard,
+          background: tokens.colorAccentLight || '#f7f1e8',
+          border: `1px solid ${tokens.colorBorder}`,
+        },
+      },
+        React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 6px' } }, 'A nameless piece, on purpose'),
+        React.createElement('p', {
+          style: {
+            fontFamily: fontSans, fontSize: 'var(--text-sm)', color: tokens.colorBrand,
+            margin: 0, lineHeight: 1.5,
+          },
+        },
+          state.selectedStyleId === 'neon-pop-art'
+            ? "This one runs hot — saturated, electric, edge-to-edge. Type would dim the glow, so we keep this style nameless and let the colour do the talking."
+            : state.selectedStyleId === 'renaissance-royalty'
+              ? "Old-master portraits never wore a label. We honour the tradition — your pet stands alone in the gallery, the way the masters intended."
+              : "Aura portraits live in their soft halo of colour. Adding type would break the spell, so this style ships without a name — pure mood."
+        ),
+      ),
+      styleAllowsName && React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
         localName.trim() ? `Add "${localName}" to the portrait?` : 'Add your pet\'s name to the portrait?'
       ),
-      !localName.trim() && React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '10px' } },
+      styleAllowsName && !localName.trim() && React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '10px' } },
         React.createElement('input', {
           type: 'text',
           placeholder: "Pet's name (optional)",
@@ -3393,7 +3415,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           },
         }),
       ),
-      React.createElement('div', { style: { display: 'flex', gap: '10px' } },
+      styleAllowsName && React.createElement('div', { style: { display: 'flex', gap: '10px' } },
         optionCard(
           generatingNamedPreview && wantsName ? 'Adding name\u2026' : 'Yes, with their name',
           wantsName === true,
@@ -3418,7 +3440,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         ),
         optionCard('No, just the portrait', wantsName === false, () => handleNameToggle(false)),
       ),
-      nameError && React.createElement('p', {
+      styleAllowsName && nameError && React.createElement('p', {
         style: {
           fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorError,
           margin: '8px 0 0', lineHeight: 1.4,
@@ -3446,7 +3468,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       React.createElement('p', {
         style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorMuted, margin: 0 },
       },
-        `${activeSize.label} canvas${wantsFrame ? ' · Framed' : ''}${wantsName ? ' · With name' : ''}`
+        `${activeSize.label} canvas${wantsFrame ? ' · Framed' : ''}${effectiveWantsName ? ' · With name' : ''}`
       ),
     ),
 

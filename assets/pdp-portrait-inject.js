@@ -844,12 +844,41 @@
   // use it directly so the toggle swap is instant.
   var noTextUrl   = previewUrls[0] || previewUrls[1] || previewUrl;
   var withTextUrl = data.namedPreviewUrl || previewUrls[1] || null; // may be null until Yes is clicked
+  // Some styles ship without a name on purpose (saturated neon, moody
+  // renaissance, soft aura) — type would break the aesthetic. Force
+  // showName off and skip the toggle UI entirely for those.
+  var NAMELESS_STYLES = { 'neon-pop-art': 1, 'renaissance-royalty': 1, 'aura-gradient': 1 };
+  var styleAllowsName = !NAMELESS_STYLES[styleId];
   // Default the toggle from what the customer picked on Step 4 ("Include name").
   // If they opted in, we land on "Yes" — even if the named preview URL hasn't
   // been persisted yet; we'll fetch it proactively below.
-  var showName = wantsName;
+  var showName = wantsName && styleAllowsName;
 
-  if (petName) {
+  if (petName && !styleAllowsName) {
+    // Render a brand-voiced explainer in place of the toggle.
+    var namelessNote = document.createElement('div');
+    namelessNote.style.cssText = 'margin-bottom:16px;padding:14px 16px;'
+      + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;'
+      + 'background:var(--color-accent-light, #f7f1e8);';
+    var copy = styleId === 'neon-pop-art'
+      ? "This one runs hot — saturated, electric, edge-to-edge. Type would dim the glow, so we keep this style nameless and let the colour do the talking."
+      : styleId === 'renaissance-royalty'
+        ? "Old-master portraits never wore a label. We honour the tradition — your pet stands alone in the gallery, the way the masters intended."
+        : "Aura portraits live in their soft halo of colour. Adding type would break the spell, so this style ships without a name — pure mood.";
+    namelessNote.innerHTML =
+      '<p style="font-family:\'Inter\',sans-serif;font-size:var(--text-xs);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-muted,#8a8580);margin:0 0 6px;">A nameless piece, on purpose</p>'
+      + '<p style="font-family:\'Inter\',sans-serif;font-size:var(--text-sm);color:var(--color-ink,#1C1C1C);margin:0;line-height:1.5;">' + copy + '</p>';
+    var insertHost = document.querySelector('.product-form, form[action*="/cart/add"]');
+    if (insertHost && insertHost.parentNode) insertHost.parentNode.insertBefore(namelessNote, insertHost);
+    // Force _Show Name=No in the cart form so the order ships nameless.
+    var form = document.querySelector('.product-form, form[action*="/cart/add"]');
+    if (form) {
+      var sn = form.querySelector('input[name="properties[_Show Name]"]');
+      if (sn) sn.value = 'No';
+    }
+  }
+
+  if (petName && styleAllowsName) {
     // Outer wrapper is a column so the toggle row and the inline name
     // editor stack cleanly. The toggle row itself is its own flex-row
     // container so the label/buttons stay side-by-side regardless of how

@@ -467,13 +467,26 @@ outlines never trail off into the background — they always loop back to \
 meet another part of the contour. Open contours that bleed into negative \
 space are forbidden.
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the script:
+- The pet's head, ears, ANY part of the line, and any stray mark MUST \
+stay BELOW y=22% of the canvas. Top of the tallest ear sits at y≈25-28% \
+— never closer to the canvas top.
+- Within the top ~22%, the warm off-white paper stays completely empty \
+— no line work, no stray strokes, no marks of any kind. This rule is \
+non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, direct or three-quarter gaze.
-- The PET (formed by the single line) occupies 75-85% of image height — \
-top of ears at ~15-18% from top, bottom of chest at ~96-99% from top, \
-centered horizontally. Generous breathing room (~15-18% top, ~6-8% sides) \
-— no edge bleed.
+- The PET (formed by the single line) occupies 76-78% of image height — \
+top of ears at ~22% from top (right at the bottom edge of the name safe \
+zone), bottom of chest at ~96-99% from top, centered horizontally. The \
+line should fill the canvas confidently — a small line in a sea of paper \
+reads as timid, not minimal. Use the full available width too: the \
+line's widest point (ear-to-ear or shoulder-to-shoulder) reaches \
+~85-92% of canvas width.
 - BACKGROUND (warm off-white) extends edge-to-edge — no reserved panels, \
 bars, color blocks, or empty bands.
 - Do NOT include any text, words, letters, watermarks, or signatures.
@@ -513,13 +526,24 @@ panels — just one flat field of saturated colour edge-to-edge.
 (never on the background)
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the type:
+- The pet's head, ears, fur fly-aways, and ANY graphic accents MUST \
+stay BELOW y=22% of the canvas. Top of the tallest ear sits at y≈25-28% \
+— never closer to the canvas top.
+- Within the top ~22%, the saturated background continues edge-to-edge \
+but stays calm and uniform — no halftone dots, no accent bursts, no \
+splatters, no extra graphic flourishes inside this band.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, facing forward with personality and attitude
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean uniform background space \
-above the ears AND below the chest as part of the pop composition
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing room \
+above the ears.
 - The BACKGROUND is ONE single saturated colour, perfectly uniform from \
 corner to corner, extending edge-to-edge with NO internal rectangles, \
 panels, bars, checker zones, or empty bands. The same colour you see in \
@@ -551,13 +575,24 @@ jeweled collar, or regal military sash appropriate to the animal
 - Subtle craquelure texture for authenticity
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the engraved-style type:
+- The pet's head, crown, ears, drapery folds, and ANY decorative detail \
+MUST stay BELOW y=22% of the canvas. Top of the head/crown sits at \
+y≈25-28% — never closer to the canvas top.
+- Within the top ~22%, the moody dark background continues uniformly \
+edge-to-edge — no light highlights, no drapery folds, no architectural \
+detail, no craquelure flourish inside this band.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and upper body in regal pose, noble and dignified
-- The PET itself (head + upper body) occupies 82-87% of image height — \
-top of head/crown at ~15-18% from top, bottom of body at ~96-99% from top, \
-centered horizontally. Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave \
-moody-background space above the head AND below the body
+- The PET itself (head + upper body) occupies 70-75% of image height — \
+top of head/crown at ~25-28% from top, bottom of body at ~96-99% from top, \
+centered horizontally. The reserved name safe zone (top ~22%) is what \
+creates the breathing room above the head.
 - The BACKGROUND (dark moody drapery/column) extends edge-to-edge naturally \
 to all four sides. No reserved panels, bars, color blocks, or empty bands
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere
@@ -722,13 +757,24 @@ STYLE:
 - Shepard Fairey / Aaron Draplin inspired graphic boldness
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the type:
+- The pet's head, ears, fur fly-aways, and ANY graphic accents MUST \
+stay BELOW y=22% of the canvas. Top of the tallest ear sits at y≈25-28% \
+— never closer to the canvas top.
+- Within the top ~22%, the solid background continues uniformly \
+edge-to-edge — no halftone, accents, or extra graphic elements inside \
+this band.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean negative space above \
-the ears AND below the chest as an integral part of the poster composition
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing \
+room above the ears.
 - The BACKGROUND (single solid flat color) extends edge-to-edge behind the \
 pet — one continuous color, NOT split into panels or bands. No reserved \
 color blocks, bars, or rectangles anywhere
@@ -766,12 +812,24 @@ ending in a hard cut.
 - High-end pet portrait artist's piece. Premium, intimate, museum-quality.
 - Fine art illustration style, high resolution 300dpi, print-ready.
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for hand-drawn type:
+- The pet's head, ears, charcoal strokes, stray marks, and ANY hatching \
+MUST stay BELOW y=22% of the canvas. Top of the tallest ear sits at \
+y≈25-28% — never closer to the canvas top.
+- Within the top ~22%, only the bare warm cream paper (#F4EFE7) shows — \
+no charcoal strokes, no hatching, no stray marks, no smudges. The same \
+calm paper continues edge-to-edge through this band.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, calm pose, direct gentle gaze.
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed.
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing room \
+above the ears.
 - BOTTOM SILHOUETTE — CRITICAL: the chest must dissolve organically into the \
 paper texture with looser strokes, never end in a flat horizontal cut.
 - BACKGROUND: warm cream paper texture (#F4EFE7 base) with subtle organic \
@@ -807,13 +865,24 @@ STYLE:
 - Mystical, spiritual, new-age aesthetic — calming and beautiful
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the type:
+- The pet's head, ears, fur fly-aways, and the most intense portion of \
+the aura halo MUST stay BELOW y=22% of the canvas. Top of the tallest \
+ear sits at y≈25-28% — never closer to the canvas top.
+- Within the top ~22%, the gradient continues edge-to-edge but stays \
+calm and uniform — soft outer aura tones only, no light bloom peaks, \
+no lens flare, no high-contrast accents inside this band.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, serene expression, gentle eye contact
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Aura needs room to radiate ABOVE \
-the head AND BELOW the chest
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing room \
+above the ears; the aura still radiates BELOW the chest.
 - The BACKGROUND (aura gradient) radiates symmetrically and fills every edge \
 as one continuous smooth wash. No reserved panels, bars, color blocks, or \
 empty bands anywhere
@@ -956,13 +1025,25 @@ straight vertical line falling below the figure — this MUST NOT happen.
 outlines never trail off into the dark field — they always loop back to \
 meet another part of the contour.
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the type:
+- The pet's head, ears, ANY part of the ivory line, and any stray mark \
+MUST stay BELOW y=22% of the canvas. Top of the tallest ear sits at \
+y≈25-28% — never closer to the canvas top.
+- Within the top ~22%, only the solid dark field shows — no line work, \
+no stray strokes, no marks of any kind. This rule is non-negotiable on \
+every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - Head and chest, direct or three-quarter gaze.
-- The PET (formed by the single ivory line) occupies 75-83% of image \
-height — top of ears at ~15-18% from top, bottom of chest at ~96-99% from \
-top, centered horizontally. Generous breathing room (~15-18% top, ~6-8% \
-sides) — no edge bleed.
+- The PET (formed by the single ivory line) occupies 76-78% of image \
+height — top of ears at ~22% from top (right at the bottom edge of the \
+name safe zone), bottom of chest at ~96-99% from top, centered \
+horizontally. The line should fill the canvas confidently. The widest \
+point of the figure (ear-to-ear or shoulder-to-shoulder) reaches \
+~85-92% of canvas width.
 - BACKGROUND (solid dark field) extends edge-to-edge — no reserved panels, \
 bars, color blocks, or empty bands.
 - Do NOT include any text, words, letters, watermarks, or signatures.
@@ -1074,13 +1155,24 @@ STYLE:
 - Shepard Fairey / Aaron Draplin inspired graphic boldness
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+of the finished image. Reserve the upper ~22% of the canvas as a CALM \
+area for the type:
+- The pet's head, ears, fur fly-aways, and ANY accent colors MUST stay \
+BELOW y=22% of the canvas. Top of the tallest ear sits at y≈25-28% — \
+never closer to the canvas top.
+- Within the top ~22%, the solid dark field continues uniformly \
+edge-to-edge — no halftone, accents, or extra graphic elements inside \
+this band.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
 - Head and chest, strong forward-facing pose, graphic impact
-- The PET itself occupies 82-87% of image height — top of ears at \
-~15-18% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-Ensure the pet is the dominant subject filling the canvas confidently, with clean breathing room (~15-18% top padding, ~6-8% side padding) on all four sides — no edge bleed. Leave clean dark-field space above \
-the ears AND below the chest as part of the poster composition
+- The PET itself occupies 70-75% of image height — top of ears at \
+~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
+The reserved name safe zone (top ~22%) is what creates the breathing room \
+above the ears.
 - The BACKGROUND (single flat black/dark-gray) extends edge-to-edge behind \
 the pet — NOT split into panels or bands. No reserved color blocks, bars, \
 or rectangles anywhere
@@ -1944,16 +2036,19 @@ def _tight_crop_post_process(img: Image.Image) -> Image.Image:
     return _portrait_post_process(img)
 
 
-def _watercolor_post_process(img: Image.Image) -> Image.Image:
-    """Watercolor reserves the top ~22% of the canvas as a NAME SAFE
-    ZONE (calm paper / wash, no detail) per the prompt. The generic
-    tight-crop helper would treat that calm zone as background and
-    crop it away, putting the pet's ears at y=0% on the master and
-    forcing the script to overlap the head. Skip the tight-crop and
-    just run the standard 4:5 crop + min-size resize so the safe
-    zone survives intact.
+def _safe_zone_post_process(img: Image.Image) -> Image.Image:
+    """Post-process for any style whose prompt reserves the top ~22%
+    of the canvas as a NAME SAFE ZONE. The generic tight-crop helper
+    would treat that calm zone as background and crop it away, putting
+    the pet's ears at y=0% on the master and forcing the script to
+    overlap the head. Skip the tight-crop and just run the standard
+    4:5 crop + min-size resize so the safe zone survives intact.
     """
     return _portrait_post_process(img)
+
+
+# Back-compat alias — older code paths referenced the watercolor name.
+_watercolor_post_process = _safe_zone_post_process
 
 
 def _pad_sides_to_aspect(img: Image.Image, target_aspect: tuple) -> Image.Image:
@@ -2019,10 +2114,14 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
                 target_aspect=PRINT_ASPECT_1_1,
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
-    if style_id == "watercolor":
+    if style_id in {
+        "watercolor", "minimal-line-art", "neon-pop-art",
+        "renaissance-royalty", "charcoal", "aura-gradient",
+        "bold-graphic-poster",
+    }:
         # Pad sides to preserve the top NAME SAFE ZONE — a centred
-        # tight-crop would drop the calm-paper band and put the pet's
-        # ears flush against the new canvas top.
+        # tight-crop would drop the calm-paper / calm-wash / calm-field
+        # band and put the pet's ears flush against the new canvas top.
         return _pad_sides_to_aspect(img, target_aspect)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
@@ -2243,9 +2342,11 @@ POST_PROCESS["modern-shape-art"] = _modern_shape_art_post_process
 # the entire image as fg).
 for _style in ("charcoal", "neon-pop-art",
                "renaissance-royalty", "bold-graphic-poster"):
-    POST_PROCESS[_style] = _tight_crop_post_process
-# Watercolor uses its own post-process — see _watercolor_post_process.
-# The standard tight-crop would eat the top NAME SAFE ZONE.
+    # Use the safe-zone-preserving post-process — the generic tight-crop
+    # treats the calm top band as background and crops it away, putting
+    # ears flush against the canvas top and forcing the script to
+    # overlap the head.
+    POST_PROCESS[_style] = _watercolor_post_process
 POST_PROCESS["watercolor"] = _watercolor_post_process
 
 
@@ -2389,10 +2490,12 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         # Letter-spacing was 6 on top of FONT_SIZE_SCALE["small"]=0.7 —
         # combined with size_ratio 0.035 the name read as 4 disconnected
         # dots across the canvas. Tuned to a readable but still airy
-        # tracked-letter look.
+        # tracked-letter look. zone_top 0.11 lands the name inside the
+        # NAME SAFE ZONE the prompt reserves at the top, well above the
+        # line-art figure (ears at y≈25-28%).
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 1.0,
     },
@@ -2410,37 +2513,39 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "neon-pop-art": {
+        # zone_top 0.11 lands the name inside the prompt-reserved NAME
+        # SAFE ZONE, above the pet's ears (y≈25-28%).
         "size_ratio": 0.07,
         "transform": "upper",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 1.0,
     },
     "renaissance-royalty": {
         "size_ratio": 0.06,
         "transform": "upper",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 3,
         "opacity": 0.9,
     },
     "bold-graphic-poster": {
         "size_ratio": 0.08,
         "transform": "upper",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 1.0,
     },
     "charcoal": {
         "size_ratio": 0.07,
         "transform": "title",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 2,
         "opacity": 0.9,
     },
     "aura-gradient": {
         "size_ratio": 0.07,
         "transform": "title",
-        "zone_top": 0.16,
+        "zone_top": 0.11,
         "letter_spacing": 1,
         "opacity": 0.85,
     },
