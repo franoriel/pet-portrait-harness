@@ -521,6 +521,27 @@ STYLE:
 (hot pink, electric blue, neon green, vivid yellow, or similar). NO multi-zone \
 backgrounds, NO geometric color blocks behind the pet, NO checker or stripe \
 panels — just one flat field of saturated colour edge-to-edge.
+- FULL-BLEED BACKGROUND — CRITICAL: the saturated colour MUST extend \
+absolutely edge-to-edge on all four sides of the canvas. The four \
+corners are pure saturated bg colour, identical to each other. NO \
+white border, NO off-colour fade at the edges, NO anti-aliased \
+softening at the canvas perimeter, NO unprinted margin, NO let-the- \
+white-paper-show artifact. If the bg colour does not reach the very \
+last pixel column on the left, right, top, and bottom, the result is \
+unusable. Treat it as a screen-print: ink covers the entire sheet.
+- COMPOSITION OPTIONS — pick ONE and commit to it (do not produce a \
+hybrid):
+  (a) FULL-BLEED PORTRAIT: the pet's body extends past the canvas \
+  edges where appropriate (ears can crop at the top safe-zone \
+  boundary, shoulders can crop at the side edges, chest cuts off at \
+  the bottom edge) so the artwork reads as a confident edge-to-edge \
+  composition with no visible bg margin around the pet.
+  (b) CLEAN BUST CROP: the pet is composed as a tight head + neck + \
+  upper-shoulder bust with crisp clean line terminations — the bust \
+  silhouette ends in a confident horizontal cut or smooth taper, \
+  surrounded by the saturated bg with NO ragged fur fly-aways, NO \
+  random splatters, NO pet body parts that don't fully resolve.
+  Either way, the bg is fully solid and edge-to-edge.
 - Andy Warhol meets Keith Haring aesthetic — playful, graphic, punchy
 - Halftone dot texture in select areas of the PET ONLY for retro pop feel \
 (never on the background)
@@ -552,7 +573,11 @@ one corner you see in every other corner.
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
 oil paint, 3D render, blurry, low resolution, text, watermark, border, \
-solid color bars or panels at image edges.\
+solid color bars or panels at image edges, white margin around the \
+artwork, off-colour fade at the canvas perimeter, anti-aliased \
+softening that leaves any pixel less than fully saturated at the \
+extreme edges, ragged fur fly-aways with no defined termination, \
+floating pet parts that don't resolve.\
 """
 
 _RENAISSANCE_ROYALTY_TEMPLATE = """\
@@ -2093,12 +2118,30 @@ def _safe_zone_post_process(img: Image.Image) -> Image.Image:
 _watercolor_post_process = _safe_zone_post_process
 
 
-def _pad_sides_to_aspect(img: Image.Image, target_aspect: tuple) -> Image.Image:
-    """Pad an image with edge-replicated side strips to reach a wider
-    target aspect WITHOUT cropping any height. Used for watercolor's
-    1:1 derivative so the top NAME SAFE ZONE is preserved vertically
-    (a tight-crop centre-pad would lose it). If the source is already
-    wider-or-equal to the target aspect this is a no-op.
+def _pad_sides_to_aspect(
+    img: Image.Image,
+    target_aspect: tuple,
+    solid_bg: bool = False,
+) -> Image.Image:
+    """Pad an image with side strips to reach a wider target aspect
+    WITHOUT cropping any height. Used for the 1:1 derivative on
+    safe-zone styles so the top NAME SAFE ZONE is preserved vertically
+    (a tight-crop centre-pad would lose it).
+
+    Strategies:
+      - solid_bg=False (default): edge-replicate the outermost 4px
+        column on each side. Right for organic / gradient backgrounds
+        (watercolour wash, charcoal paper, aura halo) where natural
+        variation extends smoothly outward.
+      - solid_bg=True: sample the actual top-left + top-right corner
+        pixels of the source and fill the side strips with that solid
+        bg colour. Right for SATURATED-FLAT-BG styles (neon, bold-
+        graphic-poster) where the AI sometimes leaves a thin imperfect
+        edge bleed — replicating those edge pixels would streak the
+        imperfection across the whole pad strip and read as a white
+        / off-colour vertical band on the printed canvas.
+
+    No-op if the source is already wider-or-equal to the target aspect.
     """
     if img.mode != "RGB":
         img = img.convert("RGB")
@@ -2111,6 +2154,27 @@ def _pad_sides_to_aspect(img: Image.Image, target_aspect: tuple) -> Image.Image:
     pad_total = needed_w - w
     pad_left = pad_total // 2
     pad_right = pad_total - pad_left
+
+    if solid_bg:
+        # Sample the top corners — for solid-bg styles the corners are
+        # always pure background (the pet sits in the lower-middle and
+        # the name safe zone keeps the top corners free of detail).
+        cs = max(8, min(w, h) // 50)
+        corners = (
+            img.crop((0, 0, cs, cs)).getdata(),
+            img.crop((w - cs, 0, w, cs)).getdata(),
+        )
+        pixels = list(corners[0]) + list(corners[1])
+        n = len(pixels)
+        bg = (
+            sum(p[0] for p in pixels) // n,
+            sum(p[1] for p in pixels) // n,
+            sum(p[2] for p in pixels) // n,
+        )
+        out = Image.new("RGB", (needed_w, h), bg)
+        out.paste(img, (pad_left, 0))
+        return out
+
     out = Image.new("RGB", (needed_w, h), (255, 255, 255))
     out.paste(img, (pad_left, 0))
     if pad_left > 0:
@@ -2167,7 +2231,12 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
         # Pad sides to preserve the top NAME SAFE ZONE — a centred
         # tight-crop would drop the calm-paper / calm-wash / calm-field
         # band and put the pet's ears flush against the new canvas top.
-        return _pad_sides_to_aspect(img, target_aspect)
+        # Saturated-flat-bg styles fill the side pad with the corner-
+        # sampled bg colour (edge replication can streak imperfect AI
+        # edges into a visible band); organic-bg styles edge-replicate
+        # so wash / halo / paper texture continues smoothly outward.
+        solid_bg = style_id in {"neon-pop-art", "bold-graphic-poster"}
+        return _pad_sides_to_aspect(img, target_aspect, solid_bg=solid_bg)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
     return _tight_crop_to_aspect(img, target_aspect=target_aspect)

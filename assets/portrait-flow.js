@@ -2135,8 +2135,14 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       );
     })(),
 
-    // Name font preview + size selector (only when style is selected)
-    state.selectedStyleId && state.petName && React.createElement('div', {
+    // Name font preview + size selector — hidden when the chosen style
+    // ships nameless on purpose (neon, renaissance, aura). Showing a
+    // font preview for those would tease a name that never gets
+    // composited, breaking the brand-voice "this style is nameless on
+    // purpose" message we deliver later.
+    state.selectedStyleId && state.petName
+      && !['neon-pop-art', 'renaissance-royalty', 'aura-gradient'].includes(state.selectedStyleId)
+      && React.createElement('div', {
       style: {
         marginTop: '20px', padding: '16px', background: tokens.colorWhite,
         borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
