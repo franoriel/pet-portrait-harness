@@ -319,20 +319,32 @@
   }
 
   // ── Client-side product mockup — CSS-composed canvas ─────
-  // Strategy: no pre-photographed canvas background. Instead, build
-  // the canvas from scratch in CSS so it always matches the variant
-  // aspect ratio exactly (no misalignment). The linen surface + shadow
-  // + canvas weave texture sell the realism.
+  // Strategy: linen surface + canvas product (sized per-variant) +
+  // canvas weave texture, mirroring Printful's pre-photographed scenes
+  // so square mockups read as the same product family as the tall
+  // Printful mockups. The canvas-face has no fill colour; the portrait
+  // covers it edge to edge. That way any style's own background is
+  // what sells the canvas face — never a flat white rectangle that the
+  // portrait sits on top of.
   function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1) {
-    // Outer container: square 1:1 slide. Transparent — the gallery slide
-    // surface shows around the portrait so we never have a flat white
-    // square sitting on linen. (Linen backdrop and white canvas-face
-    // fill removed: those read as unprofessional / paste-on-linen for
-    // any style whose own background isn't edge-to-edge cream.)
+    // Outer container: square 1:1 slide. Linen backdrop matches the
+    // pre-photographed Printful product mockup used for tall variants
+    // so the square mockups read as the same product family. The
+    // canvas-face fill (formerly #fefdfb) stays transparent — the
+    // portrait covers it edge to edge so any style's own background
+    // sells the canvas face. No flat white rectangle on linen.
     var container = document.createElement('div');
-    container.style.cssText = 'width:100%;aspect-ratio:1/1;'
-      + 'position:relative;background:transparent;'
+    container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
+      + 'overflow:hidden;position:relative;'
+      + "background-image:url(" + _assetBase + "linen-texture.webp);"
+      + 'background-size:cover;background-position:center;'
       + 'display:flex;align-items:center;justify-content:center;';
+
+    // Subtle directional light from upper-left (matches Printful style)
+    var lightGradient = document.createElement('div');
+    lightGradient.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+      + 'background:radial-gradient(ellipse at 30% 20%, rgba(255,250,240,0.18) 0%, transparent 60%);';
+    container.appendChild(lightGradient);
 
     // Canvas wrapper sized proportionally to variant dimensions.
     // Larger sizes fill more of the container so the visual scale matches reality.
@@ -543,18 +555,17 @@
     slide.setAttribute('role', 'listitem');
 
     var img = document.createElement('img');
-    // The gallery slide is locked to a 1:1 aspect ratio (see base.css)
-    // and uses object-fit:cover, which trims 12.5% off the top and
-    // bottom of a 4:5 source — exactly where the name band sits. Use
-    // the 1:1 derivative for the hero whenever we have it so the full
-    // composed layout (pet + name) is visible without cropping.
-    var heroSrc = (data.wantsName !== false && data.namedPreviewUrl1x1)
-      ? data.namedPreviewUrl1x1
-      : previewUrl;
+    // Use the watermarked 4:5 preview as the hero so the design-only
+    // image carries the Pet Printables watermark. The 1:1 derivative is
+    // un-watermarked, so we avoid it here. The gallery slide is locked
+    // to 1:1 with object-fit:cover (see base.css); top-anchor the cover
+    // crop so the name band (composited at source y≈11%) survives.
+    var heroSrc = previewUrl;
     img.src = heroSrc;
     img.alt = petName ? 'Portrait of ' + petName : 'Your custom pet portrait';
     img.loading = 'eager';
-    img.style.cssText = 'width:100%;display:block;border-radius:16px;';
+    img.style.cssText = 'width:100%;height:100%;display:block;border-radius:16px;'
+      + 'object-fit:cover;object-position:center top;';
     slide.appendChild(img);
 
     // Tap-to-zoom on the hero slide — the gallery's 1:1 cover-crop can
@@ -597,13 +608,12 @@
       mockupSlide.setAttribute('role', 'listitem');
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
-      // Square sizes (12×12, 16×16) always render client-side from the
-      // 1:1 derivative when we have it — the Printful mockup is built
-      // from the 4:5 master and center-crops the name band off the top
-      // on square faces. Tall sizes prefer Printful when available.
+      // Tall sizes prefer Printful's product photo when available.
+      // Square sizes use the client-side linen+canvas mockup, fed by the
+      // watermarked 4:5 master (the un-watermarked 1:1 derivative would
+      // leave the square mockup without the Pet Printables watermark).
       var isSquareVariant = dim.w === dim.h;
-      var useSquareSrc = isSquareVariant && data.wantsName !== false && !!data.namedPreviewUrl1x1;
-      if (hasAllPrintful && !useSquareSrc) {
+      if (hasAllPrintful && !isSquareVariant) {
         var mockupImg = document.createElement('img');
         mockupImg.src = printfulByVariant[sizeKey].url;
         mockupImg.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
@@ -611,8 +621,7 @@
         mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
         mockupSlide.appendChild(mockupImg);
       } else {
-        var srcForVariant = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
-        var clientMockup = createClientMockup(srcForVariant, dim.w, dim.h, sizeKey, useSquareSrc);
+        var clientMockup = createClientMockup(previewUrl, dim.w, dim.h, sizeKey, false);
         mockupSlide.appendChild(clientMockup);
       }
 
@@ -642,12 +651,12 @@
             if (m.placement !== 'default') return;
             var nums = m.variant.match(/(\d+)\D+(\d+)/);
             var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
-            // Square variants: skip the Printful replacement when we
-            // have a 1:1 derivative for the client-side mockup —
+            // Square variants: keep the client-side linen+canvas mockup.
             // Printful renders the 4:5 master onto the square face and
-            // center-crops it, clipping the name band off the top.
+            // centre-crops it, clipping the name band off the top — so
+            // we never let Printful replace square slides.
             var isSq = nums && nums[1] === nums[2];
-            if (isSq && data.namedPreviewUrl1x1) return;
+            if (isSq) return;
             var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
             if (slideEl) {
               slideEl.innerHTML = '';
