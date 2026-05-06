@@ -720,6 +720,14 @@ p { color: var(--color-ink); }
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.style-carousel__label--charcoal {
+  font-family: 'Kalam', 'Caveat', cursive;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  text-transform: none;
+  letter-spacing: 0;
+  color: #2F2F2A;
+}
 
 /* ── Trust bar (static glassmorphism) ─────────────────────────
    Sits at the seam between the hero and the next section. Pulls up
