@@ -1646,6 +1646,23 @@ def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
     pad_side   = int(pet_w * 0.08)
     pad_bottom = int(pet_h * bottom_frac)
 
+    # Target the 4:5 print ratio exactly so the downstream post-process
+    # never needs to crop into the pet:
+    #   - taller than 4:5 (long-bodied pet): expand sides so the bottom-
+    #     gravity crop doesn't eat into the head/ears.
+    #   - wider than 4:5 (head-shot or square bbox): expand top so the
+    #     side crop doesn't eat into the ears/shoulders. Adding to the
+    #     top preserves the flat-bottom rule.
+    target_w, target_h = PORTRAIT_RATIO  # (4, 5)
+    natural_w = pet_w + 2 * pad_side
+    natural_h = pet_h + pad_top + pad_bottom
+    if natural_w * target_h < natural_h * target_w:
+        needed_w = (natural_h * target_w + target_h - 1) // target_h
+        pad_side += (needed_w - natural_w + 1) // 2
+    elif natural_w * target_h > natural_h * target_w:
+        needed_h = (natural_w * target_h + target_w - 1) // target_w
+        pad_top += needed_h - natural_h
+
     canvas_w = pet_w + 2 * pad_side
     canvas_h = pet_h + pad_top + pad_bottom
     canvas = Image.new('RGB', (canvas_w, canvas_h), bg)

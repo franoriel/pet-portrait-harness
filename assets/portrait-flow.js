@@ -337,12 +337,6 @@ function saveSession(state) {
       // the customer toggles "Show name = No". Kept distinct from the
       // previewCdnUrls (which are watermarked) so neither side leaks.
       noNamePrintFileUrl: state.noNamePrintFileUrl || '',
-      // 1:1 derivatives — used by Printful for square canvas variants
-      // (12×12, 16×16). Composed for the 1:1 aspect so the print fills
-      // the canvas with no aspect-mismatch loss. Falls back to the 4:5
-      // master at consume time if absent (older sessions).
-      printFileUrl1x1: state.printFileUrl1x1 || '',
-      noNamePrintFileUrl1x1: state.noNamePrintFileUrl1x1 || '',
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) { /* quota exceeded — silently fail */ }
@@ -472,9 +466,7 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
       .filter(Boolean)
       .map(absolutize);
     const noNamePrintFileUrl = absolutize(submitData.raw) || '';
-    const printFileUrl1x1 = absolutize(submitData.composited_png_1x1_cdn) || '';
-    const noNamePrintFileUrl1x1 = absolutize(submitData.raw_1x1) || '';
-    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '', noNamePrintFileUrl, printFileUrl1x1, noNamePrintFileUrl1x1 };
+    return { jobId: 'job-' + Date.now(), previews, filename: submitData.filename || '', cdn: submitData.cdn || false, originalPhoto: submitData.original_cdn || '', noNamePrintFileUrl };
   }
 
   // Step 2: Poll /status/<job_id> until complete.
@@ -510,11 +502,7 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
       // watermarked preview so fulfillment never receives a watermarked
       // file, and the customer never sees an un-watermarked one.
       const noNamePrintFileUrl = absolutize(status.raw) || '';
-      // Per-aspect 1:1 derivatives — used for square canvas variants
-      // (12×12, 16×16). Fulfillment picks by Printful variant size.
-      const printFileUrl1x1 = absolutize(status.composited_png_1x1_cdn) || '';
-      const noNamePrintFileUrl1x1 = absolutize(status.raw_1x1) || '';
-      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl, noNamePrintFileUrl, printFileUrl1x1, noNamePrintFileUrl1x1 };
+      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl, noNamePrintFileUrl };
     }
 
     if (status.status === 'failed') {
@@ -675,7 +663,8 @@ const KEYFRAME_CSS = `
     max-width: 1080px;
     margin: 0 auto;
   }
-  .pf-preview-grid__media { grid-column: 1; margin: 0 !important; max-width: 100% !important; }
+  .pf-preview-grid__media-col { grid-column: 1; }
+  .pf-preview-grid__media { margin: 0 auto !important; max-width: 100% !important; }
   .pf-preview-grid__copy  { grid-column: 2; text-align: left; }
   .pf-preview-grid__copy .pf-preview-grid__center { text-align: center; }
   /* Step indicator stays at the very top, full width above the grid. */
@@ -878,9 +867,6 @@ function usePortraitFlow() {
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
     printFileUrl: saved?.printFileUrl || '',
-    noNamePrintFileUrl: saved?.noNamePrintFileUrl || '',
-    printFileUrl1x1: saved?.printFileUrl1x1 || '',
-    noNamePrintFileUrl1x1: saved?.noNamePrintFileUrl1x1 || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
     pendingPhoto: pending,  // hold pending for later conversion to File
@@ -1058,10 +1044,8 @@ function usePortraitFlow() {
         previewDataUrls: validDataUrls,
         previewCdnUrls: result.previews,  // always save original URLs as fallback
         originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
-        printFileUrl: result.printFileUrl || '',  // 4:5 hi-res PNG for Printful (tall variants)
-        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // 4:5 hi-res no-name PNG for Printful
-        printFileUrl1x1: result.printFileUrl1x1 || '',  // 1:1 hi-res PNG for Printful (square variants)
-        noNamePrintFileUrl1x1: result.noNamePrintFileUrl1x1 || '',  // 1:1 hi-res no-name PNG for Printful
+        printFileUrl: result.printFileUrl || '',  // hi-res PNG for Printful
+        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // hi-res no-name PNG for Printful
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null, generationErrorTips: null,
       };
@@ -2885,25 +2869,30 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       React.createElement(StepIndicator, { current: 3 }),
     ),
 
-    // Main preview (single, large) — left column on desktop, top on mobile
-    React.createElement('div', {
-      className: 'pf-preview-grid__media',
-      style: {
-        width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 16px', borderRadius: tokens.radiusCard,
-        overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
+    // Left column on desktop (image + watermark caption), stacks above
+    // the copy block on mobile. Wrapping image + caption together keeps
+    // them in the same grid cell — without this, the caption auto-flows
+    // into column 2, pushing the heading/CTA into row 3 with a gap.
+    React.createElement('div', { className: 'pf-preview-grid__media-col' },
+      React.createElement('div', {
+        className: 'pf-preview-grid__media',
+        style: {
+          width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 12px', borderRadius: tokens.radiusCard,
+          overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
+        },
       },
-    },
-      React.createElement('img', {
-        src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
-        style: { width: '100%', display: 'block' },
-      }),
+        React.createElement('img', {
+          src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
+          style: { width: '100%', display: 'block' },
+        }),
+      ),
+      React.createElement('p', {
+        style: {
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', textAlign: 'center',
+          color: tokens.colorMuted, margin: '0 auto 20px', letterSpacing: '0.02em',
+        },
+      }, 'Watermark will not appear on your final print.'),
     ),
-    React.createElement('p', {
-      style: {
-        fontFamily: fontSans, fontSize: 'var(--text-xs)', textAlign: 'center',
-        color: tokens.colorMuted, margin: '-8px auto 20px', letterSpacing: '0.02em',
-      },
-    }, 'Watermark will not appear on your final print.'),
 
     // Right column on desktop (heading + chip + bridge + actions),
     // stacks below the preview on mobile.
@@ -3043,15 +3032,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const activeSize = availableSizes.find(s => s.id === selectedSize) || availableSizes[0];
   const currentPrice = wantsFrame ? activeSize.priceFramed : activeSize.price;
   const currentVariantId = wantsFrame ? activeSize.variantIdFramed : activeSize.variantId;
-  // Pick the source whose aspect matches the selected canvas variant
-  // so the review-step mockup matches the print exactly. Square sizes
-  // use the 1×1 derivative; tall sizes and the watermarked named
-  // preview keep the standard fallback chain.
-  const isSquareCanvas = activeSize && activeSize.id && activeSize.id.split('x').length === 2 &&
-    Number(activeSize.id.split('x')[0]) === Number(activeSize.id.split('x')[1]);
-  const tallSrc = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
-  const squareSrc = (wantsName ? state.printFileUrl1x1 : state.noNamePrintFileUrl1x1) || tallSrc;
-  const displayImage = isSquareCanvas ? squareSrc : tallSrc;
+  const displayImage = (wantsName && namedPreviewUrl) ? namedPreviewUrl : mainImage;
 
   // When user toggles frame on, ensure selectedSize is valid in the new list
   useEffect(() => {
@@ -3110,14 +3091,6 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       if (!url) throw new Error('No image returned');
       setNamedPreviewUrl(url);
       setGeneratingNamedPreview(false);
-      // Persist the per-aspect named print files so the PDP picks
-      // the right one for the selected canvas variant.
-      try {
-        const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-        if (resp.composited_png_cdn) session.printFileUrl = resp.composited_png_cdn;
-        if (resp.composited_png_1x1_cdn) session.printFileUrl1x1 = resp.composited_png_1x1_cdn;
-        localStorage.setItem(LS_KEY, JSON.stringify(session));
-      } catch {}
     })
     .catch(err => {
       console.error('[PetPrintables] Add-name failed:', err);
