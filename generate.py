@@ -1552,23 +1552,23 @@ def add_background_padding(
     return out
 
 
-def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
+def _modern_shape_art_reframe(
+    img: Image.Image,
+    pad_top_ratio: float = 0.05,
+    pad_side_ratio: float = 0.02,
+    target_aspect: tuple = PORTRAIT_RATIO,
+) -> Image.Image:
     """Reframe a modern-shape-art portrait so the pet fills the canvas
     confidently with exact target margins regardless of how much empty
     background the AI included.
 
-    Steps:
-      1. Sample 4 corners to detect the solid background color.
-      2. Scan every 3rd pixel to find the pet's bounding box (pixels
-         whose color distance from the background exceeds the threshold).
-      3. Profile the bottom silhouette: if the last-foreground-pixel y across
-         columns varies by < 2.5% of pet height, bottom is a flat cut → 0%
-         margin.  Otherwise tapered/organic → 8% bottom margin.
-      4. Compose a new canvas with:
-           - top    : 10 % of pet height
-           - sides  : 8 % of pet width (each side)
-           - bottom : 0 % (flat cut)  OR  8 % of pet height (tapered)
-    Falls back to a simple symmetric pad if no pet is detected.
+    pad_top_ratio / pad_side_ratio are expressed as fractions of pet
+    height / pet width. Defaults (0.05 / 0.02) target the no-name 4:5
+    master — pet dominates the canvas with a thin cream halo. When a
+    name is composited, composite_name re-runs this reframe on the
+    no-name master with a larger pad_top_ratio so a name band opens up
+    above the pet without re-rendering. The 1:1 derivative similarly
+    runs the tight reframe for no-name and a generous one for with-name.
     """
     rgb = img.convert('RGB')
     w, h = rgb.size
@@ -1624,24 +1624,15 @@ def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
     # the visible body — e.g. through a tongue or collar tag — the
     # surrounding cream blends seamlessly with the canvas, so there's
     # no perceived "floating".
-    #
-    # pad_top is 0.43 so the pet fills ~70% of canvas height on tall
-    # bboxes (canvas_h = 1.43 * pet_h). Wide bboxes get a small extra
-    # top expansion to hit the 4:5 ratio, ending at ~69% pet height.
-    # The remaining ~30% top airspace is split by zone_top so the name
-    # sits roughly halfway between the canvas top and the pet's head.
-    pad_top    = int(pet_h * 0.43)
-    pad_side   = int(pet_w * 0.08)
+    pad_top    = int(pet_h * pad_top_ratio)
+    pad_side   = int(pet_w * pad_side_ratio)
     pad_bottom = 0
 
-    # Target the 4:5 print ratio exactly so the downstream post-process
-    # never needs to crop into the pet:
-    #   - taller than 4:5 (long-bodied pet): expand sides so the bottom-
-    #     gravity crop doesn't eat into the head/ears.
-    #   - wider than 4:5 (head-shot or square bbox): expand top so the
-    #     side crop doesn't eat into the ears/shoulders. Adding to the
-    #     top preserves the flat-bottom rule.
-    target_w, target_h = PORTRAIT_RATIO  # (4, 5)
+    # Target the requested print ratio exactly so downstream cropping
+    # never needs to eat into the pet:
+    #   - bbox taller than target: expand sides.
+    #   - bbox wider than target: expand top (preserves the flat-bottom rule).
+    target_w, target_h = target_aspect
     natural_w = pet_w + 2 * pad_side
     natural_h = pet_h + pad_top + pad_bottom
     if natural_w * target_h < natural_h * target_w:
@@ -1900,10 +1891,11 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
     falls through to a plain crop_to_ratio.
     """
     if style_id == "modern-shape-art":
-        # _modern_shape_art_reframe produces a tight composition; then
-        # crop to target aspect with bottom gravity (preserves chest cut).
-        reframed = _modern_shape_art_reframe(img)
-        return crop_to_ratio(reframed, target_aspect, gravity="bottom")
+        # No-name derivative for each aspect — pet packed tight against
+        # the canvas. composite_name re-runs the reframe with a larger
+        # pad_top_ratio when a name is added so the band only opens up
+        # for the with-name variant.
+        return _modern_shape_art_reframe(img, target_aspect=target_aspect)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
     return _tight_crop_to_aspect(img, target_aspect=target_aspect)
@@ -2272,15 +2264,15 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        # _modern_shape_art_reframe lands the pet's head at y≈30% on
-        # tall bboxes and y≈31% on wide/square ones (pad_top 0.43,
-        # pad_bottom 0). zone_top 0.15 places the name roughly halfway
-        # between the canvas top and the pet's head — visibly distinct
-        # from the head, with comfortable breathing room above and a
-        # ~12% gap below before the head starts.
+        # 4:5 with-name layout: composite_name re-runs the reframe with
+        # pad_top_ratio 0.20 → pet head at y≈17%. zone_top 0.085 puts
+        # the name's vertical centre halfway between the canvas top and
+        # the pet's head. 1:1 with-name uses pad_top_ratio 0.30 → head
+        # at y≈23%; composite_name detects the square aspect and bumps
+        # zone_top to 0.115 for the wider band.
         "size_ratio": 0.075,
         "transform": "upper",
-        "zone_top": 0.15,
+        "zone_top": 0.085,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
@@ -2370,6 +2362,33 @@ def _reserve_top_band(image: Image.Image, band_ratio: float = _NAME_BAND_RATIO) 
     return canvas
 
 
+def _modern_open_name_band(image: Image.Image) -> Image.Image:
+    """Re-canvas a tight modern-shape-art no-name master to open a
+    cream band above the pet for the name. The default reframe packs
+    the pet edge-to-edge (pad_top_ratio 0.05); this opens it back up
+    so composite_name has somewhere to put the text.
+
+    Square (1:1) gets a larger band because there's less vertical room
+    to amortise over — a thin band on a square reads as a clipped
+    margin rather than negative space. 4:5 keeps it tighter so the pet
+    still dominates on tall canvases.
+    """
+    is_square = image.height > 0 and abs((image.width / image.height) - 1.0) < 0.05
+    if is_square:
+        return _modern_shape_art_reframe(
+            image,
+            pad_top_ratio=0.30,
+            pad_side_ratio=0.02,
+            target_aspect=PRINT_ASPECT_1_1,
+        )
+    return _modern_shape_art_reframe(
+        image,
+        pad_top_ratio=0.20,
+        pad_side_ratio=0.02,
+        target_aspect=PORTRAIT_RATIO,
+    )
+
+
 def composite_name(
     image: Image.Image,
     pet_name: str,
@@ -2429,22 +2448,17 @@ def composite_name(
 
     # zone_top is now the VERTICAL CENTRE of the name as a fraction of
     # canvas height — interpreted as "halfway between the top of the
-    # canvas and the top of the pet's head." For default 0.11 (and a pet
-    # that lands at ~22% of source after add_background_padding), the
-    # name sits exactly between top edge and pet, with breathing room
-    # both sides. The rendered text is centred on this point regardless
-    # of font size, so a tall script and a thin sans-serif both align.
+    # canvas and the top of the pet's head." The rendered text is
+    # centred on this point regardless of font size, so a tall script
+    # and a thin sans-serif both align.
     #
-    # Modern style: the pet head sits at ~30% of canvas height on 4:5
-    # sources (where zone_top 0.15 places the name halfway above), but
-    # at ~13% on 1:1 derivatives (the bottom-gravity 4:5→1:1 crop drops
-    # the top 20%, pulling the head closer to the top edge). Detect a
-    # near-square aspect and use a tighter zone_top on those, so the
-    # name on a 1:1 print still sits roughly halfway between the top
-    # edge and the head instead of colliding with it.
+    # Modern style: 4:5 with-name reframe (pad_top_ratio 0.20) lands the
+    # head at y≈17%, so the cfg zone_top 0.085 puts the name halfway
+    # above. 1:1 with-name (pad_top_ratio 0.30) lands the head at y≈23%,
+    # so we bump zone_top to 0.115 when we detect the square aspect.
     zone_top_frac = cfg["zone_top"]
     if style == "modern-shape-art" and h > 0 and abs((w / h) - 1.0) < 0.05:
-        zone_top_frac = 0.06
+        zone_top_frac = 0.115
     text_x = (w - text_w) // 2
     text_y = max(0, int(h * zone_top_frac) - text_h // 2)
 
@@ -3034,8 +3048,14 @@ def generate_with_name_on_demand(
         if processed is not base_image:
             base_image.close()
 
-        # 4:5 with name — composite onto the post-processed master.
-        composited = composite_name(processed, pet_name, style=style)
+        # 4:5 with name — open the name band on modern (the no-name
+        # master is packed tight, so we re-canvas to make room) and
+        # composite the text on the post-processed master.
+        if style == "modern-shape-art":
+            laid_out = _modern_open_name_band(processed)
+        else:
+            laid_out = processed
+        composited = composite_name(laid_out, pet_name, style=style)
 
         safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
         comp_path = out / f"{uid}_{style}_{safe_name}_named.png"
@@ -3060,7 +3080,11 @@ def generate_with_name_on_demand(
                 (int(derived_1x1.width * scale), int(derived_1x1.height * scale)),
                 Image.LANCZOS,
             )
-        composited_1x1 = composite_name(derived_1x1, pet_name, style=style)
+        if style == "modern-shape-art":
+            laid_out_1x1 = _modern_open_name_band(derived_1x1)
+        else:
+            laid_out_1x1 = derived_1x1
+        composited_1x1 = composite_name(laid_out_1x1, pet_name, style=style)
         comp_path_1x1 = out / f"{uid}_{style}_{safe_name}_named_1x1.png"
         composited_1x1.save(comp_path_1x1, "PNG", dpi=(300, 300))
         log.info("           comp 1x1 (with name) → %s (%dx%d @ 300 DPI)",
