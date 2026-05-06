@@ -100,7 +100,6 @@ const STYLES = [
   {
     id: 'soft-watercolour',
     name: 'Soft Watercolour',
-    badge: 'Most popular',
     available: true,
     exampleImage: 'example-soft-watercolour.webp',
     backgrounds: ['auto', 'light', 'dark'],
@@ -1864,7 +1863,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         return React.createElement('button', {
           key: style.id, type: 'button', role: 'option',
           'aria-selected': selected, 'aria-disabled': !style.available,
-          'aria-label': `${style.name}${!style.available ? ' \u2014 available soon' : ''}${style.badge ? ` \u2014 ${style.badge}` : ''}`,
+          'aria-label': `${style.name}${!style.available ? ' \u2014 available soon' : ''}`,
           onClick: () => style.available && selectStyle(style.id),
           style: {
             border: selected ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
@@ -1914,15 +1913,6 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
           ),
           // Card body — style name + font preview
           React.createElement('div', { style: { padding: '8px 8px 10px' } },
-            style.badge && React.createElement('span', {
-              style: {
-                display: 'inline-block',
-                ...s.smallCaps, fontSize: 'var(--text-xs)', letterSpacing: '0.08em',
-                color: tokens.colorWhite, background: tokens.colorSuccess,
-                borderRadius: '3px', padding: '2px 6px',
-                margin: '0 0 4px',
-              },
-            }, style.badge),
             React.createElement('p', {
               style: {
                 fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
