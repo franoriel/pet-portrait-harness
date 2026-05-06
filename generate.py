@@ -2545,15 +2545,15 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        # 4:5 with-name layout: composite_name re-runs the reframe with
-        # pad_top_ratio 0.20 → pet head at y≈17%. zone_top 0.085 puts
-        # the name's vertical centre halfway between the canvas top and
-        # the pet's head. 1:1 with-name uses pad_top_ratio 0.30 → head
-        # at y≈23%; composite_name detects the square aspect and bumps
-        # zone_top to 0.115 for the wider band.
+        # 4:5 with-name layout: composite_name re-runs the reframe
+        # with pad_top_ratio 0.22 → pet head at y≈18%. zone_top 0.115
+        # lands the name lower on the canvas (closer to the pet,
+        # anchored rather than floating at the top edge). 1:1 with-name
+        # uses pad_top_ratio 0.45 → head at y≈31%; composite_name
+        # detects the square aspect and bumps zone_top to 0.155.
         "size_ratio": 0.075,
         "transform": "upper",
-        "zone_top": 0.085,
+        "zone_top": 0.115,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
@@ -2673,7 +2673,7 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
         )
     return _modern_shape_art_reframe(
         image,
-        pad_top_ratio=0.20,
+        pad_top_ratio=0.22,
         pad_side_ratio=0.02,
         target_aspect=PORTRAIT_RATIO,
     )
