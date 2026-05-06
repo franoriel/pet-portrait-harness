@@ -940,7 +940,13 @@
       fetchNamedPreview().catch(function () { /* handled inline */ });
     }
 
-    yesBtn.addEventListener('click', function () { updateTextToggle(true); });
+    yesBtn.addEventListener('click', function () {
+      updateTextToggle(true);
+      // Reveal the mockup slide so the customer sees the named portrait on
+      // the actual canvas/framed product, not just on the bare portrait.
+      var firstMockup = gallery && gallery.querySelector('.product-gallery__slide--mockup');
+      if (firstMockup) firstMockup.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    });
     noBtn.addEventListener('click',  function () { updateTextToggle(false); });
 
     // ── Inline pet-name editor ────────────────────────────
