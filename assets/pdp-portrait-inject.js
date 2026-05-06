@@ -497,6 +497,26 @@
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
     canvasFace.appendChild(weave);
 
+    // Brand watermark — only when fed the 1:1 derivative, which is
+    // un-watermarked server-side. The 4:5 master already carries a
+    // baked-in Pet Printables watermark, so we skip the overlay there
+    // to avoid stacking two watermarks.
+    if (srcIs1x1) {
+      var watermark = document.createElement('div');
+      watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
+        + 'opacity:0.18;mix-blend-mode:multiply;'
+        + "background-image:url(\"data:image/svg+xml;utf8,"
+        +   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E"
+        +     "%3Cg transform='rotate(-28 90 90)' font-family='Georgia,serif' font-style='italic' font-size='15' fill='%231c1612'%3E"
+        +       "%3Ctext x='90' y='60' text-anchor='middle'%3EPet Printables%3C/text%3E"
+        +       "%3Ctext x='90' y='120' text-anchor='middle'%3EPet Printables%3C/text%3E"
+        +     "%3C/g%3E"
+        +   "%3C/svg%3E"
+        + "\");"
+        + 'background-repeat:repeat;background-size:140px 140px;';
+      canvasFace.appendChild(watermark);
+    }
+
     // Canvas edge highlight — only on the unframed canvas (the wood
     // frame already provides clear edge separation, and the 4-sided
     // 1px highlight reads as a "second inner frame" against dark
@@ -606,10 +626,17 @@
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
       // Tall sizes prefer Printful's product photo when available.
-      // Square sizes use the client-side linen+canvas mockup, fed by the
-      // watermarked 4:5 master (the un-watermarked 1:1 derivative would
-      // leave the square mockup without the Pet Printables watermark).
+      // Square sizes use the client-side linen+canvas mockup. We feed
+      // it the 1:1 derivative (composed for a square face — pet, name
+      // and chest cut all sit at their final positions) when we have
+      // it, so the artwork doesn't read as floating with empty bg
+      // padding below the pet. The 1:1 derivative is un-watermarked,
+      // so createClientMockup tiles a CSS Pet Printables watermark on
+      // top when we pass srcIs1x1=true. Falls back to the 4:5 master
+      // when no 1:1 derivative exists yet (no name / unnamed style).
       var isSquareVariant = dim.w === dim.h;
+      var has1x1 = !!data.namedPreviewUrl1x1;
+      var useSquareSrc = isSquareVariant && data.wantsName !== false && has1x1;
       if (hasAllPrintful && !isSquareVariant) {
         var mockupImg = document.createElement('img');
         mockupImg.src = printfulByVariant[sizeKey].url;
@@ -618,7 +645,8 @@
         mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
         mockupSlide.appendChild(mockupImg);
       } else {
-        var clientMockup = createClientMockup(previewUrl, dim.w, dim.h, sizeKey, false);
+        var srcForVariant = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
+        var clientMockup = createClientMockup(srcForVariant, dim.w, dim.h, sizeKey, useSquareSrc);
         mockupSlide.appendChild(clientMockup);
       }
 
