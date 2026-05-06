@@ -662,20 +662,17 @@ mood-board swatch:
   Pinterest moodboard.
   · NEVER drop saturated primaries (pure red, pure blue, pure green, hot \
   pink) into the coat — those break the muted curated feel.
-- EYES — flat vector shapes that read as WARM and HAPPY, never blank or \
-staring. Render each eye as a soft almond / gentle curve, NOT a perfect \
-black oval. The eye colour is a deep WARM BROWN drawn from the coat \
-palette (charcoal-brown, espresso, warm umber) — NEVER pure black, which \
-reads cold and lifeless. The shape itself conveys warmth: the bottom \
-edge curves up slightly like a smiling-eye / soft squint, the outer \
-corner sits a touch lower than the inner corner so the gaze feels \
-relaxed and friendly rather than wide-open. Eyes are kept small and \
-unobtrusive — the pet's overall silhouette and coat are the hero, not \
-the eyes. NO iris ring, NO visible pupil, NO white sclera, NO catchlight, \
-NO glossy highlight, NO eyelash detail, NO under-eye shading. If a fully \
-closed / contented squint suits the pose, render the eye as a single \
-soft upward-curving line (like a relaxed 😌). Both eyes are symmetrical \
-and never wide-open or alert.
+- NO EYES — CRITICAL: Do NOT render eyes at all. The face is treated \
+as pure shape — coat planes, snout, muzzle, brow / eyebrow ridge, ear \
+shapes — without any eye marks. Where the eyes would sit, simply \
+continue the surrounding fur-tone shape unbroken. NO eye ovals, NO \
+dots, NO almonds, NO slits, NO closed-eye squint lines, NO iris, NO \
+pupil, NO white sclera, NO catchlight, NO eyelash, NO under-eye \
+shading, NO subtle eye suggestion of any kind. This is a 2D shape-art \
+treatment in the vein of Matisse cut-outs and Charley Harper's most \
+abstracted poster work — the pet's character comes from silhouette, \
+ear angle, snout, and coat planes, not from eyes. The face still \
+reads as the specific pet through its overall structure.
 
 STYLE:
 - Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets contemporary \
@@ -701,9 +698,10 @@ composition is just the pet on a single solid background — nothing else.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
-- Head and chest, calm symmetrical pose. Eyes are flat graphic marks (per \
-the EYES rule above), not realistic — the face reads as confident shape \
-art, not a photograph.
+- Head and chest, calm symmetrical pose. The face has NO eyes (per the \
+NO EYES rule above) — character comes from silhouette, ear angle, \
+snout, and coat planes. Reads as confident 2D shape art, not a \
+photograph and not a stylised cartoon with eyes.
 - The PET itself occupies 78-83% of image height — top of ears at \
 ~15-18% from top, centered horizontally. Ensure the pet is the dominant \
 subject filling the canvas confidently, with clean breathing room \
@@ -728,14 +726,14 @@ field of {{MODERN_BG_HEX}} behind the pet.
 
 Avoid: photography, photorealism, painterly brush strokes, oil paint, \
 watercolor bleed, film grain, sepia, gradients, drop shadows, 3D render, \
-cartoon, anime, neon, busy patterns, ornate details, realistic eyes, \
-visible iris ring, white sclera, glossy eye highlight, catchlight, \
-eyelash detail, under-eye rendering, pure-black eyes, wide-open or \
-staring eyes, blank doll eyes, dead-eyed expression, text, watermark, \
-border, solid color bars or panels at image edges, decorative shapes, \
-abstract accents, arcs, circles, dots, lines, foliage, halos, frames, \
-patterns, geometric ornaments, anything other than the pet on a solid \
-background.\
+cartoon, anime, neon, busy patterns, ornate details, ANY rendered eyes \
+(realistic, stylised, almond, oval, dot, slit, closed-line, glowing, \
+or any eye mark whatsoever), iris, pupil, sclera, catchlight, eyelash, \
+under-eye shading, whiskers, individual fur strands, hatching, stripe \
+patterns that don't exist on the actual pet, text, watermark, border, \
+solid color bars or panels at image edges, decorative shapes, abstract \
+accents, arcs, circles, dots, lines, foliage, halos, frames, patterns, \
+geometric ornaments, anything other than the pet on a solid background.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
