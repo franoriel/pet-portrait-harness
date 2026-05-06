@@ -1874,10 +1874,15 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             position: 'relative',
           },
         },
-          // Thumbnail — real example portrait
+          // Thumbnail — real example portrait. Source images are 4:5
+          // (matching the canvas aspect customers will print on); the
+          // card thumb matches that ratio so the full example shows
+          // without object-fit cropping. Earlier 1:1 cards left a band
+          // of empty bg above some examples (modern, neon) where the
+          // pet was rendered higher in the source than others.
           React.createElement('div', {
             className: 'pf-style-card-thumb',
-            style: { width: '100%', aspectRatio: '1/1', background: tokens.colorSurface, position: 'relative', overflow: 'hidden' },
+            style: { width: '100%', aspectRatio: '4/5', background: tokens.colorSurface, position: 'relative', overflow: 'hidden' },
           },
             style.exampleImage && React.createElement('img', {
               src: _pfAssetBase + style.exampleImage, alt: style.name + ' example',
