@@ -860,8 +860,30 @@
       var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
       if (mainImg) mainImg.src = url;
       if (thumb) thumb.src = url;
-      gallery.querySelectorAll('.product-gallery__slide--mockup img').forEach(function (mImg) {
-        mImg.src = url;
+      // Square variants need the 1:1 derivative — cover-cropping the
+      // 4:5 master onto a square face clips the name band off the top.
+      // Source-aspect change means the slide's cropping math is wrong
+      // for the new src, so rebuild client mockup slides instead of
+      // just swapping the src on the inner <img>.
+      var url1x1 = data.namedPreviewUrl1x1 || null;
+      var sizesMap = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
+      gallery.querySelectorAll('.product-gallery__slide--mockup').forEach(function (slide) {
+        var sizeKey = slide.getAttribute('data-variant-size') || '';
+        var dim = sizesMap[sizeKey];
+        var isSq = dim ? (dim.w === dim.h) : false;
+        var useSquareSrc = isSq && !!url1x1;
+        var srcForSlide = useSquareSrc ? url1x1 : url;
+        // Printful mockup slides have a single bare <img>; client-side
+        // ones have a nested canvas-wrap with a portrait <img> inside.
+        var isClientMockup = !!slide.querySelector('[style*="aspect-ratio"]');
+        if (isClientMockup && dim) {
+          slide.innerHTML = '';
+          var rebuilt = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc);
+          slide.appendChild(rebuilt);
+        } else {
+          var slideImg = slide.querySelector('img');
+          if (slideImg) slideImg.src = srcForSlide;
+        }
       });
     }
 
