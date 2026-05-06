@@ -1642,7 +1642,13 @@ def _modern_shape_art_reframe(img: Image.Image) -> Image.Image:
     bottom_frac = 0.0 if flat_bottom else 0.08
 
     # --- 4. Compose new canvas ---
-    pad_top    = int(pet_h * 0.10)
+    # pad_top is 0.20 (was 0.10) so the top airspace is large enough to
+    # fit a readable, lower-positioned name on tall pets. With 0.10 the
+    # tall-pet airspace was only ~9% of canvas height, forcing the name
+    # tiny and pinned against the top edge to avoid colliding with the
+    # head; 0.20 gives ~17% airspace, which the modern STYLE_TEXT_CONFIG
+    # uses to position a 0.075 size_ratio name at zone_top 0.09.
+    pad_top    = int(pet_h * 0.20)
     pad_side   = int(pet_w * 0.08)
     pad_bottom = int(pet_h * bottom_frac)
 
@@ -2284,14 +2290,15 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         "opacity": 1.0,
     },
     "modern-shape-art": {
-        # zone_top is 0.04 (vs 0.16 for every other style) because
-        # _modern_shape_art_reframe puts the pet at source y≈9% — much
-        # higher than add_background_padding(0.12) which lands the pet at
-        # y≈22%. With 0.16 the name would composite ON the pet's head;
-        # 0.04 keeps it in the slim 9%-tall top airspace.
-        "size_ratio": 0.05,
+        # _modern_shape_art_reframe now lands the pet at y≈17% on tall
+        # bboxes and y≈25-31% on wide/square bboxes (pad_top 0.20). That
+        # gives enough airspace for a name centred at 9% of canvas height
+        # at 7.5% size_ratio — readable and visibly lower than the old
+        # 0.04/0.05 pinned-to-top treatment, without colliding with the
+        # head on either composition.
+        "size_ratio": 0.075,
         "transform": "upper",
-        "zone_top": 0.04,
+        "zone_top": 0.09,
         "letter_spacing": 3,
         "opacity": 1.0,
     },
