@@ -3456,6 +3456,16 @@ def _generate_inner(
     # to raw_path / raw_web_path keeps the 6-tuple return shape; the
     # worker dedupes by file path before submitting CDN uploads, so the
     # CDN only sees two unique objects per generation.
+    # Tighten the empty top band on the no-name master too. The AI's
+    # reserved name-safe zone leaves visible empty bg above the pet on
+    # every style, which made the Step 3 preview AND the rectangle
+    # canvas mockups (12x16 / 16x20, where source aspect matches
+    # canvas aspect so cover-fit doesn't crop anything) read as the
+    # pet floating in a wide top margin. 10% crop + bottom re-pad with
+    # the sampled bg colour shifts the pet up enough to read as
+    # filling the canvas without clipping ear tips on tight styles.
+    ai_image_no_name = _tighten_top_after_name(ai_image_no_name, crop_frac=0.10)
+
     raw_path = out / f"{uid}_{style}_raw.png"
     ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
     log.info("           raw (no name) → %s (%dx%d @ 300 DPI)",
