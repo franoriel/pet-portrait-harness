@@ -783,23 +783,21 @@ p { color: var(--color-ink); }
    announcement bar's dark ink base for visual continuity. */
 .trust-bar {
   position: relative;
-  margin-top: -52px;
-  z-index: 5;
-  background: rgba(28, 28, 28, 0.62);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.92);
-  padding: 14px var(--gutter, 16px);
+  margin-top: 0;
+  z-index: 1;
+  background: #FAF8F5;
+  border-top: 1px solid rgba(28, 28, 28, 0.08);
+  border-bottom: 1px solid rgba(28, 28, 28, 0.08);
+  color: rgba(28, 28, 28, 0.78);
+  padding: 18px var(--gutter, 16px);
   overflow: hidden;
 }
 .trust-bar__row {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-evenly;
-  gap: clamp(12px, 2vw, 28px);
+  justify-content: center;
+  gap: clamp(28px, 5vw, 64px);
   width: 100%;
   max-width: var(--max-width, 1280px);
   margin: 0 auto;
@@ -812,62 +810,42 @@ p { color: var(--color-ink); }
 .trust-bar__item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   white-space: nowrap;
-  font-size: var(--text-sm);
+  font-size: 0.82rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(28, 28, 28, 0.78);
   letter-spacing: 0.02em;
   flex-shrink: 0;
-  padding: 0 4px;
 }
+/* No vertical dividers — items separated by whitespace alone for the
+   editorial frieze feel (matching the testimonial marquee style). */
 .trust-bar__item + .trust-bar__item {
-  border-left: 1px solid rgba(255, 255, 255, 0.14);
-  padding-left: clamp(12px, 2vw, 28px);
+  border-left: none;
+  padding-left: 0;
 }
 .trust-icon {
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+  color: var(--color-accent, #8B7D6B);
+  opacity: 0.85;
   vertical-align: 1px;
 }
-/* Browsers without backdrop-filter fall back to a solid ink panel —
-   still readable, just without the glass blur. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .trust-bar { background: var(--color-ink, #1C1C1C); }
-}
-/* Mobile: drop the dark glass treatment so the bar reads as part of
-   the page instead of a stuck-on band. Cream background, ink-muted
-   text, hairline dividers — feels like a continuation of the hero
-   copy stack, not a separate UI region. */
 @media (max-width: 760px) {
   .trust-bar {
-    margin-top: 0;
     padding: 14px var(--gutter, 16px);
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-top: 1px solid rgba(28, 28, 28, 0.08);
-    border-bottom: none;
-    color: rgba(28, 28, 28, 0.72);
   }
-  .trust-bar__row { justify-content: flex-start; gap: 0; }
+  /* Mobile: items overflow into a horizontal scroll strip; align to
+     the start so the first item is visible without a leading gap. */
+  .trust-bar__row {
+    justify-content: flex-start;
+    gap: clamp(20px, 6vw, 32px);
+  }
   .trust-bar__item {
-    padding: 0 12px;
-    color: rgba(28, 28, 28, 0.72);
     font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
-  .trust-bar__item + .trust-bar__item {
-    border-left: 1px solid rgba(28, 28, 28, 0.12);
-    padding-left: 12px;
+    letter-spacing: 0.02em;
   }
   .trust-bar__item:first-child { padding-left: 2px; }
   .trust-bar__item:last-child  { padding-right: 2px; }
-  .trust-bar .trust-icon {
-    color: var(--color-accent, #8B7D6B);
-    opacity: 0.75;
-  }
 }
 
 /* ── How it works ─────────────────────────────────────────── */
