@@ -439,9 +439,18 @@
                 (_No Name URL) — the un-watermarked PNG goes only to
                 Printful, never to a customer-facing surface.
               {%- endcomment -%}
-              {%- assign magnet_thumb_url = source_no_name_preview_url -%}
+              {%- comment -%}
+                Prefer _Portrait URL — it's the only property guaranteed
+                to be refreshed by every cart-state-changing path (the
+                Show Name toggle handlers, the regenerate-then-readd
+                flow, etc.). _No Name Preview URL was only written at
+                Add-to-Cart time and could go stale, leaving the magnet
+                thumb out of sync with the canvas thumb the customer
+                sees right next to it.
+              {%- endcomment -%}
+              {%- assign magnet_thumb_url = source_portrait_url -%}
+              {%- if magnet_thumb_url == '' -%}{%- assign magnet_thumb_url = source_no_name_preview_url -%}{%- endif -%}
               {%- if magnet_thumb_url == '' -%}{%- assign magnet_thumb_url = source_no_name_url -%}{%- endif -%}
-              {%- if magnet_thumb_url == '' -%}{%- assign magnet_thumb_url = source_portrait_url -%}{%- endif -%}
               <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:var(--font-body);">
                 <input
                   type="checkbox"
@@ -1425,6 +1434,7 @@
             existingProps['_Show Name'] = 'No';
             existingProps['_Portrait URL'] = noNameUrl;
             existingProps['_Print File URL'] = noNameUrl;
+            existingProps['_No Name Preview URL'] = noNameUrl; // keep magnet thumb in sync
             btn.disabled = true;
             updateCart(existingProps).then(function () {
               if (imgEl) imgEl.src = noNameUrl;
@@ -1489,6 +1499,7 @@
               existingProps['_Portrait URL'] = newUrl;
               existingProps['_Print File URL'] = resp.composited_png_cdn || newUrl;
               existingProps['_No Name URL'] = sourceUrl;  // preserve for future toggling
+              existingProps['_No Name Preview URL'] = sourceUrl; // keep magnet thumb in sync
               return updateCart(existingProps).then(function () {
                 if (imgEl) imgEl.src = newUrl;
                 itemEl.dataset.showName = 'Yes';
