@@ -229,7 +229,7 @@ p { color: var(--color-ink); }
   background: rgba(250,248,245,0.95);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 var(--gutter);
+  padding: 12px var(--gutter) 8px;
 }
 /* Transparent header overlaying the hero on homepage */
 .template-index .site-header {
