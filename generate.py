@@ -759,6 +759,26 @@ composition is just the pet on a single solid background — nothing else.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
+- FRONT-FACING / FACE-FORWARD POSE — CRITICAL: the pet faces directly \
+toward the viewer (camera-on, head straight). Both ears equally \
+visible, both sides of the head and body equally visible, both \
+shoulders showing in mirror-image symmetry across the vertical \
+centre line. NEVER render a profile / side-view / 3⁄4 view / head-tilt \
+/ over-the-shoulder pose — those produce asymmetric silhouettes that \
+look truncated when the canvas crops to a square (12×12 / 16×16). The \
+pet must read as bilaterally symmetric so it survives a square crop \
+intact: imagine folding the canvas down the vertical centre line — \
+the left half should mirror the right half (allowing for natural coat \
+markings that may differ side-to-side, but the underlying anatomy \
+mirrors).
+- ANATOMICALLY CORRECT TORSO — CRITICAL: the chest, shoulders, and \
+upper body must be ANATOMICALLY PLAUSIBLE for the breed. Both \
+shoulders visible at the same vertical level, chest centred under \
+the head, body widening naturally from the neck down. Do NOT crop \
+asymmetrically (one shoulder visible and the other cut off); do NOT \
+render only one side of the body; do NOT cut the body off mid-shape \
+on one side while extending it on the other. The body silhouette is \
+mirror-symmetric across the vertical centre line.
 - Head and chest, calm symmetrical pose. The face has NO eyes (per the \
 NO EYES rule above) — character comes from silhouette, ear angle, \
 snout, and coat planes. Reads as confident 2D shape art, not a \
@@ -770,14 +790,20 @@ subject filling the canvas confidently, with clean breathing room \
 - BOTTOM SILHOUETTE — CRITICAL: the chest/body must terminate in ONE of \
 two ways and never anything in between:
   (a) Taper organically into a soft, curved natural body silhouette \
-  that finishes around 88-93% from top, with breathing room below it; OR
+  that finishes around 88-93% from top, with breathing room below it. \
+  The taper is symmetric — both sides curve inward equally toward the \
+  centre.
   (b) Run as a clean horizontal cut that extends ALL THE WAY to the \
   bottom edge of the canvas — the cut IS the bottom edge, no background \
-  band visible underneath.
+  band visible underneath. The cut is HORIZONTAL and SYMMETRIC across \
+  the vertical centre line — the left and right edges of the cut sit at \
+  the same y-coordinate.
   NEVER render a flat horizontal chest cut that floats above the bottom \
   edge with background colour visible beneath it — that reads as a \
   truncated, unfinished portrait. If you choose option (b), the dog's \
-  body fills the lower portion of the frame edge-to-edge.
+  body fills the lower portion of the frame edge-to-edge. NEVER cut \
+  one side of the body off while the other side extends to the canvas \
+  edge — the silhouette is mirror-symmetric.
 - The BACKGROUND is ONE single solid colour {{MODERN_BG_NAME}} \
 ({{MODERN_BG_HEX}}) ONLY, extending edge-to-edge on all four sides. \
 Completely uniform — no decoration, no shapes, no lines, no gradients, \
@@ -798,7 +824,11 @@ stripe patterns that aren't on the actual pet, more than 3 coat \
 tones, text, watermark, border, solid color bars or panels at image \
 edges, decorative shapes, abstract accents, arcs, circles, dots, \
 lines, foliage, halos, frames, patterns, geometric ornaments, \
-anything other than the pet on a solid background.\
+profile / side-view / 3⁄4 view poses, head tilts, over-the-shoulder \
+glances, asymmetric body silhouettes, one shoulder shown without the \
+other, body cut off on one side but not the other, off-centre or \
+tilted-axis compositions, anything other than the pet on a solid \
+background.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
