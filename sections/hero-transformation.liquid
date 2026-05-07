@@ -169,15 +169,15 @@
      trust bar's own ~48px height + breathing room). */
   .hero-frame__stage {
     position: absolute; bottom: 110px; right: 24px;
-    display: inline-flex; align-items: center; gap: 12px;
-    padding: 8px 14px; border-radius: 999px;
-    background: rgba(28, 28, 28, 0.55);
-    backdrop-filter: blur(10px) saturate(140%);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(28, 28, 28, 0.32);
+    backdrop-filter: blur(8px) saturate(130%);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     z-index: 3;
     font-family: var(--font-body, sans-serif);
-    color: rgba(255, 255, 255, 0.94);
+    color: rgba(255, 255, 255, 0.78);
   }
   /* Label stack — three labels are layered in the same row, only the
      active one is visible at any moment. The container sizes to the
@@ -189,20 +189,20 @@
   }
   .hero-frame__stage-label {
     grid-column: 1; grid-row: 1;
-    font-size: var(--text-xs, 0.78rem);
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
     white-space: nowrap;
     opacity: 0;
   }
   .hero-frame__stage-dots {
-    display: inline-flex; gap: 6px;
-    padding-left: 12px;
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
+    display: inline-flex; gap: 5px;
+    padding-left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
   }
   .hero-frame__stage-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.35);
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28);
   }
   /* Label fades — match the same windows as the frames so each caption
      reads while its frame is on screen. */
