@@ -1188,6 +1188,29 @@ STYLE:
 - Warm soft lighting, no harsh shadows
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+PAPER SURFACE — CRITICAL:
+- The background is PLAIN WATERCOLOR PAPER. Nothing else. No wall, no \
+shelf, no table, no floor, no surface the pet is "sitting on" or \
+"placed against." The pet floats on paper.
+- ABSOLUTELY NO HORIZONTAL LINES, STREAKS, BANDS, OR STRIPES anywhere \
+in the background or behind the pet — at any opacity, in any colour. \
+This includes (forbidden, all of them): wood grain, wood panelling, \
+shiplap, plank lines, parquet, beadboard, slat walls, fence boards, \
+floorboards, table edges, shelf lines, wainscoting, horizon lines, \
+counter lines, picture-rail mouldings, baseboard mouldings, ruled \
+notebook lines, washi-tape edges, banding from a printing pass, \
+posterised stripes, scanner lines, any horizontal mark that suggests \
+a built environment behind or beneath the subject.
+- NO vertical lines either: no plank seams, no wall corners, no door \
+edges, no curtain folds, no window frames.
+- NO surface texture: no canvas weave, no linen, no rough plaster, no \
+concrete, no marble, no granite, no fabric, no leather, no metal. \
+Just clean white watercolor paper with the watercolor wash painted \
+on it. RECURRING FAILURE MODE TO AVOID: faint horizontal pencil-like \
+streaks running across the lower third of the canvas (the model \
+imagining a wooden floor or shelf the pet is on). DO NOT add these \
+streaks at any opacity.
+
 WATERCOLOR WASH COVERAGE — CRITICAL:
 - The painted watercolor wash (the soft wet bleeds, washes, and color halo \
 that surround the pet) MUST extend organically toward the LEFT and RIGHT \
@@ -1228,7 +1251,11 @@ edge of the canvas. No reserved panels, bars, color blocks, or empty bands
 
 Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
 blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border, \
-narrow watercolor wash column with bare white paper at the sides.\
+narrow watercolor wash column with bare white paper at the sides, \
+horizontal streaks, horizontal lines, horizontal bands, horizontal stripes, \
+wood grain, wood panelling, shiplap, plank lines, floorboards, shelf, \
+table, wall texture, surface texture behind the pet, ruled lines, \
+banding, scanner lines.\
 """
 
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
