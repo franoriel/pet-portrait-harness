@@ -82,11 +82,11 @@
       {%- endfor -%}
     </div>
 
-    {%- if section.settings.cta_label != blank -%}
-      <div style="margin-top:40px;">
-        <a href="{{ section.settings.cta_url }}" class="btn btn--primary">{{ section.settings.cta_label }}</a>
-      </div>
-    {%- endif -%}
+    {%- comment -%}
+      CTA intentionally removed. The page-wide sticky "Begin the Process" bar
+      handles the conversion ask — duplicating it here was creating CTA noise
+      on every section and pulling attention away from the hero CTA + sticky.
+    {%- endcomment -%}
   </div>
 </section>
 

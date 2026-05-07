@@ -79,12 +79,30 @@
   {%- if template.name == 'index' or template.name == 'product' -%}
     <div class="sticky-cta-bar" id="StickyCta" aria-hidden="true">
       {%- if template.name == 'product' -%}
+        {%- comment -%}
+          Product PDP keeps the dark-fill primary button — it has a price chip
+          inline that needs the simpler container.
+        {%- endcomment -%}
         <button class="sticky-cta-bar__btn btn btn--primary" id="StickyAddToCart">
           Add to Cart — <span id="StickyPrice"></span>
         </button>
       {%- else -%}
-        <a href="/pages/create" class="sticky-cta-bar__btn btn btn--primary" style="text-decoration:none;">
-          BEGIN THE PROCESS
+        {%- comment -%}
+          Homepage sticky CTA mirrors the hero's framed-canvas button so the
+          conversion ask reads as the same brand object in two places. The
+          `sticky-cta-bar__btn--pulse` modifier adds a slow ambient pulse
+          (2.6s ease-in-out) so the bar still asks for attention without
+          flashing aggressively.
+        {%- endcomment -%}
+        <a href="/pages/create"
+           class="sticky-cta-bar__btn sticky-cta-bar__btn--pulse btn btn--canvas-frame btn--large"
+           style="text-decoration:none;">
+          <span class="btn__canvas-inner">
+            Begin the process
+            <svg class="btn__arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </span>
         </a>
       {%- endif -%}
     </div>

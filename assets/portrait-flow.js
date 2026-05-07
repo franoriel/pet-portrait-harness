@@ -77,6 +77,23 @@ const MODERN_COLORS = [
 ];
 const MODERN_COLOR_IDS = MODERN_COLORS.map(c => c.id);
 
+// Bold Graphic Poster palette — 8 paired-tone palettes. Each one drives
+// a vertical 2-tone background split (left half = `left`, right half =
+// `right`). IDs map to POSTER_PALETTES in generate.py so the backend can
+// inject the chosen colours into the prompt. Default is 'teal' (the warm
+// vivid teal+orange mockup the example image is generated against).
+const POSTER_PALETTES = [
+  { id: 'teal',   left: '#2DA39F', right: '#1B6B6E', label: 'Teal' },
+  { id: 'cobalt', left: '#3D6FAA', right: '#1B2E58', label: 'Cobalt' },
+  { id: 'rose',   left: '#F2BAC2', right: '#9F4A6F', label: 'Rose' },
+  { id: 'citrus', left: '#F2C14A', right: '#C76A1F', label: 'Citrus' },
+  { id: 'forest', left: '#3F8559', right: '#1F4A30', label: 'Forest' },
+  { id: 'rust',   left: '#C75D3F', right: '#7A2C1F', label: 'Rust' },
+  { id: 'violet', left: '#8C5FA8', right: '#3F1F58', label: 'Violet' },
+  { id: 'ember',  left: '#E63946', right: '#7A1F2A', label: 'Ember' },
+];
+const POSTER_PALETTE_IDS = POSTER_PALETTES.map(p => p.id);
+
 // Load a Google Font dynamically
 const _loadedFonts = new Set();
 function loadGoogleFont(styleId) {
@@ -140,7 +157,9 @@ const STYLES = [
     name: 'Bold Graphic Poster',
     available: true,
     exampleImage: 'example-bold-graphic-poster.webp',
-    backgrounds: ['auto', 'light', 'dark'],
+    // Bold Graphic Poster uses paired-tone palettes (vertical bg split)
+    // instead of auto/light/dark — see POSTER_PALETTES.
+    backgrounds: POSTER_PALETTE_IDS,
   },
   {
     id: 'charcoal',
@@ -2179,12 +2198,73 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
     })(),
 
     // Background selector — modern-shape-art renders an 8-swatch print-safe
-    // colour grid (4x2). Other styles render the auto/light/dark trio if
-    // they support more than one mode; styles locked to 'auto' get nothing.
+    // colour grid (4x2); bold-graphic-poster renders an 8-swatch paired-tone
+    // palette grid (each swatch shows the vertical bg split it produces).
+    // Other styles render the auto/light/dark trio if they support more than
+    // one mode; styles locked to 'auto' get nothing.
     (() => {
       if (!state.selectedStyleId) return null;
       const allowed = backgroundsFor(state.selectedStyleId);
       const isModern = state.selectedStyleId === 'modern-shape-art';
+      const isPoster = state.selectedStyleId === 'bold-graphic-poster';
+
+      if (isPoster) {
+        const active = state.backgroundMode && POSTER_PALETTE_IDS.includes(state.backgroundMode)
+          ? state.backgroundMode : 'teal';
+        return React.createElement('div', {
+          style: {
+            marginTop: '20px', padding: '16px', background: tokens.colorWhite,
+            borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+          },
+        },
+          React.createElement('p', {
+            style: { ...s.smallCaps, margin: '0 0 10px', fontSize: 'var(--text-xs)', textAlign: 'center' },
+          }, 'Background palette'),
+          React.createElement('div', {
+            style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' },
+            role: 'radiogroup', 'aria-label': 'Background palette',
+          },
+            POSTER_PALETTES.map(p => {
+              const isActive = active === p.id;
+              return React.createElement('button', {
+                key: p.id, type: 'button', role: 'radio',
+                'aria-checked': isActive,
+                'aria-label': `${p.label} palette — left ${p.left}, right ${p.right}`,
+                onClick: () => {
+                  update({ backgroundMode: p.id });
+                  saveSession({ ...state, backgroundMode: p.id });
+                },
+                style: {
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: '6px', padding: '8px 4px',
+                  border: isActive ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+                  borderRadius: '10px',
+                  background: isActive ? tokens.colorAccentLight : tokens.colorWhite,
+                  cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+                },
+              },
+                React.createElement('span', {
+                  'aria-hidden': true,
+                  style: {
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    // Hard-edge half-and-half fill — previews the vertical
+                    // bg split each palette produces in the final art.
+                    background: `linear-gradient(to right, ${p.left} 50%, ${p.right} 50%)`,
+                    border: `1px solid rgba(28, 28, 28, 0.10)`,
+                    boxShadow: isActive ? `0 0 0 2px ${tokens.colorAccent}, 0 0 0 4px ${tokens.colorAccentLight}` : 'inset 0 1px 2px rgba(28,28,28,0.06)',
+                  },
+                }),
+                React.createElement('span', {
+                  style: {
+                    fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
+                    color: isActive ? tokens.colorAccent : tokens.colorBrand,
+                  },
+                }, p.label),
+              );
+            }),
+          ),
+        );
+      }
 
       if (isModern) {
         const active = state.backgroundMode && MODERN_COLOR_IDS.includes(state.backgroundMode)

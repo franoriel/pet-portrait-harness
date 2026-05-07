@@ -1450,6 +1450,48 @@ p { color: var(--color-ink); }
 .sticky-cta-bar.is-visible { transform: translateY(0); }
 .sticky-cta-bar__btn { width: 100%; }
 
+/* When the sticky bar hosts the framed-canvas hero CTA, stretch the
+   inner cream face full-width so it doesn't shrink to its label width
+   and float in the bar like a chip. The framed-canvas button is
+   inline-flex by default — a quick width:100% on both layers gets it
+   to fill the bar like the old primary-fill version did. */
+.sticky-cta-bar__btn.btn--canvas-frame { width: 100%; }
+.sticky-cta-bar__btn.btn--canvas-frame .btn__canvas-inner { width: 100%; }
+
+/* ── Sticky CTA slow ambient pulse ────────────────────────── */
+/* Quiet attention cue — a 2.6s ease-in-out scale + shadow breath that
+   fires while the bar is on screen. The hover state cancels it so the
+   user gets crisp tactile feedback the moment they engage; the
+   prefers-reduced-motion override turns the animation off entirely. */
+@keyframes sticky-cta-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 6px 18px rgba(28, 22, 18, 0.22),
+      0 2px 4px rgba(28, 22, 18, 0.18);
+  }
+  50% {
+    transform: scale(1.025);
+    box-shadow:
+      0 12px 28px rgba(28, 22, 18, 0.32),
+      0 4px 10px rgba(28, 22, 18, 0.22);
+  }
+}
+.sticky-cta-bar__btn--pulse {
+  animation: sticky-cta-pulse 2.6s ease-in-out infinite;
+  /* Lift the button onto its own layer so the scale animates on the
+     compositor, not paint — keeps the pulse buttery on mobile. */
+  will-change: transform, box-shadow;
+  transform-origin: center center;
+}
+.sticky-cta-bar__btn--pulse:hover,
+.sticky-cta-bar__btn--pulse:focus-visible {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticky-cta-bar__btn--pulse { animation: none; }
+}
+
 /* ── Review stars snippet ─────────────────────────────────── */
 .star-rating { display: inline-flex; gap: 2px; color: var(--color-accent); font-size: var(--text-sm); }
 .review-count { font-size: var(--text-sm); color: var(--color-muted); margin-left: 6px; }
