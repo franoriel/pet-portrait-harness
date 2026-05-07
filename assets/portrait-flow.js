@@ -1522,8 +1522,22 @@ function PhotoGuidelines() {
 
 /* ── YourPortraits gallery — shows saved portraits at top of upload step ─── */
 function YourPortraits({ onOrderPortrait }) {
-  const library = loadLibrary();
+  const [library, setLibrary] = useState(() => loadLibrary());
+  // Pending-delete id: when set, the card flips to a confirmation
+  // overlay (Cancel / Yes, delete) so a stray tap on the × never
+  // discards a saved portrait without the customer's explicit second
+  // confirmation.
+  const [pendingDelete, setPendingDelete] = useState(null);
+
   if (!library.length) return null;
+
+  const requestDelete = (id) => setPendingDelete(id);
+  const cancelDelete = () => setPendingDelete(null);
+  const confirmDelete = (id) => {
+    removeFromLibrary(id);
+    setLibrary(loadLibrary());
+    setPendingDelete(null);
+  };
 
   return React.createElement('div', {
     style: {
@@ -1546,16 +1560,18 @@ function YourPortraits({ onOrderPortrait }) {
     },
       library.map(p => {
         const daysLeft = daysRemaining(p.createdAt);
+        const isPending = pendingDelete === p.id;
         return React.createElement('div', {
           key: p.id,
-          style: { flex: '0 0 auto', width: '120px', textAlign: 'left' },
+          style: { flex: '0 0 auto', width: '120px', textAlign: 'left', position: 'relative' },
         },
           React.createElement('button', {
             type: 'button',
             onClick: () => onOrderPortrait(p),
+            disabled: isPending,
             style: {
               width: '120px', padding: 0, border: 'none', background: 'none',
-              cursor: 'pointer', outline: 'none', textAlign: 'left',
+              cursor: isPending ? 'default' : 'pointer', outline: 'none', textAlign: 'left',
             },
             'aria-label': `Order ${p.petName}'s portrait`,
           },
@@ -1579,6 +1595,81 @@ function YourPortraits({ onOrderPortrait }) {
                 margin: 0,
               },
             }, daysLeft <= 3 ? `Expires in ${daysLeft}d` : `${daysLeft}d left`),
+          ),
+          // First step: small "×" button in the top-right corner of
+          // the thumbnail. Stops propagation so the parent's
+          // onOrderPortrait click never fires by accident.
+          !isPending && React.createElement('button', {
+            type: 'button',
+            onClick: (e) => { e.stopPropagation(); requestDelete(p.id); },
+            'aria-label': `Delete ${p.petName}'s portrait`,
+            title: `Delete ${p.petName}'s portrait`,
+            style: {
+              position: 'absolute', top: '6px', right: '6px',
+              width: '24px', height: '24px', borderRadius: '50%',
+              border: 'none', padding: 0, cursor: 'pointer',
+              background: 'rgba(20,14,8,0.55)', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'var(--text-sm)', lineHeight: 1,
+              backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+            },
+          },
+            React.createElement('svg', {
+              xmlns: 'http://www.w3.org/2000/svg',
+              width: '12', height: '12', viewBox: '0 0 24 24',
+              fill: 'none', stroke: 'currentColor', strokeWidth: '2.4',
+              strokeLinecap: 'round', strokeLinejoin: 'round',
+              'aria-hidden': true,
+            },
+              React.createElement('path', { d: 'M6 6L18 18M18 6L6 18' }),
+            ),
+          ),
+          // Second step: full-card confirmation overlay. The customer
+          // must explicitly confirm "Yes, delete" — a stray tap on
+          // the × never discards a saved portrait silently.
+          isPending && React.createElement('div', {
+            role: 'dialog', 'aria-modal': true,
+            'aria-label': `Delete ${p.petName}'s portrait?`,
+            style: {
+              position: 'absolute', top: 0, left: 0,
+              width: '120px', height: '150px',
+              background: 'rgba(20,14,8,0.86)',
+              borderRadius: '10px',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              padding: '8px', gap: '8px',
+              backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+            },
+          },
+            React.createElement('p', {
+              style: {
+                fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
+                color: '#fff', margin: 0, textAlign: 'center', lineHeight: 1.3,
+              },
+            }, `Delete ${p.petName}'s portrait?`),
+            React.createElement('button', {
+              type: 'button',
+              onClick: (e) => { e.stopPropagation(); confirmDelete(p.id); },
+              style: {
+                fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
+                background: '#c43c2a', color: '#fff',
+                border: 'none', borderRadius: '6px',
+                padding: '7px 10px', cursor: 'pointer',
+                width: '100%', letterSpacing: '0.02em',
+              },
+            }, 'Yes, delete'),
+            React.createElement('button', {
+              type: 'button',
+              onClick: (e) => { e.stopPropagation(); cancelDelete(); },
+              style: {
+                fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 500,
+                background: 'rgba(255,255,255,0.18)', color: '#fff',
+                border: '1px solid rgba(255,255,255,0.4)', borderRadius: '6px',
+                padding: '7px 10px', cursor: 'pointer',
+                width: '100%', letterSpacing: '0.02em',
+              },
+            }, 'Cancel'),
           ),
         );
       }),

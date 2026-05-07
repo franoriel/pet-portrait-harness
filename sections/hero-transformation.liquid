@@ -76,7 +76,7 @@
       {%- endif -%}
     </div>
 
-    <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Upload → Preview → Hang' }}</p>
+    <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Upload → Create custom portrait → Hang' }}</p>
     </div>
   </div>
 </section>
@@ -324,7 +324,7 @@
     border-color: rgba(28, 28, 28, 0.32);
   }
   /* Step strip — the reassurance line now carries the customer journey
-     ("Upload → Preview → Hang"). Slight tracking + medium weight gives
+     ("Upload → Create custom portrait → Hang"). Slight tracking + medium weight gives
      it a step-indicator feel without competing with the eyebrow's full
      small-caps treatment. The arrow characters inherit the same colour
      so the whole line reads as a single, scannable strip. */
@@ -444,7 +444,7 @@
     { "type": "url", "id": "cta_url", "label": "Primary CTA URL" },
     { "type": "text", "id": "secondary_cta_label", "label": "Secondary CTA label (optional)" },
     { "type": "url", "id": "secondary_cta_url", "label": "Secondary CTA URL" },
-    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Upload → Preview → Hang" }
+    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Upload → Create custom portrait → Hang" }
   ],
   "presets": [{ "name": "Hero Transformation" }]
 }
