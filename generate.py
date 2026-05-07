@@ -878,6 +878,21 @@ rectangular patch in the upper portion of one half (looks like a \
 faint room-corner shadow). DO NOT add this patch — both halves are \
 treated as pure flat colour fields, like a screen-print pull, not a \
 photograph of a wall.
+- CRITICAL — NO INSET / NESTED RECTANGLE BEHIND THE PET: do NOT \
+render the background as an outer lighter border with a darker \
+rectangular block behind the pet (a "poster pinned to a wall" or \
+"framed art" look). The two-tone split is the WHOLE canvas — left \
+half goes edge-to-edge top to bottom, right half goes edge-to-edge \
+top to bottom. There is NO secondary rectangle, NO inner panel, NO \
+darker zone surrounding the pet, NO card-on-a-wall layering. The \
+exact pixel at the canvas's outer corner is the SAME colour as the \
+pixel one inch inward — only the single central vertical seam ever \
+changes background colour. RECURRING FAILURE MODE TO AVOID: \
+generating four background regions (lighter outer border + darker \
+inner rectangle around the pet, sometimes split into quadrants). \
+This is FORBIDDEN. There are exactly TWO background regions, period: \
+left half and right half, each one flat colour, each one running \
+fully from canvas edge to canvas edge.
 - The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
 curved, never offset. It runs floor-to-ceiling exactly down the centre.
 - The pet sits IN FRONT OF the seam: the pet's body crosses the seam \
@@ -905,10 +920,13 @@ Avoid: photography, photorealism, soft or curved edges WITHIN the pet, \
 gradients, watercolor, painterly strokes, 3D render, blurry, detailed \
 fur texture, drawn fur strands, hatching, eye whites, irises, pupils, \
 catchlights, eyelashes, decorative shapes, foliage, props, halos, \
-frames, more than two background colours, horizontal background \
-splits, diagonal background splits, curved background seams, gradient \
-backgrounds, off-centre seam, background patterns, drop shadows, text, \
-watermark, border, solid color bars or panels at image edges.\
+frames, framed-art look, poster-pinned-to-wall look, inset rectangle \
+behind the pet, nested background rectangles, darker rectangular block \
+surrounding the pet, four-quadrant background, more than two \
+background colours, horizontal background splits, diagonal background \
+splits, curved background seams, gradient backgrounds, off-centre \
+seam, background patterns, drop shadows, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
