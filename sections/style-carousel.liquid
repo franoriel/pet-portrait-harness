@@ -25,8 +25,14 @@
         width="1200" height="896">
     </div>
 
-    <div class="style-marquee__track-wrap" aria-hidden="false">
-      <div class="style-marquee__track">
+    <aside class="style-marquee__right">
+      <div class="style-marquee__heading">
+        <p class="style-marquee__eyebrow">Pick a style</p>
+        <h2 class="style-marquee__title">Eight styles. One pet.</h2>
+      </div>
+
+      <div class="style-marquee__track-wrap" aria-hidden="false">
+        <div class="style-marquee__track">
         {%- for i in (1..2) -%}
           <div class="style-marquee__set" {% if i == 2 %}aria-hidden="true"{% endif %}>
             <div class="style-marquee__item">
@@ -63,8 +69,9 @@
             </div>
           </div>
         {%- endfor -%}
+        </div>
       </div>
-    </div>
+    </aside>
   </div>
 </section>
 
@@ -89,25 +96,68 @@
     position: relative;
     z-index: 1;
     width: 50%;
+    /* Source asset is 1200x896 (~4:3) with cream negative space baked in
+       above the framed posters and below the cuddle pile. Forcing a wider
+       2:1 container + object-fit: cover crops that empty cream off the
+       top and bottom, so the pets + posters fill the visible frame. */
+    aspect-ratio: 2 / 1;
+    max-height: 420px;
   }
   .style-marquee__hero img {
     display: block;
     width: 100%;
-    height: auto;
-    max-height: 544px;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
     /* Soft fade on the left and right bg-only edges so the hero's vignette
        dissolves into the section bg, killing any subtle seam. The pets and
        posters live in the inner ~85%, so the fade only touches empty cream. */
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
             mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
   }
-  .style-marquee__track-wrap {
+  /* Right column wraps the introductory heading and the marquee track in
+     one vertically-centered stack, so the heading sits directly above the
+     scrolling cards instead of fighting them for vertical space. */
+  .style-marquee__right {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
     left: 48%;
     right: -2%;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+  }
+  .style-marquee__heading {
+    text-align: center;
+    padding: 0 24px;
+    /* Match the marquee's visible window so the heading sits centered over
+       the cards, not over the soft-fade edges of the marquee mask. */
+    margin-left: 6%;
+    margin-right: 4%;
+  }
+  .style-marquee__eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-accent, #8B7D6B);
+    margin: 0 0 8px;
+  }
+  .style-marquee__title {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    line-height: 1.1;
+    color: var(--color-ink, #1C1C1C);
+    margin: 0;
+  }
+  .style-marquee__track-wrap {
+    position: relative;
     z-index: 2;
     overflow: hidden;
     pointer-events: none;
@@ -179,27 +229,41 @@
   /* narrower desktops: keep marquee well clear of the cuddle pile */
   @media (max-width: 1280px) {
     .style-marquee__hero { width: 45%; }
-    .style-marquee__track-wrap { left: 48%; }
+    .style-marquee__right { left: 48%; }
   }
   @media (max-width: 1080px) {
     .style-marquee__hero { width: 42%; }
-    .style-marquee__track-wrap { left: 50%; }
+    .style-marquee__right { left: 50%; }
   }
 
   /* mobile: stack hero above marquee */
   @media (max-width: 760px) {
     .style-marquee { padding: 24px 0 32px; }
     .style-marquee__inner { padding: 0 16px; }
-    .style-marquee__hero { width: 100%; }
+    .style-marquee__hero {
+      width: 100%;
+      /* Slightly less aggressive crop on mobile so the cuddle pile and
+         posters both stay visible at narrow widths. */
+      aspect-ratio: 16 / 10;
+      max-height: 280px;
+    }
     .style-marquee__hero img {
-      max-height: 320px;
       -webkit-mask-image: none;
               mask-image: none;
     }
-    .style-marquee__track-wrap {
+    .style-marquee__right {
       position: static;
-      transform: none;
+      display: block;
       margin-top: 16px;
+    }
+    .style-marquee__heading {
+      margin: 0 0 12px;
+      padding: 0 8px;
+    }
+    .style-marquee__title {
+      font-size: 1.4rem;
+    }
+    .style-marquee__track-wrap {
       -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
               mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
     }

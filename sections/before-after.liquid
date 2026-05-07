@@ -33,11 +33,11 @@
       <span class="before-after__label before-after__label--after">Portrait</span>
     </div>
 
-    {%- if section.settings.cta_label != blank -%}
-      <div style="margin-top:32px;">
-        <a href="{{ section.settings.cta_url }}" class="btn btn--primary">{{ section.settings.cta_label }}</a>
-      </div>
-    {%- endif -%}
+    {%- comment -%}
+      CTA intentionally removed. The page-wide sticky "Begin the Process" bar
+      is the single conversion ask — keeping a section-level CTA here was
+      pulling attention off it without lifting clicks.
+    {%- endcomment -%}
   </div>
 </section>
 
