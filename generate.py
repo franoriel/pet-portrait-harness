@@ -858,12 +858,26 @@ BACKGROUND — VERTICAL TWO-TONE SPLIT (CRITICAL):
 RAZOR-SHARP straight seam at exactly 50% of the canvas width. The seam \
 runs from the very top of the canvas to the very bottom in one \
 unbroken vertical line.
-- LEFT half (0-50% width) = solid flat {{POSTER_BG_LEFT_NAME}} \
-({{POSTER_BG_LEFT_HEX}}) edge-to-edge.
-- RIGHT half (50-100% width) = solid flat {{POSTER_BG_RIGHT_NAME}} \
-({{POSTER_BG_RIGHT_HEX}}) edge-to-edge.
-- Both halves are perfectly flat solid colour — no gradient, no \
-texture, no shading, no shadows, no decorative noise.
+- LEFT half (0-50% width) = PERFECTLY FLAT {{POSTER_BG_LEFT_NAME}} \
+({{POSTER_BG_LEFT_HEX}}) — every pixel within the left half is the \
+exact same hex value, corner to corner, top to bottom.
+- RIGHT half (50-100% width) = PERFECTLY FLAT {{POSTER_BG_RIGHT_NAME}} \
+({{POSTER_BG_RIGHT_HEX}}) — every pixel within the right half is the \
+exact same hex value, corner to corner, top to bottom.
+- ABSOLUTELY NO BG VARIATION OF ANY KIND inside either half: NO \
+gradient, NO subtle vignette, NO corner darkening, NO ambient \
+occlusion, NO darker patch, NO lighter patch, NO faint shadow, NO \
+suggestion of light source, NO suggestion of room corners or wall \
+joints, NO atmospheric haze, NO depth cue, NO painterly variation, \
+NO posterised banding, NO halftone dot pattern. The colour at the \
+top-left corner of the left half is EXACTLY the same as the colour \
+2px from the seam on the left side, which is EXACTLY the same as \
+the colour at the bottom-left corner. Same uniformity rule for the \
+right half. RECURRING FAILURE MODE TO AVOID: a slightly darker \
+rectangular patch in the upper portion of one half (looks like a \
+faint room-corner shadow). DO NOT add this patch — both halves are \
+treated as pure flat colour fields, like a screen-print pull, not a \
+photograph of a wall.
 - The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
 curved, never offset. It runs floor-to-ceiling exactly down the centre.
 - The pet sits IN FRONT OF the seam: the pet's body crosses the seam \
@@ -914,6 +928,106 @@ def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
         .replace("{{POSTER_BG_RIGHT_NAME}}", p["bg_right_name"])
         .replace("{{POSTER_ACCENTS}}",       p["accents"])
     )
+
+
+def _hex_to_rgb(hex_str: str) -> tuple[int, int, int]:
+    """Parse '#RRGGBB' → (r, g, b) tuple of 0-255 ints."""
+    h = hex_str.lstrip("#")
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def _flatten_poster_bg(
+    img: Image.Image,
+    palette: dict[str, str],
+    tol: int = 90,
+) -> Image.Image:
+    """Snap near-bg pixels to the exact palette hex on each half of the
+    bold-graphic-poster image, killing Gemini's recurring "soft room-shadow
+    in the upper-left" hallucination.
+
+    SAFE-ZONE STRATEGY: snapping is restricted to the outer perimeter where
+    the composition rule guarantees no pet content sits — the pet's bbox is
+    inset 15-18% from the top, 8-12% from each side, and reaches to the
+    bottom edge. So we flatten:
+      - the top 18% (full-width, safely above the ears), and
+      - the outer 10% on each side from y=18% downward (clean bg margin
+        beside the pet).
+    The bottom remains untouched — that's where the pet's chest sits flush.
+    The interior of the canvas (where pet faceting lives) is left entirely
+    alone, so even palettes whose bg sits close in RGB space to a common
+    accent (e.g. Forest deep-green near charcoal) can't snap pet blocks.
+
+    Within the safe zone, we still gate by colour distance (tol=90 → ~52 per
+    channel) so a pet that strays into the safe zone (rare, but possible —
+    Gemini sometimes drifts) doesn't get its outline blurred into bg.
+
+    NumPy vectorised path used when available (~50× faster on a 1024-tall
+    portrait) with a pure-PIL fallback for envs without numpy.
+    """
+    img = img.convert("RGB")
+    w, h = img.size
+    bg_left  = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+    mid = w // 2
+    tol_sq = tol * tol
+
+    # Safe-zone bands: only flatten where the composition rule guarantees
+    # bg-only content. Numbers track _COMPOSITION_RULE_WITH_NAME.
+    top_band_h    = int(h * 0.18)
+    side_margin_w = int(w * 0.10)
+
+    try:
+        import numpy as np
+        # int32 (not int16) — squared per-channel diffs reach 65025, and
+        # summed across 3 channels reach ~195k. Both overflow int16 and
+        # wrap to negative values that falsely pass a "< tol_sq" check.
+        arr = np.asarray(img, dtype=np.int32).copy()  # h × w × 3, mutable
+        bg_left_arr  = np.array(bg_left,  dtype=np.int32)
+        bg_right_arr = np.array(bg_right, dtype=np.int32)
+        d2_left  = ((arr - bg_left_arr ) ** 2).sum(axis=2)   # h × w
+        d2_right = ((arr - bg_right_arr) ** 2).sum(axis=2)   # h × w
+        # Build a full-image safe-zone mask (top band + outer side margins).
+        # We can't use chained fancy indexing (`arr[:, :mid, :][mask] =
+        # value`) — that writes through a view and silently no-ops; build
+        # a full-shape boolean mask and use one advanced-indexing assign.
+        in_top    = np.zeros((h, w), dtype=bool)
+        in_left_margin  = np.zeros((h, w), dtype=bool)
+        in_right_margin = np.zeros((h, w), dtype=bool)
+        in_top[:top_band_h, :]                  = True
+        in_left_margin[top_band_h:, :side_margin_w]      = True
+        in_right_margin[top_band_h:, w - side_margin_w:] = True
+        # Each pixel also has to be in the matching half (so a left-margin
+        # pixel only snaps to bg_left, etc.).
+        left_half  = np.zeros((h, w), dtype=bool)
+        right_half = np.zeros((h, w), dtype=bool)
+        left_half[:, :mid]  = True
+        right_half[:, mid:] = True
+        in_left_safe  = (in_top | in_left_margin)  & left_half
+        in_right_safe = (in_top | in_right_margin) & right_half
+        left_mask  = (d2_left  < tol_sq) & in_left_safe
+        right_mask = (d2_right < tol_sq) & in_right_safe
+        arr[left_mask]  = bg_left_arr
+        arr[right_mask] = bg_right_arr
+        return Image.fromarray(arr.astype(np.uint8), mode="RGB")
+    except ImportError:
+        # Pure-PIL fallback. Slow but correct.
+        px = img.load()
+        for y in range(h):
+            in_top = y < top_band_h
+            for x in range(w):
+                in_left_margin  = (not in_top) and x < side_margin_w
+                in_right_margin = (not in_top) and x >= w - side_margin_w
+                if not (in_top or in_left_margin or in_right_margin):
+                    continue
+                r, g, b = px[x, y]
+                if x < mid:
+                    br, bg_, bb = bg_left
+                else:
+                    br, bg_, bb = bg_right
+                d2 = (r - br) ** 2 + (g - bg_) ** 2 + (b - bb) ** 2
+                if d2 < tol_sq:
+                    px[x, y] = (br, bg_, bb)
+        return img
 
 _CHARCOAL_TEMPLATE = """\
 Transform this photo into a hand-drawn fine-art charcoal pet portrait on warm cream paper.
@@ -3514,6 +3628,19 @@ def _generate_inner(
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
             )
+            # BG FLATTEN — Gemini reliably reads the prompt's "vertical
+            # 2-tone split" but routinely drops a soft vignette / corner
+            # darkening / faint room-shadow into one of the halves. Even
+            # with the prompt explicitly forbidding it, the failure mode
+            # recurs on every other roll. Robust fix: snap any pixel that
+            # is "close enough" to the expected bg hex (per the customer's
+            # poster_palette pick) to the EXACT bg hex. The pet uses
+            # palette accent colours that sit far from either bg colour
+            # in RGB space, so the snap leaves the cubist faceting intact
+            # while flattening any soft bg variation away.
+            palette_id = (style_vars or {}).get("poster_palette") or "teal"
+            if palette_id in POSTER_PALETTES:
+                padded = _flatten_poster_bg(padded, POSTER_PALETTES[palette_id])
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
             # renaissance, line art): pad top + sides only so the pet's
