@@ -377,8 +377,12 @@
       + 'max-width:' + scaledPct + '%;max-height:' + scaledPct + '%;'
       + 'border-radius:2px;overflow:visible;'
       + (isFramedProduct
-        ? 'filter:drop-shadow(6px 10px 18px rgba(40,28,18,0.22)) drop-shadow(0 2px 4px rgba(40,28,18,0.18));'
-        : 'filter:drop-shadow(4px 8px 16px rgba(60,45,30,0.18)) drop-shadow(0 1px 3px rgba(60,45,30,0.14));');
+        // Centred Y-only shadow. Earlier versions used a 6px right X
+        // offset, which read as "the right side of the frame is
+        // thicker" on the small square (12x12) wrap where the
+        // asymmetric shadow took a larger share of the slide width.
+        ? 'filter:drop-shadow(0 10px 18px rgba(40,28,18,0.22)) drop-shadow(0 2px 4px rgba(40,28,18,0.18));'
+        : 'filter:drop-shadow(0 8px 16px rgba(60,45,30,0.18)) drop-shadow(0 1px 3px rgba(60,45,30,0.14));');
     container.appendChild(canvasWrap);
 
     // If framed: wood frame border wrapping the canvas face
