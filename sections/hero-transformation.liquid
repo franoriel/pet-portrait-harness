@@ -257,11 +257,14 @@
   }
 
   .hero--transform .hero__content {
-    padding: clamp(40px, 7vw, 88px) 0;
+    /* Padding is symmetric so the eyebrow sits the same distance from
+       the top of the cream wash as the CTA sits from the bottom — the
+       previous value (clamp 40-88px) put the eyebrow visually crowded
+       against the dark header gradient zone. Larger top/bottom values
+       give the headline stack obvious breathing room and read balanced
+       at every viewport. */
+    padding: clamp(72px, 10vw, 128px) 0;
     max-width: 540px;
-    /* Center the stack within its column so the eyebrow, title, sub,
-       CTA, and step strip all share the same vertical axis. Reads
-       balanced at every viewport without needing per-element overrides. */
     text-align: center;
   }
   .hero--transform .hero__cta-group {
