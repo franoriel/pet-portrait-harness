@@ -75,8 +75,6 @@
         </a>
       {%- endif -%}
     </div>
-
-    <p class="hero__reassurance" data-reveal>{{ section.settings.reassurance | default: 'Upload → Create custom portrait → Hang' }}</p>
     </div>
   </div>
 </section>
@@ -85,7 +83,7 @@
   /* Hero transformation — overrides the regular .hero pattern just for this
      section so the rest of the theme's hero CSS doesn't fight us. */
   .hero--transform { position: relative; overflow: hidden; isolation: isolate;
-                     background: #FAF8F5; min-height: 532px; }
+                     background: #FAF8F5; min-height: 448px; }
   .hero--transform .hero__media--stack {
     position: absolute; inset: 0;
     display: block;
@@ -249,7 +247,7 @@
     grid-template-columns: 1fr;
   }
   @media (min-width: 761px) {
-    .hero--transform { min-height: clamp(437px, 49vw, 570px); }
+    .hero--transform { min-height: clamp(368px, 42vw, 480px); }
     .hero--transform .hero__layout {
       grid-template-columns: minmax(360px, 540px) 1fr;
       align-items: center;
