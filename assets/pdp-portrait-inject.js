@@ -503,7 +503,7 @@
     // the source-image zoom inside the canvas-face.
     var watermark = document.createElement('div');
     watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3;'
-      + 'opacity:0.14;'
+      + 'opacity:0.02;'
       + "background-image:url(" + _assetBase + "watermark-logo.png);"
       + 'background-repeat:repeat;background-size:160px auto;';
     container.appendChild(watermark);

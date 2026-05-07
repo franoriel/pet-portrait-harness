@@ -2903,7 +2903,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         React.createElement('div', {
           style: {
             position: 'absolute', inset: 0, pointerEvents: 'none',
-            opacity: 0.14, zIndex: 2,
+            opacity: 0.02, zIndex: 2,
             backgroundImage: `url(${_pfAssetBase}watermark-logo.png)`,
             backgroundRepeat: 'repeat',
             backgroundSize: '160px auto',
@@ -2912,18 +2912,15 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
           style: {
-            // Light 110% zoom to drop the server's 10% padding ring
-            // without clipping into the pet on styles whose AI source
-            // already fills the canvas (Modern, Renaissance Royalty,
-            // Aura Gradient — these had body / ears clipped at the
-            // earlier 140% zoom). 110% is conservative on purpose:
-            // tighter styles will still show a thin band of bg margin,
-            // but no style ever loses the subject. max-width override
-            // beats the global `img, video { max-width:100% }` rule
-            // in base.css.
-            position: 'absolute',
-            top: '-5%', left: '-5%',
-            width: '110%', height: '110%',
+            // No client-side zoom. Earlier zooms (140% then 110%) cut
+            // into the subject for styles whose AI source already
+            // fills the canvas (Modern, Renaissance, Aura Gradient).
+            // The named version renders at 100% and reads perfectly,
+            // so we mirror that here for consistency. max-width
+            // override beats the global
+            // `img, video { max-width:100% }` rule in base.css.
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
             maxWidth: 'none', maxHeight: 'none',
             objectFit: 'cover',
             objectPosition: 'center center',
@@ -3309,20 +3306,13 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
               //
               // max-width override beats the global
               // `img, video { max-width:100% }` rule in base.css.
-              if (effectiveWantsName) {
-                return {
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  maxWidth: 'none', maxHeight: 'none',
-                  objectFit: 'cover',
-                  objectPosition: 'center center',
-                  display: 'block',
-                };
-              }
+              // Both name and no-name variants render at 100% — the
+              // named version proved the right composition, so the
+              // unnamed mirrors it for consistency. Earlier zoom-in
+              // attempts cut into the pet on tighter source styles.
               return {
-                position: 'absolute',
-                top: '-20%', left: '-20%',
-                width: '140%', height: '140%',
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
                 maxWidth: 'none', maxHeight: 'none',
                 objectFit: 'cover',
                 objectPosition: 'center center',
@@ -3354,7 +3344,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       React.createElement('div', {
         style: {
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          opacity: 0.14, zIndex: 2,
+          opacity: 0.02, zIndex: 2,
           backgroundImage: `url(${_pfAssetBase}watermark-logo.png)`,
           backgroundRepeat: 'repeat',
           backgroundSize: '160px auto',
