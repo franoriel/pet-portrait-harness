@@ -12,6 +12,43 @@
   var raw;
   try { raw = localStorage.getItem(LS_KEY); } catch (e) { /* no storage access */ }
 
+  // ── IndexedDB photo handoff ───────────────────────────────
+  // The pending-photo handoff used to write a base64 data URL into
+  // localStorage. localStorage caps at ~5-10MB per origin, so any
+  // photo over ~3.5MB on disk (which is most modern phone photos)
+  // overflows the quota — the setItem throws, the silent catch drops
+  // the data, the redirect runs anyway, and /pages/create finds no
+  // pending state and falls back to the upload step. Using IDB for
+  // the photo (no realistic size limit for our use case) and keeping
+  // only small metadata in localStorage fixes the handoff for every
+  // photo size the customer might upload.
+  function _openPendingDB() {
+    return new Promise(function (resolve, reject) {
+      try {
+        var req = indexedDB.open('petPrintables', 1);
+        req.onupgradeneeded = function (e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains('pending')) {
+            db.createObjectStore('pending');
+          }
+        };
+        req.onsuccess = function (e) { resolve(e.target.result); };
+        req.onerror = function (e) { reject(e); };
+      } catch (err) { reject(err); }
+    });
+  }
+  function savePendingPhotoBlob(blob) {
+    return _openPendingDB().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction('pending', 'readwrite');
+        tx.objectStore('pending').put(blob, 'photo');
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function (e) { reject(e); };
+        tx.onabort = function (e) { reject(e); };
+      });
+    });
+  }
+
   // Function definitions (hoisted, but defining explicitly for clarity)
   function setupPdpPreGenFlow() {
     console.log('[PetPrintables] Setting up pre-gen PDP flow');
@@ -102,29 +139,78 @@
           return;
         }
 
-        var reader = new FileReader();
-        reader.onload = function () {
-          try {
-            var pending = {
-              version: 1,
-              petName: petName,
-              photoDataUrl: reader.result,
-              photoName: file.name,
-              photoType: file.type,
-              createdAt: new Date().toISOString(),
+        // Photo blob — IndexedDB (no quota issue for normal photo sizes).
+        // Metadata + a small data-URL THUMBNAIL — localStorage so the
+        // create page can show an instant preview before the IDB read
+        // resolves. Thumbnail is downscaled to <= 320px on the long
+        // edge — well under any localStorage limit even at base64.
+        function makeThumbnail(srcFile) {
+          return new Promise(function (resolve) {
+            var url = URL.createObjectURL(srcFile);
+            var img = new Image();
+            img.onload = function () {
+              var maxDim = 320;
+              var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+              var cw = Math.max(1, Math.round(img.width * scale));
+              var ch = Math.max(1, Math.round(img.height * scale));
+              var canvas = document.createElement('canvas');
+              canvas.width = cw; canvas.height = ch;
+              var ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, cw, ch);
+              URL.revokeObjectURL(url);
+              try { resolve(canvas.toDataURL('image/jpeg', 0.78)); }
+              catch (e) { resolve(null); }
             };
-            localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-          } catch (err) { /* storage quota — proceed anyway */ }
+            img.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+            img.src = url;
+          });
+        }
+
+        function persistAndGo(thumbDataUrl) {
+          var meta = {
+            version: 2,
+            petName: petName,
+            photoName: file.name,
+            photoType: file.type,
+            photoSize: file.size,
+            photoThumbDataUrl: thumbDataUrl || null,
+            createdAt: new Date().toISOString(),
+          };
+          try { localStorage.setItem(PENDING_KEY, JSON.stringify(meta)); } catch (err) {}
           window.location.href = '/pages/create';
-        };
-        reader.onerror = function () {
-          alert(
-            'We couldn\u2019t open this photo. The file may be damaged.\n\n' +
-            '\u2022 Try opening it in your Photos app, re-saving, and uploading again.\n' +
-            '\u2022 Or choose a different photo.'
-          );
-        };
-        reader.readAsDataURL(file);
+        }
+
+        savePendingPhotoBlob(file)
+          .then(function () { return makeThumbnail(file); })
+          .then(persistAndGo)
+          .catch(function () {
+            // IDB unavailable (private mode on some browsers, etc.) —
+            // fall back to the legacy data-URL-in-localStorage path.
+            // Will quota-fail for large photos, but at least small
+            // photos still work in those niche environments.
+            var reader = new FileReader();
+            reader.onload = function () {
+              try {
+                localStorage.setItem(PENDING_KEY, JSON.stringify({
+                  version: 1,
+                  petName: petName,
+                  photoDataUrl: reader.result,
+                  photoName: file.name,
+                  photoType: file.type,
+                  createdAt: new Date().toISOString(),
+                }));
+              } catch (err) {}
+              window.location.href = '/pages/create';
+            };
+            reader.onerror = function () {
+              alert(
+                'We couldn\u2019t open this photo. The file may be damaged.\n\n' +
+                '\u2022 Try opening it in your Photos app, re-saving, and uploading again.\n' +
+                '\u2022 Or choose a different photo.'
+              );
+            };
+            reader.readAsDataURL(file);
+          });
       }
     }
 
@@ -389,18 +475,18 @@
     // If unframed: just the canvas face
     var canvasFace;
     if (isFramedProduct) {
-      // Solid walnut frame. The previous gradient stack (5-stop wood
-      // gradient + diagonal highlight + grain stripes + inset bevel)
-      // produced visible "second frame" striping on the right edge
-      // when paired with dark portraits — the gradient stops compressed
-      // into thin stripes that read as concentric frames. A single
-      // solid colour reads cleanly behind any portrait.
+      // Solid black frame. Frame colour is fixed to black for every
+      // framed-canvas variant — matches what's printed on the
+      // materials section of the PDP and what the customer actually
+      // receives. A single solid colour reads cleanly behind any
+      // portrait without the concentric-stripe artefacts the earlier
+      // gradient stack produced.
       var frame = document.createElement('div');
       frame.style.cssText = 'position:absolute;inset:0;padding:6%;box-sizing:border-box;'
-        + 'background:#3a2818;border-radius:1px;'
+        + 'background:#0E0E0E;border-radius:1px;'
         + 'box-shadow:'
-        +   'inset 0 1px 0 rgba(255,255,255,0.10),'
-        +   'inset 0 -1px 0 rgba(0,0,0,0.30);';
+        +   'inset 0 1px 0 rgba(255,255,255,0.06),'
+        +   'inset 0 -1px 0 rgba(0,0,0,0.40);';
       canvasWrap.appendChild(frame);
 
       // Recess where the printed canvas sits. No fill colour — the

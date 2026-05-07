@@ -816,25 +816,72 @@ function iconLabel(icon, label, iconPosition) {
 
 /* ── usePortraitFlow hook ──────────────────────────────────── */
 
-// Check for pending PDP-initiated flow (user uploaded on PDP, needs to pick style)
+// Check for pending PDP-initiated flow (user uploaded on PDP, needs to pick style).
+// v2 keeps the photo in IndexedDB (no localStorage quota issue) and only the
+// metadata + a small thumbnail in localStorage. v1 (legacy) put the full data
+// URL in localStorage, which silently failed for any photo over ~3.5MB and
+// caused the create page to fall back to the upload step.
 function loadPending() {
   try {
     const raw = localStorage.getItem('petPrintables_pending');
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data.version !== 1 || !data.photoDataUrl) return null;
-    return data;
+    if (data.version === 2 && data.petName) return data;       // IDB-backed
+    if (data.version === 1 && data.photoDataUrl) return data;  // legacy data-URL
+    return null;
   } catch { return null; }
 }
 
 function clearPending() {
   try { localStorage.removeItem('petPrintables_pending'); } catch {}
+  try {
+    const req = indexedDB.open('petPrintables', 1);
+    req.onsuccess = (e) => {
+      try {
+        const db = e.target.result;
+        if (db.objectStoreNames.contains('pending')) {
+          const tx = db.transaction('pending', 'readwrite');
+          tx.objectStore('pending').delete('photo');
+        }
+      } catch {}
+    };
+  } catch {}
 }
 
-// Convert a data URL back into a File object
+// Pull the v2 photo Blob back out of IndexedDB
+function loadPendingPhotoBlob() {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open('petPrintables', 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('pending')) {
+          db.createObjectStore('pending');
+        }
+      };
+      req.onsuccess = (e) => {
+        try {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('pending')) { resolve(null); return; }
+          const tx = db.transaction('pending', 'readonly');
+          const get = tx.objectStore('pending').get('photo');
+          get.onsuccess = () => resolve(get.result || null);
+          get.onerror = () => resolve(null);
+        } catch { resolve(null); }
+      };
+      req.onerror = () => resolve(null);
+    } catch { resolve(null); }
+  });
+}
+
+// Convert a data URL back into a File object (legacy v1 path)
 async function dataUrlToFile(dataUrl, filename, mimeType) {
   const res = await fetch(dataUrl);
   const blob = await res.blob();
+  return new File([blob], filename || 'pet-photo.jpg', { type: mimeType || blob.type || 'image/jpeg' });
+}
+
+function blobToFile(blob, filename, mimeType) {
   return new File([blob], filename || 'pet-photo.jpg', { type: mimeType || blob.type || 'image/jpeg' });
 }
 
@@ -844,10 +891,13 @@ function usePortraitFlow() {
   const pending = !saved ? loadPending() : null;
 
   const [state, setState] = useState({
-    // If pending from PDP, skip to Style step with photo + name pre-filled
+    // If pending from PDP, skip to Style step with photo + name pre-filled.
+    // v2 pending stores a tiny thumbnail in localStorage (photoThumbDataUrl)
+    // and the full photo in IDB (loaded asynchronously by useEffect below).
+    // v1 stores the full photo as a data URL.
     stage: saved ? STAGES.PREVIEW : (pending ? STAGES.STYLE : STAGES.UPLOAD),
     photo: null,
-    photoThumbnailUrl: pending?.photoDataUrl || null,
+    photoThumbnailUrl: pending?.photoThumbDataUrl || pending?.photoDataUrl || null,
     photoDimensions: null,
     photoWarning: null,
     photoError: null,
@@ -873,16 +923,28 @@ function usePortraitFlow() {
     termsAcceptedAt: null,
   });
 
-  // If we have pending PDP data, reconstruct the File object asynchronously
+  // If we have pending PDP data, reconstruct the File object asynchronously.
+  // v2 pulls the Blob from IDB; v1 falls back to the legacy data-URL path.
   useEffect(() => {
-    if (pending && !state.photo) {
-      dataUrlToFile(pending.photoDataUrl, pending.photoName, pending.photoType)
-        .then(file => {
-          setState(prev => ({ ...prev, photo: file }));
-          clearPending();
-        })
-        .catch(() => { /* ignore — user can re-upload */ });
-    }
+    if (!pending || state.photo) return;
+    const reconstruct = async () => {
+      if (pending.version === 2) {
+        const blob = await loadPendingPhotoBlob();
+        if (!blob) return null;
+        return blobToFile(blob, pending.photoName, pending.photoType);
+      }
+      if (pending.version === 1 && pending.photoDataUrl) {
+        return dataUrlToFile(pending.photoDataUrl, pending.photoName, pending.photoType);
+      }
+      return null;
+    };
+    reconstruct()
+      .then(file => {
+        if (!file) return;
+        setState(prev => ({ ...prev, photo: file }));
+        clearPending();
+      })
+      .catch(() => { /* ignore — user can re-upload */ });
   }, []);
 
   const update = useCallback((patch) => {
@@ -1197,8 +1259,20 @@ function usePortraitFlow() {
         userError = 'We couldn\u2019t reach our servers.';
         userTips = ['Check your internet connection, then try again.'];
       } else if (msg && msg !== 'Generation failed') {
-        // Pass through a specific backend message (e.g. worker-level failure)
-        userError = msg;
+        // Pass through a specific backend message — but never raw model text
+        // or stack traces. The backend already sanitises these in
+        // _safe_customer_error; this is a belt-and-braces guard so a future
+        // regression can never leak model output to a customer.
+        const looksLikeLeak = (
+          msg.length > 160
+          || /\n/.test(msg)
+          || /gemini\s+returned|model\s+response|anthropic\s+returned|i\s+have\s+created|\*\*\w+\*\*|traceback/i.test(msg)
+        );
+        if (looksLikeLeak) {
+          userError = 'Something went wrong on our end.';
+        } else {
+          userError = msg;
+        }
         userTips = ['Your photo and style are saved — try again in a moment.'];
       }
 
@@ -3522,7 +3596,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('span', null,
             React.createElement('span', { style: { fontWeight: 600 } }, 'Framed'),
             React.createElement('br'),
-            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Solid wood · heirloom finish'),
+            React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: tokens.colorMuted } }, 'Solid wood · matte black'),
           )
         ),
       ),
