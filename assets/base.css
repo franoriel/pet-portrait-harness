@@ -719,14 +719,14 @@ p { color: var(--color-ink); }
     var(--color-bg);
   background-size: auto, 240px 240px, auto;
   background-repeat: no-repeat, repeat, no-repeat;
-  padding: 36px 0 48px;
+  padding: 36px 0 20px;
   overflow: hidden;
 }
 /* Adjacent-section override — the carousel's bottom now fades into
    transparent which reveals the cream behind it, so the next section
-   only needs a small top pad to keep the rhythm without a visible
-   seam between them. */
-.style-carousel + .hiw { padding-top: 16px; background: var(--color-bg); }
+   sits flush with no extra top pad on top of the carousel's own
+   bottom pad. */
+.style-carousel + .hiw { padding-top: 0; background: var(--color-bg); }
 .style-carousel__track {
   display: flex;
   width: max-content;
