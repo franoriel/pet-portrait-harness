@@ -2898,16 +2898,16 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
           style: {
-            // Zoom in by ~20% to crop the server's ~10% background-
-            // padding ring without slicing into the pet (an earlier
-            // 130% / -22% crop was clipping ear tips on tall styles).
-            // max-width override beats the global
-            // `img, video { max-width:100% }` rule in base.css, which
-            // would otherwise clamp the 120% width back to 100% and
-            // leave a white edge strip in the container.
+            // Zoom in 140% to crop ~14% per side. Earlier 120% crop
+            // only removed the server's 10% padding ring and left the
+            // AI's name-safe zone empty bg visible (the pet still read
+            // as floating). 140% is the sweet spot — it removes the
+            // padding + most of the name-safe zone without slicing
+            // into ear tips. max-width override beats the global
+            // `img, video { max-width:100% }` rule in base.css.
             position: 'absolute',
-            top: '-10%', left: '-10%',
-            width: '120%', height: '120%',
+            top: '-20%', left: '-20%',
+            width: '140%', height: '140%',
             maxWidth: 'none', maxHeight: 'none',
             objectFit: 'cover',
             objectPosition: 'center center',
@@ -3277,17 +3277,16 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             src: displayImage,
             alt: localName ? `Portrait of ${localName}` : 'Your portrait',
             style: {
-              // Zoom in by ~20% to crop the ~10% background-padding ring
-              // that the server adds to every preview. Without this the
-              // pet floats inside a wide cream/bg margin on canvas-face
-              // displays whose aspect matches the source. The max-width
-              // override is required because base.css applies a global
-              // `img, video { max-width:100% }` that would otherwise
-              // clamp our 120% width down to 100% and leave a white
-              // strip of canvas-face showing on the right edge.
+              // Zoom in 140% to crop ~14% per side — removes the
+              // server's 10% padding ring AND most of the AI's
+              // name-safe zone empty bg, so the pet doesn't float in
+              // wide bg margins. max-width override beats the global
+              // `img, video { max-width:100% }` rule in base.css that
+              // otherwise clamps the 140% width down to 100% and
+              // leaves a strip of canvas-face showing on the edges.
               position: 'absolute',
-              top: '-10%', left: '-10%',
-              width: '120%', height: '120%',
+              top: '-20%', left: '-20%',
+              width: '140%', height: '140%',
               maxWidth: 'none', maxHeight: 'none',
               objectFit: 'cover',
               objectPosition: 'center center',
