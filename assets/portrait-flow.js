@@ -3799,11 +3799,11 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
     // Guarantee strip
     React.createElement('div', {
-      style: { borderTop: `1px solid ${tokens.colorBorder}`, marginTop: '24px', paddingTop: '20px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' },
+      style: { borderTop: `1px solid ${tokens.colorBorder}`, marginTop: '24px', paddingTop: '20px', marginBottom: '20px', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: '20px', rowGap: '6px' },
     },
       ['Preview before we print', "Free redos until it\u2019s right", 'Ships in 7\u201310 days'].map((line, i) =>
-        React.createElement('p', { key: i, style: { ...s.bodyMuted, fontSize: 'var(--text-xs)' } },
-          React.createElement('span', { style: { color: tokens.colorSuccess, marginRight: '10px' } }, '\u2713'),
+        React.createElement('p', { key: i, style: { ...s.bodyMuted, fontSize: 'var(--text-xs)', margin: 0, whiteSpace: 'nowrap' } },
+          React.createElement('span', { style: { color: tokens.colorSuccess, marginRight: '8px' } }, '\u2713'),
           line,
         )
       ),
