@@ -3276,22 +3276,34 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           React.createElement('img', {
             src: displayImage,
             alt: localName ? `Portrait of ${localName}` : 'Your portrait',
-            style: {
-              // Zoom in 140% to crop ~14% per side — removes the
-              // server's 10% padding ring AND most of the AI's
-              // name-safe zone empty bg, so the pet doesn't float in
-              // wide bg margins. max-width override beats the global
+            style: (() => {
+              // Conditional zoom-crop. Two competing constraints on
+              // this preview:
+              //   1. Name (when composited at source y≈11%) must not
+              //      be clipped at the top.
+              //   2. The pet must not float inside wide empty bg
+              //      margins (the AI reserves a name-safe zone at the
+              //      top of every source plus a 10% padding ring).
+              // When a name IS composited, we cap the top crop at
+              // ~8% (120% zoom) so the lettering stays whole. When
+              // there's no name, we crop ~14% per side (140% zoom)
+              // because the safe zone is empty space we can drop.
+              // max-width override beats the global
               // `img, video { max-width:100% }` rule in base.css that
-              // otherwise clamps the 140% width down to 100% and
+              // otherwise clamps our zoom width back to 100% and
               // leaves a strip of canvas-face showing on the edges.
-              position: 'absolute',
-              top: '-20%', left: '-20%',
-              width: '140%', height: '140%',
-              maxWidth: 'none', maxHeight: 'none',
-              objectFit: 'cover',
-              objectPosition: 'center center',
-              display: 'block',
-            },
+              var z = effectiveWantsName ? 120 : 140;
+              var off = (z - 100) / 2;
+              return {
+                position: 'absolute',
+                top: '-' + off + '%', left: '-' + off + '%',
+                width: z + '%', height: z + '%',
+                maxWidth: 'none', maxHeight: 'none',
+                objectFit: 'cover',
+                objectPosition: 'center center',
+                display: 'block',
+              };
+            })(),
           }),
           // Canvas weave texture
           React.createElement('div', {
