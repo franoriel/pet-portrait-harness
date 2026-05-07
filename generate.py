@@ -69,15 +69,19 @@ def _name_integration(
     style_id: str,
     pet_name: str,
     background_mode: Optional[str] = "auto",
+    style_vars: Optional[dict] = None,
 ) -> str:
     """Returns a prompt fragment instructing Gemini how to integrate the
     pet's name into the artwork in the style's native medium.
 
-    `background_mode` matters only for the three styles that expose a dark
-    inversion (minimal-line-art, watercolor, bold-graphic-poster). When dark
-    is picked for one of them, we swap the hardcoded dark name color for
-    a light ivory/cream — otherwise the name renders invisible on the
-    inverted background.
+    `background_mode` matters for the two styles that still expose a dark
+    inversion (minimal-line-art, watercolor) — when dark is picked we swap
+    the hardcoded dark name colour for a light ivory/cream so it stays
+    legible.
+    `style_vars` carries the palette id for bold-graphic-poster — its 2-tone
+    bg means the right name ink depends on which paired-tone palette the
+    customer picked (cream-on-saturated for most, deep aubergine for the
+    light/dark Rose pair, etc.).
     """
     if not pet_name or not pet_name.strip():
         return "- Do NOT include any text, words, or letters anywhere in the image."
@@ -192,12 +196,12 @@ def _name_integration(
     # Target sizes: 3-5% of image height for most styles. Bold styles go
     # slightly larger (5-6%) but never oversized.
 
-    # When the user picked Dark on one of the three supported styles, the
+    # When the user picked Dark on one of the two supported styles, the
     # background is inverted — so the name's hardcoded dark ink color would
     # disappear. Swap in an ivory/cream ink for legibility.
     _dark_inverted = (
         (background_mode or "auto").lower() == "dark"
-        and style_id in {"minimal-line-art", "watercolor", "bold-graphic-poster"}
+        and style_id in {"minimal-line-art", "watercolor"}
     )
 
     watercolor_ink = (
@@ -208,10 +212,17 @@ def _name_integration(
         "warm ivory #F3EFE4 (matching the inverted linework)" if _dark_inverted
         else "Solid black (#000000)"
     )
-    poster_ink = (
-        "warm ivory #F3EFE4 or a bright palette accent color" if _dark_inverted
-        else "jet black #000000 OR a palette accent color"
-    )
+    # Bold Graphic Poster ink follows the chosen palette — each POSTER_PALETTES
+    # entry hand-picks an ink colour that reads cleanly across BOTH halves of
+    # its vertical 2-tone bg split. Falls back to the 'teal' pair's cream ink
+    # if no palette has been selected yet.
+    if style_id == "bold-graphic-poster":
+        _palette_id = (style_vars or {}).get("poster_palette") or "teal"
+        if _palette_id not in POSTER_PALETTES:
+            _palette_id = "teal"
+        poster_ink = POSTER_PALETTES[_palette_id]["name_ink"]
+    else:
+        poster_ink = "jet black #000000"
 
     integrations = {
         "watercolor": (
@@ -642,6 +653,78 @@ MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
     "charcoal":   ("#2E2A26", "warm charcoal"),
 }
 
+# 8 paired-colour palettes offered to customers via the Bold Graphic Poster
+# style background picker. Each palette drives a vertical 2-tone background
+# split (left half / right half) AND seeds the saturated accent colours used
+# for the pet's cubist faceting. All values sit inside CMYK gamut so screen
+# preview matches the printed canvas.
+#
+# Schema for each palette:
+#   bg_left_hex / bg_right_hex  → exact hex codes for the left + right bg halves
+#   bg_left_name / bg_right_name → descriptive labels Gemini can latch onto
+#   accents              → human-readable list of accent colours for the pet
+#   name_ink             → ink colour for the composited pet name (chosen so
+#                          it reads cleanly against BOTH bg halves at once)
+POSTER_PALETTES: dict[str, dict[str, str]] = {
+    "teal": {
+        "label":         "Teal",
+        "bg_left_hex":   "#2DA39F", "bg_left_name":  "vivid teal",
+        "bg_right_hex":  "#1B6B6E", "bg_right_name": "deep teal",
+        "accents":       "warm orange (#F4A340), golden mustard (#F2CB52), warm ivory (#F4EFE7), and charcoal black (#1B1B1B)",
+        "name_ink":      "warm ivory #F4EFE7",
+    },
+    "cobalt": {
+        "label":         "Cobalt",
+        "bg_left_hex":   "#3D6FAA", "bg_left_name":  "bright cobalt blue",
+        "bg_right_hex":  "#1B2E58", "bg_right_name": "deep navy ink",
+        "accents":       "warm yellow (#F4D641), ivory (#F4EFE7), hot red (#E63946), and charcoal (#1B1B1B)",
+        "name_ink":      "warm ivory #F4EFE7",
+    },
+    "rose": {
+        "label":         "Rose",
+        "bg_left_hex":   "#F2BAC2", "bg_left_name":  "soft dusty pink",
+        "bg_right_hex":  "#9F4A6F", "bg_right_name": "deep magenta plum",
+        "accents":       "ivory (#F4EFE7), deep aubergine (#3B1F36), peachy blush (#F2C9A4), and dusty mauve (#C9A4A4)",
+        "name_ink":      "deep aubergine #3B1F36",
+    },
+    "citrus": {
+        "label":         "Citrus",
+        "bg_left_hex":   "#F2C14A", "bg_left_name":  "golden yellow",
+        "bg_right_hex":  "#C76A1F", "bg_right_name": "burnt orange",
+        "accents":       "deep teal (#234A4A), ivory (#F4EFE7), warm charcoal (#1B1B1B), and soft brick red (#A04030)",
+        "name_ink":      "deep teal #234A4A",
+    },
+    "forest": {
+        "label":         "Forest",
+        "bg_left_hex":   "#3F8559", "bg_left_name":  "vivid emerald green",
+        "bg_right_hex":  "#1F4A30", "bg_right_name": "deep forest green",
+        "accents":       "warm mustard (#C9A352), ivory (#F4EFE7), terracotta (#C77B58), and charcoal (#1B1B1B)",
+        "name_ink":      "warm ivory #F4EFE7",
+    },
+    "rust": {
+        "label":         "Rust",
+        "bg_left_hex":   "#C75D3F", "bg_left_name":  "warm rust orange",
+        "bg_right_hex":  "#7A2C1F", "bg_right_name": "deep maroon",
+        "accents":       "warm ochre (#E8C547), ivory (#F4EFE7), deep navy (#1B2E58), and charcoal (#1B1B1B)",
+        "name_ink":      "warm ivory #F4EFE7",
+    },
+    "violet": {
+        "label":         "Violet",
+        "bg_left_hex":   "#8C5FA8", "bg_left_name":  "vivid violet",
+        "bg_right_hex":  "#3F1F58", "bg_right_name": "deep aubergine purple",
+        "accents":       "warm yellow (#F2CB52), ivory (#F4EFE7), hot pink (#E68FB5), and charcoal (#1B1B1B)",
+        "name_ink":      "warm ivory #F4EFE7",
+    },
+    "ember": {
+        "label":         "Ember",
+        "bg_left_hex":   "#E63946", "bg_left_name":  "vivid coral red",
+        "bg_right_hex":  "#7A1F2A", "bg_right_name": "deep wine",
+        "accents":       "warm yellow (#F2CB52), deep teal (#234A4A), ivory (#F4EFE7), and charcoal (#1B1B1B)",
+        "name_ink":      "warm ivory #F4EFE7",
+    },
+}
+POSTER_PALETTE_IDS = tuple(POSTER_PALETTES.keys())
+
 def _modern_shape_art_prompt(style_vars: Optional[dict] = None) -> str:
     """Build the modern-shape-art prompt with the customer-chosen background
     colour interpolated into the COMPOSITION block. Falls back to clay if
@@ -657,227 +740,180 @@ def _modern_shape_art_prompt(style_vars: Optional[dict] = None) -> str:
     )
 
 _MODERN_SHAPE_ART_TEMPLATE = """\
-Transform this photo into a modern, clean, minimalist shape-art pet portrait.
+Transform this photo into a bold mid-century modern poster-style pet portrait \
+on a single solid background of {{MODERN_BG_NAME}} ({{MODERN_BG_HEX}}).
 
 COLOR ACCURACY — THIS IS CRITICAL:
-- Reinterpret the animal's fur/coat color as a TINY palette of FLAT shape \
-fills — exactly 2-3 colours TOTAL on the entire pet, not more. One \
-dominant coat tone fills almost the whole silhouette; one slightly \
-darker tone marks the snout / nose / a single shadow plane; optionally \
-one third tone marks a clearly-visible coat patch from the photo (a \
-white chest blaze, a tan saddle, a calico patch). That is the entire \
-coat palette — DO NOT subdivide the body into smaller and smaller \
-shadow planes the way a rendered illustration would. A black dog reads \
-as one deep charcoal silhouette with maybe a slightly darker snout and \
-a small chest patch — nothing else inside the body. A brown dog reads \
-as one warm caramel silhouette + snout + (optional) chest patch.
-- DO NOT HALLUCINATE MARKINGS — CRITICAL: the source photo is the \
-SINGLE SOURCE OF TRUTH for what's on the pet's coat. Before adding \
-ANY second tone or shape inside the silhouette, verify it corresponds \
-to a real, clearly-visible feature on the actual pet in the photo. \
-If the photo shows a solid-colour dog, the result is a SOLID-COLOUR \
-silhouette — one tone, full stop. Acceptable second-tone uses (only \
-if visible in the photo): a real white chest blaze, a real tan \
-saddle on a black-and-tan dog, a real visible calico patch, the \
-muzzle if it's noticeably darker than the body. Tabby / spotted / \
-patched coats keep ONLY the 1-2 most distinguishing real markings, \
-rendered as large simple shape blocks.
-- ABSOLUTELY FORBIDDEN — invented patterns the AI adds because "shape \
-art needs visual interest": tiger / zebra / brindle stripes that \
-aren't on the actual pet, decorative swirls, marble veins, brushy \
-texture suggesting fur direction, abstract colour-block panels, \
-geometric facets, and any other coat detail that does not appear in \
-the source photo. If you find yourself drawing a second tone purely \
-to "add interest," DELETE IT and leave the silhouette flat. Boring \
-flat silhouette > invented pattern. The recent failure mode is a \
-solid-coloured pet rendered with body-wide tiger striping — this \
-must NEVER happen.
-- COLOR HARMONY — CRITICAL: the pet's coat palette and the {{MODERN_BG_NAME}} \
-background must read as ONE intentional, harmonious palette — never as two \
-unrelated images stacked. Treat the whole composition like a curated \
-mood-board swatch:
-  · Match temperature: a WARM background (cream, clay, terracotta, mustard, \
-  warm charcoal) pairs with warm-leaning coat tones (caramel, sienna, warm \
-  espresso, ivory). A COOL background (sage, navy) pairs with cooler-leaning \
-  coat tones (taupe, ash brown, slate, soft greige). If the pet's true color \
-  is warm but the background is cool (or vice-versa), bridge them by gently \
-  shifting the coat shadows / mid-tones a half-step toward the background's \
-  temperature so the pet sits IN the scene, not pasted onto it.
-  · Echo the background: at least one secondary coat tone (a shadow plane, \
-  fur edge, or chest fluff) should subtly reference the background hue — a \
-  whisper of {{MODERN_BG_NAME}} desaturated and tucked into the coat — so \
-  the eye reads continuity across the image.
-  · Confident contrast, never muddy: the primary coat tones still read \
-  clearly against {{MODERN_BG_HEX}} (no disappearing pet, no value-clash \
-  vibration). Aim for a relaxed museum-poster feel — the kind of palette \
-  that would look intentional in a Charley Harper print or a curated \
-  Pinterest moodboard.
-  · NEVER drop saturated primaries (pure red, pure blue, pure green, hot \
-  pink) into the coat — those break the muted curated feel.
-- NO EYES — CRITICAL: Do NOT render eyes at all. The face is treated \
-as pure shape — coat planes, snout, muzzle, brow / eyebrow ridge, ear \
-shapes — without any eye marks. Where the eyes would sit, simply \
-continue the surrounding fur-tone shape unbroken. NO eye ovals, NO \
-dots, NO almonds, NO slits, NO closed-eye squint lines, NO iris, NO \
-pupil, NO white sclera, NO catchlight, NO eyelash, NO under-eye \
-shading, NO subtle eye suggestion of any kind. This is a 2D shape-art \
-treatment in the vein of Matisse cut-outs and Charley Harper's most \
-abstracted poster work — the pet's character comes from silhouette, \
-ear angle, snout, and coat planes, not from eyes. The face still \
-reads as the specific pet through its overall structure.
+- Use the animal's fur/coat pattern and markings as the structural guide. \
+Simplify into 4-6 flat color zones that respect the original coloring. A \
+black dog uses deep charcoal/black shapes. A brown dog uses warm earth \
+tones. A white cat uses cool ivory + pale grey shadow shapes. Preserve the \
+recognisable pattern of the specific animal — chest blaze, tan points, \
+calico patches, tabby markings — rendered as bold simple flat shapes, not \
+realistic detail.
+- Match the animal's actual eye shape and gaze from the photo. Eyes are \
+small flat shapes with crisp pupil + iris colour, no rendered glints.
+- COLOR HARMONY — CRITICAL: the pet's coat palette and the \
+{{MODERN_BG_NAME}} background must read as ONE intentional, harmonious \
+palette. Pick coat shades that contrast comfortably with \
+{{MODERN_BG_HEX}} (no disappearing pet, no value-clash vibration), and \
+let one secondary coat tone subtly echo the background hue so the eye \
+reads continuity across the image.
 
 STYLE:
-- Minimalist vector / cut-paper aesthetic — Matisse cut-outs meets \
-contemporary Bauhaus. Think pictogram-level simplification: if the \
-result wouldn't work as a 2-colour silkscreen logo, it's too detailed.
-- FLAT color fills only — no gradients, no painterly texture, no \
-airbrush, no photographic detail, no brush strokes, no soft edges.
-- Crisp clean edges between shapes. Soft organic curves where \
-appropriate (ear outline, cheek line, head silhouette), sharp \
-geometric edges where appropriate (collars, jaw line).
-- LOW-DIMENSION, FLAT FACE — CRITICAL: Inside the silhouette, the \
-face stays almost entirely flat. NO brow furrows, NO forehead \
-wrinkles, NO chin folds, NO multiple shadow planes carving up the \
-muzzle, NO highlight ridges along the nose bridge, NO fur striation, \
-NO whiskers, NO mouth crease lines, NO under-jaw shading. The snout / \
-nose is ONE darker shape; the rest of the face is one continuous coat \
-tone. A 3-year-old should be able to recognise the breed from the \
-silhouette alone — that's the depth target.
-- Restrained modern palette: the BACKGROUND is the customer's chosen \
-colour {{MODERN_BG_NAME}} ({{MODERN_BG_HEX}}). The pet's coat uses \
-exactly 2-3 flat tones (see COLOR ACCURACY). Pet tones must read \
-clearly against the {{MODERN_BG_NAME}} background — pick coat shades \
-that contrast comfortably with {{MODERN_BG_HEX}}. Quietly confident, \
-never garish.
-- Generous NEGATIVE SPACE — at least 35% of the canvas is calm, unbroken \
-background so the pet shapes have room to breathe.
+- Flat vector illustration — clean geometric shapes with hard edges
+- Strong color blocking with 4-6 bold flat colors, no gradients
+- Thick confident outlines (2-3px feel) where colour zones meet, in \
+charcoal or deep neutral
+- Mid-century modern poster / screen-print aesthetic — Shepard Fairey \
+"Obey" / Aaron Draplin / Charley Harper graphic boldness
 - THE PET IS THE ONLY SUBJECT. Do NOT add decorative elements, abstract \
-shapes, accents, arcs, circles, dots, lines, foliage, geometric ornaments, \
-patterns, halos, frames, or any other graphic elements around the pet. The \
-composition is just the pet on a single solid background — nothing else.
+shapes, arcs, circles, dots, foliage, halos, frames, or any other graphic \
+ornaments around the pet. The composition is just the pet on a single \
+solid background — nothing else.
 - Fine art illustration style, high resolution 300dpi, print-ready.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - FRONT-FACING / FACE-FORWARD POSE — CRITICAL: the pet faces directly \
-toward the viewer (camera-on, head straight). Both ears equally \
-visible, both sides of the head and body equally visible, both \
-shoulders showing in mirror-image symmetry across the vertical \
-centre line. NEVER render a profile / side-view / 3⁄4 view / head-tilt \
-/ over-the-shoulder pose — those produce asymmetric silhouettes that \
-look truncated when the canvas crops to a square (12×12 / 16×16). The \
-pet must read as bilaterally symmetric so it survives a square crop \
-intact: imagine folding the canvas down the vertical centre line — \
-the left half should mirror the right half (allowing for natural coat \
-markings that may differ side-to-side, but the underlying anatomy \
-mirrors).
-- ANATOMICALLY CORRECT TORSO — CRITICAL: the chest, shoulders, and \
-upper body must be ANATOMICALLY PLAUSIBLE for the breed. Both \
-shoulders visible at the same vertical level, chest centred under \
-the head, body widening naturally from the neck down. Do NOT crop \
-asymmetrically (one shoulder visible and the other cut off); do NOT \
-render only one side of the body; do NOT cut the body off mid-shape \
-on one side while extending it on the other. The body silhouette is \
-mirror-symmetric across the vertical centre line.
-- Head and chest, calm symmetrical pose. The face has NO eyes (per the \
-NO EYES rule above) — character comes from silhouette, ear angle, \
-snout, and coat planes. Reads as confident 2D shape art, not a \
-photograph and not a stylised cartoon with eyes.
+toward the viewer (camera-on, head straight). Both ears equally visible, \
+both shoulders showing in mirror-image symmetry across the vertical \
+centre line. NEVER render a profile / side-view / 3⁄4 view / head-tilt — \
+those produce asymmetric silhouettes that look truncated when the canvas \
+crops to a square (12×12 / 16×16).
+- ANATOMICALLY CORRECT TORSO — both shoulders visible at the same \
+vertical level, chest centred under the head, body widening naturally \
+from the neck down. The body silhouette is mirror-symmetric across the \
+vertical centre line — never one shoulder cut off while the other \
+extends to the edge.
+- Head and chest, strong forward-facing pose, graphic impact.
 - The PET itself occupies 78-83% of image height — top of ears at \
-~15-18% from top, centered horizontally. Ensure the pet is the dominant \
-subject filling the canvas confidently, with clean breathing room \
-(~15-18% top padding, ~6-8% side padding) at the top and sides — no edge bleed on those three sides.
-- BOTTOM SILHOUETTE — CRITICAL: the chest/body must terminate in ONE of \
-two ways and never anything in between:
-  (a) Taper organically into a soft, curved natural body silhouette \
-  that finishes around 88-93% from top, with breathing room below it. \
-  The taper is symmetric — both sides curve inward equally toward the \
-  centre.
-  (b) Run as a clean horizontal cut that extends ALL THE WAY to the \
-  bottom edge of the canvas — the cut IS the bottom edge, no background \
-  band visible underneath. The cut is HORIZONTAL and SYMMETRIC across \
-  the vertical centre line — the left and right edges of the cut sit at \
-  the same y-coordinate.
-  NEVER render a flat horizontal chest cut that floats above the bottom \
-  edge with background colour visible beneath it — that reads as a \
-  truncated, unfinished portrait. If you choose option (b), the dog's \
-  body fills the lower portion of the frame edge-to-edge. NEVER cut \
-  one side of the body off while the other side extends to the canvas \
-  edge — the silhouette is mirror-symmetric.
+~15-18% from top, chest at ~96-99% from top, centred horizontally. The \
+pet is grounded at the bottom edge so a square (1:1) centre-crop still \
+ships the chest intact.
 - The BACKGROUND is ONE single solid colour {{MODERN_BG_NAME}} \
 ({{MODERN_BG_HEX}}) ONLY, extending edge-to-edge on all four sides. \
-Completely uniform — no decoration, no shapes, no lines, no gradients, \
-no panels, no bars, no colour blocks, no empty bands. Just one flat \
-field of {{MODERN_BG_HEX}} behind the pet.
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere.
+Completely uniform — no decoration, no shapes, no gradients, no panels, \
+no bars, no colour blocks, no empty bands. Just one flat field of \
+{{MODERN_BG_HEX}} behind the pet.
 
-Avoid: photography, photorealism, painterly brush strokes, oil paint, \
-watercolor bleed, film grain, sepia, gradients, drop shadows, 3D \
-render, cartoon, anime, neon, busy patterns, ornate details, ANY \
-rendered eyes (realistic, stylised, almond, oval, dot, slit, \
-closed-line, glowing, or any eye mark whatsoever), iris, pupil, \
-sclera, catchlight, eyelash, under-eye shading, whiskers, individual \
-fur strands, hatching, brow furrows, forehead wrinkles, chin folds, \
-multiple shadow planes inside the silhouette, nose-bridge highlights, \
-fur striations, mouth crease lines, made-up tiger / zebra / marble \
-stripe patterns that aren't on the actual pet, more than 3 coat \
-tones, text, watermark, border, solid color bars or panels at image \
-edges, decorative shapes, abstract accents, arcs, circles, dots, \
-lines, foliage, halos, frames, patterns, geometric ornaments, \
-profile / side-view / 3⁄4 view poses, head tilts, over-the-shoulder \
-glances, asymmetric body silhouettes, one shoulder shown without the \
-other, body cut off on one side but not the other, off-centre or \
-tilted-axis compositions, anything other than the pet on a solid \
-background.\
+Avoid: photography, photorealism, soft edges, gradients, watercolor, \
+painterly strokes, 3D render, blurry, detailed fur texture, multiple \
+background colours, vertical or horizontal background splits, decorative \
+shapes, foliage, halos, frames, patterns, geometric ornaments, \
+profile / side-view / 3⁄4 view poses, head tilts, asymmetric body \
+silhouettes, off-centre or tilted-axis compositions, text, watermark, \
+border, solid color bars or panels at image edges.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
-Transform this photo into a bold graphic poster-style pet portrait.
+Transform this photo into a CUBIST WPAP-style flat-graphic pet portrait — \
+the pet rendered as a mosaic of bold angular polygonal colour blocks meeting \
+at sharp clean edges, set against a vertical TWO-TONE BACKGROUND SPLIT.
 
 COLOR ACCURACY — THIS IS CRITICAL:
-- Use the animal's fur/coat pattern and markings as the structural guide. \
-Simplify into 4-6 flat color zones that respect the original coloring. \
-A black dog uses deep charcoal/black shapes. A brown dog uses warm earth tones. \
-Preserve the recognizable pattern of the specific animal.
-- Match the animal's actual eye shape from the photo.
+- Use the animal's actual fur/coat pattern from the photo as the \
+structural guide for which colour block goes where. A golden dog reads \
+through warm orange + cream + deep-shadow blocks. A grey cat reads \
+through soft pinks + ivory + lavender blocks. A black dog reads through \
+deep navy/teal + ivory highlight + charcoal blocks. Preserve the \
+recognisable identity of the specific pet — the breed shape, the head \
+angle, any major chest blaze or markings.
+- Eye placement and head angle stay TRUE to the source photo, but the \
+eyes themselves are stylised as flat angular slit shapes (see STYLE).
 
-STYLE:
-- Flat vector illustration — clean geometric shapes with hard edges
-- Strong color blocking with 4-6 bold flat colors, no gradients
-- Thick confident outlines where color zones meet
-- Mid-century modern poster / screen print aesthetic
-- Clean solid background — single bold contrasting color
-- Shepard Fairey / Aaron Draplin inspired graphic boldness
-- Fine art illustration style, high resolution 300dpi, print-ready
+STYLE — CUBIST FLAT GRAPHIC:
+- The pet's face and chest are reinterpreted as a CUBIST FACETED MOSAIC: \
+12-20 bold polygonal flat colour blocks arranged like cut paper or \
+stained glass.
+- Each block is a flat, sharp-edged polygon (triangle, parallelogram, \
+irregular quadrilateral, kite). Edges WITHIN the pet are STRAIGHT and \
+GEOMETRIC, not curved. The OUTER silhouette of the pet (top of head, \
+ear tips, jawline, chest line) may follow the natural curve of the \
+breed; everything internal is faceted.
+- NO outlines or strokes around the colour blocks — the colour change \
+at each edge IS the edge. Blocks meet at razor-clean precise lines.
+- 4-6 saturated flat colours total used across the pet's faceting, \
+drawn from this palette only: {{POSTER_ACCENTS}}. Repeat colours \
+across multiple blocks to create rhythm.
+- NO gradients, NO airbrush, NO soft shading, NO photographic detail, \
+NO drawn fur strands. Each block is uniformly flat colour.
+- Eyes are stylised as a single dark angular SLIT or NARROW WEDGE — a \
+closed-eye / half-closed expression. NO whites, NO iris detail, NO \
+catchlight, NO pupil dot. Where the pet was looking forward in the \
+photo, render two small angular dark slits where the eyes sit; the \
+faceted blocks of the face flow around them.
+- The nose is a single dark angular polygonal block. The muzzle / mouth \
+line is implied by the meeting edge of two adjacent colour blocks, not \
+drawn as a stroke.
+- Fur direction along the chest and edges of the silhouette is implied \
+by ZIG-ZAG triangular block patterns (alternating light/dark wedges \
+running along the contour) — never by drawn fur strands.
+- Mid-century WPAP / Tsevis / Fairey "Obey" graphic energy: high \
+contrast, bold saturated colour, posterised, screen-print feel.
+- Fine art illustration style, high resolution 300dpi, print-ready.
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
-of the finished image. Reserve the upper ~22% of the canvas as a CALM \
-area for the type:
-- The pet's head, ears, fur fly-aways, and ANY graphic accents MUST \
-stay BELOW y=22% of the canvas. Top of the tallest ear sits at y≈25-28% \
-— never closer to the canvas top.
-- Within the top ~22%, the solid background continues uniformly \
-edge-to-edge — no halftone, accents, or extra graphic elements inside \
-this band.
-- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
+BACKGROUND — VERTICAL TWO-TONE SPLIT (CRITICAL):
+- The background is divided VERTICALLY into TWO equal halves with a \
+RAZOR-SHARP straight seam at exactly 50% of the canvas width. The seam \
+runs from the very top of the canvas to the very bottom in one \
+unbroken vertical line.
+- LEFT half (0-50% width) = solid flat {{POSTER_BG_LEFT_NAME}} \
+({{POSTER_BG_LEFT_HEX}}) edge-to-edge.
+- RIGHT half (50-100% width) = solid flat {{POSTER_BG_RIGHT_NAME}} \
+({{POSTER_BG_RIGHT_HEX}}) edge-to-edge.
+- Both halves are perfectly flat solid colour — no gradient, no \
+texture, no shading, no shadows, no decorative noise.
+- The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
+curved, never offset. It runs floor-to-ceiling exactly down the centre.
+- The pet sits IN FRONT OF the seam: the pet's body crosses the seam \
+without altering its faceted block colours (the pet's blocks stay the \
+SAME colour whether they're over the left or right bg half — the seam \
+is pure background, behind the pet).
+- NO other background detail anywhere: no foliage, no props, no \
+shadows, no reflections, no decorative shapes, no halos, no gradients, \
+no extra colour blocks. Just the two flat halves.
 
 COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, strong forward-facing pose, graphic impact
-- The PET itself occupies 70-75% of image height — top of ears at \
-~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing \
-room above the ears.
-- The BACKGROUND (single solid flat color) extends edge-to-edge behind the \
-pet — one continuous color, NOT split into panels or bands. No reserved \
-color blocks, bars, or rectangles anywhere
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+- Centered portrait, 4:5 aspect ratio (portrait orientation).
+- FRONT-FACING / FACE-FORWARD POSE — CRITICAL: the pet faces directly \
+toward the viewer (camera-on, head straight). Both ears equally \
+visible, both shoulders showing in mirror-image symmetry across the \
+vertical centre line. The pet's vertical axis of symmetry sits exactly \
+on the bg seam. NEVER profile / 3⁄4 / head-tilt poses.
+- Head and chest, strong forward-facing pose, graphic impact.
+- The PET itself occupies 78-83% of image height — top of ears at \
+~15-18% from top, chest at ~96-99% from top, centred horizontally. \
+The pet is grounded at the bottom edge so a square (1:1) centre-crop \
+still ships the chest intact.
 
-Avoid: photography, photorealism, soft edges, gradients, watercolor, painterly strokes, \
-3D render, blurry, detailed fur texture, text, watermark, border, \
-solid color bars or panels at image edges, horizontal color-band splits, \
-pet pushed to canvas edges.\
+Avoid: photography, photorealism, soft or curved edges WITHIN the pet, \
+gradients, watercolor, painterly strokes, 3D render, blurry, detailed \
+fur texture, drawn fur strands, hatching, eye whites, irises, pupils, \
+catchlights, eyelashes, decorative shapes, foliage, props, halos, \
+frames, more than two background colours, horizontal background \
+splits, diagonal background splits, curved background seams, gradient \
+backgrounds, off-centre seam, background patterns, drop shadows, text, \
+watermark, border, solid color bars or panels at image edges.\
 """
+
+def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
+    """Build the bold-graphic-poster prompt with the customer-chosen palette
+    interpolated: vertical 2-tone bg split colours + saturated accent palette
+    for the pet's cubist faceting. Falls back to 'teal' if nothing is supplied
+    or the id is unknown."""
+    palette_id = (style_vars or {}).get("poster_palette") or "teal"
+    if palette_id not in POSTER_PALETTES:
+        palette_id = "teal"
+    p = POSTER_PALETTES[palette_id]
+    return (
+        _BOLD_GRAPHIC_POSTER_TEMPLATE
+        .replace("{{POSTER_BG_LEFT_HEX}}",   p["bg_left_hex"])
+        .replace("{{POSTER_BG_LEFT_NAME}}",  p["bg_left_name"])
+        .replace("{{POSTER_BG_RIGHT_HEX}}",  p["bg_right_hex"])
+        .replace("{{POSTER_BG_RIGHT_NAME}}", p["bg_right_name"])
+        .replace("{{POSTER_ACCENTS}}",       p["accents"])
+    )
 
 _CHARCOAL_TEMPLATE = """\
 Transform this photo into a hand-drawn fine-art charcoal pet portrait on warm cream paper.
@@ -1212,78 +1248,15 @@ photography, photorealism, harsh shadows, pixelation, blurry, low resolution, \
 cartoon, anime, 3D render, clipping, text, watermark, border.\
 """
 
-_BOLD_GRAPHIC_POSTER_DARK_TEMPLATE = """\
-Transform this photo into a bold graphic poster pet portrait on a pure \
-black-or-dark-gray background — a high-contrast screen print where the pet \
-pops off the black field in crisp white and one or two bold accent colors. \
-Think Saul Bass after-dark title card, Shepard Fairey "Obey" on black, or a \
-mid-century night-poster screen print.
-
-BACKGROUND — THIS IS CRITICAL:
-- The BACKGROUND is a single flat NEUTRAL dark — pick ONE and hold it across \
-the whole canvas: pure black (#0A0A0A), charcoal (#151515), or dark graphite \
-gray (#202020).
-- It must read as black or near-black — NEVER navy, crimson, forest, \
-aubergine, or any chromatic dark. No color cast. No gradient. No split panels.
-
-PET COLOR TREATMENT — THIS IS CRITICAL:
-- The pet is rendered primarily in CRISP WHITE / IVORY (#F5F2EB) as the \
-dominant value, so it reads instantly against the black field.
-- Add 1-2 BOLD accent colors (hot red #E63946, electric yellow #FFD60A, \
-bright cyan #1BA5D4, neon orange #FF6B1A, or electric pink #FF3E8F) as \
-punchy spot highlights — muzzle, tongue, collar zone, a single eye \
-highlight, a stripe of fur. Accents are sparing, not dominant.
-- Use the pet's fur pattern and markings as a guide for WHERE shapes go, \
-but reinterpret into 3-5 flat zones of white + accent + deep shadow. \
-Shadows can read as pure black (merging into the background) for a classic \
-screen-print silhouette effect.
-- Do NOT try to match the pet's realistic fur colors — this is a stylized \
-poster, not a portrait transcription.
-
-STYLE:
-- Flat vector illustration — clean geometric shapes with hard edges
-- Strong color blocking, no gradients, no soft shading
-- Thick confident black outlines where white zones meet accent colors
-- Mid-century modern poster / screen print aesthetic
-- Shepard Fairey / Aaron Draplin inspired graphic boldness
-- Fine art illustration style, high resolution 300dpi, print-ready
-
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
-of the finished image. Reserve the upper ~22% of the canvas as a CALM \
-area for the type:
-- The pet's head, ears, fur fly-aways, and ANY accent colors MUST stay \
-BELOW y=22% of the canvas. Top of the tallest ear sits at y≈25-28% — \
-never closer to the canvas top.
-- Within the top ~22%, the solid dark field continues uniformly \
-edge-to-edge — no halftone, accents, or extra graphic elements inside \
-this band.
-- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
-
-COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation)
-- Head and chest, strong forward-facing pose, graphic impact
-- The PET itself occupies 70-75% of image height — top of ears at \
-~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing room \
-above the ears.
-- The BACKGROUND (single flat black/dark-gray) extends edge-to-edge behind \
-the pet — NOT split into panels or bands. No reserved color blocks, bars, \
-or rectangles anywhere
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
-
-Avoid: colored dark backgrounds (navy, burgundy, forest, aubergine), light \
-or pastel backgrounds, realistic fur coloring, photography, photorealism, \
-soft edges, gradients, watercolor, painterly strokes, 3D render, blurry, \
-detailed fur texture, text, watermark, border, solid color bars or panels \
-at image edges, horizontal color-band splits.\
-"""
-
 # (style_id, mode) → dedicated template. Missing keys fall back to the base
 # PROMPTS template plus the generic _BACKGROUND_MODE_RULES override.
+# Bold Graphic Poster used to expose a 'dark' inversion template; the cubist
+# WPAP rewrite drops that path entirely — bg colours are now driven by the
+# customer's poster_palette pick (see POSTER_PALETTES), so a separate dark
+# alt would conflict with the palette-injected bg split.
 _ALT_PROMPTS: dict[tuple[str, str], str] = {
     ("minimal-line-art", "dark"):    _MINIMAL_LINE_ART_DARK_TEMPLATE,
     ("watercolor", "dark"):          _WATERCOLOR_DARK_TEMPLATE,
-    ("bold-graphic-poster", "dark"): _BOLD_GRAPHIC_POSTER_DARK_TEMPLATE,
 }
 
 
@@ -1532,10 +1505,14 @@ _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     # baked-in look. Matches portrait-flow.js STYLES[].backgrounds.
     "watercolor":          {"auto", "light", "dark"},
     "minimal-line-art":    {"auto", "light", "dark"},
-    "modern-shape-art":    {"auto"},
+    # Modern + Bold Graphic Poster expose dedicated colour palettes instead
+    # of auto/light/dark — Modern uses MODERN_BG_COLORS (8 single-tone
+    # print-safe options), Bold Graphic Poster uses POSTER_PALETTES (8
+    # paired-tone vertical-split options).
+    "modern-shape-art":    set(MODERN_BG_COLORS.keys()),
     "neon-pop-art":        {"auto"},
     "renaissance-royalty": {"auto"},
-    "bold-graphic-poster": {"auto", "light", "dark"},
+    "bold-graphic-poster": set(POSTER_PALETTE_IDS),
     "aura-gradient":       {"auto"},
     "charcoal":            {"auto", "light"},
 }
@@ -1599,7 +1576,7 @@ def build_prompt_with_name(
     into the artwork as a native design element."""
     base = _resolve_prompt_body(style_id, style_vars, background_mode)
     base = _strip_no_text_rules(base)
-    name_block = _name_integration(style_id, pet_name, background_mode)
+    name_block = _name_integration(style_id, pet_name, background_mode, style_vars)
     return (
         base.rstrip()
         + _composition_rule(has_name=True)
@@ -1619,7 +1596,7 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
     "modern-shape-art":   _modern_shape_art_prompt,
     "neon-pop-art":       _static(_NEON_POP_ART_TEMPLATE),
     "renaissance-royalty": _static(_RENAISSANCE_ROYALTY_TEMPLATE),
-    "bold-graphic-poster": _static(_BOLD_GRAPHIC_POSTER_TEMPLATE),
+    "bold-graphic-poster": _bold_graphic_poster_prompt,
     "aura-gradient":      _static(_AURA_GRADIENT_TEMPLATE),
     "charcoal":           _static(_CHARCOAL_TEMPLATE),
 }
@@ -2310,7 +2287,11 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
         # sampled bg colour (edge replication can streak imperfect AI
         # edges into a visible band); organic-bg styles edge-replicate
         # so wash / halo / paper texture continues smoothly outward.
-        solid_bg = style_id in {"neon-pop-art", "bold-graphic-poster"}
+        # neon-pop-art is the only single-flat-bg style still using the
+        # corner-sampled solid fill — bold-graphic-poster's 2-tone vertical
+        # split is preserved correctly by edge replication (each side pads
+        # with that side's bg colour).
+        solid_bg = style_id == "neon-pop-art"
         return _pad_sides_to_aspect(img, target_aspect, solid_bg=solid_bg)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
@@ -3268,6 +3249,7 @@ def add_name_to_image(
     pet_name: str,
     max_retries: int = 2,
     background_mode: Optional[str] = "auto",
+    style_vars: Optional[dict] = None,
 ) -> bytes:
     """Take an already-generated portrait and ask Gemini to add the pet's name
     into the existing artwork — preserving every detail of the original image.
@@ -3276,7 +3258,7 @@ def add_name_to_image(
     artworks when we want "same image with/without name".
     """
     client = _get_client()
-    name_block = _name_integration(style, pet_name, background_mode)
+    name_block = _name_integration(style, pet_name, background_mode, style_vars)
     prompt = (
         "Take this existing artwork and add the pet's name integrated into it. "
         "KEEP THE ORIGINAL ARTWORK EXACTLY AS IT IS — do NOT redraw, reimagine, "
@@ -3384,9 +3366,14 @@ def call_gemini(
                 p.text for c in response.candidates
                 for p in c.content.parts if hasattr(p, "text") and p.text
             ]
-            raise RuntimeError(
-                f"Gemini returned no image. Model response: {' | '.join(text_parts) or 'no details'}"
+            # Keep the model text in server logs only — never include it in the
+            # exception message, which gets serialized to the customer-facing
+            # job.error field. A raw model dump is a horrible customer experience.
+            log.error(
+                "Gemini returned no image. Model response: %s",
+                " | ".join(text_parts) or "no details",
             )
+            raise RuntimeError("Gemini returned no image")
 
         except Exception as exc:
             last_exc = exc
@@ -3463,6 +3450,12 @@ def _generate_inner(
     if style == "modern-shape-art" and background_mode in MODERN_BG_COLORS:
         style_vars = {**(style_vars or {}), "modern_bg_color": background_mode}
         background_mode = "auto"
+    # Bold Graphic Poster does the same with paired-tone palettes — lift the
+    # chosen palette id into style_vars["poster_palette"] so the prompt
+    # builder injects the bg + accent colours, and reset background_mode.
+    if style == "bold-graphic-poster" and background_mode in POSTER_PALETTES:
+        style_vars = {**(style_vars or {}), "poster_palette": background_mode}
+        background_mode = "auto"
 
     log.info("[generate] %s  '%s'  ←  %s", style, pet_name, photo.name)
 
@@ -3483,17 +3476,14 @@ def _generate_inner(
             # target margins (10% top, 8% sides, 0% bottom if flat cut).
             # This handles both edge-to-edge and over-padded AI outputs.
             padded = _modern_shape_art_reframe(ai_image_no_name)
-        elif style in ("neon-pop-art", "bold-graphic-poster"):
-            # Solid-bg styles: the prompt asks for a single saturated
-            # colour edge-to-edge. Edge replication produces streaks when
-            # the pet touches an edge (especially the bottom, which the
-            # composition rule explicitly allows). Sample the bg colour
+        elif style == "neon-pop-art":
+            # Single-saturated-bg style: edge replication produces streaks
+            # when the pet touches an edge (especially the bottom, which
+            # the composition rule explicitly allows). Sample the bg colour
             # from the top corners — pet never reaches there — and fill
             # the padding ring with that solid colour.
             #
-            # pad_bottom_ratio=0 enforces the universal flush-bottom rule:
-            # the pet's body bottom sits at the canvas bottom edge — no
-            # band of bg colour below the pet.
+            # pad_bottom_ratio=0 enforces the universal flush-bottom rule.
             sw, sh = ai_image_no_name.size
             cs = max(8, min(sw, sh) // 50)
             corners = (
@@ -3510,6 +3500,19 @@ def _generate_inner(
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.12, solid_bg_color=bg,
                 pad_bottom_ratio=0,
+            )
+        elif style == "bold-graphic-poster":
+            # Cubist 2-tone vertical-split bg: corner-sampling would average
+            # the left + right halves into a meaningless mid-tone (and a
+            # solid fill would smother the seam). Edge replication is the
+            # right call here — the pet keeps ~8-12% clean bg on each side
+            # per the composition rule, so the left + right edges are pure
+            # bg. Replication preserves left-half colour on the left pad,
+            # right-half colour on the right pad, and (since the top-edge
+            # 1px strip carries the seam at 50%) the seam itself extends
+            # vertically into the top pad.
+            padded = add_background_padding(
+                ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
             )
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
