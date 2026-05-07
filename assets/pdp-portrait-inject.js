@@ -326,7 +326,7 @@
   // covers it edge to edge. That way any style's own background is
   // what sells the canvas face — never a flat white rectangle that the
   // portrait sits on top of.
-  function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1) {
+  function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1, styleId) {
     // Outer container: square 1:1 slide. Linen backdrop matches the
     // pre-photographed Printful product mockup used for tall variants
     // so the square mockups read as the same product family. The
@@ -453,32 +453,51 @@
     //     full source width keeps any natural margin symmetric inside
     //     the canvas face — closer to what the printed product looks like.
     var isSquare = (widthIn === heightIn);
+    var isModernFlush = (styleId === 'modern-shape-art') && !srcIs1x1 && !isSquare;
     // When the source is the 1:1 derivative (already composed for a
     // square face — pet, chest cut, and name band all in their final
     // positions) no cropping is needed. Otherwise the source is the
     // 4:5 master and we trim the small bg padding ring.
+    //
+    // Modern (tall variant): pet flush at source bottom (no bottom pad
+    // server-side). The source must render top-to-bottom inside the
+    // canvas face with NO vertical cropping so the chest cut lands on
+    // the canvas-face bottom edge — pre-scale the image element so its
+    // aspect equals the source aspect (4:5), with horizontal overflow
+    // clipped by the cropWindow. Universal rule: the pet's bottom
+    // aligns with the canvas bottom for every style.
     var cropTopFrac, cropBotFrac, cropSideFrac;
-    if (srcIs1x1) {
-      cropTopFrac = 0;
-      cropBotFrac = 0;
-      cropSideFrac = 0;
-    } else if (isSquare) {
-      cropTopFrac = 0;
-      cropBotFrac = 0;
-      cropSideFrac = 0.05;
-    } else {
-      cropTopFrac = 0.05;
-      cropBotFrac = 0.10;
-      cropSideFrac = 0;
-    }
-    // Always top-anchor so the name (composited at source y≈11%) lands inside
-    // the visible region on every face aspect, rather than being centre-cropped
-    // out the top by object-fit:cover.
     var coverPosition = 'center top';
-    var hScale = 100 / (1 - 2 * cropSideFrac);                     // e.g. 125
-    var vScale = 100 / (1 - cropTopFrac - cropBotFrac);             // e.g. 161.3 (named) or 122 (no-name)
-    var leftPct = -cropSideFrac * hScale;                          // e.g. -12.5
-    var topPct = -cropTopFrac * vScale;                            // e.g. -48.4 (named) or -12.2 (no-name)
+    var hScale, vScale, leftPct, topPct;
+    if (isModernFlush) {
+      var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
+      var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
+      hScale = 100 * (srcAspect / faceAspect);          // image_w as % of face_w
+      vScale = 100;                                     // image_h fills face_h
+      leftPct = (100 - hScale) / 2;                     // centred horizontally
+      topPct = 0;
+    } else {
+      if (srcIs1x1) {
+        cropTopFrac = 0;
+        cropBotFrac = 0;
+        cropSideFrac = 0;
+      } else if (isSquare) {
+        cropTopFrac = 0;
+        cropBotFrac = 0;
+        cropSideFrac = 0.05;
+      } else {
+        cropTopFrac = 0.05;
+        cropBotFrac = 0.10;
+        cropSideFrac = 0;
+      }
+      // Always top-anchor so the name (composited at source y≈11%) lands inside
+      // the visible region on every face aspect, rather than being centre-cropped
+      // out the top by object-fit:cover.
+      hScale = 100 / (1 - 2 * cropSideFrac);
+      vScale = 100 / (1 - cropTopFrac - cropBotFrac);
+      leftPct = -cropSideFrac * hScale;
+      topPct = -cropTopFrac * vScale;
+    }
 
     var cropWindow = document.createElement('div');
     cropWindow.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
@@ -641,7 +660,7 @@
         mockupSlide.appendChild(mockupImg);
       } else {
         var srcForVariant = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
-        var clientMockup = createClientMockup(srcForVariant, dim.w, dim.h, sizeKey, useSquareSrc);
+        var clientMockup = createClientMockup(srcForVariant, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
         mockupSlide.appendChild(clientMockup);
       }
 
@@ -1018,7 +1037,7 @@
         var isClientMockup = !!slide.querySelector('[style*="aspect-ratio"]');
         if (isClientMockup && dim) {
           slide.innerHTML = '';
-          var rebuilt = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc);
+          var rebuilt = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
           slide.appendChild(rebuilt);
         } else {
           var slideImg = slide.querySelector('img');
