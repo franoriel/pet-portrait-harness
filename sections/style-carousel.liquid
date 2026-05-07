@@ -70,10 +70,11 @@
 
 {% style %}
   .style-marquee {
-    /* warm cream that matches the bg baked into the hero image so the image
-       blends seamlessly into the section. Sits as a "warmth band" against the
-       lighter --color-bg used by adjacent sections. */
-    background: #f3e7d4;
+    /* Tuned to the hero image's actual edge tone (Gemini drew a soft vignette
+       bg, not a flat hex), so the image blends seamlessly into the section
+       background. Sits as a "warmth band" against the lighter --color-bg used
+       by adjacent sections. */
+    background: #ede0cc;
     padding: 48px 0 56px;
     overflow: hidden;
   }
@@ -87,14 +88,19 @@
   .style-marquee__hero {
     position: relative;
     z-index: 1;
-    width: 62%;
+    width: 50%;
   }
   .style-marquee__hero img {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 680px;
+    max-height: 544px;
     object-fit: contain;
+    /* Soft fade on the left and right bg-only edges so the hero's vignette
+       dissolves into the section bg, killing any subtle seam. The pets and
+       posters live in the inner ~85%, so the fade only touches empty cream. */
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
   }
   .style-marquee__track-wrap {
     position: absolute;
@@ -170,15 +176,14 @@
     .style-marquee__track { animation: none; }
   }
 
-  /* narrower desktops: shift marquee further right so it never crashes
-     into the cuddle pile */
+  /* narrower desktops: keep marquee well clear of the cuddle pile */
   @media (max-width: 1280px) {
-    .style-marquee__hero { width: 56%; }
-    .style-marquee__track-wrap { left: 54%; }
+    .style-marquee__hero { width: 45%; }
+    .style-marquee__track-wrap { left: 48%; }
   }
   @media (max-width: 1080px) {
-    .style-marquee__hero { width: 52%; }
-    .style-marquee__track-wrap { left: 56%; }
+    .style-marquee__hero { width: 42%; }
+    .style-marquee__track-wrap { left: 50%; }
   }
 
   /* mobile: stack hero above marquee */
@@ -186,7 +191,11 @@
     .style-marquee { padding: 24px 0 32px; }
     .style-marquee__inner { padding: 0 16px; }
     .style-marquee__hero { width: 100%; }
-    .style-marquee__hero img { max-height: 360px; }
+    .style-marquee__hero img {
+      max-height: 320px;
+      -webkit-mask-image: none;
+              mask-image: none;
+    }
     .style-marquee__track-wrap {
       position: static;
       transform: none;
