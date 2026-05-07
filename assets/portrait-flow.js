@@ -2898,22 +2898,19 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
           style: {
-            // Zoom in vertically (130%) and horizontally (110%) to crop
-            // the AI's reserved top name-safe zone + the server's ~10%
-            // background-padding ring. Without this the pet floats with
-            // a wide empty bg block above it (especially on Bold
-            // Graphic Poster, where the name-safe zone is large).
-            // Top offset is biased so the cut comes off the top, where
-            // the name-safe zone sits. max-width override beats the
-            // global `img, video { max-width:100% }` rule in base.css,
-            // which otherwise clamps the 110% width down to 100% and
-            // leaves a white edge strip in the container.
+            // Zoom in by ~20% to crop the server's ~10% background-
+            // padding ring without slicing into the pet (an earlier
+            // 130% / -22% crop was clipping ear tips on tall styles).
+            // max-width override beats the global
+            // `img, video { max-width:100% }` rule in base.css, which
+            // would otherwise clamp the 120% width back to 100% and
+            // leave a white edge strip in the container.
             position: 'absolute',
-            top: '-22%', left: '-5%',
-            width: '110%', height: '130%',
+            top: '-10%', left: '-10%',
+            width: '120%', height: '120%',
             maxWidth: 'none', maxHeight: 'none',
             objectFit: 'cover',
-            objectPosition: 'center top',
+            objectPosition: 'center center',
             display: 'block',
           },
         }),
