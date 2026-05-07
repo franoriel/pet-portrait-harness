@@ -497,31 +497,25 @@
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
     canvasFace.appendChild(weave);
 
-    // Brand watermark — only when fed the 1:1 derivative, which is
-    // un-watermarked server-side. The 4:5 master already carries a
-    // baked-in Pet Printables watermark, so we skip the overlay there
-    // to avoid stacking two watermarks. The mask-image fades the
-    // watermark to transparent near the top and bottom edges so the
-    // tile pattern never reads as "chopped" against the canvas/wood
-    // frame seam.
-    if (srcIs1x1) {
-      var watermark = document.createElement('div');
-      var fadeMask = 'linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)';
-      watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
-        + 'opacity:0.14;mix-blend-mode:multiply;'
-        + "background-image:url(\"data:image/svg+xml;utf8,"
-        +   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E"
-        +     "%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' "
-        +       "font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3E"
-        +       "Pet Printables"
-        +     "%3C/text%3E"
-        +   "%3C/svg%3E"
-        + "\");"
-        + 'background-repeat:repeat;background-size:170px 170px;'
-        + '-webkit-mask-image:' + fadeMask + ';'
-        + 'mask-image:' + fadeMask + ';';
-      canvasFace.appendChild(watermark);
-    }
+    // Brand watermark overlay on the OUTER mockup container (linen +
+    // canvas) rather than inside the canvas-face. Putting it on the
+    // outer container means the watermark spans the entire visible
+    // preview, can't be cropped by zoom, and doesn't stack with the
+    // baked-in watermark inside the cropped portrait. Always show it
+    // so every preview surface carries the brand mark consistently.
+    var watermark = document.createElement('div');
+    watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3;'
+      + 'opacity:0.16;'
+      + "background-image:url(\"data:image/svg+xml;utf8,"
+      +   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E"
+      +     "%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' "
+      +       "font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3E"
+      +       "Pet Printables"
+      +     "%3C/text%3E"
+      +   "%3C/svg%3E"
+      + "\");"
+      + 'background-repeat:repeat;background-size:170px 170px;';
+    container.appendChild(watermark);
 
     // Canvas edge highlight — only on the unframed canvas (the wood
     // frame already provides clear edge separation, and the 4-sided

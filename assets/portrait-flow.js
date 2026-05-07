@@ -2895,6 +2895,19 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
           aspectRatio: '4/5', position: 'relative',
         },
       },
+        // Brand watermark overlay — on the OUTER container, so it
+        // spans the full visible preview and isn't constrained by the
+        // cropped source. Same mark used on the customize step + PDP
+        // mockup so all three preview surfaces match.
+        React.createElement('div', {
+          style: {
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            opacity: 0.16, zIndex: 2,
+            backgroundImage: "url(\"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3EPet Printables%3C/text%3E%3C/svg%3E\")",
+            backgroundRepeat: 'repeat',
+            backgroundSize: '170px 170px',
+          },
+        }),
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
           style: {
@@ -3331,6 +3344,19 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           }),
         ),
       ),
+      // Brand watermark overlay — sits on the OUTER linen container
+      // (above the canvas product), so it always spans the full
+      // visible preview and never gets cropped by the source-image
+      // zoom that runs inside the canvas-face.
+      React.createElement('div', {
+        style: {
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          opacity: 0.16, zIndex: 2,
+          backgroundImage: "url(\"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3EPet Printables%3C/text%3E%3C/svg%3E\")",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '170px 170px',
+        },
+      }),
       // Loading overlay when fetching named version — spinner + progressive copy
       generatingNamedPreview && React.createElement('div', {
         style: {
