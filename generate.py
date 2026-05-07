@@ -895,6 +895,20 @@ left half and right half, each one flat colour, each one running \
 fully from canvas edge to canvas edge.
 - The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
 curved, never offset. It runs floor-to-ceiling exactly down the centre.
+- EXACTLY ONE SEAM, AT 50%: there is precisely ONE colour change in the \
+entire background, and it sits at the dead-centre vertical line. NO \
+additional vertical seams anywhere. NO secondary lighter or darker \
+vertical strip along the LEFT edge of the canvas. NO secondary vertical \
+strip along the RIGHT edge of the canvas. NO three-band vertical \
+layout. NO vertical pillar, sidebar, gutter, margin strip, or border \
+column of any colour. The leftmost pixel column of the canvas is the \
+SAME hex as the pixel column 5%, 10%, 25%, and 49.9% inward — they all \
+read as one continuous flat field of {{POSTER_BG_LEFT_NAME}}. Same \
+rule for the right half. RECURRING FAILURE MODE TO AVOID: a vertical \
+strip of slightly different green / rust / cobalt / etc. running down \
+the LEFT edge of the canvas, ~10-15% of canvas width, creating a \
+3-region background (edge strip + main left half + right half). This \
+is FORBIDDEN.
 - The pet sits IN FRONT OF the seam: the pet's body crosses the seam \
 without altering its faceted block colours (the pet's blocks stay the \
 SAME colour whether they're over the left or right bg half — the seam \
@@ -922,11 +936,13 @@ fur texture, drawn fur strands, hatching, eye whites, irises, pupils, \
 catchlights, eyelashes, decorative shapes, foliage, props, halos, \
 frames, framed-art look, poster-pinned-to-wall look, inset rectangle \
 behind the pet, nested background rectangles, darker rectangular block \
-surrounding the pet, four-quadrant background, more than two \
-background colours, horizontal background splits, diagonal background \
-splits, curved background seams, gradient backgrounds, off-centre \
-seam, background patterns, drop shadows, text, watermark, border, \
-solid color bars or panels at image edges.\
+surrounding the pet, four-quadrant background, vertical edge strip, \
+vertical pillar or sidebar at left or right edge, three-region \
+vertical background, additional vertical seams beyond the central one, \
+more than two background colours, horizontal background splits, \
+diagonal background splits, curved background seams, gradient \
+backgrounds, off-centre seam, background patterns, drop shadows, text, \
+watermark, border, solid color bars or panels at image edges.\
 """
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
