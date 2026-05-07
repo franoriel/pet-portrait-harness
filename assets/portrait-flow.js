@@ -3499,13 +3499,11 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       },
     },
-      // Directional light
-      React.createElement('div', {
-        style: {
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse at 30% 20%, rgba(255,250,240,0.18) 0%, transparent 60%)',
-        },
-      }),
+      // Directional light overlay removed — its upper-left warm highlight
+      // collided with saturated bg colours (teal/cobalt/forest poster splits,
+      // dark Modern bg picks) and read as a discoloured patch on the
+      // artwork itself. The mockup loses a touch of "3D room" feel but the
+      // artwork now renders true to what's printed.
       // Canvas product (scales to aspect ratio)
       React.createElement('div', {
         style: {
@@ -3565,21 +3563,11 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
               };
             })(),
           }),
-          // Canvas weave texture
-          React.createElement('div', {
-            style: {
-              position: 'absolute', inset: 0, pointerEvents: 'none',
-              mixBlendMode: 'multiply', opacity: 0.08,
-              backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\")",
-            },
-          }),
-          // Edge highlight
-          React.createElement('div', {
-            style: {
-              position: 'absolute', inset: 0, pointerEvents: 'none',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.05)',
-            },
-          }),
+          // Canvas weave + edge-highlight overlays removed — both were
+          // dimensional mockup treatments that subtly darkened/lightened
+          // the artwork itself. With saturated flat-colour styles (cubist
+          // poster, Modern, neon pop) those treatments read as visible
+          // shading on the printed face. The artwork now mocks up flat.
         ),
       ),
       // Brand watermark overlay — uses the Pet Printables logo asset
