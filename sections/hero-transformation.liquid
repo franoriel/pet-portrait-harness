@@ -87,6 +87,13 @@
   .hero--transform .hero__media--stack {
     position: absolute; inset: 0;
     display: block;
+    /* Fade the bottom of the photo into the section cream so the
+       console-table edge in frame 3 (canvas-on-wall) doesn't read as
+       a hard horizontal line cutting under the CTA. The fade reveals
+       the section's #FAF8F5 base, so the headline column hands off
+       cleanly into the trust bar with no seam. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
   }
   .hero-frame {
     position: absolute; inset: 0;
