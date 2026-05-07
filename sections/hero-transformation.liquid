@@ -257,13 +257,14 @@
   }
 
   .hero--transform .hero__content {
-    /* Padding is symmetric so the eyebrow sits the same distance from
-       the top of the cream wash as the CTA sits from the bottom — the
-       previous value (clamp 40-88px) put the eyebrow visually crowded
-       against the dark header gradient zone. Larger top/bottom values
-       give the headline stack obvious breathing room and read balanced
-       at every viewport. */
-    padding: clamp(72px, 10vw, 128px) 0;
+    /* Asymmetric padding for VISUAL balance, not mathematical: the
+       dark header gradient (height 110px, sits over the top of the
+       hero) consumes the upper part of the section, so symmetric
+       padding leaves the eyebrow looking crowded against the gradient
+       and the CTA floating in roomy cream below. Adding the gradient
+       height to the top padding equalises the visible cream space
+       above the eyebrow and below the CTA. */
+    padding: clamp(168px, 15vw, 220px) 0 clamp(60px, 7vw, 96px);
     max-width: 540px;
     text-align: center;
   }
