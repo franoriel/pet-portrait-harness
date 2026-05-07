@@ -893,6 +893,25 @@ inner rectangle around the pet, sometimes split into quadrants). \
 This is FORBIDDEN. There are exactly TWO background regions, period: \
 left half and right half, each one flat colour, each one running \
 fully from canvas edge to canvas edge.
+- ZERO TOLERANCE FOR SOFT / SUBTLE INSET RECTANGLES: the inset \
+rectangle is forbidden at FULL contrast AND at 1% contrast. Even a \
+2-pixel-wide ring of slightly lighter colour around the canvas \
+perimeter is forbidden. Even a ~5% lightness shift between the area \
+immediately behind the pet and the canvas corners is forbidden. If \
+when rendering you find yourself imagining ANY darker zone, ANY \
+softer halo, ANY breathing-room patch, ANY vignette inversion, ANY \
+rectangular bias of any kind around the pet — at ANY opacity, in \
+ANY shade — REMOVE IT. The four corners of the canvas (top-left, \
+top-right, bottom-left, bottom-right) are EXACTLY the same hex \
+value as the pixels directly behind the pet's silhouette in the \
+same half. Imagine using a single paint-bucket fill of \
+{{POSTER_BG_LEFT_HEX}} for the entire left half (every pixel from \
+x=0 to x=49.9% width, every pixel from y=0 to y=100% height) and a \
+single paint-bucket fill of {{POSTER_BG_RIGHT_HEX}} for the entire \
+right half. Not a brush. Not a wash. Not an airbrush. A flat \
+paint-bucket fill, like Photoshop's bucket tool with anti-alias and \
+tolerance both off. ANY pixel-to-pixel variation within a half is a \
+PROMPT VIOLATION.
 - The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
 curved, never offset. It runs floor-to-ceiling exactly down the centre.
 - EXACTLY ONE SEAM, AT 50%: there is precisely ONE colour change in the \
