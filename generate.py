@@ -767,6 +767,17 @@ STYLE:
 charcoal or deep neutral
 - Mid-century modern poster / screen-print aesthetic — Shepard Fairey \
 "Obey" / Aaron Draplin / Charley Harper graphic boldness
+- INTERNAL SHAPE LANGUAGE — CRITICAL: every colour zone inside the pet's \
+silhouette must read as a broad anatomical mass (a cheek, a brow, a \
+shoulder plane, a chest blaze, a leg). Shapes are wide and stable, not \
+narrow or elongated. NEVER render long curved tubular bands, tongue-shaped \
+wedges, swooping ribbon highlights, sausage forms, paisley curls, S-curves, \
+teardrops, or any narrow-elongated-with-rounded-ends form. A chest blaze \
+reads as a single broad bib/triangle, never as a tall curving tongue. Leg \
+shading is one or two flat blocks following the leg axis, never curved \
+bands that snake across the body. If a shape would read as suggestive or \
+phallic in isolation, redraw it as an angular plane or merge it into the \
+adjacent block.
 - THE PET IS THE ONLY SUBJECT. Do NOT add decorative elements, abstract \
 shapes, arcs, circles, dots, foliage, halos, frames, or any other graphic \
 ornaments around the pet. The composition is just the pet on a single \
@@ -802,8 +813,11 @@ painterly strokes, 3D render, blurry, detailed fur texture, multiple \
 background colours, vertical or horizontal background splits, decorative \
 shapes, foliage, halos, frames, patterns, geometric ornaments, \
 profile / side-view / 3⁄4 view poses, head tilts, asymmetric body \
-silhouettes, off-centre or tilted-axis compositions, text, watermark, \
-border, solid color bars or panels at image edges.\
+silhouettes, off-centre or tilted-axis compositions, tongue-shaped or \
+tube-shaped colour zones, sausage forms, swooping ribbon highlights, \
+paisley curls, S-curves, teardrop shapes, narrow elongated rounded-end \
+shapes anywhere inside the pet, phallic or suggestive silhouettes, text, \
+watermark, border, solid color bars or panels at image edges.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
