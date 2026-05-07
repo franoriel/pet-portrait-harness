@@ -430,17 +430,27 @@ def generate_route():
     if style not in PROMPTS:
         return jsonify(error="Invalid style."), 400
 
-    # Background mode: 'auto' / 'light' / 'dark' for most styles, plus 8
-    # named colours for modern-shape-art (cream/clay/sage/terracotta/mauve/
-    # mustard/navy/charcoal). Anything else falls back to 'auto'.
-    from generate import MODERN_BG_COLORS
-    _BG_VALID = ("auto", "light", "dark", *MODERN_BG_COLORS.keys())
+    # Background mode: 'auto' / 'light' / 'dark' for most styles, plus the 8
+    # MODERN_BG_COLORS for modern-shape-art (cream/clay/sage/terracotta/mauve/
+    # mustard/navy/charcoal) and the 8 POSTER_PALETTES for bold-graphic-poster
+    # (teal/cobalt/rose/citrus/forest/rust/violet/ember). Anything else falls
+    # back to 'auto'.
+    from generate import MODERN_BG_COLORS, POSTER_PALETTES
+    _BG_VALID = (
+        "auto", "light", "dark",
+        *MODERN_BG_COLORS.keys(),
+        *POSTER_PALETTES.keys(),
+    )
     background_mode_raw = (request.form.get("background_mode") or "auto").strip().lower()
     background_mode = background_mode_raw if background_mode_raw in _BG_VALID else "auto"
     # Modern locks to a colour palette — if the request comes in with
     # auto/light/dark while the chosen style is modern, default to 'clay'.
     if style == "modern-shape-art" and background_mode not in MODERN_BG_COLORS:
         background_mode = "clay"
+    # Bold Graphic Poster locks to a paired-tone palette — same idea, but
+    # default 'teal' when the request didn't carry a valid palette id.
+    if style == "bold-graphic-poster" and background_mode not in POSTER_PALETTES:
+        background_mode = "teal"
     log.info("[/generate] style=%s bg_mode=%s (raw=%r)", style, background_mode, background_mode_raw)
 
     # ── Photo-license consent (audit trail) ──────────────────────────────────
@@ -775,8 +785,10 @@ def add_name():
     image_url = (data.get("image_url") or "").strip()
     style_raw = (data.get("style") or "watercolor").strip()
     background_mode = (data.get("background_mode") or "auto").strip().lower()
-    from generate import MODERN_BG_COLORS
-    if background_mode not in ("auto", "light", "dark", *MODERN_BG_COLORS.keys()):
+    from generate import MODERN_BG_COLORS, POSTER_PALETTES
+    if background_mode not in ("auto", "light", "dark",
+                               *MODERN_BG_COLORS.keys(),
+                               *POSTER_PALETTES.keys()):
         background_mode = "auto"
 
     # Validate pet_name
