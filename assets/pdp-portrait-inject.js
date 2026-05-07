@@ -500,20 +500,26 @@
     // Brand watermark — only when fed the 1:1 derivative, which is
     // un-watermarked server-side. The 4:5 master already carries a
     // baked-in Pet Printables watermark, so we skip the overlay there
-    // to avoid stacking two watermarks.
+    // to avoid stacking two watermarks. The mask-image fades the
+    // watermark to transparent near the top and bottom edges so the
+    // tile pattern never reads as "chopped" against the canvas/wood
+    // frame seam.
     if (srcIs1x1) {
       var watermark = document.createElement('div');
+      var fadeMask = 'linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)';
       watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
-        + 'opacity:0.18;mix-blend-mode:multiply;'
+        + 'opacity:0.14;mix-blend-mode:multiply;'
         + "background-image:url(\"data:image/svg+xml;utf8,"
-        +   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E"
-        +     "%3Cg transform='rotate(-28 90 90)' font-family='Georgia,serif' font-style='italic' font-size='15' fill='%231c1612'%3E"
-        +       "%3Ctext x='90' y='60' text-anchor='middle'%3EPet Printables%3C/text%3E"
-        +       "%3Ctext x='90' y='120' text-anchor='middle'%3EPet Printables%3C/text%3E"
-        +     "%3C/g%3E"
+        +   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E"
+        +     "%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' "
+        +       "font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3E"
+        +       "Pet Printables"
+        +     "%3C/text%3E"
         +   "%3C/svg%3E"
         + "\");"
-        + 'background-repeat:repeat;background-size:140px 140px;';
+        + 'background-repeat:repeat;background-size:170px 170px;'
+        + '-webkit-mask-image:' + fadeMask + ';'
+        + 'mask-image:' + fadeMask + ';';
       canvasFace.appendChild(watermark);
     }
 

@@ -3258,7 +3258,16 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             src: displayImage,
             alt: localName ? `Portrait of ${localName}` : 'Your portrait',
             style: {
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              // Zoom in by ~20% to crop the ~10% background-padding ring
+              // that the server adds to every preview. Without this the
+              // pet floats inside a wide cream/bg margin on canvas-face
+              // displays whose aspect matches the source (e.g. 4:5
+              // master on a 4:5 canvas, or the 1:1 derivative on a 1:1
+              // canvas — the cover-fit doesn't crop in those cases so
+              // the padding sits on the canvas as visible empty space).
+              position: 'absolute',
+              top: '-10%', left: '-10%',
+              width: '120%', height: '120%',
               objectFit: 'cover',
               objectPosition: 'center center',
               display: 'block',
