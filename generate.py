@@ -2259,11 +2259,16 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
         # composite_name re-runs the reframe with a larger
         # pad_top_ratio when a name is added to open the band.
         if target_aspect == PRINT_ASPECT_1_1:
+            # The 1:1 derivative is mockup-display-only (Printful gets
+            # the 4:5 master regardless of canvas variant), so it must
+            # render flush at the canvas-face bottom — universal flush-
+            # bottom rule. pad_bottom_ratio=0 lands the pet's flat
+            # chest cut on the canvas-face bottom edge with no gap.
             return _modern_shape_art_reframe(
                 img,
                 pad_top_ratio=0.18,
                 pad_side_ratio=0.06,
-                pad_bottom_ratio=0.16,
+                pad_bottom_ratio=0,
                 target_aspect=PRINT_ASPECT_1_1,
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
@@ -2603,48 +2608,29 @@ def get_font(size: int, style: Optional[str] = None) -> ImageFont.FreeTypeFont:
 
 def _detect_text_color(image: Image.Image) -> tuple:
     """
-    Decide the name's text colour by matching the PET's luminance
-    band, with the background's hue used as a soft tint.
+    Decide the name's text colour to GUARANTEE legibility against the
+    background it sits on, with the bg's hue used as a soft tint for
+    aesthetic integration.
 
-    Why: a customer with a mostly-white pet expects a light, airy
-    title — not a heavy dark name that reads as disconnected from the
-    portrait. Likewise a customer with a black dog expects a deep ink
-    title. So we sample the centre of the image (where the pet sits)
-    to set the LUMINANCE band, and sample the top edge (where the bg
-    shows) to set the HUE so the title still feels integrated with
-    the canvas wash colour.
+    Earlier this function matched PET luminance (light pet → light
+    text, dark pet → dark text). That produced unreadable text whenever
+    the pet's tone was close to the bg's tone — most obviously a
+    golden retriever (light pet) on cream Modern bg (light bg) gave
+    near-white text on near-white bg = invisible. Legibility wins
+    over "pet integration": text contrasts with the bg it's drawn on.
 
     Strategy:
-      1. Sample the centre 50%×50% region — that's where the pet's
-         shape dominates on every style. Pet luminance decides
-         light-vs-dark text.
-      2. Sample the top 12% region — bg colour decides the hue tint.
-      3. Compose the text colour:
-         - Light pet → cream / near-white text, with a whisper of bg
-           hue desaturated in.
-         - Dark pet → deep ink text, with the same hue whisper.
-      4. Achromatic guard: if the bg is essentially grey, drop the
-         tint and use plain black / white so we never colour-shift a
-         neutral.
+      1. Sample the top 12% region — that's where the title sits.
+         Bg luminance decides light-vs-dark text; bg hue feeds the tint.
+      2. Light bg → near-ink text. Dark bg → near-cream text.
+      3. Achromatic guard: if the bg is essentially grey, drop the
+         hue tint and use plain near-black / near-white.
 
     Returns (text_rgb, line_rgba).
     """
     w, h = image.size
     if w <= 0 or h <= 0:
         return (0, 0, 0), (0, 0, 0, 80)
-
-    # PET region — centre 50% × 50% (the pet's shape dominates this
-    # box on every style we generate).
-    cx0, cx1 = int(w * 0.25), int(w * 0.75)
-    cy0, cy1 = int(h * 0.25), int(h * 0.75)
-    pet_region = image.crop((cx0, cy0, cx1, cy1))
-    pet_pixels = list(pet_region.getdata())
-    if not pet_pixels:
-        return (0, 0, 0), (0, 0, 0, 80)
-    pet_r = sum(p[0] for p in pet_pixels) / len(pet_pixels) / 255.0
-    pet_g = sum(p[1] for p in pet_pixels) / len(pet_pixels) / 255.0
-    pet_b = sum(p[2] for p in pet_pixels) / len(pet_pixels) / 255.0
-    pet_lum = 0.2126 * pet_r + 0.7152 * pet_g + 0.0722 * pet_b
 
     # BG region — top 12% strip (where the title will be composited).
     top = image.crop((0, 0, w, max(2, int(h * 0.12))))
@@ -2655,27 +2641,28 @@ def _detect_text_color(image: Image.Image) -> tuple:
         bg_r = sum(p[0] for p in top_pixels) / len(top_pixels) / 255.0
         bg_g = sum(p[1] for p in top_pixels) / len(top_pixels) / 255.0
         bg_b = sum(p[2] for p in top_pixels) / len(top_pixels) / 255.0
+    bg_lum = 0.2126 * bg_r + 0.7152 * bg_g + 0.0722 * bg_b
 
     import colorsys
     bg_h, _bg_l, bg_s = colorsys.rgb_to_hls(bg_r, bg_g, bg_b)
 
     # Achromatic guard — bg is essentially grey, so any hue tint
     # would read as a colour artefact. Fall back to plain black /
-    # white driven entirely by the pet's luminance.
+    # white driven entirely by the bg's luminance.
     if bg_s < 0.08:
-        if pet_lum >= 0.5:
-            return (245, 240, 232), (245, 240, 232, 110)  # near-white cream
-        return (28, 26, 22), (28, 26, 22, 90)              # near-ink
+        if bg_lum >= 0.5:
+            return (28, 26, 22), (28, 26, 22, 90)              # near-ink on light bg
+        return (245, 240, 232), (245, 240, 232, 110)           # near-white on dark bg
 
-    # Match the pet's luminance band; tint with the bg hue.
-    if pet_lum >= 0.5:
-        # Light pet → light text. Cream / near-white tinted with bg hue.
-        out_l = 0.93
-        out_s = min(0.14, bg_s * 0.28)
-    else:
-        # Dark pet → dark text. Deep ink tinted with bg hue.
+    # Contrast against the bg's luminance band; tint with the bg hue.
+    if bg_lum >= 0.5:
+        # Light bg → dark text. Deep ink tinted with bg hue.
         out_l = 0.18
         out_s = min(0.40, bg_s * 0.50 + 0.08)
+    else:
+        # Dark bg → light text. Cream / near-white tinted with bg hue.
+        out_l = 0.93
+        out_s = min(0.14, bg_s * 0.28)
 
     cr, cg, cb = colorsys.hls_to_rgb(bg_h, out_l, out_s)
     text_rgb = (
@@ -2697,12 +2684,14 @@ STYLE_TEXT_CONFIG: dict[str, dict] = {
         # below y=22%). zone_top 0.11 lands the script's vertical
         # centre inside that band — comfortably above the pet's ears
         # (which sit at y≈25-28%) and well clear of the 1:1 centre
-        # crop edge on square canvas variants.
+        # crop edge on square canvas variants. Opacity 1.0 with the
+        # true-black override in composite_name so the name reads as
+        # confident hand-written ink, not faded pencil.
         "size_ratio": 0.08,
         "transform": "title",
         "zone_top": 0.11,
         "letter_spacing": 0,
-        "opacity": 0.85,
+        "opacity": 1.0,
     },
     "minimal-line-art": {
         # Letter-spacing was 6 on top of FONT_SIZE_SCALE["small"]=0.7 —
@@ -2831,17 +2820,18 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
     """
     is_square = image.height > 0 and abs((image.width / image.height) - 1.0) < 0.05
     if is_square:
-        # Square with name needs a generous top band — name has to fit
-        # WITH visible breathing room above (not flush to the canvas
-        # top edge) AND clear margin below before the ears start. The
-        # wrap canvas eats ~8.6% per edge on a square so pad_bottom is
-        # also non-zero — without it the chest cut wraps around the
-        # side of the canvas instead of staying on the front face.
+        # Square with name needs a generous top band so the name has
+        # visible breathing room above (not flush to the canvas top
+        # edge) AND clear margin below before the ears start. Universal
+        # flush-bottom rule: pad_bottom_ratio=0 keeps the pet's flat
+        # chest cut flush at the canvas-face bottom in the mockup —
+        # the 1:1 derivative is mockup-only (Printful gets the 4:5
+        # master), so wrap-around concerns don't apply here.
         return _modern_shape_art_reframe(
             image,
             pad_top_ratio=0.45,
             pad_side_ratio=0.06,
-            pad_bottom_ratio=0.16,
+            pad_bottom_ratio=0,
             target_aspect=PRINT_ASPECT_1_1,
         )
     return _modern_shape_art_reframe(
@@ -2936,8 +2926,14 @@ def composite_name(
     # Get style-specific config
     cfg = STYLE_TEXT_CONFIG.get(style, _DEFAULT_TEXT_CONFIG)
 
-    # Auto-detect text color based on bottom region brightness
-    text_color, _ = _detect_text_color(img)
+    # Watercolor wants true ink-black hand-written script — no auto-
+    # detected hue tint, no opacity blend. The other styles use the
+    # bg-luminance-driven detection so the name always contrasts with
+    # whatever's behind it.
+    if style == "watercolor":
+        text_color = (0, 0, 0)
+    else:
+        text_color, _ = _detect_text_color(img)
 
     # Apply opacity to text color
     opacity = cfg["opacity"]
