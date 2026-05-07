@@ -1,43 +1,203 @@
-<section class="style-carousel" aria-label="Portrait styles">
-  <div class="style-carousel__track">
-    {%- for i in (1..2) -%}
-      <div class="style-carousel__set" {% if i == 2 %}aria-hidden="true"{% endif %}>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-soft-watercolour.webp' | asset_url }}" alt="Soft Watercolour style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Soft Watercolour</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-minimal-line-art.webp' | asset_url }}" alt="Minimal Line Art style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Minimal Line Art</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-modern-shape-art-v2.webp' | asset_url }}" alt="Modern style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Modern</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-neon-pop-art.webp' | asset_url }}" alt="Neon Pop Art style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Neon Pop Art</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-renaissance-royalty.webp' | asset_url }}" alt="Renaissance Royalty style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Renaissance Royalty</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-bold-graphic-poster.webp' | asset_url }}" alt="Bold Graphic Poster style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Bold Graphic Poster</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-charcoal.webp' | asset_url }}" alt="Charcoal style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Charcoal</span>
-        </div>
-        <div class="style-carousel__item">
-          <img src="{{ 'example-aura-gradient.webp' | asset_url }}" alt="Aura Gradient style" loading="lazy" width="200" height="248">
-          <span class="style-carousel__label">Aura Gradient</span>
-        </div>
+{% comment %}
+  Style carousel — hero composition (photoreal pets in front of two flat-graphic
+  poster canvases) on the left, horizontal scrolling marquee of all available
+  styles on the right. The marquee is absolutely positioned and overlaps the
+  hero on its left edge with a soft mask gradient, so the cards visually
+  emerge from the image rather than sitting beside it.
+
+  Section type ("style-carousel") is preserved so templates/index.json doesn't
+  need to be touched. Asset filenames map to files dropped into /assets:
+    - mockup-hero-cuddle.png  (RGB, cream bg already baked in)
+    - example-*.webp           (existing per-style preview cards)
+{% endcomment %}
+
+{%- liquid
+  assign hero_image = 'mockup-hero-cuddle.png' | asset_url
+-%}
+
+<section class="style-marquee" aria-label="Portrait styles">
+  <div class="style-marquee__inner">
+    <div class="style-marquee__hero">
+      <img
+        src="{{ hero_image }}"
+        alt="A photographed dog and cat cuddling in front of two bold-graphic poster portraits of themselves"
+        loading="lazy"
+        width="1200" height="896">
+    </div>
+
+    <div class="style-marquee__track-wrap" aria-hidden="false">
+      <div class="style-marquee__track">
+        {%- for i in (1..2) -%}
+          <div class="style-marquee__set" {% if i == 2 %}aria-hidden="true"{% endif %}>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-soft-watercolour.webp' | asset_url }}" alt="Soft Watercolour style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Soft Watercolour</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-minimal-line-art.webp' | asset_url }}" alt="Minimal Line Art style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Minimal Line Art</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-modern-shape-art-v2.webp' | asset_url }}" alt="Modern style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Modern</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-neon-pop-art.webp' | asset_url }}" alt="Neon Pop Art style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Neon Pop Art</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-renaissance-royalty.webp' | asset_url }}" alt="Renaissance Royalty style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Renaissance Royalty</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-bold-graphic-poster.webp' | asset_url }}" alt="Bold Graphic Poster style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Bold Graphic Poster</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-charcoal.webp' | asset_url }}" alt="Charcoal style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Charcoal</span>
+            </div>
+            <div class="style-marquee__item">
+              <img src="{{ 'example-aura-gradient.webp' | asset_url }}" alt="Aura Gradient style" loading="lazy" width="140" height="174">
+              <span class="style-marquee__label">Aura Gradient</span>
+            </div>
+          </div>
+        {%- endfor -%}
       </div>
-    {%- endfor -%}
+    </div>
   </div>
 </section>
+
+{% style %}
+  .style-marquee {
+    /* warm cream that matches the bg baked into the hero image so the image
+       blends seamlessly into the section. Sits as a "warmth band" against the
+       lighter --color-bg used by adjacent sections. */
+    background: #f3e7d4;
+    padding: 48px 0 56px;
+    overflow: hidden;
+  }
+  .style-marquee__inner {
+    position: relative;
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 0 32px;
+    isolation: isolate;
+  }
+  .style-marquee__hero {
+    position: relative;
+    z-index: 1;
+    width: 62%;
+  }
+  .style-marquee__hero img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 680px;
+    object-fit: contain;
+  }
+  .style-marquee__track-wrap {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 48%;
+    right: -2%;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%, transparent 6%,
+      #000 16%, #000 90%,
+      transparent 100%
+    );
+            mask-image: linear-gradient(
+      to right,
+      transparent 0%, transparent 6%,
+      #000 16%, #000 90%,
+      transparent 100%
+    );
+  }
+  .style-marquee__track-wrap .style-marquee__track { pointer-events: auto; }
+  .style-marquee__track {
+    display: flex;
+    width: max-content;
+    animation: style-marquee-scroll 40s linear infinite;
+  }
+  .style-marquee__track:hover { animation-play-state: paused; }
+  .style-marquee__set {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-right: 20px;
+    flex-shrink: 0;
+  }
+  .style-marquee__item {
+    flex: 0 0 auto;
+    width: 140px;
+    text-align: center;
+  }
+  .style-marquee__item img {
+    width: 140px;
+    height: 174px;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+    background: transparent;
+    box-shadow: 0 6px 16px rgba(60,40,20,.08);
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .style-marquee__item:hover img {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(60,40,20,.12);
+  }
+  .style-marquee__label {
+    display: block;
+    margin-top: 10px;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  @keyframes style-marquee-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .style-marquee__track { animation: none; }
+  }
+
+  /* narrower desktops: shift marquee further right so it never crashes
+     into the cuddle pile */
+  @media (max-width: 1280px) {
+    .style-marquee__hero { width: 56%; }
+    .style-marquee__track-wrap { left: 54%; }
+  }
+  @media (max-width: 1080px) {
+    .style-marquee__hero { width: 52%; }
+    .style-marquee__track-wrap { left: 56%; }
+  }
+
+  /* mobile: stack hero above marquee */
+  @media (max-width: 760px) {
+    .style-marquee { padding: 24px 0 32px; }
+    .style-marquee__inner { padding: 0 16px; }
+    .style-marquee__hero { width: 100%; }
+    .style-marquee__hero img { max-height: 360px; }
+    .style-marquee__track-wrap {
+      position: static;
+      transform: none;
+      margin-top: 16px;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    }
+    .style-marquee__item { width: 120px; }
+    .style-marquee__item img { width: 120px; height: 150px; }
+  }
+{% endstyle %}
 
 {% schema %}
 {
