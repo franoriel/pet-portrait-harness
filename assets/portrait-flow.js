@@ -2889,11 +2889,33 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         style: {
           width: '100%', maxWidth: 'min(520px, 100%)', margin: '0 auto 12px', borderRadius: tokens.radiusCard,
           overflow: 'hidden', boxShadow: '0 12px 40px rgba(28, 28, 28, 0.12)',
+          // Aspect-locked container so the absolutely-positioned IMG
+          // can overflow on each axis to crop the padding/name-safe
+          // zone without collapsing the layout.
+          aspectRatio: '4/5', position: 'relative',
         },
       },
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
-          style: { width: '100%', display: 'block' },
+          style: {
+            // Zoom in vertically (130%) and horizontally (110%) to crop
+            // the AI's reserved top name-safe zone + the server's ~10%
+            // background-padding ring. Without this the pet floats with
+            // a wide empty bg block above it (especially on Bold
+            // Graphic Poster, where the name-safe zone is large).
+            // Top offset is biased so the cut comes off the top, where
+            // the name-safe zone sits. max-width override beats the
+            // global `img, video { max-width:100% }` rule in base.css,
+            // which otherwise clamps the 110% width down to 100% and
+            // leaves a white edge strip in the container.
+            position: 'absolute',
+            top: '-22%', left: '-5%',
+            width: '110%', height: '130%',
+            maxWidth: 'none', maxHeight: 'none',
+            objectFit: 'cover',
+            objectPosition: 'center top',
+            display: 'block',
+          },
         }),
       ),
       React.createElement('p', {
@@ -3261,13 +3283,15 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
               // Zoom in by ~20% to crop the ~10% background-padding ring
               // that the server adds to every preview. Without this the
               // pet floats inside a wide cream/bg margin on canvas-face
-              // displays whose aspect matches the source (e.g. 4:5
-              // master on a 4:5 canvas, or the 1:1 derivative on a 1:1
-              // canvas — the cover-fit doesn't crop in those cases so
-              // the padding sits on the canvas as visible empty space).
+              // displays whose aspect matches the source. The max-width
+              // override is required because base.css applies a global
+              // `img, video { max-width:100% }` that would otherwise
+              // clamp our 120% width down to 100% and leave a white
+              // strip of canvas-face showing on the right edge.
               position: 'absolute',
               top: '-10%', left: '-10%',
               width: '120%', height: '120%',
+              maxWidth: 'none', maxHeight: 'none',
               objectFit: 'cover',
               objectPosition: 'center center',
               display: 'block',
