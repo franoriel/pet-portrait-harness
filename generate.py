@@ -2890,11 +2890,13 @@ def composite_name(
     # clipped — `text_y` is the absolute pixel y-coordinate of the
     # rendered glyph top.
     if h > 0 and text_y > 0:
-        # Cap the crop at min(7% of h, half the empty space above name)
-        # so we always leave a small breathing margin of bg above the
-        # first glyph. half-of-text_y guarantees we don't touch the
-        # rendered text even when the styled font has long ascenders.
-        crop_frac = min(0.07, (text_y / h) * 0.5)
+        # Cap the crop at min(3.5% of h, one-third of the empty space
+        # above name) so we always leave a comfortable breathing margin
+        # of bg above the first glyph — the name should sit a little
+        # below the canvas top edge, not flush against it. one-third of
+        # text_y guarantees we don't touch the rendered text even when
+        # the styled font has long ascenders.
+        crop_frac = min(0.035, (text_y / h) / 3.0)
         if crop_frac > 0.01:
             img = _tighten_top_after_name(img, crop_frac=crop_frac)
 
