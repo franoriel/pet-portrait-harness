@@ -87,7 +87,10 @@
   .hero--transform { position: relative; overflow: hidden; isolation: isolate;
                      background: #FAF8F5; min-height: 560px; }
   .hero--transform .hero__media--stack {
-    position: absolute; inset: 0;
+    /* Bottom inset trims 5% off the image area so the hero photo doesn't
+       run flush to the section edge — leaves a slim cream gutter that
+       hands off cleanly into the trust bar below. */
+    position: absolute; top: 0; right: 0; bottom: 5%; left: 0;
     display: block;
   }
   .hero-frame {
@@ -120,9 +123,12 @@
      never feels veiled. */
   .hero--transform::after {
     content: '';
-    /* Starts below the dark header gradient so it doesn't fight the
-       white logo / nav contrast at the top. */
-    position: absolute; top: 120px; bottom: 0; left: 0;
+    /* Anchored near the top of the section but with a vertical mask so
+       the wash's top edge fades in softly — no hard horizontal line
+       crossing near the eyebrow, and the eyebrow gets generous cream
+       padding above it. The mask hands off smoothly to the dark header
+       gradient, which is fully transparent by 96px. */
+    position: absolute; top: 24px; bottom: 0; left: 0;
     width: 60%;
     background: linear-gradient(
       to right,
@@ -131,6 +137,8 @@
       rgba(250, 248, 245, 0.2) 70%,
       rgba(250, 248, 245, 0) 100%
     );
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 96px, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 96px, #000 100%);
     z-index: 1; pointer-events: none;
   }
   @media (max-width: 760px) {
