@@ -96,19 +96,28 @@
     position: relative;
     z-index: 1;
     width: 50%;
-    /* Source asset is 1200x896 (~4:3) with cream negative space baked in
-       above the framed posters and below the cuddle pile. Forcing a wider
-       2:1 container + object-fit: cover crops that empty cream off the
-       top and bottom, so the pets + posters fill the visible frame. */
-    aspect-ratio: 2 / 1;
-    max-height: 420px;
+    /* Source asset is 1200x896 (~1.34:1) with a slim cream margin baked in
+       above the framed posters and below the cuddle pile. We force a
+       slightly wider container (1.5:1) + object-fit: cover so the cream
+       margins trim off WITHOUT biting into the frames or paws — that's
+       only ~6% cropped from each edge instead of the ~12% the earlier
+       2:1 crop took, which was clipping the canvas tops and the pet
+       bodies. object-position: center 60% nudges the visible window
+       slightly downward so the dog/cat at the bottom of the source get
+       priority over the calmer cream space above the canvases. */
+    aspect-ratio: 3 / 2;
+    max-height: 460px;
   }
   .style-marquee__hero img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    /* 60% (instead of center) anchors the visible window a touch lower
+       than dead-centre — the cuddle pile at the bottom of the source
+       reads as the hero subject, while the canvas tops still clear the
+       upper edge cleanly. */
+    object-position: center 60%;
     /* Soft fade on the left and right bg-only edges so the hero's vignette
        dissolves into the section bg, killing any subtle seam. The pets and
        posters live in the inner ~85%, so the fade only touches empty cream. */
@@ -242,10 +251,11 @@
     .style-marquee__inner { padding: 0 16px; }
     .style-marquee__hero {
       width: 100%;
-      /* Slightly less aggressive crop on mobile so the cuddle pile and
-         posters both stay visible at narrow widths. */
-      aspect-ratio: 16 / 10;
-      max-height: 280px;
+      /* Mobile keeps the source's natural ~4:3 ratio so neither the
+         canvases nor the cuddle pile get cropped — at narrow widths
+         every pixel of subject matters more than the cream trim. */
+      aspect-ratio: 4 / 3;
+      max-height: 320px;
     }
     .style-marquee__hero img {
       -webkit-mask-image: none;
