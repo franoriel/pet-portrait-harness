@@ -76,6 +76,40 @@ def _client_ip() -> str:
     return request.headers.get("X-Real-IP") or request.remote_addr or "unknown"
 
 
+# Backend exception messages can contain raw model output, stack traces, or
+# other internals. These end up in job.error, which is sent to the client and
+# rendered in the UI — anything we don't whitelist here is a customer-facing
+# leak. Always log the full exception via log.exception; only a curated message
+# may travel to the customer.
+_SAFE_ERROR_LEAK_MARKERS = (
+    "gemini returned",
+    "model response:",
+    "anthropic returned",
+    "openai returned",
+    "traceback",
+    "**",            # markdown bold from a model dump
+    "i have created",
+)
+
+
+def _safe_customer_error(exc: BaseException) -> str:
+    """Reduce an exception to a customer-safe error string.
+
+    Pass-through is allowed only for short, plain messages that don't look like
+    a model dump. Anything suspicious collapses to a generic message; the full
+    detail is preserved in server logs (caller is expected to log.exception)."""
+    msg = (str(exc) or "").strip()
+    if not msg:
+        return "Generation failed"
+    low = msg.lower()
+    for marker in _SAFE_ERROR_LEAK_MARKERS:
+        if marker in low:
+            return "Generation failed"
+    if len(msg) > 160 or "\n" in msg:
+        return "Generation failed"
+    return msg
+
+
 def check_rate_limit(ip: str, endpoint: str = "generate") -> tuple[bool, str]:
     """Sliding window rate check per IP + endpoint.
     Returns (allowed, reason_if_blocked)."""
@@ -1770,7 +1804,7 @@ def _process_job(job: dict):
 
     except Exception as exc:
         log.exception("Job %s failed", job_id)
-        update_job(job_id, status="failed", error=str(exc))
+        update_job(job_id, status="failed", error=_safe_customer_error(exc))
     finally:
         with _active_lock:
             _active_generations -= 1
