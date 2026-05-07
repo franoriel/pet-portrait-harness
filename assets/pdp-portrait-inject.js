@@ -693,6 +693,21 @@
       .catch(function () {});
     }
 
+    // Watermark disclaimer — sits directly under the gallery so the
+    // customer is reassured the Pet Printables marks they see in the
+    // preview won't appear on the printed canvas they receive.
+    var galleryRoot = gallery.closest('.product-gallery') || gallery.parentNode;
+    if (galleryRoot && !galleryRoot.querySelector('.pp-watermark-disclaimer')) {
+      var disclaimer = document.createElement('p');
+      disclaimer.className = 'pp-watermark-disclaimer';
+      disclaimer.style.cssText = 'margin:10px auto 0;text-align:center;'
+        + "font-family:'Inter',sans-serif;font-size:var(--text-xs);"
+        + 'color:var(--color-muted,#7a7369);letter-spacing:0.02em;'
+        + 'line-height:1.4;max-width:520px;';
+      disclaimer.textContent = 'Watermark will not appear on your final printed canvas.';
+      galleryRoot.appendChild(disclaimer);
+    }
+
     // Store mockup variant→slide index map for variant picker
     // Normalize keys to "NxN" format so they match theme.js lookup
     window._mockupSlideMap = {};

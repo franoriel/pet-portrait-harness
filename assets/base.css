@@ -153,6 +153,62 @@ p { color: var(--color-ink); }
 .btn--large { padding: 18px 36px; font-size: var(--text-lg); min-height: 60px; }
 .btn--full { width: 100%; }
 
+/* ── Minimalist framed-canvas CTA ─────────────────────────── */
+/* Outer dark "frame" wrapping a cream "canvas" interior. The arrow at
+   the end of the label nudges the user toward the next step. Used for
+   the homepage hero CTA + final CTA — it's the brand's product made
+   button-shaped, so the offer reads as "your portrait, framed." */
+.btn--canvas-frame {
+  background: var(--color-ink, #1c1612);
+  padding: 5px;
+  color: var(--color-ink, #1c1612);
+  text-transform: none;
+  letter-spacing: 0;
+  /* Override .btn defaults that conflict with the frame structure */
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  font-weight: 600;
+  border-radius: 3px;
+  min-height: 0;
+  box-shadow: 0 6px 18px rgba(28, 22, 18, 0.22), 0 2px 4px rgba(28, 22, 18, 0.18);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.btn--canvas-frame:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(28, 22, 18, 0.28), 0 3px 6px rgba(28, 22, 18, 0.2);
+}
+.btn--canvas-frame .btn__canvas-inner {
+  background: #fdf8f0;
+  color: var(--color-ink, #1c1612);
+  padding: 14px 26px;
+  border-radius: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  width: 100%;
+}
+.btn--canvas-frame.btn--large .btn__canvas-inner {
+  padding: 18px 34px;
+  font-size: var(--text-base);
+}
+.btn--canvas-frame .btn__arrow {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  transition: transform 0.22s ease;
+}
+.btn--canvas-frame:hover .btn__arrow {
+  transform: translateX(5px);
+}
+
 /* ── Announcement bar ─────────────────────────────────────── */
 .announcement-bar {
   background: var(--color-ink);

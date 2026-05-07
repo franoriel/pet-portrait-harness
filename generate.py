@@ -2589,62 +2589,87 @@ def get_font(size: int, style: Optional[str] = None) -> ImageFont.FreeTypeFont:
 
 def _detect_text_color(image: Image.Image) -> tuple:
     """
-    Sample the top 15% of the image and return a complementary text
-    colour with strong contrast against the canvas background.
+    Decide the name's text colour by matching the PET's luminance
+    band, with the background's hue used as a soft tint.
+
+    Why: a customer with a mostly-white pet expects a light, airy
+    title — not a heavy dark name that reads as disconnected from the
+    portrait. Likewise a customer with a black dog expects a deep ink
+    title. So we sample the centre of the image (where the pet sits)
+    to set the LUMINANCE band, and sample the top edge (where the bg
+    shows) to set the HUE so the title still feels integrated with
+    the canvas wash colour.
 
     Strategy:
-      1. Average the top-region RGB to find the dominant bg colour.
-      2. Convert to HSL.
-      3. The text is the SAME hue rotated 180° (true colour-wheel
-         complement) AND pulled to one of two luminance extremes —
-         deep on light bg, light on dark bg — so contrast stays high.
-      4. Saturation is moderated so the text doesn't read as a
-         flashing primary; it should feel like an intentional accent
-         that complements the canvas tone (e.g. a deep navy on warm
-         terracotta, a soft cream on cool teal) rather than pure
-         black/white which can read as utilitarian.
+      1. Sample the centre 50%×50% region — that's where the pet's
+         shape dominates on every style. Pet luminance decides
+         light-vs-dark text.
+      2. Sample the top 12% region — bg colour decides the hue tint.
+      3. Compose the text colour:
+         - Light pet → cream / near-white text, with a whisper of bg
+           hue desaturated in.
+         - Dark pet → deep ink text, with the same hue whisper.
+      4. Achromatic guard: if the bg is essentially grey, drop the
+         tint and use plain black / white so we never colour-shift a
+         neutral.
 
     Returns (text_rgb, line_rgba).
     """
     w, h = image.size
-    zone_bottom = int(h * 0.15)
-    top = image.crop((0, 0, w, zone_bottom))
-    pixels = list(top.getdata())
-    if not pixels:
+    if w <= 0 or h <= 0:
         return (0, 0, 0), (0, 0, 0, 80)
-    avg_r = sum(p[0] for p in pixels) / len(pixels) / 255.0
-    avg_g = sum(p[1] for p in pixels) / len(pixels) / 255.0
-    avg_b = sum(p[2] for p in pixels) / len(pixels) / 255.0
 
-    # RGB → HSL
-    import colorsys
-    h_, l_, s_ = colorsys.rgb_to_hls(avg_r, avg_g, avg_b)
+    # PET region — centre 50% × 50% (the pet's shape dominates this
+    # box on every style we generate).
+    cx0, cx1 = int(w * 0.25), int(w * 0.75)
+    cy0, cy1 = int(h * 0.25), int(h * 0.75)
+    pet_region = image.crop((cx0, cy0, cx1, cy1))
+    pet_pixels = list(pet_region.getdata())
+    if not pet_pixels:
+        return (0, 0, 0), (0, 0, 0, 80)
+    pet_r = sum(p[0] for p in pet_pixels) / len(pet_pixels) / 255.0
+    pet_g = sum(p[1] for p in pet_pixels) / len(pet_pixels) / 255.0
+    pet_b = sum(p[2] for p in pet_pixels) / len(pet_pixels) / 255.0
+    pet_lum = 0.2126 * pet_r + 0.7152 * pet_g + 0.0722 * pet_b
 
-    # Complementary hue (180° rotation on the colour wheel).
-    comp_h = (h_ + 0.5) % 1.0
-
-    # Strong contrast luminance.
-    #   Dark canvas (l < 0.5)  → light text (l ≈ 0.92, near-cream)
-    #   Light canvas (l ≥ 0.5) → dark text  (l ≈ 0.16, near-ink)
-    if l_ < 0.5:
-        comp_l = 0.92
-        comp_s = min(0.18, s_ * 0.35)  # very desaturated cream tint
+    # BG region — top 12% strip (where the title will be composited).
+    top = image.crop((0, 0, w, max(2, int(h * 0.12))))
+    top_pixels = list(top.getdata())
+    if not top_pixels:
+        bg_r = bg_g = bg_b = 0.5
     else:
-        comp_l = 0.16
-        comp_s = min(0.45, s_ * 0.55 + 0.10)  # darker, takes more tint
-    # Achromatic guard — if the canvas is essentially grey, fall back
-    # to plain black/white so we never colour-tint a neutral.
-    if s_ < 0.08:
-        return ((0, 0, 0) if l_ >= 0.5 else (255, 255, 255),
-                (0, 0, 0, 80) if l_ >= 0.5 else (255, 255, 255, 100))
+        bg_r = sum(p[0] for p in top_pixels) / len(top_pixels) / 255.0
+        bg_g = sum(p[1] for p in top_pixels) / len(top_pixels) / 255.0
+        bg_b = sum(p[2] for p in top_pixels) / len(top_pixels) / 255.0
 
-    cr, cg, cb = colorsys.hls_to_rgb(comp_h, comp_l, comp_s)
+    import colorsys
+    bg_h, _bg_l, bg_s = colorsys.rgb_to_hls(bg_r, bg_g, bg_b)
+
+    # Achromatic guard — bg is essentially grey, so any hue tint
+    # would read as a colour artefact. Fall back to plain black /
+    # white driven entirely by the pet's luminance.
+    if bg_s < 0.08:
+        if pet_lum >= 0.5:
+            return (245, 240, 232), (245, 240, 232, 110)  # near-white cream
+        return (28, 26, 22), (28, 26, 22, 90)              # near-ink
+
+    # Match the pet's luminance band; tint with the bg hue.
+    if pet_lum >= 0.5:
+        # Light pet → light text. Cream / near-white tinted with bg hue.
+        out_l = 0.93
+        out_s = min(0.14, bg_s * 0.28)
+    else:
+        # Dark pet → dark text. Deep ink tinted with bg hue.
+        out_l = 0.18
+        out_s = min(0.40, bg_s * 0.50 + 0.08)
+
+    cr, cg, cb = colorsys.hls_to_rgb(bg_h, out_l, out_s)
     text_rgb = (
         max(0, min(255, int(round(cr * 255)))),
         max(0, min(255, int(round(cg * 255)))),
         max(0, min(255, int(round(cb * 255)))),
     )
-    line_rgba = (text_rgb[0], text_rgb[1], text_rgb[2], 90)
+    line_rgba = (text_rgb[0], text_rgb[1], text_rgb[2], 100)
     return text_rgb, line_rgba
 
 
@@ -2949,22 +2974,12 @@ def composite_name(
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
 
-    # Tighten the top empty band so the name sits closer to the canvas
-    # top edge instead of floating with a wide empty margin above it.
-    # We crop slightly less than `text_y` so the name itself is never
-    # clipped — `text_y` is the absolute pixel y-coordinate of the
-    # rendered glyph top.
-    if h > 0 and text_y > 0:
-        # Cap the crop at min(3.5% of h, one-third of the empty space
-        # above name) so we always leave a comfortable breathing margin
-        # of bg above the first glyph — the name should sit a little
-        # below the canvas top edge, not flush against it. one-third of
-        # text_y guarantees we don't touch the rendered text even when
-        # the styled font has long ascenders.
-        crop_frac = min(0.035, (text_y / h) / 3.0)
-        if crop_frac > 0.01:
-            img = _tighten_top_after_name(img, crop_frac=crop_frac)
-
+    # Note: we no longer call _tighten_top_after_name here. The raw
+    # no-name master is already pre-tightened (in `generate`) before
+    # composite_name ever sees it, so a second tighten here would
+    # double-shift content up and push the name flush against the
+    # canvas top edge. The pre-tighten alone gives the name a
+    # comfortable margin below the canvas top.
     return img
 
 

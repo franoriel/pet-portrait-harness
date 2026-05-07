@@ -61,8 +61,13 @@
     <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Museum-grade canvas, gallery-wrapped and built to outlast the wall it hangs on.' }}</p>
 
     <div class="hero__cta-group" data-reveal>
-      <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--primary btn--large">
-        {{ section.settings.cta_label | default: 'Create My Portrait' }}
+      <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--canvas-frame btn--large">
+        <span class="btn__canvas-inner">
+          {{ section.settings.cta_label | default: 'Create My Portrait' }}
+          <svg class="btn__arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 5l7 7-7 7"/>
+          </svg>
+        </span>
       </a>
       {%- if section.settings.secondary_cta_label != blank -%}
         <a href="{{ section.settings.secondary_cta_url }}" class="btn btn--outline btn--large">

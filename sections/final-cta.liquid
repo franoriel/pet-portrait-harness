@@ -4,8 +4,13 @@
     <h2 id="FinalCtaHeading">{{ section.settings.heading | default: "The portrait they'll never take down." }}</h2>
     <p>{{ section.settings.subheading | default: "Start with a photo. We'll handle the painting, printing, and shipping." }}</p>
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-      <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--primary btn--large">
-        {{ section.settings.cta_label | default: 'Create My Portrait' }}
+      <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--canvas-frame btn--large">
+        <span class="btn__canvas-inner">
+          {{ section.settings.cta_label | default: 'Create My Portrait' }}
+          <svg class="btn__arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 5l7 7-7 7"/>
+          </svg>
+        </span>
       </a>
       <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.5);">Free preview · Free redos · Printed in Canada · Ships within Canada only</p>
     </div>
