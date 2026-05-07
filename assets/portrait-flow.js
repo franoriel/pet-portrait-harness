@@ -3277,27 +3277,36 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             src: displayImage,
             alt: localName ? `Portrait of ${localName}` : 'Your portrait',
             style: (() => {
-              // Conditional zoom-crop. Two competing constraints on
-              // this preview:
-              //   1. Name (when composited at source y≈11%) must not
-              //      be clipped at the top.
-              //   2. The pet must not float inside wide empty bg
-              //      margins (the AI reserves a name-safe zone at the
-              //      top of every source plus a 10% padding ring).
-              // When a name IS composited, we cap the top crop at
-              // ~8% (120% zoom) so the lettering stays whole. When
-              // there's no name, we crop ~14% per side (140% zoom)
-              // because the safe zone is empty space we can drop.
+              // Conditional zoom-crop.
+              //
+              // When a name IS composited, generate.py now runs
+              // `_tighten_top_after_name` on the server which already
+              // crops the empty bg above the name and re-pads the
+              // bottom, so the source arrives with the name near the
+              // top edge. Any client-side top crop would clip into
+              // the now-tighter name — so we render the named source
+              // at 100% with no offset.
+              //
+              // When there's no name, we still want to drop the
+              // server's 10% padding ring + the AI's name-safe zone
+              // empty bg, so we zoom in 140% (≈14% crop per side).
+              //
               // max-width override beats the global
-              // `img, video { max-width:100% }` rule in base.css that
-              // otherwise clamps our zoom width back to 100% and
-              // leaves a strip of canvas-face showing on the edges.
-              var z = effectiveWantsName ? 120 : 140;
-              var off = (z - 100) / 2;
+              // `img, video { max-width:100% }` rule in base.css.
+              if (effectiveWantsName) {
+                return {
+                  position: 'absolute', inset: 0,
+                  width: '100%', height: '100%',
+                  maxWidth: 'none', maxHeight: 'none',
+                  objectFit: 'cover',
+                  objectPosition: 'center center',
+                  display: 'block',
+                };
+              }
               return {
                 position: 'absolute',
-                top: '-' + off + '%', left: '-' + off + '%',
-                width: z + '%', height: z + '%',
+                top: '-20%', left: '-20%',
+                width: '140%', height: '140%',
                 maxWidth: 'none', maxHeight: 'none',
                 objectFit: 'cover',
                 objectPosition: 'center center',
