@@ -2748,6 +2748,65 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
     )
 
 
+def _tighten_top_after_name(
+    image: Image.Image,
+    crop_frac: float = 0.07,
+) -> Image.Image:
+    """Shift the composited content upward to remove the empty bg band
+    above the name.
+
+    add_background_padding adds a 10% padding ring on every side, and
+    the AI's name-safe-zone prompt leaves additional empty space above
+    the pet. After composite_name lays the name at zone_top≈0.11 of the
+    canvas, that combined empty band reads as "the artwork is floating"
+    — there's a visible margin between the canvas top and the first
+    rendered glyph.
+
+    This helper crops `crop_frac` (default 7%) off the top and re-pads
+    the bottom with the sampled bottom-edge bg colour to preserve the
+    original 4:5 aspect ratio. Net effect: name moves toward the top
+    edge without clipping (zone_top 0.11 minus 0.07 = 0.04 — name top
+    at ≈y=1.5% with breathing room), pet content shifts up the same
+    amount, and the now-larger bottom padding matches the bg colour
+    so it reads as natural canvas wash, not empty white space.
+    """
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    w, h = image.size
+    crop_px = int(round(h * crop_frac))
+    if crop_px <= 0 or crop_px >= h:
+        return image
+
+    # Sample the bottom-edge bg colour so the new bottom padding matches
+    # the existing canvas tone. Mode-of-coarse-bin matches the strategy
+    # used in add_background_padding so a striped/textured edge doesn't
+    # produce a muddy averaged colour.
+    sample_band = image.crop((0, h - max(2, crop_px // 2), w, h))
+    if max(sample_band.size) > 200:
+        sample_band = sample_band.resize(
+            (max(1, sample_band.size[0] * 200 // max(sample_band.size)),
+             max(1, sample_band.size[1] * 200 // max(sample_band.size))),
+            Image.LANCZOS,
+        )
+    pixels = list(sample_band.getdata())
+    counts: dict = {}
+    for r, g, b in pixels:
+        key = (r >> 4, g >> 4, b >> 4)
+        counts[key] = counts.get(key, 0) + 1
+    if counts:
+        mode_key, _ = max(counts.items(), key=lambda kv: kv[1])
+        # Recover the bin centre as the fill colour.
+        bg = (mode_key[0] * 16 + 8, mode_key[1] * 16 + 8, mode_key[2] * 16 + 8)
+    else:
+        bg = (255, 255, 255)
+
+    # Crop top, paste onto a same-size canvas filled with bg colour.
+    cropped = image.crop((0, crop_px, w, h))  # h - crop_px rows tall
+    canvas = Image.new("RGB", (w, h), bg)
+    canvas.paste(cropped, (0, 0))
+    return canvas
+
+
 def composite_name(
     image: Image.Image,
     pet_name: str,
@@ -2824,6 +2883,20 @@ def composite_name(
     text_y = max(0, int(h * zone_top_frac) - text_h // 2)
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
+
+    # Tighten the top empty band so the name sits closer to the canvas
+    # top edge instead of floating with a wide empty margin above it.
+    # We crop slightly less than `text_y` so the name itself is never
+    # clipped — `text_y` is the absolute pixel y-coordinate of the
+    # rendered glyph top.
+    if h > 0 and text_y > 0:
+        # Cap the crop at min(7% of h, half the empty space above name)
+        # so we always leave a small breathing margin of bg above the
+        # first glyph. half-of-text_y guarantees we don't touch the
+        # rendered text even when the styled font has long ascenders.
+        crop_frac = min(0.07, (text_y / h) * 0.5)
+        if crop_frac > 0.01:
+            img = _tighten_top_after_name(img, crop_frac=crop_frac)
 
     return img
 
