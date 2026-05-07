@@ -893,6 +893,25 @@ inner rectangle around the pet, sometimes split into quadrants). \
 This is FORBIDDEN. There are exactly TWO background regions, period: \
 left half and right half, each one flat colour, each one running \
 fully from canvas edge to canvas edge.
+- ZERO TOLERANCE FOR SOFT / SUBTLE INSET RECTANGLES: the inset \
+rectangle is forbidden at FULL contrast AND at 1% contrast. Even a \
+2-pixel-wide ring of slightly lighter colour around the canvas \
+perimeter is forbidden. Even a ~5% lightness shift between the area \
+immediately behind the pet and the canvas corners is forbidden. If \
+when rendering you find yourself imagining ANY darker zone, ANY \
+softer halo, ANY breathing-room patch, ANY vignette inversion, ANY \
+rectangular bias of any kind around the pet — at ANY opacity, in \
+ANY shade — REMOVE IT. The four corners of the canvas (top-left, \
+top-right, bottom-left, bottom-right) are EXACTLY the same hex \
+value as the pixels directly behind the pet's silhouette in the \
+same half. Imagine using a single paint-bucket fill of \
+{{POSTER_BG_LEFT_HEX}} for the entire left half (every pixel from \
+x=0 to x=49.9% width, every pixel from y=0 to y=100% height) and a \
+single paint-bucket fill of {{POSTER_BG_RIGHT_HEX}} for the entire \
+right half. Not a brush. Not a wash. Not an airbrush. A flat \
+paint-bucket fill, like Photoshop's bucket tool with anti-alias and \
+tolerance both off. ANY pixel-to-pixel variation within a half is a \
+PROMPT VIOLATION.
 - The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
 curved, never offset. It runs floor-to-ceiling exactly down the centre.
 - EXACTLY ONE SEAM, AT 50%: there is precisely ONE colour change in the \
@@ -1188,6 +1207,29 @@ STYLE:
 - Warm soft lighting, no harsh shadows
 - Fine art illustration style, high resolution 300dpi, print-ready
 
+PAPER SURFACE — CRITICAL:
+- The background is PLAIN WATERCOLOR PAPER. Nothing else. No wall, no \
+shelf, no table, no floor, no surface the pet is "sitting on" or \
+"placed against." The pet floats on paper.
+- ABSOLUTELY NO HORIZONTAL LINES, STREAKS, BANDS, OR STRIPES anywhere \
+in the background or behind the pet — at any opacity, in any colour. \
+This includes (forbidden, all of them): wood grain, wood panelling, \
+shiplap, plank lines, parquet, beadboard, slat walls, fence boards, \
+floorboards, table edges, shelf lines, wainscoting, horizon lines, \
+counter lines, picture-rail mouldings, baseboard mouldings, ruled \
+notebook lines, washi-tape edges, banding from a printing pass, \
+posterised stripes, scanner lines, any horizontal mark that suggests \
+a built environment behind or beneath the subject.
+- NO vertical lines either: no plank seams, no wall corners, no door \
+edges, no curtain folds, no window frames.
+- NO surface texture: no canvas weave, no linen, no rough plaster, no \
+concrete, no marble, no granite, no fabric, no leather, no metal. \
+Just clean white watercolor paper with the watercolor wash painted \
+on it. RECURRING FAILURE MODE TO AVOID: faint horizontal pencil-like \
+streaks running across the lower third of the canvas (the model \
+imagining a wooden floor or shelf the pet is on). DO NOT add these \
+streaks at any opacity.
+
 WATERCOLOR WASH COVERAGE — CRITICAL:
 - The painted watercolor wash (the soft wet bleeds, washes, and color halo \
 that surround the pet) MUST extend organically toward the LEFT and RIGHT \
@@ -1228,7 +1270,11 @@ edge of the canvas. No reserved panels, bars, color blocks, or empty bands
 
 Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
 blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border, \
-narrow watercolor wash column with bare white paper at the sides.\
+narrow watercolor wash column with bare white paper at the sides, \
+horizontal streaks, horizontal lines, horizontal bands, horizontal stripes, \
+wood grain, wood panelling, shiplap, plank lines, floorboards, shelf, \
+table, wall texture, surface texture behind the pet, ruled lines, \
+banding, scanner lines.\
 """
 
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
