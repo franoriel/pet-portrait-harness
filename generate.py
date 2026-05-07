@@ -2559,28 +2559,63 @@ def get_font(size: int, style: Optional[str] = None) -> ImageFont.FreeTypeFont:
 
 def _detect_text_color(image: Image.Image) -> tuple:
     """
-    Sample the top 15% of the image to determine if text should be
-    light or dark for good contrast.
-    Returns (text_rgb, line_rgba) tuple.
+    Sample the top 15% of the image and return a complementary text
+    colour with strong contrast against the canvas background.
+
+    Strategy:
+      1. Average the top-region RGB to find the dominant bg colour.
+      2. Convert to HSL.
+      3. The text is the SAME hue rotated 180° (true colour-wheel
+         complement) AND pulled to one of two luminance extremes —
+         deep on light bg, light on dark bg — so contrast stays high.
+      4. Saturation is moderated so the text doesn't read as a
+         flashing primary; it should feel like an intentional accent
+         that complements the canvas tone (e.g. a deep navy on warm
+         terracotta, a soft cream on cool teal) rather than pure
+         black/white which can read as utilitarian.
+
+    Returns (text_rgb, line_rgba).
     """
     w, h = image.size
     zone_bottom = int(h * 0.15)
-    bottom = image.crop((0, 0, w, zone_bottom))
-    # Average the pixel values
-    pixels = list(bottom.getdata())
+    top = image.crop((0, 0, w, zone_bottom))
+    pixels = list(top.getdata())
     if not pixels:
         return (0, 0, 0), (0, 0, 0, 80)
-    avg_r = sum(p[0] for p in pixels) / len(pixels)
-    avg_g = sum(p[1] for p in pixels) / len(pixels)
-    avg_b = sum(p[2] for p in pixels) / len(pixels)
-    # Perceived luminance (ITU-R BT.709)
-    luminance = 0.2126 * avg_r + 0.7152 * avg_g + 0.0722 * avg_b
-    if luminance < 128:
-        # Dark background → white text
-        return (255, 255, 255), (255, 255, 255, 100)
+    avg_r = sum(p[0] for p in pixels) / len(pixels) / 255.0
+    avg_g = sum(p[1] for p in pixels) / len(pixels) / 255.0
+    avg_b = sum(p[2] for p in pixels) / len(pixels) / 255.0
+
+    # RGB → HSL
+    import colorsys
+    h_, l_, s_ = colorsys.rgb_to_hls(avg_r, avg_g, avg_b)
+
+    # Complementary hue (180° rotation on the colour wheel).
+    comp_h = (h_ + 0.5) % 1.0
+
+    # Strong contrast luminance.
+    #   Dark canvas (l < 0.5)  → light text (l ≈ 0.92, near-cream)
+    #   Light canvas (l ≥ 0.5) → dark text  (l ≈ 0.16, near-ink)
+    if l_ < 0.5:
+        comp_l = 0.92
+        comp_s = min(0.18, s_ * 0.35)  # very desaturated cream tint
     else:
-        # Light background → dark text
-        return (0, 0, 0), (0, 0, 0, 80)
+        comp_l = 0.16
+        comp_s = min(0.45, s_ * 0.55 + 0.10)  # darker, takes more tint
+    # Achromatic guard — if the canvas is essentially grey, fall back
+    # to plain black/white so we never colour-tint a neutral.
+    if s_ < 0.08:
+        return ((0, 0, 0) if l_ >= 0.5 else (255, 255, 255),
+                (0, 0, 0, 80) if l_ >= 0.5 else (255, 255, 255, 100))
+
+    cr, cg, cb = colorsys.hls_to_rgb(comp_h, comp_l, comp_s)
+    text_rgb = (
+        max(0, min(255, int(round(cr * 255)))),
+        max(0, min(255, int(round(cg * 255)))),
+        max(0, min(255, int(round(cb * 255)))),
+    )
+    line_rgba = (text_rgb[0], text_rgb[1], text_rgb[2], 90)
+    return text_rgb, line_rgba
 
 
 # Per-style text rendering config — controls how the name looks on each style
