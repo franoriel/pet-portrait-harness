@@ -262,8 +262,7 @@ p { color: var(--color-ink); }
 .template-index .site-header:not(.is-scrolled) .nav-dropdown__menu a {
   color: var(--color-ink) !important;
 }
-.template-index .site-header:not(.is-scrolled) .btn--primary,
-.template-index .site-header:not(.is-scrolled) #HeaderCta {
+.template-index .site-header:not(.is-scrolled) .btn--primary {
   background: rgba(255,255,255,0.12) !important;
   border: 1px solid rgba(255,255,255,0.4) !important;
   color: #fff !important;
@@ -303,8 +302,7 @@ p { color: var(--color-ink); }
   .template-index .site-header:not(.is-scrolled) .site-header__logo img {
     filter: none;
   }
-  .template-index .site-header:not(.is-scrolled) .btn--primary,
-  .template-index .site-header:not(.is-scrolled) #HeaderCta {
+  .template-index .site-header:not(.is-scrolled) .btn--primary {
     background: var(--color-primary, #2F2F2A) !important;
     border: 1px solid transparent !important;
     color: #fff !important;
