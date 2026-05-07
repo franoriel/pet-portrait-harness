@@ -1867,13 +1867,39 @@ def _modern_shape_art_reframe(
     if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
         return add_background_padding(img, padding_ratio=0.10)
 
+    # Sanity check on the detected bbox. Low-contrast pets (a white
+    # cat on a cream Modern bg, a cream dog on warm beige, etc.) drop
+    # out of the BG_TOL distance check — the body's coat colour is
+    # too close to the bg, so only the darker features (ears, eyes,
+    # nose, fur shadows) get classified as foreground. Result: bbox
+    # is just the face, and the body gets cropped off before the
+    # reframe pastes onto the new canvas.
+    #
+    # When the bbox is implausibly small along an axis we trust the
+    # AI's natural composition on that axis instead — Gemini reliably
+    # composes pets centred horizontally with the body extending down
+    # to the source bottom, so we expand fg_max_y to the source bottom
+    # and centre the bbox horizontally on the source midline. The
+    # white-body / pale-coat areas of the source are preserved (the
+    # bbox crop is a rectangular region; whatever's inside it gets
+    # pasted, regardless of whether each pixel passed BG_TOL).
+    bbox_w = fg_max_x - fg_min_x
+    bbox_h = fg_max_y - fg_min_y
+    if bbox_h < h * 0.55:
+        fg_max_y = h
+        bbox_h = fg_max_y - fg_min_y
+    if bbox_w < w * 0.55:
+        cx = w // 2
+        half = max(bbox_w, int(w * 0.55)) // 2
+        fg_min_x = max(0, cx - half)
+        fg_max_x = min(w, cx + half)
+        bbox_w = fg_max_x - fg_min_x
+
     # Add inset so we don't clip anti-aliased edges. Antialiased ear
     # tips on a cream background can fall below BG_TOL — without a
     # margin, the bbox cuts into the visible silhouette and re-padding
     # places the ears flush against the canvas edge. 1.5% of bbox
     # dimension gives the soft fade room to be preserved.
-    bbox_w = fg_max_x - fg_min_x
-    bbox_h = fg_max_y - fg_min_y
     inset_x = max(step * 2, int(bbox_w * 0.015))
     inset_y = max(step * 2, int(bbox_h * 0.015))
     fg_min_x = max(0, fg_min_x - inset_x)
