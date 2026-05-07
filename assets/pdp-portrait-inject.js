@@ -497,24 +497,15 @@
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
     canvasFace.appendChild(weave);
 
-    // Brand watermark overlay on the OUTER mockup container (linen +
-    // canvas) rather than inside the canvas-face. Putting it on the
-    // outer container means the watermark spans the entire visible
-    // preview, can't be cropped by zoom, and doesn't stack with the
-    // baked-in watermark inside the cropped portrait. Always show it
-    // so every preview surface carries the brand mark consistently.
+    // Brand watermark overlay — uses the actual Pet Printables logo
+    // asset tiled across the OUTER mockup container (linen + canvas)
+    // so it spans the entire visible preview and can't be cropped by
+    // the source-image zoom inside the canvas-face.
     var watermark = document.createElement('div');
     watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3;'
-      + 'opacity:0.16;'
-      + "background-image:url(\"data:image/svg+xml;utf8,"
-      +   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E"
-      +     "%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' "
-      +       "font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3E"
-      +       "Pet Printables"
-      +     "%3C/text%3E"
-      +   "%3C/svg%3E"
-      + "\");"
-      + 'background-repeat:repeat;background-size:170px 170px;';
+      + 'opacity:0.14;'
+      + "background-image:url(" + _assetBase + "watermark-logo.png);"
+      + 'background-repeat:repeat;background-size:160px auto;';
     container.appendChild(watermark);
 
     // Canvas edge highlight — only on the unframed canvas (the wood

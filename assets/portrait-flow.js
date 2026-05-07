@@ -2895,32 +2895,35 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
           aspectRatio: '4/5', position: 'relative',
         },
       },
-        // Brand watermark overlay — on the OUTER container, so it
-        // spans the full visible preview and isn't constrained by the
-        // cropped source. Same mark used on the customize step + PDP
-        // mockup so all three preview surfaces match.
+        // Brand watermark overlay — uses the Pet Printables logo
+        // asset tiled across the OUTER container so it spans the full
+        // visible preview and isn't constrained by the cropped source.
+        // Same mark used on the customize step + PDP mockup so all
+        // three preview surfaces match.
         React.createElement('div', {
           style: {
             position: 'absolute', inset: 0, pointerEvents: 'none',
-            opacity: 0.16, zIndex: 2,
-            backgroundImage: "url(\"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3EPet Printables%3C/text%3E%3C/svg%3E\")",
+            opacity: 0.14, zIndex: 2,
+            backgroundImage: `url(${_pfAssetBase}watermark-logo.png)`,
             backgroundRepeat: 'repeat',
-            backgroundSize: '170px 170px',
+            backgroundSize: '160px auto',
           },
         }),
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
           style: {
-            // Zoom in 140% to crop ~14% per side. Earlier 120% crop
-            // only removed the server's 10% padding ring and left the
-            // AI's name-safe zone empty bg visible (the pet still read
-            // as floating). 140% is the sweet spot — it removes the
-            // padding + most of the name-safe zone without slicing
-            // into ear tips. max-width override beats the global
-            // `img, video { max-width:100% }` rule in base.css.
+            // Light 110% zoom to drop the server's 10% padding ring
+            // without clipping into the pet on styles whose AI source
+            // already fills the canvas (Modern, Renaissance Royalty,
+            // Aura Gradient — these had body / ears clipped at the
+            // earlier 140% zoom). 110% is conservative on purpose:
+            // tighter styles will still show a thin band of bg margin,
+            // but no style ever loses the subject. max-width override
+            // beats the global `img, video { max-width:100% }` rule
+            // in base.css.
             position: 'absolute',
-            top: '-20%', left: '-20%',
-            width: '140%', height: '140%',
+            top: '-5%', left: '-5%',
+            width: '110%', height: '110%',
             maxWidth: 'none', maxHeight: 'none',
             objectFit: 'cover',
             objectPosition: 'center center',
@@ -3344,17 +3347,17 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           }),
         ),
       ),
-      // Brand watermark overlay — sits on the OUTER linen container
-      // (above the canvas product), so it always spans the full
-      // visible preview and never gets cropped by the source-image
-      // zoom that runs inside the canvas-face.
+      // Brand watermark overlay — uses the Pet Printables logo asset
+      // tiled across the OUTER linen container so it always spans the
+      // full visible preview and can't be cropped by the source-image
+      // zoom inside the canvas-face.
       React.createElement('div', {
         style: {
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          opacity: 0.16, zIndex: 2,
-          backgroundImage: "url(\"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Ctext x='110' y='118' text-anchor='middle' transform='rotate(-26 110 110)' font-family='Georgia,serif' font-style='italic' font-size='13' fill='%231c1612'%3EPet Printables%3C/text%3E%3C/svg%3E\")",
+          opacity: 0.14, zIndex: 2,
+          backgroundImage: `url(${_pfAssetBase}watermark-logo.png)`,
           backgroundRepeat: 'repeat',
-          backgroundSize: '170px 170px',
+          backgroundSize: '160px auto',
         },
       }),
       // Loading overlay when fetching named version — spinner + progressive copy
