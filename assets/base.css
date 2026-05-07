@@ -153,14 +153,15 @@ p { color: var(--color-ink); }
 .btn--large { padding: 18px 36px; font-size: var(--text-lg); min-height: 60px; }
 .btn--full { width: 100%; }
 
-/* ── Minimalist framed-canvas CTA ─────────────────────────── */
-/* Outer dark "frame" wrapping a cream "canvas" interior. The arrow at
-   the end of the label nudges the user toward the next step. Used for
-   the homepage hero CTA + final CTA — it's the brand's product made
-   button-shaped, so the offer reads as "your portrait, framed." */
+/* ── Subtle framed-canvas CTA ─────────────────────────────── */
+/* Quiet outlined frame with a soft cream interior. Used for the
+   homepage hero / final CTA — it gestures at the "framed canvas"
+   product without competing with the hero visual for attention.
+   Forward arrow nudges the user to the next step. */
 .btn--canvas-frame {
-  background: var(--color-ink, #1c1612);
-  padding: 5px;
+  background: transparent;
+  padding: 2px;
+  border: 1.5px solid rgba(28, 22, 18, 0.78);
   color: var(--color-ink, #1c1612);
   text-transform: none;
   letter-spacing: 0;
@@ -168,45 +169,65 @@ p { color: var(--color-ink); }
   display: inline-flex;
   align-items: stretch;
   gap: 0;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: 3px;
   min-height: 0;
-  box-shadow: 0 6px 18px rgba(28, 22, 18, 0.22), 0 2px 4px rgba(28, 22, 18, 0.18);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 1px 2px rgba(28, 22, 18, 0.06);
+  transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
 }
 .btn--canvas-frame:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(28, 22, 18, 0.28), 0 3px 6px rgba(28, 22, 18, 0.2);
+  border-color: var(--color-ink, #1c1612);
+  background: rgba(253, 248, 240, 0.4);
 }
 .btn--canvas-frame .btn__canvas-inner {
-  background: #fdf8f0;
+  background: rgba(253, 248, 240, 0.55);
   color: var(--color-ink, #1c1612);
-  padding: 14px 26px;
+  padding: 10px 20px;
   border-radius: 1px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 10px;
   font-family: var(--font-body);
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   white-space: nowrap;
   width: 100%;
 }
 .btn--canvas-frame.btn--large .btn__canvas-inner {
-  padding: 18px 34px;
-  font-size: var(--text-base);
+  padding: 13px 24px;
+  font-size: var(--text-sm);
 }
 .btn--canvas-frame .btn__arrow {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   flex: 0 0 auto;
   transition: transform 0.22s ease;
+  opacity: 0.85;
 }
 .btn--canvas-frame:hover .btn__arrow {
-  transform: translateX(5px);
+  transform: translateX(4px);
+  opacity: 1;
+}
+/* On the homepage hero (transparent header overlay, white text), the
+   subtle frame switches to a soft cream-on-cream outline so it stays
+   visible on the dark portion of the hero without ever fighting the
+   image for visual weight. */
+.template-index .btn--canvas-frame {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+.template-index .btn--canvas-frame .btn__canvas-inner {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.template-index .btn--canvas-frame:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Announcement bar ─────────────────────────────────────── */
