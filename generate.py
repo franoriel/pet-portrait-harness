@@ -1633,6 +1633,7 @@ def add_background_padding(
     img: Image.Image,
     padding_ratio: float = 0.12,
     solid_bg_color: Optional[tuple] = None,
+    pad_bottom_ratio: Optional[float] = None,
 ) -> Image.Image:
     """Pad the image by replicating its edge pixels outward.
 
@@ -1666,6 +1667,10 @@ def add_background_padding(
     w, h = img.size
     pad_w = int(w * padding_ratio)
     pad_h = int(h * padding_ratio)
+    # Bottom pad can be set independently for the universal flush-bottom
+    # rule (pad_bottom_ratio=0 keeps the pet at the canvas bottom edge).
+    # Defaults to padding_ratio for backward compat.
+    pad_bot_h = int(h * (padding_ratio if pad_bottom_ratio is None else pad_bottom_ratio))
 
     # Solid-bg shortcut: when the caller knows the style has a uniform
     # edge-to-edge background colour (e.g. neon-pop-art, bold-graphic-
@@ -1675,11 +1680,11 @@ def add_background_padding(
     # padding with the known bg colour" is both simpler and visibly
     # cleaner.
     if solid_bg_color is not None:
-        out = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h), solid_bg_color)
+        out = Image.new('RGB', (w + 2 * pad_w, h + pad_h + pad_bot_h), solid_bg_color)
         out.paste(img, (pad_w, pad_h))
         return out
 
-    out = Image.new('RGB', (w + 2 * pad_w, h + 2 * pad_h))
+    out = Image.new('RGB', (w + 2 * pad_w, h + pad_h + pad_bot_h))
     out.paste(img, (pad_w, pad_h))
 
     # Padding strategy: each band is a blend between two layers.
@@ -1768,12 +1773,15 @@ def add_background_padding(
     out.paste(top_band, (pad_w, 0))
 
     # ── Bottom band (replicate edge sits at the top of the band) ──
-    bot_strip_1px = img.crop((0, h - 1, w, h))
-    bot_replicated = bot_strip_1px.resize((w, pad_h), Image.NEAREST)
-    bot_solid = Image.new('RGB', (w, pad_h), _band_mean(bot_strip_1px))
-    bot_band = Image.composite(bot_solid, bot_replicated,
-                                _vertical_blend_mask(w, pad_h, replicate_at_top=True))
-    out.paste(bot_band, (pad_w, pad_h + h))
+    # Skipped entirely when pad_bot_h == 0 (flush-bottom mode — pet's
+    # bottom should sit at the canvas bottom edge, no padding below).
+    if pad_bot_h > 0:
+        bot_strip_1px = img.crop((0, h - 1, w, h))
+        bot_replicated = bot_strip_1px.resize((w, pad_bot_h), Image.NEAREST)
+        bot_solid = Image.new('RGB', (w, pad_bot_h), _band_mean(bot_strip_1px))
+        bot_band = Image.composite(bot_solid, bot_replicated,
+                                    _vertical_blend_mask(w, pad_bot_h, replicate_at_top=True))
+        out.paste(bot_band, (pad_w, pad_h + h))
 
     # ── Left band (replicate edge sits at the right of the band) ──
     left_strip_1px = img.crop((0, 0, 1, h))
@@ -1794,8 +1802,9 @@ def add_background_padding(
     # ── Corners: solid sample of the corner pixel ──
     out.paste(img.crop((0, 0, 1, 1)).resize((pad_w, pad_h), Image.NEAREST), (0, 0))
     out.paste(img.crop((w - 1, 0, w, 1)).resize((pad_w, pad_h), Image.NEAREST), (pad_w + w, 0))
-    out.paste(img.crop((0, h - 1, 1, h)).resize((pad_w, pad_h), Image.NEAREST), (0, pad_h + h))
-    out.paste(img.crop((w - 1, h - 1, w, h)).resize((pad_w, pad_h), Image.NEAREST), (pad_w + w, pad_h + h))
+    if pad_bot_h > 0:
+        out.paste(img.crop((0, h - 1, 1, h)).resize((pad_w, pad_bot_h), Image.NEAREST), (0, pad_h + h))
+        out.paste(img.crop((w - 1, h - 1, w, h)).resize((pad_w, pad_bot_h), Image.NEAREST), (pad_w + w, pad_h + h))
 
     return out
 
@@ -2111,8 +2120,13 @@ def _portrait_post_process(img: Image.Image) -> Image.Image:
     NOTE: callers should add background padding via add_background_padding()
     BEFORE calling this — the padding step needs the un-cropped image so it
     can sample the corners reliably.
+
+    Uses bottom gravity so any vertical excess is cropped from the top.
+    With the universal flush-bottom rule (add_background_padding uses
+    pad_bottom_ratio=0), the pet's bottom is at the source bottom edge —
+    bottom gravity preserves that flush alignment when cropping to 4:5.
     """
-    img = crop_to_ratio(img, PORTRAIT_RATIO)
+    img = crop_to_ratio(img, PORTRAIT_RATIO, gravity="bottom")
     min_w, min_h = PORTRAIT_MIN_SIZE
     if img.width < min_w or img.height < min_h:
         scale = max(min_w / img.width, min_h / img.height)
@@ -3454,6 +3468,10 @@ def _generate_inner(
             # composition rule explicitly allows). Sample the bg colour
             # from the top corners — pet never reaches there — and fill
             # the padding ring with that solid colour.
+            #
+            # pad_bottom_ratio=0 enforces the universal flush-bottom rule:
+            # the pet's body bottom sits at the canvas bottom edge — no
+            # band of bg colour below the pet.
             sw, sh = ai_image_no_name.size
             cs = max(8, min(sw, sh) // 50)
             corners = (
@@ -3468,10 +3486,17 @@ def _generate_inner(
                 sum(p[2] for p in pixels) // n,
             )
             padded = add_background_padding(
-                ai_image_no_name, padding_ratio=0.12, solid_bg_color=bg
+                ai_image_no_name, padding_ratio=0.12, solid_bg_color=bg,
+                pad_bottom_ratio=0,
             )
         else:
-            padded = add_background_padding(ai_image_no_name, padding_ratio=0.12)
+            # All other organic-bg styles (watercolor, charcoal, aura,
+            # renaissance, line art): pad top + sides only so the pet's
+            # natural bottom (fur fade, paw line) lands flush at the
+            # canvas bottom — universal flush-bottom rule.
+            padded = add_background_padding(
+                ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
+            )
         ai_image_no_name.close()
         ai_image_no_name = padded
 
@@ -3501,15 +3526,13 @@ def _generate_inner(
     # to raw_path / raw_web_path keeps the 6-tuple return shape; the
     # worker dedupes by file path before submitting CDN uploads, so the
     # CDN only sees two unique objects per generation.
-    # Tighten the empty top band on the no-name master too. The AI's
-    # reserved name-safe zone leaves visible empty bg above the pet on
-    # every style, which made the Step 3 preview AND the rectangle
-    # canvas mockups (12x16 / 16x20, where source aspect matches
-    # canvas aspect so cover-fit doesn't crop anything) read as the
-    # pet floating in a wide top margin. 10% crop + bottom re-pad with
-    # the sampled bg colour shifts the pet up enough to read as
-    # filling the canvas without clipping ear tips on tight styles.
-    ai_image_no_name = _tighten_top_after_name(ai_image_no_name, crop_frac=0.10)
+    # _tighten_top_after_name is intentionally NOT called here. With
+    # the universal flush-bottom rule (add_background_padding now uses
+    # pad_bottom_ratio=0 for every style), the pet already sits at the
+    # canvas bottom edge. Re-tightening would crop into the pet content
+    # AND re-pad the bottom with a sampled-edge colour (which on the
+    # flush layout is the pet itself, not bg) — producing a visible
+    # band where the pet used to sit flush.
 
     raw_path = out / f"{uid}_{style}_raw.png"
     ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
