@@ -3807,24 +3807,23 @@ def composite_name(
     w, h = img.size
 
     # IDEMPOTENCY GUARD — if the input already contains composited text
-    # IN THE NAME-SAFE ZONE (top 22% of canvas), DO NOT add another layer.
-    # That zone is where the previous composite_name would have placed
-    # the name; pre-existing text there is almost always a stale named
-    # URL being passed back through. A second composite at slightly
-    # different scale / position produces ghost-doubled letters
-    # ("EDUARDO RAMIREZ" overlapping itself, JEWEL + WILDER → JEWILDER).
+    # ANYWHERE in the upper half of the canvas, DO NOT add another layer.
+    # A second composite at slightly different scale / position produces
+    # ghost-doubled letters ("EDUARDO RAMIREZ" overlapping itself, JEWEL
+    # + WILDER → JEWILDER).
     #
-    # Scoping the OCR check to the top band is critical: at full canvas
-    # scope, Tesseract reads pet anatomy (eye shapes, cubist facets) as
-    # spurious "words" on stylized portraits, which would FALSELY skip
-    # the composite and the customer would see no name on the preview
-    # despite toggling Yes. Only the name-safe band is checked because
-    # that's where doubling actually causes visible ghosting.
+    # The scan zone is the TOP 50% of the canvas — wider than the strict
+    # name-safe-zone band — because some style pipelines (e.g.
+    # _modern_open_name_band) re-canvas the image and shift an
+    # already-composited name from y≈11% to y≈30%, putting it OUTSIDE
+    # a strict top-22% scan. Top-50% catches names regardless of where
+    # earlier post-processing pushed them. Conservative alpha-char
+    # thresholds below keep false-positive risk low on stylized pet art.
     #
     # Falls open silently if Tesseract isn't installed (returns None) —
     # behavior is unchanged from before in that case.
     try:
-        name_band_h = max(1, int(h * 0.22))
+        name_band_h = max(1, int(h * 0.50))
         name_band = img.crop((0, 0, w, name_band_h))
         existing_text = _detect_hallucinated_text(name_band)
         # Conservative thresholds — Tesseract reliably mis-reads cubist
