@@ -1079,10 +1079,14 @@
     }
 
     function renderActiveImage(url) {
-      // Hero slide is locked to a 1:1 aspect ratio — feed it the 1:1
-      // derivative when we have one so the name band isn't cropped.
-      var url1x1 = data.namedPreviewUrl1x1 || null;
-      var heroUrl = (showName && url1x1) ? url1x1 : url;
+      // Pick the 1:1 derivative that matches the current toggle state.
+      // Toggling No used to keep showing data.namedPreviewUrl1x1 on square
+      // mockups — the name visibly stayed on the canvas after the customer
+      // had opted out. Use the no-name 1:1 derivative on No.
+      var url1x1 = showName
+        ? (data.namedPreviewUrl1x1 || null)
+        : (data.previewUrl1x1 || null);
+      var heroUrl = url1x1 || url;
       var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
       if (mainImg) mainImg.src = heroUrl;
       if (thumb) thumb.src = heroUrl;
