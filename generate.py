@@ -646,9 +646,9 @@ MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
     "cream":      ("#F4EFE7", "warm off-white cream"),
     "clay":       ("#E2C7A8", "soft warm clay"),
     "sage":       ("#B6C2A3", "muted sage green"),
-    "terracotta": ("#C77B58", "dusty terracotta"),
+    "terracotta": ("#D9A28D", "soft dusty terracotta"),
     "mauve":      ("#C9A4A4", "soft dusty mauve"),
-    "mustard":    ("#C9A352", "warm mustard ochre"),
+    "mustard":    ("#D4B884", "soft warm wheat"),
     "navy":       ("#1D2A44", "deep navy ink"),
     "charcoal":   ("#2E2A26", "warm charcoal"),
 }

@@ -69,9 +69,9 @@ const MODERN_COLORS = [
   { id: 'cream',      hex: '#F4EFE7', label: 'Cream' },
   { id: 'clay',       hex: '#E2C7A8', label: 'Clay' },
   { id: 'sage',       hex: '#B6C2A3', label: 'Sage' },
-  { id: 'terracotta', hex: '#C77B58', label: 'Terracotta' },
+  { id: 'terracotta', hex: '#D9A28D', label: 'Terracotta' },
   { id: 'mauve',      hex: '#C9A4A4', label: 'Mauve' },
-  { id: 'mustard',    hex: '#C9A352', label: 'Mustard' },
+  { id: 'mustard',    hex: '#D4B884', label: 'Wheat' },
   { id: 'navy',       hex: '#1D2A44', label: 'Navy' },
   { id: 'charcoal',   hex: '#2E2A26', label: 'Charcoal' },
 ];
