@@ -3806,24 +3806,33 @@ def composite_name(
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
     w, h = img.size
 
-    # IDEMPOTENCY GUARD — if the input already contains compositied text
-    # (almost always the customer's previous pet name baked into a stale
-    # source URL), DO NOT add another layer. A second composite at a
-    # slightly different scale / position produces ghost-doubled letters
-    # ("EDUARDO RAMIREZ" overlapping itself, "JEWEL" + "WILDER" → JEWILDER).
-    # Better to ship the existing name unchanged than to ship a doubled
-    # mess that customers see and can't ignore.
+    # IDEMPOTENCY GUARD — if the input already contains composited text
+    # IN THE NAME-SAFE ZONE (top 22% of canvas), DO NOT add another layer.
+    # That zone is where the previous composite_name would have placed
+    # the name; pre-existing text there is almost always a stale named
+    # URL being passed back through. A second composite at slightly
+    # different scale / position produces ghost-doubled letters
+    # ("EDUARDO RAMIREZ" overlapping itself, JEWEL + WILDER → JEWILDER).
     #
-    # Falls open silently if Tesseract isn't installed in the environment
-    # (returns None) — behavior is unchanged from before. With Tesseract,
-    # any high-confidence multi-character text trips the skip.
+    # Scoping the OCR check to the top band is critical: at full canvas
+    # scope, Tesseract reads pet anatomy (eye shapes, cubist facets) as
+    # spurious "words" on stylized portraits, which would FALSELY skip
+    # the composite and the customer would see no name on the preview
+    # despite toggling Yes. Only the name-safe band is checked because
+    # that's where doubling actually causes visible ghosting.
+    #
+    # Falls open silently if Tesseract isn't installed (returns None) —
+    # behavior is unchanged from before in that case.
     try:
-        existing_text = _detect_hallucinated_text(img)
+        name_band_h = max(1, int(h * 0.22))
+        name_band = img.crop((0, 0, w, name_band_h))
+        existing_text = _detect_hallucinated_text(name_band)
         if existing_text:
             log.warning(
-                "[composite_name] input already contains text '%s' — "
-                "skipping composite for pet_name='%s' to avoid double-name "
-                "ghosting. Source state likely had a stale namedPreviewUrl.",
+                "[composite_name] input's name-safe zone already contains "
+                "text '%s' — skipping composite for pet_name='%s' to avoid "
+                "double-name ghosting. Source state likely had a stale "
+                "namedPreviewUrl.",
                 existing_text, pet_name,
             )
             return img
