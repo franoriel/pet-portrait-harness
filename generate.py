@@ -892,6 +892,20 @@ rectangular patch in the upper portion of one half (looks like a \
 faint room-corner shadow). DO NOT add this patch — both halves are \
 treated as pure flat colour fields, like a screen-print pull, not a \
 photograph of a wall.
+- NO CORNER PATCHES, EVER: do NOT add a darker rectangular block \
+in the TOP-LEFT corner. Do NOT add one in the TOP-RIGHT corner. Do \
+NOT add one in the BOTTOM-LEFT corner. Do NOT add one in the \
+BOTTOM-RIGHT corner. NO L-shaped corner shadows, NO triangular \
+corner gradients, NO darker rectangle hugging any corner of the \
+canvas at any size (5%, 10%, 30%, 50% — all forbidden). The pet is \
+NOT in a room, the pet is NOT against a wall, the pet is NOT in a \
+photo studio with a corner shadow. This is a flat 2D screen-print, \
+NOT a 3D scene with depth. RECURRING FAILURE MODE TO AVOID: a \
+darker rectangular block roughly 25-50% of canvas width and 10-20% \
+of canvas height, hugging the upper-left or upper-right corner — \
+the model imagining a window frame, picture-rail moulding, or \
+cropped wall panel. This is FORBIDDEN. The pet floats in a flat \
+two-region poster, not in a photographed corner of a room.
 - CRITICAL — NO INSET / NESTED RECTANGLE BEHIND THE PET: do NOT \
 render the background as an outer lighter border with a darker \
 rectangular block behind the pet (a "poster pinned to a wall" or \
@@ -972,10 +986,15 @@ behind the pet, nested background rectangles, darker rectangular block \
 surrounding the pet, four-quadrant background, vertical edge strip, \
 vertical pillar or sidebar at left or right edge, three-region \
 vertical background, additional vertical seams beyond the central one, \
-more than two background colours, horizontal background splits, \
-diagonal background splits, curved background seams, gradient \
-backgrounds, off-centre seam, background patterns, drop shadows, text, \
-watermark, border, solid color bars or panels at image edges.\
+darker corner patch, top-left corner rectangle, top-right corner \
+rectangle, bottom-left corner rectangle, bottom-right corner \
+rectangle, L-shaped corner shadows, triangular corner gradients, \
+window-frame look, picture-rail moulding, cropped wall panel, \
+photographed-corner-of-room look, more than two background colours, \
+horizontal background splits, diagonal background splits, curved \
+background seams, gradient backgrounds, off-centre seam, background \
+patterns, drop shadows, text, watermark, border, solid color bars or \
+panels at image edges.\
 """
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
