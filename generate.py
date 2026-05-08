@@ -672,6 +672,10 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#1B6B6E", "bg_right_name": "deep teal",
         "accents":       "warm orange (#F4A340), golden mustard (#F2CB52), warm ivory (#F4EFE7), and charcoal black (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        # Cool bg overlaps natural shadow tones in stylised pet rendering.
+        # Tighten interior snap so a midtone teal-grey shadow on the pet
+        # doesn't get snapped to canonical bg → silhouette breach.
+        "interior_tol":  50,
     },
     "cobalt": {
         "label":         "Cobalt",
@@ -679,6 +683,7 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#1B2E58", "bg_right_name": "deep navy ink",
         "accents":       "warm yellow (#F4D641), ivory (#F4EFE7), hot red (#E63946), and charcoal (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        "interior_tol":  50,
     },
     "rose": {
         "label":         "Rose",
@@ -700,6 +705,7 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#1F4A30", "bg_right_name": "deep forest green",
         "accents":       "warm mustard (#C9A352), ivory (#F4EFE7), terracotta (#C77B58), and charcoal (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        "interior_tol":  50,
     },
     "rust": {
         "label":         "Rust",
@@ -714,6 +720,9 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#3F1F58", "bg_right_name": "deep aubergine purple",
         "accents":       "warm yellow (#F2CB52), ivory (#F4EFE7), hot pink (#E68FB5), and charcoal (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        # Deep aubergine sits close to charcoal/dark-shadow tones — same
+        # over-snap risk as the other cool palettes, slightly less acute.
+        "interior_tol":  60,
     },
     "ember": {
         "label":         "Ember",
@@ -4291,8 +4300,16 @@ def _generate_inner(
             # while flattening any soft bg variation away.
             palette_id = (style_vars or {}).get("poster_palette") or "teal"
             if palette_id in POSTER_PALETTES:
-                padded = _flatten_poster_bg(padded, POSTER_PALETTES[palette_id])
-                padded = _remove_poster_halos(padded, POSTER_PALETTES[palette_id])
+                _palette = POSTER_PALETTES[palette_id]
+                # Cool palettes (teal/cobalt/forest/violet) override
+                # interior_tol downward so natural pet-shadow tones in the
+                # pet's bg-adjacent colour family don't get snapped to bg
+                # and read as silhouette breaches.
+                _interior_tol = int(_palette.get("interior_tol", 90))
+                padded = _flatten_poster_bg(
+                    padded, _palette, interior_tol=_interior_tol,
+                )
+                padded = _remove_poster_halos(padded, _palette)
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
             # renaissance, line art): pad top + sides only so the pet's
