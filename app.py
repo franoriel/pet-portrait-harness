@@ -38,7 +38,10 @@ from fulfillment import (
 )
 from mockups import generate_mockups
 from storage import upload_portrait
-from jobs import create_job, get_job, dequeue_job, update_job, queue_depth
+from jobs import (
+    create_job, get_job, dequeue_job, update_job, queue_depth,
+    set_order_record, get_order_record,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger(__name__)
@@ -776,6 +779,247 @@ def verify_download_token(token: str) -> Optional[str]:
         return r2_key
     except Exception:
         return None
+
+
+def make_order_token(order_id: str, ttl_seconds: int = 90 * 86400) -> str:
+    """Sign an order_id with HMAC + expiry. Mirrors make_download_token's
+    format. Used for the /portraits/<token> digital-gift page link in
+    the post-purchase email — no Shopify account login required."""
+    import base64, hmac, hashlib, time
+    expires = int(time.time()) + ttl_seconds
+    payload = f"order:{order_id}|{expires}".encode("utf-8")
+    sig = hmac.new(_download_secret(), payload, hashlib.sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=") + "." + sig
+
+
+def verify_order_token(token: str) -> Optional[str]:
+    """Verify an order token. Returns the order_id on success, None on
+    signature failure or expiry."""
+    import base64, hmac, hashlib, time
+    try:
+        b64_payload, sig = token.rsplit(".", 1)
+        padding = 4 - (len(b64_payload) % 4)
+        if padding != 4:
+            b64_payload += "=" * padding
+        payload = base64.urlsafe_b64decode(b64_payload)
+        expected = hmac.new(_download_secret(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+        decoded = payload.decode("utf-8")
+        if not decoded.startswith("order:"):
+            return None
+        body, expires_str = decoded.rsplit("|", 1)
+        if int(expires_str) < int(time.time()):
+            return None
+        return body[len("order:"):]
+    except Exception:
+        return None
+
+
+# Self-contained HTML for the digital-gift page. Single CTA above the
+# fold, per-portrait card with downloads + share + gallery submit, plus
+# a soft review nudge. Inline CSS so it renders standalone — no theme
+# Liquid dependency. Brand-aligned with the email template (cream bg,
+# Cormorant Garamond serif italic, charcoal ink, no em-dashes).
+_PORTRAITS_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Your portraits — Pet Printables</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 'Inter', -apple-system, sans-serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
+.header { text-align: center; padding: 16px 0 32px; }
+.brand { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 24px; color: #1C1C1C; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 8px; }
+.h1 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 38px; line-height: 1.1; margin: 0 0 12px; color: #1C1C1C; }
+.h1-sub { font-size: 14px; color: #6B6B63; line-height: 1.55; margin: 0 0 32px; }
+.expiry { font-size: 12px; color: #8B7D6B; margin: 0 0 24px; font-style: italic; }
+.portrait-card { background: #FFFFFF; border: 1px solid #E4DDD4; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.portrait-card__head { display: grid; grid-template-columns: 140px 1fr; gap: 20px; align-items: start; margin-bottom: 16px; }
+.portrait-card__img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; background: #F3EDE6; }
+.portrait-card__name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 22px; color: #1C1C1C; margin: 0 0 4px; }
+.portrait-card__style { font-size: 12px; color: #8B7D6B; margin: 0 0 14px; }
+.dl-section { margin-top: 14px; }
+.dl-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 10px; }
+.dl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.dl-btn { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 14px; border: 1px solid #1C1C1C; border-radius: 6px; background: #FFFFFF; color: #1C1C1C; text-decoration: none; cursor: pointer; font-family: inherit; font-size: 13px; transition: all 0.15s; }
+.dl-btn:hover { background: #F3EDE6; }
+.dl-btn strong { font-size: 14px; font-weight: 600; }
+.dl-btn span { font-size: 11px; color: #6B6B63; margin-top: 2px; }
+.dl-btn--solid { background: #2F2F2A; color: #fff; border-color: #2F2F2A; }
+.dl-btn--solid:hover { background: #1C1C1C; color: #fff; }
+.dl-btn--ghost { background: transparent; }
+.actions-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.review-cta { background: #F3EDE6; border-radius: 12px; padding: 28px; text-align: center; margin-top: 32px; }
+.review-cta h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 24px; margin: 0 0 8px; color: #1C1C1C; }
+.review-cta p { font-size: 14px; color: #6B6B63; margin: 0 0 16px; line-height: 1.55; }
+.btn-primary { display: inline-block; background: #2F2F2A; color: #FFFFFF; padding: 14px 28px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; }
+.footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid #E4DDD4; }
+.footer p { font-size: 11px; color: #8B7D6B; letter-spacing: 0.04em; margin: 4px 0; }
+.footer a { color: #8B7D6B; text-decoration: underline; }
+@media (max-width: 600px) {
+  .h1 { font-size: 30px; }
+  .portrait-card__head { grid-template-columns: 1fr; }
+  .portrait-card__img { max-width: 220px; margin: 0 auto; }
+  .dl-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <span class="brand">Pet Printables</span>
+  </header>
+  <p class="eyebrow">Your digital gift</p>
+  __HEADLINE__
+  <p class="expiry">Links are good until __EXPIRES__. Save the originals — they expire.</p>
+  __PORTRAITS__
+  <div class="review-cta">
+    <h2>How was your order?</h2>
+    <p>Your canvas is on its way. Once it lands, we'd love to hear what you think.</p>
+    <a href="https://petprintables.ca/account" class="btn-primary">LEAVE A REVIEW</a>
+  </div>
+  <footer class="footer">
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:#1C1C1C;">Pet Printables</p>
+    <p>A modern tribute to unconditional love. Vancouver, BC.</p>
+    <p><a href="https://petprintables.ca">petprintables.ca</a> · <a href="https://instagram.com/mypetprintables">@mypetprintables</a></p>
+  </footer>
+</div>
+<script>
+document.querySelectorAll('[data-share-url]').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    var url = btn.getAttribute('data-share-url');
+    var name = btn.getAttribute('data-share-name') || 'pet portrait';
+    var data = { title: name + ' portrait', text: 'Look at ' + name + ' \\ud83d\\udc3e', url: url };
+    try {
+      if (navigator.share) { await navigator.share(data); return; }
+      await navigator.clipboard.writeText(url);
+      var orig = btn.textContent;
+      btn.textContent = 'Link copied';
+      setTimeout(function () { btn.textContent = orig; }, 2000);
+    } catch (e) { /* user cancelled or unsupported */ }
+  });
+});
+</script>
+</body>
+</html>"""
+
+
+def _render_portraits_page(record: dict) -> str:
+    """Render the /portraits/<token> page from a digital_files record."""
+    import html as _html
+    portraits = record.get("portraits") or []
+    expires_at = record.get("expires_at") or ""
+    # Format expiry as "May 8, 2026" if it's an ISO timestamp
+    try:
+        from datetime import datetime as _dt
+        expiry_dt = _dt.strptime(expires_at[:10], "%Y-%m-%d") if expires_at else None
+        expires_str = expiry_dt.strftime("%B %-d, %Y") if expiry_dt else "soon"
+    except Exception:
+        expires_str = "soon"
+
+    # Headline branches on count
+    if len(portraits) == 1:
+        name = _html.escape(portraits[0].get("pet_name") or "your pet")
+        headline = (
+            f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
+            '<p class="h1-sub">Your order is in production. Until it lands at your door, '
+            'here is a digital copy in every format you would want to share — feed, '
+            'story, profile pic, even a phone wallpaper.</p>'
+        )
+    else:
+        headline = (
+            f'<h1 class="h1">Your {len(portraits)} portraits, ready to share.</h1>'
+            '<p class="h1-sub">Your order is in production. Until it lands at your door, '
+            'here is a digital copy of each portrait in every format you would want '
+            'to share — feed, story, profile pic, even a phone wallpaper.</p>'
+        )
+
+    cards = []
+    for p in portraits:
+        pet_name = _html.escape(p.get("pet_name") or "Pet")
+        style = _html.escape(p.get("style") or "")
+        preview = _html.escape(p.get("preview_url") or "")
+        original = _html.escape(p.get("original_url") or preview)
+        gallery = _html.escape(p.get("gallery_submit_url") or "")
+        downloads = p.get("downloads") or {}
+
+        dl_buttons = []
+        formats = [
+            ("square", "Square", "Instagram post"),
+            ("story", "Story", "IG &amp; FB story"),
+            ("portrait", "Portrait", "IG feed (4:5)"),
+            ("wallpaper", "Wallpaper", "Phone lock screen"),
+        ]
+        for key, label, desc in formats:
+            url = downloads.get(key)
+            if url:
+                dl_buttons.append(
+                    f'<a href="{_html.escape(url)}" class="dl-btn" download>'
+                    f'<strong>{label}</strong><span>{desc}</span></a>'
+                )
+
+        actions = [
+            f'<a href="{original}" class="dl-btn dl-btn--solid" download>Download original</a>',
+            f'<button type="button" class="dl-btn dl-btn--ghost" data-share-url="{original}" data-share-name="{pet_name}">Share</button>',
+        ]
+        if gallery:
+            actions.append(
+                f'<a href="{gallery}" class="dl-btn dl-btn--ghost">Submit to gallery</a>'
+            )
+
+        cards.append(f"""
+<article class="portrait-card">
+  <div class="portrait-card__head">
+    <a href="{original}" download><img class="portrait-card__img" src="{preview}" alt="{pet_name} portrait"/></a>
+    <div>
+      <p class="portrait-card__name">{pet_name}</p>
+      <p class="portrait-card__style">{style}</p>
+      <div class="actions-row">{"".join(actions)}</div>
+    </div>
+  </div>
+  <div class="dl-section">
+    <p class="dl-eyebrow">Made for sharing</p>
+    <div class="dl-grid">{"".join(dl_buttons)}</div>
+  </div>
+</article>""")
+
+    return (_PORTRAITS_PAGE_TEMPLATE
+            .replace("__HEADLINE__", headline)
+            .replace("__EXPIRES__", _html.escape(expires_str))
+            .replace("__PORTRAITS__", "".join(cards)))
+
+
+@app.route("/portraits/<token>")
+def portraits_page(token):
+    """Render the digital-gift page for a signed order token. The Klaviyo
+    post-purchase email links here. No Shopify account login required —
+    HMAC-signed token is the access control. 90-day TTL."""
+    ip = _client_ip()
+    allowed, _ = check_rate_limit(ip, "download")
+    if not allowed:
+        return "Too many requests", 429
+
+    order_id = verify_order_token(token)
+    if not order_id:
+        return ("This portrait link has expired. The digital gift was available for "
+                "90 days from when your order email was sent. Reply to that email and "
+                "we will send a fresh one."), 410
+
+    record = get_order_record(order_id)
+    if not record:
+        log.warning("[portraits/page] order=%s record not found in store", order_id)
+        return ("We could not find your portraits. If you just placed an order, "
+                "it may take a few minutes for the digital files to be ready — "
+                "try again in 5 minutes."), 404
+
+    log.info("[portraits/page] order=%s rendered (%d portrait(s))",
+             order_id, len(record.get("portraits") or []))
+    return _render_portraits_page(record)
 
 
 @app.route("/portrait/download/<token>")
@@ -1520,9 +1764,22 @@ def _push_klaviyo_order_event(
             "portraits": portraits_payload,
         }
 
-        # Persist canonical record on the Shopify order. The customer account
-        # order detail page reads this via Liquid as
-        # {{ order.metafields.petprintables.digital_files.value }}.
+        # Persist canonical record in TWO places:
+        # 1. Local Redis store (keyed by order_id) — read by the Flask
+        #    /portraits/<token> route to render the digital-gift page
+        #    without requiring Shopify customer-account login. This is
+        #    the PRIMARY surface customers hit from the email.
+        # 2. Shopify order metafield — for customers who DO log into
+        #    a (legacy) customer account and look at the order detail
+        #    page. Optional/redundant given the Flask page works for
+        #    everyone, but harmless to keep.
+        try:
+            set_order_record(str(order_id), digital_files_record)
+        except Exception as exc:
+            log.warning(
+                "[klaviyo] order=%s order-record write failed: %s",
+                order_id, exc,
+            )
         try:
             set_order_metafield(
                 str(order_id), "petprintables", "digital_files",
@@ -1534,13 +1791,15 @@ def _push_klaviyo_order_event(
                 order_id, exc,
             )
 
-        # Klaviyo payload — minimal. The email is now a single CTA pointing
-        # to /account/orders/<token>; downloads + sharing live on that page.
+        # Klaviyo payload — minimal. The email's single CTA points at the
+        # Flask /portraits/<token> page (NOT the Shopify customer account)
+        # because Shopify's New Customer Accounts UI doesn't load theme
+        # Liquid, and we can't render our digital files block there. The
+        # token is HMAC-signed with a 90-day TTL so the link works for the
+        # life of the social variants.
         first_p = portraits_payload[0]
-        order_url = (
-            f"{shop_base}/account/orders/{order_token}" if order_token
-            else f"{shop_base}/account"
-        )
+        order_token_signed = make_order_token(str(order_id), ttl_seconds=SOCIAL_TTL_S)
+        order_url = f"{backend_base}/portraits/{order_token_signed}"
         properties = {
             "pet_name": first_p["pet_name"],
             "pet_preview_url": first_p["preview_url"],
