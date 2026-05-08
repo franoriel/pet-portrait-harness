@@ -928,8 +928,11 @@ through plum + ivory + deep aubergine blocks (NOT charcoal). Preserve \
 the recognisable identity of the specific pet — the breed shape, the \
 head angle, any major chest blaze or markings — but always through \
 the chosen palette's accent colours.
-- Eye placement and head angle stay TRUE to the source photo, but the \
-eyes themselves are stylised as flat angular slit shapes (see STYLE).
+- Eye placement, gaze direction, and head angle stay TRUE to the \
+source photo. The eyes themselves are stylised as bold OPEN graphic \
+shapes — flat polygonal iris + flat polygonal pupil — that engage \
+the viewer (see STYLE). The pet must look ALIVE and ALERT, never \
+asleep, never squinting.
 - BG / PET CONTRAST IS NON-NEGOTIABLE: the pet's silhouette MUST read \
 distinctly against BOTH bg halves — left and right. NEVER use a pet \
 facet colour that shares a hue or lightness with either bg colour. \
@@ -964,12 +967,31 @@ NO drawn fur strands. Each block is uniformly flat colour.
 PET FILL — CRITICAL (anti-stencil rule):
 - The pet's silhouette is FULLY OPAQUE. Every single pixel inside the \
 pet's outline is filled with one of the {{POSTER_ACCENTS}} palette \
-colours. The background colour NEVER shows through the pet — there are \
-NO transparent gaps, NO holes, NO slivers of bg colour visible inside \
-the silhouette. If you traced the pet's outline and flood-filled the \
-inside, every pixel in the fill region would be a palette accent (no \
-pixel inside the silhouette is the bg's left-half hex or right-half \
-hex — those colours live ONLY outside the pet).
+colours (the ONE exception is the tongue — see TONGUE EXCEPTION \
+below). The background colour NEVER shows through the pet — there \
+are NO transparent gaps, NO holes, NO slivers of bg colour visible \
+inside the silhouette. If you traced the pet's outline and flood- \
+filled the inside, every pixel in the fill region would be a palette \
+accent or the tongue carve-out colour (no pixel inside the silhouette \
+is the bg's left-half hex or right-half hex — those colours live \
+ONLY outside the pet).
+- TONGUE EXCEPTION — the ONE pixel-level override of the palette-only \
+rule: if the source photo shows the pet's tongue (open-mouth panting \
+smile, lolling tongue, visible inside-of-mouth), render the tongue \
+as a single flat warm CORAL-PINK polygon (#E07A6B). This is the \
+ONLY area inside the pet's silhouette that may sit outside the \
+{{POSTER_ACCENTS}} palette. Reason: a tongue rendered in any palette \
+accent (teal, charcoal, ochre, ivory, mustard, etc.) reads as a sick \
+/ poisoned / dead animal — pink is universally read as "alive and \
+happy," and a non-pink tongue collapses the joyful pet-portrait vibe \
+into uncanny-valley creep. The tongue polygon gets the same flat- \
+faceted treatment as everything else (one flat block, sharp clean \
+edges, no gradient, no shading). Mouth interior shadow behind the \
+tongue, if shown, uses the palette's darkest accent. RECURRING \
+FAILURE MODE TO AVOID: tongue rendered in teal / blue / charcoal / \
+ivory / ochre / any non-pink colour — FORBIDDEN. The tongue is \
+always a clean flat coral-pink polygon, regardless of which palette \
+the customer picked.
 - Use AT LEAST 4 distinct palette colours across the pet's body — \
 never collapse to a single dark stamp. Light-coat areas (cheeks, brow, \
 chest blaze, muzzle highlights) use the palette's LIGHTER accents; \
@@ -992,23 +1014,46 @@ looks like a coloring-book outline that hasn't been filled in yet, \
 or like a dark sticker placed on a flat coloured card, the image is \
 wrong. Compare against the WPAP / Tsevis reference: every facet of \
 the pet is a confident filled colour block, not a line drawing.
-- Eyes are stylised as a small angular SLIT or NARROW WEDGE — a \
-closed-eye / half-closed expression. NO whites, NO iris detail, NO \
-catchlight, NO pupil dot. Where the pet was looking forward in the \
-photo, render two small angular slits where the eyes sit; the faceted \
-blocks of the face flow around them.
-- EYE FILL — HARD RULE: the eye polygon is FULLY OPAQUE in the \
-palette's DARKEST accent (the charcoal / aubergine / deepest-tone \
-colour from {{POSTER_ACCENTS}} — whichever accent has the lowest \
-lightness). The eye is NEVER filled with {{POSTER_BG_LEFT_HEX}} \
-({{POSTER_BG_LEFT_NAME}}) or {{POSTER_BG_RIGHT_HEX}} \
-({{POSTER_BG_RIGHT_NAME}}) — the bg colours NEVER appear inside the \
-pet, including inside the eye slits. RECURRING FAILURE MODE TO \
-AVOID: eyes rendered in the bg colour so they read as empty sockets / \
+- Eyes are stylised as bold OPEN graphic shapes — vector-icon eyes \
+that lock with the viewer (or follow whatever gaze direction the \
+source photo shows). Each eye is exactly TWO flat polygonal colour \
+blocks: an IRIS (a single uniform palette accent — typically a \
+warmer mid-accent like ochre / mustard / peach / blush, OR ivory / \
+cream for darker pets where ivory contrasts the face blocks) and a \
+PUPIL (a single solid polygon in the palette's DARKEST accent — \
+charcoal / aubergine / deep navy / etc.). The pupil sits inside \
+the iris, positioned to match the gaze direction in the source \
+photo (forward = pupil centred; slight off-camera tilt = pupil \
+shifted to that side). Eye SHAPE follows the source: round eyes \
+get round-ish polygons, almond eyes get almond polygons, alert \
+eyes are wide, relaxed eyes are softer — but the eyes are always \
+clearly OPEN.
+- EYE FLATNESS — HARD RULE (preserve the WPAP vector aesthetic): \
+NO catchlights, NO white glints, NO sparkle dots, NO sclera (no \
+"whites of the eye" visible — the iris fills the entire visible \
+eye opening). NO gradient WITHIN the iris from light to dark. NO \
+secondary ring of a different colour around the pupil. NO drop \
+shadow of the upper eyelid onto the eye. Two flat polygonal blocks \
+per eye — iris + pupil — and that's the entire eye. Same vector- \
+icon treatment a screen-print designer would draw with two filled \
+paths in Illustrator. The eye reads as graphic and iconic, NOT as \
+anatomically rendered with depth or moisture.
+- EYE FILL — HARD RULE: neither the iris nor the pupil polygon is \
+ever filled with {{POSTER_BG_LEFT_HEX}} ({{POSTER_BG_LEFT_NAME}}) \
+or {{POSTER_BG_RIGHT_HEX}} ({{POSTER_BG_RIGHT_NAME}}) — the bg \
+colours NEVER appear inside the pet, including inside the eye \
+shapes. The iris uses a palette accent that visibly contrasts the \
+immediately surrounding face blocks, so the eye reads as a discrete \
+shape rather than disappearing into the cheek. RECURRING FAILURE \
+MODE TO AVOID #1: eyes rendered as closed slits, narrow wedges, \
+squinted half-moons, or sleeping-emoji curves — the pet must look \
+ALIVE and ALERT, never asleep, never squinting, never zen-meditating. \
+Closed or near-closed eyes on a commercial pet portrait read as \
+sleeping, sick, or dead, which is the opposite of the joyful \
+"beloved family pet" vibe we ship. RECURRING FAILURE MODE TO AVOID \
+#2: eyes rendered in the bg colour so they read as empty sockets / \
 hollow holes / the bg showing through, making the pet look eyeless \
-or zombie-like. Each eye slit must read as a confident solid dark \
-mark sitting on top of the pet's face, distinct in colour from BOTH \
-the surrounding face blocks and the background.
+or zombie-like. Both failure modes are FORBIDDEN.
 - The nose is a single dark angular polygonal block. The muzzle / mouth \
 line is implied by the meeting edge of two adjacent colour blocks, not \
 drawn as a stroke.
@@ -1131,8 +1176,12 @@ still ships the chest intact.
 
 Avoid: photography, photorealism, soft or curved edges WITHIN the pet, \
 gradients, watercolor, painterly strokes, 3D render, blurry, detailed \
-fur texture, drawn fur strands, hatching, eye whites, irises, pupils, \
-catchlights, eyelashes, stencil look, ink-stamp look, sticker look, \
+fur texture, drawn fur strands, hatching, eye whites / sclera, gradient- \
+filled iris, secondary iris ring, catchlights, white glints in the \
+eye, sparkle dots, eyelashes, closed slit eyes, half-closed eyes, \
+squinted eyes, sleeping-emoji eye curves, asleep / zen / meditating \
+expression, teal tongue, blue tongue, charcoal tongue, ivory tongue, \
+any non-pink tongue, stencil look, ink-stamp look, sticker look, \
 silhouette with bg showing through, dark angular strokes overlaid on \
 flat bg, coloring-book outline, hollow pet figure, single-colour pet \
 stamp, monochrome pet on coloured field, thin sliver "blocks", \
@@ -1549,6 +1598,101 @@ wood grain, wood panelling, shiplap, plank lines, floorboards, shelf, \
 table, table edge, counter line, baseboard, wall texture, surface \
 texture behind the pet, ruled lines, banding, scanner lines.\
 """
+
+def _remove_poster_halos(
+    img: Image.Image,
+    palette: dict[str, str],
+    white_tol: int = 20,
+    halo_thickness_px: int = 3,
+) -> Image.Image:
+    """Erase the thin near-white halo Gemini sometimes leaves between dark
+    line work and the colored background in bold-graphic-poster output.
+
+    Distinguishes halos from intentional white fur by THICKNESS — halos
+    are thin (1–3 px) strips at dark/bg boundaries; fur is a wider
+    connected region. Erodes the near-white mask by `halo_thickness_px`
+    to keep only "fat" white (fur), then recolors the eroded-off thin
+    strips to the local bg hex (left half → bg_left, right half → bg_right).
+
+    `white_tol=20` keeps the threshold (235 per channel) above palette
+    ivory accents like #F4EFE7 (b=231), so genuine ivory stays untouched.
+
+    Pure-PIL implementation so no scipy/cv2 dependency is needed.
+    """
+    from PIL import ImageChops, ImageFilter
+
+    img = img.convert("RGB")
+    w, h = img.size
+    bg_left = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+    mid = w // 2
+
+    # Per-channel threshold mask: pixel is "near-white" only if r,g,b all
+    # exceed (255 - white_tol).
+    threshold = 255 - white_tol
+    r, g, b = img.split()
+    mask_r = r.point(lambda v: 255 if v > threshold else 0, "L")
+    mask_g = g.point(lambda v: 255 if v > threshold else 0, "L")
+    mask_b = b.point(lambda v: 255 if v > threshold else 0, "L")
+    is_white = ImageChops.multiply(ImageChops.multiply(mask_r, mask_g), mask_b)
+    is_white = is_white.point(lambda v: 255 if v > 0 else 0, "L")
+
+    # Erode `halo_thickness_px` times — anything that survives is "fat"
+    # white (fur). Anything that doesn't is a thin halo strip.
+    fat_white = is_white
+    for _ in range(halo_thickness_px):
+        fat_white = fat_white.filter(ImageFilter.MinFilter(3))
+    halo_mask = ImageChops.subtract(is_white, fat_white)
+
+    if halo_mask.getbbox() is None:
+        return img  # no halo pixels → fast path
+
+    # Safety gate: only recolour thin whites that sit adjacent to a
+    # canonical-bg pixel (because _flatten_poster_bg ran first, "canonical
+    # bg" means an exact RGB match with bg_left or bg_right). Thin whites
+    # *inside* the pet (e.g. a narrow neck of white fur connecting two
+    # wider patches) are surrounded by pet colours, not bg, so they fall
+    # outside the dilated bg mask and stay untouched.
+    def _exact_match_mask(channel: Image.Image, target: int) -> Image.Image:
+        return channel.point(lambda v, t=target: 255 if v == t else 0, "L")
+
+    bg_left_mask = ImageChops.multiply(
+        ImageChops.multiply(_exact_match_mask(r, bg_left[0]), _exact_match_mask(g, bg_left[1])),
+        _exact_match_mask(b, bg_left[2]),
+    )
+    bg_right_mask = ImageChops.multiply(
+        ImageChops.multiply(_exact_match_mask(r, bg_right[0]), _exact_match_mask(g, bg_right[1])),
+        _exact_match_mask(b, bg_right[2]),
+    )
+    is_bg = ImageChops.add(bg_left_mask, bg_right_mask).point(
+        lambda v: 255 if v > 0 else 0, "L"
+    )
+    # Dilate bg mask by halo_thickness_px + 2 so any halo pixel within
+    # that distance of a bg pixel is gated in.
+    bg_dilated = is_bg
+    for _ in range(halo_thickness_px + 2):
+        bg_dilated = bg_dilated.filter(ImageFilter.MaxFilter(3))
+    halo_mask = ImageChops.multiply(halo_mask, bg_dilated).point(
+        lambda v: 255 if v > 0 else 0, "L"
+    )
+
+    if halo_mask.getbbox() is None:
+        return img
+
+    # Build a "left bg | right bg" composite that covers the whole canvas,
+    # then paste through the halo mask so only halo pixels get recoloured.
+    bg_full = Image.new("RGB", (w, h), bg_left)
+    right_half = Image.new("RGB", (w - mid, h), bg_right)
+    bg_full.paste(right_half, (mid, 0))
+
+    out = img.copy()
+    out.paste(bg_full, (0, 0), halo_mask)
+    log.info(
+        "bold-graphic-poster: halo removed (mask bbox=%s)",
+        halo_mask.getbbox(),
+    )
+    return out
+
 
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
     return _WATERCOLOR_TEMPLATE
@@ -4148,6 +4292,7 @@ def _generate_inner(
             palette_id = (style_vars or {}).get("poster_palette") or "teal"
             if palette_id in POSTER_PALETTES:
                 padded = _flatten_poster_bg(padded, POSTER_PALETTES[palette_id])
+                padded = _remove_poster_halos(padded, POSTER_PALETTES[palette_id])
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
             # renaissance, line art): pad top + sides only so the pet's
