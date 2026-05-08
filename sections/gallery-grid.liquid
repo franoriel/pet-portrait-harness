@@ -14,6 +14,14 @@
       <button class="filter-btn" data-filter="other">Other</button>
     </div>
 
+    {%- comment -%}
+      Customer submissions live in the `gallery_submission` metaobject type
+      and are populated automatically when a customer clicks "Submit to
+      Gallery" in their digital-gift email. Sorted newest-first so a fresh
+      submission shows above older ones; rendered alongside curated blocks.
+    {%- endcomment -%}
+    {%- assign submissions = shop.metaobjects.gallery_submission.values | sort: 'submitted_at' | reverse -%}
+
     <div class="gallery-grid" role="list" aria-label="Pet portrait gallery">
       {%- for block in section.blocks -%}
         <div
@@ -36,7 +44,29 @@
             <p style="font-size:0.78rem;color:var(--color-muted);padding:6px 8px;text-align:center;">{{ block.settings.caption }}</p>
           {%- endif -%}
         </div>
-      {%- else -%}
+      {%- endfor -%}
+
+      {%- for sub in submissions -%}
+        {%- if sub.image != blank -%}
+          <div
+            class="gallery-item"
+            role="listitem"
+            data-category="{{ sub.category | default: 'dogs' }}"
+          >
+            {{- sub.image | image_url: width: 600 | image_tag:
+              loading: 'lazy',
+              alt: sub.pet_name | default: 'Customer pet portrait',
+              widths: '300, 600',
+              sizes: '(min-width:1024px) 33vw, 50vw'
+            -}}
+            {%- if sub.pet_name != blank -%}
+              <p style="font-size:0.78rem;color:var(--color-muted);padding:6px 8px;text-align:center;">{{ sub.pet_name }}</p>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+
+      {%- if section.blocks.size == 0 and submissions.size == 0 -%}
         {%- comment -%}
           Default gallery fills with the 8 style example assets shipped in
           assets/example-*.webp (the same images that power the homepage
@@ -73,7 +103,7 @@
             <p style="font-size:0.78rem;color:var(--color-muted);padding:6px 8px;text-align:center;">{{ label }}</p>
           </div>
         {%- endfor -%}
-      {%- endfor -%}
+      {%- endif -%}
     </div>
 
     {%- if section.settings.cta_label != blank -%}

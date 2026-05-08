@@ -1,0 +1,91 @@
+{%- comment -%}
+  The thanks page lives at /pages/gallery-thanks. Three states are rendered
+  inline; a tiny inline script picks the right one based on ?status=…:
+
+    (no param)         → success
+    ?status=expired    → expired-link state
+    ?status=error      → error state
+
+  Shopify Liquid doesn't expose query params to themes, so the conditional
+  has to happen client-side. Default visible state is success since that's
+  the dominant path; JS only flips the state on failure redirects.
+{%- endcomment -%}
+<section class="gallery-thanks" aria-labelledby="GalleryThanksHeading">
+  <div class="container container--mid" style="text-align:center;padding-top:80px;padding-bottom:80px;">
+    <div data-state="success">
+      <span class="eyebrow" style="color:var(--color-primary);">{{ section.settings.eyebrow | default: 'Submitted' }}</span>
+      <h1 id="GalleryThanksHeading">{{ section.settings.heading | default: 'Thank you — they are in the gallery.' }}</h1>
+      <p class="text-muted" style="max-width:480px;margin:16px auto 32px;">
+        {{ section.settings.body | default: "Your portrait is now part of the public gallery on petprintables.ca. Future customers will see what's possible because of you." }}
+      </p>
+    </div>
+
+    <div data-state="expired" hidden>
+      <span class="eyebrow" style="color:var(--color-muted);">{{ section.settings.eyebrow_expired | default: 'Link expired' }}</span>
+      <h1>{{ section.settings.heading_expired | default: 'That submission link has expired.' }}</h1>
+      <p class="text-muted" style="max-width:480px;margin:16px auto 32px;">
+        {{ section.settings.body_expired | default: "Submission links are good for 30 days. Reply to your order email and we'll send you a fresh one." }}
+      </p>
+    </div>
+
+    <div data-state="error" hidden>
+      <span class="eyebrow" style="color:var(--color-muted);">{{ section.settings.eyebrow_error | default: 'Something went sideways' }}</span>
+      <h1>{{ section.settings.heading_error | default: "We couldn't add that to the gallery." }}</h1>
+      <p class="text-muted" style="max-width:480px;margin:16px auto 32px;">
+        {{ section.settings.body_error | default: "We've logged the issue. Reply to your order email and we'll add it manually." }}
+      </p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <a href="{{ section.settings.cta_url | default: '/pages/gallery' }}" class="btn btn--primary btn--large">
+        {{ section.settings.cta_label | default: 'View Gallery' }}
+      </a>
+      {%- if section.settings.secondary_cta_label != blank -%}
+        <a href="{{ section.settings.secondary_cta_url | default: '/' }}" style="font-size:var(--text-xs);color:var(--color-muted);">
+          {{ section.settings.secondary_cta_label }}
+        </a>
+      {%- endif -%}
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var status = params.get('status');
+      if (status !== 'expired' && status !== 'error') return;
+      var root = document.querySelector('.gallery-thanks');
+      if (!root) return;
+      root.querySelector('[data-state="success"]').hidden = true;
+      root.querySelector('[data-state="' + status + '"]').hidden = false;
+    })();
+  </script>
+</section>
+
+{% schema %}
+{
+  "name": "Gallery Thanks",
+  "settings": [
+    { "type": "header", "content": "Success state" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Submitted" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Thank you — they are in the gallery." },
+    { "type": "textarea", "id": "body", "label": "Body", "default": "Your portrait is now part of the public gallery on petprintables.ca. Future customers will see what's possible because of you." },
+
+    { "type": "header", "content": "Expired-link state" },
+    { "type": "text", "id": "eyebrow_expired", "label": "Eyebrow (expired)", "default": "Link expired" },
+    { "type": "text", "id": "heading_expired", "label": "Heading (expired)", "default": "That submission link has expired." },
+    { "type": "textarea", "id": "body_expired", "label": "Body (expired)", "default": "Submission links are good for 30 days. Reply to your order email and we'll send you a fresh one." },
+
+    { "type": "header", "content": "Error state" },
+    { "type": "text", "id": "eyebrow_error", "label": "Eyebrow (error)", "default": "Something went sideways" },
+    { "type": "text", "id": "heading_error", "label": "Heading (error)", "default": "We couldn't add that to the gallery." },
+    { "type": "textarea", "id": "body_error", "label": "Body (error)", "default": "We've logged the issue. Reply to your order email and we'll add it manually." },
+
+    { "type": "header", "content": "Buttons" },
+    { "type": "text", "id": "cta_label", "label": "Primary CTA label", "default": "View Gallery" },
+    { "type": "url", "id": "cta_url", "label": "Primary CTA URL" },
+    { "type": "text", "id": "secondary_cta_label", "label": "Secondary CTA label" },
+    { "type": "url", "id": "secondary_cta_url", "label": "Secondary CTA URL" }
+  ],
+  "presets": [{ "name": "Gallery Thanks" }]
+}
+{% endschema %}
