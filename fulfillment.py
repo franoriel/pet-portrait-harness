@@ -190,10 +190,10 @@ def verify_shopify_webhook(data: bytes, hmac_header: str) -> bool:
 
 
 def _sample_corner_color(img: Image.Image) -> tuple[int, int, int]:
-    """Average RGB of the four corner regions — used to fill the wrap-bleed
-    band around a canvas print. Stylised pet portraits sit on a calm,
-    relatively flat background, so the four-corner average is a faithful
-    extension of the painting beyond the front face.
+    """Average RGB of the four corner regions — used as a final fallback
+    fill colour. Prefer _edge_replicate_pad for actual wrap bleed since
+    it correctly handles split / multi-colour backgrounds (e.g. modern
+    shape art's half-yellow / half-orange canvas).
     """
     rgb = img.convert("RGB") if img.mode != "RGB" else img
     w, h = rgb.size
@@ -212,6 +212,44 @@ def _sample_corner_color(img: Image.Image) -> tuple[int, int, int]:
     g = sum(p[1] for p in pixels) // len(pixels)
     b = sum(p[2] for p in pixels) // len(pixels)
     return (r, g, b)
+
+
+def _edge_replicate_pad(
+    front: Image.Image,
+    target_w: int,
+    target_h: int,
+) -> Image.Image:
+    """Pad `front` to (target_w, target_h) by replicating its outermost
+    edge pixels into the surrounding bleed band. Each side extends the
+    adjacent column/row, so a horizontally-split background (e.g. yellow
+    left / orange right) cleanly extends both colours into the wrap
+    rather than being filled with a single averaged tone."""
+    rgb = front.convert("RGB") if front.mode != "RGB" else front
+    w, h = rgb.size
+    pad_l = (target_w - w) // 2
+    pad_t = (target_h - h) // 2
+    pad_r = target_w - w - pad_l
+    pad_b = target_h - h - pad_t
+
+    out = Image.new("RGB", (target_w, target_h))
+    out.paste(rgb, (pad_l, pad_t))
+
+    # Left / right bleed — replicate the 1px edge column out to the bleed width.
+    if pad_l > 0:
+        left_col = rgb.crop((0, 0, 1, h)).resize((pad_l, h), Image.NEAREST)
+        out.paste(left_col, (0, pad_t))
+    if pad_r > 0:
+        right_col = rgb.crop((w - 1, 0, w, h)).resize((pad_r, h), Image.NEAREST)
+        out.paste(right_col, (pad_l + w, pad_t))
+    # Top / bottom bleed — replicate the (now full-width) 1px row out vertically,
+    # so the corners inherit the colour from whichever side they sit on.
+    if pad_t > 0:
+        top_row = out.crop((0, pad_t, target_w, pad_t + 1)).resize((target_w, pad_t), Image.NEAREST)
+        out.paste(top_row, (0, 0))
+    if pad_b > 0:
+        bot_row = out.crop((0, pad_t + h - 1, target_w, pad_t + h)).resize((target_w, pad_b), Image.NEAREST)
+        out.paste(bot_row, (0, pad_t + h))
+    return out
 
 
 def wrap_print_file_with_bleed(
@@ -246,12 +284,7 @@ def wrap_print_file_with_bleed(
     if (front_face.width, front_face.height) != (front_w, front_h):
         front_face = front_face.resize((front_w, front_h), Image.LANCZOS)
 
-    bg = _sample_corner_color(front_face)
-    file_canvas = Image.new("RGB", (file_w, file_h), bg)
-    inset_x = (file_w - front_w) // 2
-    inset_y = (file_h - front_h) // 2
-    file_canvas.paste(front_face, (inset_x, inset_y))
-    return file_canvas
+    return _edge_replicate_pad(front_face, file_w, file_h)
 
 
 # ---------------------------------------------------------------------------
@@ -326,13 +359,14 @@ def generate_print_file(
         if needs_upscale:
             img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
-        # Composite pet name on the front-face image (zone_top is a
-        # fraction of the front face, not the file). Skip for mugs, and
-        # honor the customer's _Show Name=No selection from the cart.
+        # The R2 source is already-composited from preview generation —
+        # it has the customer's name baked in (or is the no-name variant
+        # when show_name=No). Re-compositing here would burn the name on
+        # top of itself, and any cart-side rename produces a double-name
+        # overlap (e.g. JEWEL + WILDER → JEWILDER on the print file).
+        # The Gemini fallback below DOES composite because it starts from
+        # a raw, unnamed Gemini output.
         style_key = _map_style_id(style)
-        skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
-        if not skip_name:
-            img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
 
         # Clean up downloaded file
         r2_path.unlink(missing_ok=True)
