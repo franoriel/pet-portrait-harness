@@ -422,6 +422,8 @@
     var cropTopFrac, cropBotFrac, cropSideFrac;
     var coverPosition = 'center top';
     var hScale, vScale, leftPct, topPct;
+    var hScaleOverride, vScaleOverride, leftPctOverride, topPctOverride;
+    var sampleNeonBg = false;
     if (isFlushBottomMaster) {
       var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
       var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
@@ -434,17 +436,38 @@
         cropTopFrac = 0;
         cropBotFrac = 0;
         cropSideFrac = 0;
+      } else if (styleId === 'neon-pop-art') {
+        // Neon Pop Art on a square face from the 4:5 master.
+        // The bg is a single uniform saturated colour, so we can extend
+        // it across the canvas face and center the pet vertically (no
+        // bottom-anchoring — the user reads bottom-anchored as "too low"
+        // because there's no breathing room above OR below). Strategy:
+        //   - IMG element 80% × 100% of face → matches source 4:5 aspect
+        //   - top = -12% face so the empty name-safe-zone band at the
+        //     top of source is clipped above the canvas face
+        //   - pet center (source y≈62%) lands at face y≈50%
+        //   - bottom 12% + left 10% + right 10% of face are empty;
+        //     fillCanvasFaceFromCorner() samples the source's top-left
+        //     corner after image load and paints canvas-face that exact
+        //     hex so the side / bottom margins read as one continuous
+        //     saturated bg. CORS-safe; degrades to leaving canvas-face
+        //     transparent if sampling fails.
+        cropTopFrac = 0;
+        cropBotFrac = 0;
+        cropSideFrac = 0;
+        hScaleOverride = 80;
+        vScaleOverride = 100;
+        leftPctOverride = 10;
+        topPctOverride = -12;
+        sampleNeonBg = true;
       } else {
-        // 4:5 master on a square face (no-name fallback — with-name uses
-        // the 1:1 derivative). The 4:5 source has the pet flush at the
-        // bottom edge (universal flush-bottom rule). A center-top cover
-        // crop loses the bottom ~28% of source, which is exactly where
-        // the pet's chest sits. We cover-crop with bottom anchoring
-        // instead, so the chest stays intact and the empty name-safe-
-        // zone paper at the top is what gets trimmed (acceptable in the
-        // no-name case — the top 20% above the ears is just paper).
-        // No side trim either: keeps the watercolor wash extending
-        // edge-to-edge horizontally rather than introducing margins.
+        // Other styles on a square face from the 4:5 master (watercolor
+        // / charcoal etc.): cover-crop with bottom anchoring so the
+        // pet's chest survives. The empty name-safe-zone paper at the
+        // top is what gets trimmed instead. Side / bottom extension via
+        // canvas-face bg colour is harder for these styles because the
+        // bg has texture (paper grain, wash) — sampling a single hex
+        // would look obviously fake.
         cropTopFrac = 0;
         cropBotFrac = 0;
         cropSideFrac = 0;
@@ -454,6 +477,10 @@
       vScale = 100 / (1 - cropTopFrac - cropBotFrac);
       leftPct = -cropSideFrac * hScale;
       topPct = -cropTopFrac * vScale;
+      if (hScaleOverride !== undefined) hScale = hScaleOverride;
+      if (vScaleOverride !== undefined) vScale = vScaleOverride;
+      if (leftPctOverride !== undefined) leftPct = leftPctOverride;
+      if (topPctOverride !== undefined) topPct = topPctOverride;
     }
 
     var cropWindow = document.createElement('div');
@@ -461,6 +488,7 @@
     canvasFace.appendChild(cropWindow);
 
     var portraitImg = document.createElement('img');
+    if (sampleNeonBg) portraitImg.crossOrigin = 'anonymous';
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
@@ -469,6 +497,34 @@
       + 'width:' + hScale + '%;height:' + vScale + '%;'
       + 'object-fit:cover;object-position:' + coverPosition + ';display:block;';
     cropWindow.appendChild(portraitImg);
+
+    // Neon Pop Art square: sample the source's top-left corner once
+    // the image loads and paint the canvas face that exact saturated
+    // hex. The pet sits in the middle 80% × 88% of the face; the side
+    // and bottom margins outside that area read as one continuous
+    // saturated bg. CORS-safe: requires the CDN to send Access-Control-
+    // Allow-Origin (Cloudinary / our preview endpoint already do); if
+    // it doesn't, the catch leaves canvas-face transparent and we get
+    // the original linen-margin fallback.
+    if (sampleNeonBg) {
+      var paintFromCorner = function () {
+        try {
+          var c = document.createElement('canvas');
+          c.width = 4; c.height = 4;
+          var cx = c.getContext('2d');
+          cx.drawImage(portraitImg, 0, 0, 4, 4, 0, 0, 4, 4);
+          var d = cx.getImageData(0, 0, 4, 4).data;
+          var r = 0, g = 0, b = 0;
+          for (var i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
+          var n = d.length / 4;
+          canvasFace.style.background = 'rgb(' + Math.round(r/n) + ',' + Math.round(g/n) + ',' + Math.round(b/n) + ')';
+        } catch (e) {
+          // CORS / decode error — leave transparent, accept the linen-margin fallback.
+        }
+      };
+      if (portraitImg.complete && portraitImg.naturalWidth > 0) paintFromCorner();
+      else portraitImg.addEventListener('load', paintFromCorner, { once: true });
+    }
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
     var weave = document.createElement('div');
