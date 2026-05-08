@@ -377,11 +377,25 @@
             {%- assign source_style = '' -%}
             {%- assign source_job_id = '' -%}
             {%- assign source_show_name = 'Yes' -%}
+            {%- comment -%}
+              Count how many distinct non-magnet portrait line items are in
+              the cart. The magnet upsell only makes sense when there is
+              EXACTLY ONE portrait — with two or more, it's ambiguous which
+              design the magnet should print. Suppress the upsell in the
+              multi-portrait case rather than guess.
+            {%- endcomment -%}
+            {%- assign portrait_line_count = 0 -%}
             {%- for item in cart.items -%}
               {%- if item.product.handle == 'magnet' -%}
                 {%- assign magnet_in_cart = true -%}
                 {%- assign magnet_line_key = item.key -%}
                 {%- assign magnet_current_variant_id = item.variant.id -%}
+              {%- else -%}
+                {%- for property in item.properties -%}
+                  {%- if property.first == '_Portrait URL' and property.last != blank -%}
+                    {%- assign portrait_line_count = portrait_line_count | plus: 1 -%}
+                  {%- endif -%}
+                {%- endfor -%}
               {%- endif -%}
               {%- if source_portrait_url == '' -%}
                 {%- for property in item.properties -%}
@@ -413,7 +427,7 @@
               {%- endif -%}
             {%- endfor -%}
 
-            {%- if source_portrait_url != '' -%}
+            {%- if source_portrait_url != '' and portrait_line_count == 1 -%}
             <div
               class="magnet-upsell"
               data-magnet-upsell
