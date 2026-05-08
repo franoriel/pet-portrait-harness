@@ -761,12 +761,29 @@ let one secondary coat tone subtly echo the background hue so the eye \
 reads continuity across the image.
 
 STYLE:
-- Flat vector illustration — clean geometric shapes with hard edges
-- Strong color blocking with 4-6 bold flat colors, no gradients
-- Thick confident outlines (2-3px feel) where colour zones meet, in \
-charcoal or deep neutral
-- Mid-century modern poster / screen-print aesthetic — Shepard Fairey \
-"Obey" / Aaron Draplin / Charley Harper graphic boldness
+- MODERN EDITORIAL VECTOR ILLUSTRATION — refined, smooth, premium. The \
+aesthetic reference is contemporary product illustration / Spotify \
+Wrapped portrait art / Malika Favre / Olimpia Zagnoli / Apple TV \
+character art / modern Behance "vector portrait" trend. NOT mid-\
+century screen-print, NOT Charley Harper / Shepard Fairey graphic \
+poster, NOT Disney-style cartoon mascot, NOT children's book \
+illustration, NOT sticker art.
+- Form is defined ENTIRELY by color separation between adjacent zones. \
+ABSOLUTELY NO OUTLINES of any kind. NO black outlines around the pet \
+silhouette. NO charcoal contour strokes between colour zones. NO \
+inked edges, no stroke borders, no line work. The shape reads through \
+tonal contrast and clean colour boundaries — never through drawn \
+lines.
+- 5-7 SUBTLY GRADUATED FLAT COLOURS in a tight, harmonious palette: \
+adjacent shades of the pet's primary hue family that step through \
+light → mid → shadow, plus 1-2 small accents for the nose and eyes. \
+Each colour zone is one flat tone (no gradient WITHIN a zone), but \
+the zones step through close, related shades so the pet reads as a \
+soft, refined form — never as a hard-edged poster block.
+- Smooth, organic zone boundaries that follow the pet's anatomy \
+(cheek meets brow with a confident curve, snout meets cheek along \
+the muzzle's natural plane). Not aggressively geometric, not \
+faceted, not paper-cut angular.
 - INTERNAL SHAPE LANGUAGE — CRITICAL: every colour zone inside the pet's \
 silhouette must read as a broad anatomical mass (a cheek, a brow, a \
 shoulder plane, a chest blaze, a leg). Shapes are wide and stable, not \
@@ -808,10 +825,16 @@ Completely uniform — no decoration, no shapes, no gradients, no panels, \
 no bars, no colour blocks, no empty bands. Just one flat field of \
 {{MODERN_BG_HEX}} behind the pet.
 
-Avoid: photography, photorealism, soft edges, gradients, watercolor, \
-painterly strokes, 3D render, blurry, detailed fur texture, multiple \
-background colours, vertical or horizontal background splits, decorative \
-shapes, foliage, halos, frames, patterns, geometric ornaments, \
+Avoid: photography, photorealism, painterly strokes, watercolor wash, \
+3D render, blurry, detailed fur texture, drawn fur strands, OUTLINES \
+of any kind around the pet or between colour zones, black contour \
+strokes, ink lines, inked edges, charcoal outlines, coloring-book \
+look, Disney-style cartoon mascot, children's book illustration, \
+sticker art, animated character look, mid-century screen-print poster \
+aesthetic, Shepard Fairey "Obey" / Charley Harper / Aaron Draplin \
+graphic-block boldness, hard paper-cut faceting, multiple background \
+colours, vertical or horizontal background splits, decorative shapes, \
+foliage, halos, frames, patterns, geometric ornaments, \
 profile / side-view / 3⁄4 view poses, head tilts, asymmetric body \
 silhouettes, off-centre or tilted-axis compositions, tongue-shaped or \
 tube-shaped colour zones, sausage forms, swooping ribbon highlights, \
@@ -847,23 +870,13 @@ facet colour that shares a hue or lightness with either bg colour. \
 If the customer's pet is naturally a colour close to the bg (e.g. a \
 golden retriever on the rust palette where the bg is warm rust + \
 deep maroon), substitute the warm-orange / russet tones on the pet \
-with the palette's CONTRASTING accents. Bg-toned blocks on the pet \
-are FORBIDDEN — they merge with the bg and erase the silhouette.
-- FULL TONAL RANGE IS NON-NEGOTIABLE: the pet uses the DARKEST \
-accent in the palette prominently for shadows, the LIGHTEST accent \
-prominently for highlights, AND a mid-tone accent for the broad \
-masses. The contrast between the deepest and lightest pet blocks \
-must be high enough that the pet pops as a confident graphic shape \
-on a poster. NEVER pick only the muted / mid-range accents and \
-skip the deepest / lightest ones — that produces a washed-out, \
-"all the same value" pet that fails to read as bold WPAP poster \
-art. RECURRING FAILURE MODE TO AVOID: a pet rendered in only the \
-lightest 2-3 palette accents (e.g. on the rose palette: ivory + \
-peachy blush + dusty mauve, all light), skipping deep aubergine \
-entirely. The pet looks limp and pastel instead of bold and \
-graphic. EVERY pet MUST include the palette's deepest accent in \
-substantial blocks (at least 20-30% of the pet's faceted area) so \
-the chiaroscuro reads correctly.
+with the palette's CONTRASTING accents (ochre is fine, ivory is fine, \
+navy is fine, charcoal is fine — but warm-orange or maroon-toned \
+blocks on the pet are FORBIDDEN because they merge with the bg). \
+RECURRING FAILURE MODE TO AVOID: a golden / red / brown pet rendered \
+in warm orange blocks that visually merge with a warm-toned bg, \
+making the pet's silhouette ambiguous. The pet must always pop off \
+the bg with high contrast at every silhouette edge.
 
 STYLE — CUBIST FLAT GRAPHIC:
 - The pet's face and chest are reinterpreted as a CUBIST FACETED MOSAIC: \
