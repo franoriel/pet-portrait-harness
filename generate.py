@@ -1025,27 +1025,37 @@ def _hex_to_rgb(hex_str: str) -> tuple[int, int, int]:
 def _flatten_poster_bg(
     img: Image.Image,
     palette: dict[str, str],
-    tol: int = 90,
+    perimeter_tol: int = 90,
+    interior_tol: int = 90,
 ) -> Image.Image:
     """Snap near-bg pixels to the exact palette hex on each half of the
     bold-graphic-poster image, killing Gemini's recurring "soft room-shadow
-    in the upper-left" hallucination.
+    / inset rectangle / corner patch / letterbox bands" hallucinations.
 
-    SAFE-ZONE STRATEGY: snapping is restricted to the outer perimeter where
-    the composition rule guarantees no pet content sits — the pet's bbox is
-    inset 15-18% from the top, 8-12% from each side, and reaches to the
-    bottom edge. So we flatten:
-      - the top 18% (full-width, safely above the ears), and
-      - the outer 10% on each side from y=18% downward (clean bg margin
-        beside the pet).
-    The bottom remains untouched — that's where the pet's chest sits flush.
-    The interior of the canvas (where pet faceting lives) is left entirely
-    alone, so even palettes whose bg sits close in RGB space to a common
-    accent (e.g. Forest deep-green near charcoal) can't snap pet blocks.
+    FULL-CANVAS SNAP — perimeter and interior both default to tol=90:
 
-    Within the safe zone, we still gate by colour distance (tol=90 → ~52 per
-    channel) so a pet that strays into the safe zone (rare, but possible —
-    Gemini sometimes drifts) doesn't get its outline blurred into bg.
+      Previously the interior of the canvas (where the pet lives) was
+      left untouched on the theory that wide-tolerance snap might chip
+      pet edges. In practice the inset-rectangle / corner-patch failure
+      modes recur in exactly that interior region, and prompt-tightening
+      hit a diminishing-returns wall. All 8 Bold Graphic Poster palettes
+      are designed so accent pet colours (saturated orange / charcoal /
+      ivory / mustard / etc.) sit >190 RGB distance from either bg hex —
+      so tol=90 (~52 per channel) cannot accidentally snap a pet
+      faceting block.
+
+      Anti-aliased pet/bg edge pixels at >60% bg may get snapped to
+      canonical, which sharpens the silhouette by 1-2 px — visually
+      cleaner against an already-faceted poster aesthetic, not chipped.
+      Pet-side edge pixels (50/50 mix or less bg) sit at ~95+ RGB
+      distance from bg, safely outside tol=90.
+
+      Both halves are gated by x position (left half snaps to bg_left
+      only, right half to bg_right only).
+
+      perimeter_tol / interior_tol kept as separate kwargs so a future
+      palette with a softer bg/accent contrast can dial the interior
+      back without losing perimeter aggression.
 
     NumPy vectorised path used when available (~50× faster on a 1024-tall
     portrait) with a pure-PIL fallback for envs without numpy.
@@ -1055,10 +1065,10 @@ def _flatten_poster_bg(
     bg_left  = _hex_to_rgb(palette["bg_left_hex"])
     bg_right = _hex_to_rgb(palette["bg_right_hex"])
     mid = w // 2
-    tol_sq = tol * tol
+    perimeter_tol_sq = perimeter_tol * perimeter_tol
+    interior_tol_sq  = interior_tol  * interior_tol
 
-    # Safe-zone bands: only flatten where the composition rule guarantees
-    # bg-only content. Numbers track _COMPOSITION_RULE_WITH_NAME.
+    # Perimeter safe-zone bands: top band + outer side margins.
     top_band_h    = int(h * 0.18)
     side_margin_w = int(w * 0.10)
 
@@ -1072,39 +1082,43 @@ def _flatten_poster_bg(
         bg_right_arr = np.array(bg_right, dtype=np.int32)
         d2_left  = ((arr - bg_left_arr ) ** 2).sum(axis=2)   # h × w
         d2_right = ((arr - bg_right_arr) ** 2).sum(axis=2)   # h × w
-        # Build a full-image safe-zone mask (top band + outer side margins).
-        # We can't use chained fancy indexing (`arr[:, :mid, :][mask] =
-        # value`) — that writes through a view and silently no-ops; build
-        # a full-shape boolean mask and use one advanced-indexing assign.
-        in_top    = np.zeros((h, w), dtype=bool)
+
+        # Build perimeter mask (top + side margins).
+        in_top          = np.zeros((h, w), dtype=bool)
         in_left_margin  = np.zeros((h, w), dtype=bool)
         in_right_margin = np.zeros((h, w), dtype=bool)
-        in_top[:top_band_h, :]                  = True
+        in_top[:top_band_h, :]                           = True
         in_left_margin[top_band_h:, :side_margin_w]      = True
         in_right_margin[top_band_h:, w - side_margin_w:] = True
-        # Each pixel also has to be in the matching half (so a left-margin
-        # pixel only snaps to bg_left, etc.).
+        in_perimeter = in_top | in_left_margin | in_right_margin
+
         left_half  = np.zeros((h, w), dtype=bool)
         right_half = np.zeros((h, w), dtype=bool)
         left_half[:, :mid]  = True
         right_half[:, mid:] = True
-        in_left_safe  = (in_top | in_left_margin)  & left_half
-        in_right_safe = (in_top | in_right_margin) & right_half
-        left_mask  = (d2_left  < tol_sq) & in_left_safe
-        right_mask = (d2_right < tol_sq) & in_right_safe
-        arr[left_mask]  = bg_left_arr
-        arr[right_mask] = bg_right_arr
+
+        # Pass 1: perimeter snap (wide tol).
+        peri_left  = (d2_left  < perimeter_tol_sq) & in_perimeter & left_half
+        peri_right = (d2_right < perimeter_tol_sq) & in_perimeter & right_half
+        # Pass 2: interior snap (narrow tol). ~in_perimeter = the central
+        # region where the pet lives.
+        interior   = ~in_perimeter
+        int_left   = (d2_left  < interior_tol_sq)  & interior & left_half
+        int_right  = (d2_right < interior_tol_sq)  & interior & right_half
+
+        arr[peri_left | int_left]   = bg_left_arr
+        arr[peri_right | int_right] = bg_right_arr
         return Image.fromarray(arr.astype(np.uint8), mode="RGB")
     except ImportError:
-        # Pure-PIL fallback. Slow but correct.
+        # Pure-PIL fallback. Slow but correct — mirrors the two-pass logic.
         px = img.load()
         for y in range(h):
             in_top = y < top_band_h
             for x in range(w):
                 in_left_margin  = (not in_top) and x < side_margin_w
                 in_right_margin = (not in_top) and x >= w - side_margin_w
-                if not (in_top or in_left_margin or in_right_margin):
-                    continue
+                in_perimeter    = in_top or in_left_margin or in_right_margin
+                tol_sq = perimeter_tol_sq if in_perimeter else interior_tol_sq
                 r, g, b = px[x, y]
                 if x < mid:
                     br, bg_, bb = bg_left
