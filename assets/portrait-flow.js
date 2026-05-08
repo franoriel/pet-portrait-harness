@@ -1130,6 +1130,48 @@ function usePortraitFlow() {
       saveSession({ ...state, ...newState });
       addToLibrary({ ...state, ...newState });
 
+      // Background CDN upgrade — the backend now marks jobs complete
+      // with local /preview/ URLs the moment the watermarked WebP is
+      // ready and uploads to R2 in the background. Show preview ASAP
+      // (already done via update() above), then keep polling /status
+      // for ~30s until cdn flips to "1" so localStorage and React
+      // state both end up with durable R2 URLs before the customer
+      // navigates to PDP / writes the cart line.
+      if (result.jobId && !result.cdn) {
+        (async () => {
+          const UPGRADE_BUDGET = 30000;
+          const started = Date.now();
+          while (Date.now() - started < UPGRADE_BUDGET) {
+            await new Promise(r => setTimeout(r, 1500));
+            try {
+              const r = await fetch(`${API_BASE}/status/${result.jobId}`);
+              if (!r.ok) continue;
+              const s = await r.json();
+              const cdnReady = s.cdn === '1' || s.cdn === true;
+              if (!cdnReady) continue;
+              const absolutize = (p) => p && (p.startsWith('http') ? p : `${API_BASE}${p}`);
+              const cdnPreviews = [s.composited, s.raw_preview || s.raw].filter(Boolean).map(absolutize);
+              const cdnPrintFile = absolutize(s.composited_png_cdn) || '';
+              const cdnNoNamePrint = absolutize(s.raw) || '';
+              const cdnOriginal = s.original_cdn || '';
+              const upgrade = {
+                previewCdnUrls: cdnPreviews,
+                printFileUrl: cdnPrintFile || newState.printFileUrl,
+                noNamePrintFileUrl: cdnNoNamePrint || newState.noNamePrintFileUrl,
+                originalPhotoUrl: cdnOriginal || newState.originalPhotoUrl,
+              };
+              update(upgrade);
+              try {
+                const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+                Object.assign(session, upgrade);
+                localStorage.setItem(LS_KEY, JSON.stringify(session));
+              } catch (_) { /* ignore storage errors */ }
+              break;
+            } catch (_) { /* keep polling */ }
+          }
+        })();
+      }
+
       // Fire background mockup generation (non-blocking, with retry)
       if (result.filename) {
         ['canvas'].forEach(productType => {

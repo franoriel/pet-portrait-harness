@@ -1741,30 +1741,13 @@ def _process_job(job: dict):
             background_mode=worker_bg,
         )
 
-        # Upload the unique files in parallel. _generate_inner aliases
-        # the with-name and 1:1 outputs to the no-name 4:5 PNG / WebP
-        # at preview time (no name has been composited yet, no per-
-        # aspect plumbing in the cart), so the six paths typically
-        # collapse to two distinct files. Dedup by path so we don't
-        # push the same bytes to CDN multiple times — which would
-        # otherwise waste bandwidth and burn extra pool slots.
-        unique_paths = {raw_path, comp_path, web_path,
-                        raw_web_path, raw_path_1x1, comp_path_1x1}
-        upload_futures = {
-            p: _fulfillment_pool.submit(upload_portrait, p)
-            for p in unique_paths
-        }
-        upload_cdn = {p: f.result() for p, f in upload_futures.items()}
-        raw_cdn = upload_cdn[raw_path]
-        comp_cdn = upload_cdn[comp_path]
-        web_cdn = upload_cdn[web_path]
-        raw_web_cdn = upload_cdn[raw_web_path]
-        raw_1x1_cdn = upload_cdn[raw_path_1x1]
-        comp_1x1_cdn = upload_cdn[comp_path_1x1]
-
-        # Mark complete as soon as the preview URLs are ready. The original
-        # photo (used only by fulfillment at order time) uploads in the
-        # background — the customer sees the preview several seconds sooner.
+        # Mark the job complete with LOCAL /preview/ URLs the moment
+        # the watermarked WebP is on disk — the customer sees their
+        # preview ~5–15s sooner than if we waited on CDN. CDN uploads
+        # then run in a background task and re-update the job record
+        # with R2 URLs (cdn="1") for any consumer that needs them
+        # (fulfillment writes happen at add-to-cart, by which time the
+        # backfill has typically finished).
         # Field semantics:
         #   composited / raw_preview → watermarked WebPs for customer UI
         #   raw / composited_png_cdn → un-watermarked 4:5 PNGs for Printful
@@ -1772,17 +1755,53 @@ def _process_job(job: dict):
         update_job(
             job_id,
             status="complete",
-            raw=raw_cdn or f"/preview/{raw_path.name}",                       # 4:5 un-watermarked PNG, fulfillment
-            raw_preview=raw_web_cdn or f"/preview/{raw_web_path.name}",        # watermarked WebP, customer no-name preview
-            composited=web_cdn or f"/preview/{web_path.name}",                 # watermarked WebP, customer with-name preview
-            composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",       # 4:5 un-watermarked PNG, fulfillment
-            raw_1x1=raw_1x1_cdn or f"/preview/{raw_path_1x1.name}",             # 1:1 no-name un-watermarked PNG
-            composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",  # 1:1 with-name un-watermarked PNG
-            download=f"/download/{comp_path.name}",                            # full-res PNG for download (un-watermarked — gated, see /download)
+            raw=f"/preview/{raw_path.name}",
+            raw_preview=f"/preview/{raw_web_path.name}",
+            composited=f"/preview/{web_path.name}",
+            composited_png_cdn=f"/preview/{comp_path.name}",
+            raw_1x1=f"/preview/{raw_path_1x1.name}",
+            composited_png_1x1_cdn=f"/preview/{comp_path_1x1.name}",
+            download=f"/download/{comp_path.name}",
             filename=comp_path.name,
-            cdn="1" if comp_cdn else "0",
+            cdn="0",
         )
-        log.info("Job %s complete: %s", job_id, comp_path.name)
+        log.info("Job %s complete (local URLs): %s", job_id, comp_path.name)
+
+        # Background CDN backfill — same dedup strategy as before
+        # (six paths collapse to two unique files at preview time, so
+        # we upload each unique path once). When all uploads finish,
+        # the job record is updated with R2 URLs.
+        unique_paths = {raw_path, comp_path, web_path,
+                        raw_web_path, raw_path_1x1, comp_path_1x1}
+        def _backfill_cdn():
+            try:
+                upload_futures = {
+                    p: _fulfillment_pool.submit(upload_portrait, p)
+                    for p in unique_paths
+                }
+                upload_cdn = {p: f.result() for p, f in upload_futures.items()}
+                raw_cdn = upload_cdn[raw_path]
+                comp_cdn = upload_cdn[comp_path]
+                web_cdn = upload_cdn[web_path]
+                raw_web_cdn = upload_cdn[raw_web_path]
+                raw_1x1_cdn = upload_cdn[raw_path_1x1]
+                comp_1x1_cdn = upload_cdn[comp_path_1x1]
+                if not comp_cdn:
+                    log.warning("CDN backfill incomplete for job %s — comp_cdn empty", job_id)
+                update_job(
+                    job_id,
+                    raw=raw_cdn or f"/preview/{raw_path.name}",
+                    raw_preview=raw_web_cdn or f"/preview/{raw_web_path.name}",
+                    composited=web_cdn or f"/preview/{web_path.name}",
+                    composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",
+                    raw_1x1=raw_1x1_cdn or f"/preview/{raw_path_1x1.name}",
+                    composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",
+                    cdn="1" if comp_cdn else "0",
+                )
+                log.info("Job %s CDN backfill done", job_id)
+            except Exception:
+                log.exception("CDN backfill failed for job %s", job_id)
+        _fulfillment_pool.submit(_backfill_cdn)
 
         # Hand off the upload file to a background task: upload to R2 for
         # fulfillment, then delete. Fulfillment reads original_cdn from the

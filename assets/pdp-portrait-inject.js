@@ -76,6 +76,45 @@
 
   function runInjection() {
 
+  // CDN freshness check — preview jobs now mark complete with local
+  // /preview/ URLs while the R2 upload runs in the background. Most
+  // customers reach PDP after the upgrade poll in portrait-flow.js
+  // has already swapped CDN URLs into localStorage, but a fast click
+  // can land here with local URLs still in `data`. Fire a one-shot
+  // /status fetch so cart writes never use a /preview/ URL.
+  (function upgradeLocalUrlsToCdn() {
+    var urls = (data.previewCdnUrls || []).concat([
+      data.printFileUrl || '',
+      data.noNamePrintFileUrl || '',
+    ]);
+    var hasLocal = urls.some(function (u) { return u && u.indexOf('/preview/') !== -1; });
+    if (!hasLocal || !data.jobId) return;
+    var apiBase = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+    fetch(apiBase + '/status/' + encodeURIComponent(data.jobId))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) {
+        if (!s) return;
+        var cdnReady = s.cdn === '1' || s.cdn === true;
+        if (!cdnReady) return;
+        var absolutize = function (p) { return p && (p.indexOf('http') === 0 ? p : apiBase + p); };
+        var cdnPreviews = [s.composited, s.raw_preview || s.raw]
+          .filter(Boolean).map(absolutize);
+        var upgrade = {
+          previewCdnUrls: cdnPreviews,
+          printFileUrl: absolutize(s.composited_png_cdn) || data.printFileUrl,
+          noNamePrintFileUrl: absolutize(s.raw) || data.noNamePrintFileUrl,
+          originalPhotoUrl: s.original_cdn || data.originalPhotoUrl,
+        };
+        Object.assign(data, upgrade);
+        try {
+          var session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+          Object.assign(session, upgrade);
+          localStorage.setItem(LS_KEY, JSON.stringify(session));
+        } catch (_) { /* ignore */ }
+      })
+      .catch(function () { /* ignore — cart guard will warn if local URL leaks */ });
+  })();
+
   // Accept either base64 data URLs or CDN URLs — whichever is available
   var previewUrls = (data.previewDataUrls && data.previewDataUrls.length)
     ? data.previewDataUrls
