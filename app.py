@@ -855,26 +855,31 @@ def add_name():
             chunks.append(chunk)
         no_name_bytes = b"".join(chunks)
 
-        comp_path, web_path, comp_path_1x1 = generate_with_name_on_demand(
+        comp_path, web_path, comp_path_1x1, web_path_1x1 = generate_with_name_on_demand(
             no_name_image_bytes=no_name_bytes,
             pet_name=pet_name,
             style=style,
             background_mode=background_mode,
         )
 
-        # Upload all three (4:5 named PNG, watermarked WebP preview,
-        # 1:1 named PNG) to R2 in parallel.
+        # Upload all four (4:5 named PNG, 4:5 watermarked WebP preview,
+        # 1:1 named PNG, 1:1 watermarked WebP preview) to R2 in parallel.
+        # The PNGs are print files for Printful; the WebPs are the
+        # diagonal-watermarked previews the customer sees on PDP.
         comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
         web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
         comp_1x1_fut = _fulfillment_pool.submit(upload_portrait, comp_path_1x1)
+        web_1x1_fut = _fulfillment_pool.submit(upload_portrait, web_path_1x1)
         comp_cdn = comp_fut.result()
         web_cdn = web_fut.result()
         comp_1x1_cdn = comp_1x1_fut.result()
+        web_1x1_cdn = web_1x1_fut.result()
 
         return jsonify(
             composited=web_cdn or f"/preview/{web_path.name}",
             composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",
             composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",
+            composited_1x1_preview=web_1x1_cdn or f"/preview/{web_path_1x1.name}",
             filename=comp_path.name,
         )
     except RuntimeError as e:

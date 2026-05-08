@@ -3426,7 +3426,14 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       // Capture the 1:1 derivative URL too — square canvas variants
       // (12×12, 16×16) need to render their PDP mockup from this file
       // rather than cover-cropping the 4:5 master and clipping the name.
-      const url1x1 = resp.composited_png_1x1_cdn || resp.composited_1x1 || null;
+      // Prefer the watermarked WebP (composited_1x1_preview) for the
+      // display surface so the diagonal Pet Printables watermark is
+      // baked in. Falls back to the un-watermarked print PNG only on
+      // older backend deploys that don't return the WebP yet.
+      const url1x1 = resp.composited_1x1_preview
+        || resp.composited_png_1x1_cdn
+        || resp.composited_1x1
+        || null;
       if (url1x1) setNamedPreviewUrl1x1(url1x1);
       setGeneratingNamedPreview(false);
     })

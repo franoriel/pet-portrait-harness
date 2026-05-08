@@ -1043,7 +1043,14 @@
         var newUrl = resp.composited_png_cdn || resp.composited;
         if (!newUrl) throw new Error('No image URL returned');
         withTextUrl = newUrl;
-        var newUrl1x1 = resp.composited_png_1x1_cdn || resp.composited_1x1 || null;
+        // Prefer the watermarked 1:1 WebP (composited_1x1_preview) for
+        // square-variant display so the diagonal Pet Printables
+        // watermark is visible. Falls back to the un-watermarked print
+        // PNG only when the backend hasn't been redeployed yet.
+        var newUrl1x1 = resp.composited_1x1_preview
+          || resp.composited_png_1x1_cdn
+          || resp.composited_1x1
+          || null;
 
         // Persist for future PDP loads so we don't re-fetch on refresh
         try {

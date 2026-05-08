@@ -3285,7 +3285,10 @@ def _build_watermark_logo(color: tuple) -> Image.Image:
     src = Image.open(logo_path).convert("L")
     # Ink density: dark source pixels → high ink, white background → 0
     ink = src.point(lambda p: 255 - p)
-    OPACITY = 0.05
+    # 8% — subtle on calm backgrounds (watercolour paper) but still
+    # readable on saturated mid-brightness fills (neon hot pink, vivid
+    # blue) where 5% disappeared into the colour.
+    OPACITY = 0.08
     alpha = ink.point(lambda p: int(p * OPACITY))
     rgba = Image.new("RGBA", src.size, color + (0,))
     rgba.putalpha(alpha)
@@ -3873,11 +3876,11 @@ def generate_with_name_on_demand(
     style: str,
     output_dir: Optional[Path] = None,
     background_mode: Optional[str] = "auto",
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path]:
     """Add the pet's name to an already-generated no-name portrait.
     Called at add-to-cart time to halve the up-front Gemini cost.
 
-    Returns: (comp_path_4x5, web_preview_path, comp_path_1x1)
+    Returns: (comp_path_4x5, web_preview_path, comp_path_1x1, web_preview_path_1x1)
 
     The 1:1 derivative is composited from the same name-applied source
     so both square and tall canvas variants get a print file with the
@@ -3946,10 +3949,17 @@ def generate_with_name_on_demand(
         log.info("           comp 1x1 (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path_1x1, composited_1x1.width, composited_1x1.height)
 
+        # Watermarked 1:1 WebP — the PDP square mockup renders this
+        # for customer display when wantsName is on, so the diagonal
+        # Pet Printables watermark sits over the artwork the same way
+        # it does on the 4:5 preview. The un-watermarked PNG above is
+        # the print file Printful fetches; this WebP is display-only.
+        web_path_1x1 = save_web_preview(composited_1x1, comp_path_1x1)
+
         composited.close()
         composited_1x1.close()
         derived_1x1.close()
-        return comp_path, web_path, comp_path_1x1
+        return comp_path, web_path, comp_path_1x1, web_path_1x1
     finally:
         _generation_semaphore.release()
 
