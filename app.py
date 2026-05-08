@@ -43,8 +43,45 @@ from jobs import create_job, get_job, dequeue_job, update_job, queue_depth
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger(__name__)
 
-# Background executor for async fulfillment (webhook responds immediately)
-_fulfillment_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="fulfill")
+# Background executor for async fulfillment (webhook responds immediately).
+# Wrapped in a class that auto-recreates the pool if a request hits a
+# worker mid-shutdown (Railway redeploy race) — without this, customers
+# see "cannot schedule new futures after shutdown" leak through to the UI.
+class _ResilientPool:
+    def __init__(self, max_workers, thread_name_prefix):
+        self._max_workers = max_workers
+        self._thread_name_prefix = thread_name_prefix
+        self._lock = Lock()
+        self._pool = ThreadPoolExecutor(
+            max_workers=max_workers, thread_name_prefix=thread_name_prefix,
+        )
+
+    def submit(self, fn, *args, **kwargs):
+        try:
+            return self._pool.submit(fn, *args, **kwargs)
+        except RuntimeError as exc:
+            msg = str(exc).lower()
+            if "shutdown" not in msg and "broken" not in msg:
+                raise
+            # Pool is dead (atexit fired or broken). Recreate once and retry.
+            with self._lock:
+                # Double-check inside the lock — another thread may have
+                # already recreated the pool.
+                try:
+                    return self._pool.submit(fn, *args, **kwargs)
+                except RuntimeError:
+                    log.warning(
+                        "Thread pool %s was shut down — recreating",
+                        self._thread_name_prefix,
+                    )
+                    self._pool = ThreadPoolExecutor(
+                        max_workers=self._max_workers,
+                        thread_name_prefix=self._thread_name_prefix,
+                    )
+                    return self._pool.submit(fn, *args, **kwargs)
+
+
+_fulfillment_pool = _ResilientPool(max_workers=4, thread_name_prefix="fulfill")
 
 # ─────────────────────────────────────────────────────────────
 # Rate limiting (per-IP, in-memory sliding window)
@@ -90,6 +127,14 @@ _SAFE_ERROR_LEAK_MARKERS = (
     "traceback",
     "**",            # markdown bold from a model dump
     "i have created",
+    # Python runtime / infrastructure jargon that leaks during graceful
+    # restarts and confuses non-technical customers.
+    "cannot schedule new futures",
+    "after shutdown",
+    "executor",
+    "concurrent.futures",
+    "broken pool",
+    "thread",
 )
 
 
@@ -2154,7 +2199,7 @@ import time as _worker_time
 
 # How many jobs to process concurrently (matches the Gemini semaphore)
 _WORKER_THREADS = int(os.environ.get("MAX_CONCURRENT_GENERATIONS", 20))
-_worker_pool = ThreadPoolExecutor(max_workers=_WORKER_THREADS, thread_name_prefix="gen-worker")
+_worker_pool = _ResilientPool(max_workers=_WORKER_THREADS, thread_name_prefix="gen-worker")
 
 
 def _process_job(job: dict):

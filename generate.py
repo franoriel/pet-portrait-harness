@@ -1075,6 +1075,21 @@ fur appearance from the photo. NEVER render closed slits, hidden \
 eyes, fur-only zone where eyes should be, or "looking through fur" \
 effects. The customer wants a portrait that captures their pet's \
 SPIRIT and GAZE, not a literal redraw of an awkward photo angle.
+- CAT OVERRIDE — CRITICAL: cats in source photos OFTEN have \
+naturally squinted, half-closed, or near-closed eyes (sunshine \
+photos, contented "loaf" pose, slow-blink trust gesture). Render \
+cat eyes in the portrait as FULLY OPEN with the iris clearly \
+visible — round-to-almond polygons at the EYE SIZE minimum above. \
+Cat irises typically show the breed's natural eye colour (gold, \
+green, copper, blue, ice) — pick the closest palette accent. Cats \
+have vertical slit pupils when alert in bright light; render the \
+PUPIL as a vertical narrow shape inside the iris (this is the cat- \
+specific iconic detail), but the IRIS itself is wide-open and \
+visible — not the whole eye reduced to a horizontal slit. NEVER \
+render cat eyes as horizontal slits, sleeping crescents, contented \
+half-moons, or zen-meditating squints — those collapse the portrait \
+into a "sleepy cat sticker" instead of a confident vector portrait. \
+The owner wants their cat to look ALERT and ENGAGING, not asleep.
 - RECURRING FAILURE MODE TO AVOID #1: eyes rendered as closed slits, \
 narrow wedges, squinted half-moons, sleeping-emoji curves, or thin \
 horizontal lines — the pet must look ALIVE and ALERT, never asleep, \
@@ -1093,8 +1108,22 @@ drawn as a stroke.
 - Fur direction along the chest and edges of the silhouette is implied \
 by ZIG-ZAG triangular block patterns (alternating light/dark wedges \
 running along the contour) — never by drawn fur strands.
-- Mid-century WPAP / Tsevis / Fairey "Obey" graphic energy: high \
-contrast, bold saturated colour, posterised, screen-print feel.
+- WPAP / Tsevis cubist-vector graphic energy: high contrast, bold \
+saturated colour, posterised, geometric. The reference is a CLEAN \
+DIGITAL VECTOR ILLUSTRATION (Adobe Illustrator output) — NOT a \
+screen-print, NOT silk-screened ink, NOT distressed Risograph, NOT \
+hand-pulled poster art.
+- ABSOLUTELY NO TEXTURE OF ANY KIND inside any colour block. Each \
+polygon is a SINGLE flat solid hex value, edge to edge. NO ink \
+spatter, NO ink grain, NO halftone dots, NO Risograph misalignment, \
+NO paper-fibre texture, NO grunge, NO distressed edges, NO noise, \
+NO film grain, NO dust scratches, NO worn-printed-poster effect, \
+NO weathered look. The output should look like a vector file, not a \
+photographed silk-screen poster. RECURRING FAILURE MODE TO AVOID: \
+the model adds a subtle gritty / weathered / inked texture to every \
+colour block to "feel like a real print" — this is FORBIDDEN. The \
+print produces texture from the canvas weave; the artwork file is a \
+clean flat-colour vector composition.
 - Fine art illustration style, high resolution 300dpi, print-ready.
 
 BACKGROUND — VERTICAL TWO-TONE SPLIT (CRITICAL):
