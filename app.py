@@ -855,29 +855,39 @@ def add_name():
             chunks.append(chunk)
         no_name_bytes = b"".join(chunks)
 
-        comp_path, web_path, comp_path_1x1, web_path_1x1 = generate_with_name_on_demand(
+        (
+            comp_path, web_path,
+            comp_path_3x4, web_path_3x4,
+            comp_path_1x1, web_path_1x1,
+        ) = generate_with_name_on_demand(
             no_name_image_bytes=no_name_bytes,
             pet_name=pet_name,
             style=style,
             background_mode=background_mode,
         )
 
-        # Upload all four (4:5 named PNG, 4:5 watermarked WebP preview,
-        # 1:1 named PNG, 1:1 watermarked WebP preview) to R2 in parallel.
-        # The PNGs are print files for Printful; the WebPs are the
-        # diagonal-watermarked previews the customer sees on PDP.
+        # Upload all six (4:5 / 3:4 / 1:1 named PNG + watermarked WebP
+        # preview each) to R2 in parallel. The PNGs are the per-aspect
+        # print files Printful fetches at fulfillment time; the WebPs
+        # are the diagonal-watermarked previews shown on PDP.
         comp_fut = _fulfillment_pool.submit(upload_portrait, comp_path)
         web_fut = _fulfillment_pool.submit(upload_portrait, web_path)
+        comp_3x4_fut = _fulfillment_pool.submit(upload_portrait, comp_path_3x4)
+        web_3x4_fut = _fulfillment_pool.submit(upload_portrait, web_path_3x4)
         comp_1x1_fut = _fulfillment_pool.submit(upload_portrait, comp_path_1x1)
         web_1x1_fut = _fulfillment_pool.submit(upload_portrait, web_path_1x1)
         comp_cdn = comp_fut.result()
         web_cdn = web_fut.result()
+        comp_3x4_cdn = comp_3x4_fut.result()
+        web_3x4_cdn = web_3x4_fut.result()
         comp_1x1_cdn = comp_1x1_fut.result()
         web_1x1_cdn = web_1x1_fut.result()
 
         return jsonify(
             composited=web_cdn or f"/preview/{web_path.name}",
             composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",
+            composited_png_3x4_cdn=comp_3x4_cdn or f"/preview/{comp_path_3x4.name}",
+            composited_3x4_preview=web_3x4_cdn or f"/preview/{web_path_3x4.name}",
             composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",
             composited_1x1_preview=web_1x1_cdn or f"/preview/{web_path_1x1.name}",
             filename=comp_path.name,
@@ -911,6 +921,7 @@ def mockups():
     image_url = (data.get("image_url") or "").strip()
     product_type = (data.get("product_type") or "canvas").strip()
     variants = data.get("variants")
+    image_urls_by_aspect_raw = data.get("image_urls_by_aspect")
 
     # Validate product_type is a simple handle
     if product_type not in ("canvas", "poster", "mug"):
@@ -933,11 +944,28 @@ def mockups():
         if any(not isinstance(v, str) or len(v) > 30 for v in variants):
             return jsonify(error="Invalid variants."), 400
 
-    if not image_filename and not image_url:
-        return jsonify(error="image_filename or image_url required"), 400
+    # Per-aspect URLs: each value must pass the same SSRF guard as
+    # image_url. Keys are the aspect strings ('1:1', '3:4', '4:5'); we
+    # don't enforce the key set strictly — generate_mockups silently
+    # ignores aspects it doesn't recognise.
+    image_urls_by_aspect: dict[str, str] = {}
+    if image_urls_by_aspect_raw is not None:
+        if not isinstance(image_urls_by_aspect_raw, dict) or len(image_urls_by_aspect_raw) > 6:
+            return jsonify(error="Invalid image_urls_by_aspect."), 400
+        for k, v in image_urls_by_aspect_raw.items():
+            if not isinstance(k, str) or len(k) > 8:
+                return jsonify(error="Invalid image_urls_by_aspect key."), 400
+            if not isinstance(v, str) or len(v) > 1000:
+                return jsonify(error="Invalid image_urls_by_aspect value."), 400
+            if not validate_url(v, allowed_hosts=_SAFE_IMAGE_HOSTS):
+                return jsonify(error="Invalid image_urls_by_aspect URL."), 400
+            image_urls_by_aspect[k] = v
+
+    if not image_filename and not image_url and not image_urls_by_aspect:
+        return jsonify(error="image_filename, image_url, or image_urls_by_aspect required"), 400
 
     # If no CDN URL provided, verify local file exists
-    if not image_url:
+    if not image_url and not image_urls_by_aspect:
         path = OUTPUT_DIR / Path(image_filename).name
         if not path.exists():
             return jsonify(error="Image not found"), 404
@@ -948,6 +976,7 @@ def mockups():
             product_type=product_type,
             image_url=image_url or None,
             variants=variants,
+            image_urls_by_aspect=image_urls_by_aspect or None,
         )
         return jsonify(mockups=results)
     except Exception:
@@ -1373,10 +1402,11 @@ def admin_style_smoke_test(style_id: str):
 
     # ── Step 1: generate the no-name composited via the production path ──
     try:
-        _raw_path, comp_path, web_path, _raw_web_path, _raw_path_1x1, _comp_path_1x1 = generate_portrait(
+        _gen_paths = generate_portrait(
             photo_path, pet_name, style=harness_style,
             style_vars=None, background_mode="auto",
         )
+        _raw_path, comp_path, web_path = _gen_paths[0], _gen_paths[1], _gen_paths[2]
     except Exception as e:
         log.exception("smoke-test: portrait generation failed for style=%s", style_id)
         return jsonify(error=f"Portrait generation failed: {e}"), 500
@@ -1543,14 +1573,22 @@ def _process_fulfillment(order_id: str, items: list, recipient: dict):
 
         def _pick_source_url(item: dict, aspect: tuple, show_name_lc: str) -> str:
             """Pick the pre-rendered print URL whose aspect matches the
-            target product. Square variants (1:1) prefer the 1×1
-            derivative; everything else uses the 4:5 master. Falls back
-            to the 4:5 fields if 1×1 isn't present (orders placed
-            before per-aspect generation existed)."""
+            target product front face. 1:1 variants prefer the 1×1
+            derivative, 3:4 variants prefer the 3×4 derivative, 4:5
+            (and any other) variants use the 4:5 master. Falls back to
+            the 4:5 fields if the requested per-aspect derivative isn't
+            present (orders placed before per-aspect generation
+            existed)."""
             no_name = show_name_lc == "no"
             if aspect == (1, 1):
                 primary = (
                     item.get("no_name_url_1x1") if no_name else item.get("print_file_url_1x1")
+                ) or ""
+                if primary:
+                    return primary
+            if aspect == (3, 4):
+                primary = (
+                    item.get("no_name_url_3x4") if no_name else item.get("print_file_url_3x4")
                 ) or ""
                 if primary:
                     return primary
@@ -1738,8 +1776,11 @@ def _process_job(job: dict):
     try:
         worker_bg = job.get("background_mode") or "auto"
         log.info("[worker] job=%s style=%s bg_mode=%s", job_id, job["style"], worker_bg)
-        (raw_path, comp_path, web_path, raw_web_path,
-         raw_path_1x1, comp_path_1x1) = generate(
+        (
+            raw_path, comp_path, web_path, raw_web_path,
+            raw_path_1x1, comp_path_1x1,
+            raw_path_3x4, raw_web_path_3x4, raw_web_path_1x1, comp_path_3x4,
+        ) = generate(
             str(upload_path),
             job["pet_name"],
             job["style"],
@@ -1754,9 +1795,13 @@ def _process_job(job: dict):
         # (fulfillment writes happen at add-to-cart, by which time the
         # backfill has typically finished).
         # Field semantics:
-        #   composited / raw_preview → watermarked WebPs for customer UI
-        #   raw / composited_png_cdn → un-watermarked 4:5 PNGs for Printful
+        #   raw_preview / composited / *_3x4_preview / *_1x1_preview
+        #     → watermarked WebPs for customer UI
+        #   raw / composited_png_cdn → un-watermarked 4:5 PNGs
+        #   raw_3x4 / composited_png_3x4_cdn → un-watermarked 3:4 PNGs
         #   raw_1x1 / composited_png_1x1_cdn → un-watermarked 1:1 PNGs
+        # The composited_* fields are no-name-aliased placeholders until
+        # /add-name overwrites them with real with-name files.
         update_job(
             job_id,
             status="complete",
@@ -1764,7 +1809,11 @@ def _process_job(job: dict):
             raw_preview=f"/preview/{raw_web_path.name}",
             composited=f"/preview/{web_path.name}",
             composited_png_cdn=f"/preview/{comp_path.name}",
+            raw_3x4=f"/preview/{raw_path_3x4.name}",
+            composited_3x4_preview=f"/preview/{raw_web_path_3x4.name}",
+            composited_png_3x4_cdn=f"/preview/{comp_path_3x4.name}",
             raw_1x1=f"/preview/{raw_path_1x1.name}",
+            composited_1x1_preview=f"/preview/{raw_web_path_1x1.name}",
             composited_png_1x1_cdn=f"/preview/{comp_path_1x1.name}",
             download=f"/download/{comp_path.name}",
             filename=comp_path.name,
@@ -1772,12 +1821,14 @@ def _process_job(job: dict):
         )
         log.info("Job %s complete (local URLs): %s", job_id, comp_path.name)
 
-        # Background CDN backfill — same dedup strategy as before
-        # (six paths collapse to two unique files at preview time, so
-        # we upload each unique path once). When all uploads finish,
-        # the job record is updated with R2 URLs.
-        unique_paths = {raw_path, comp_path, web_path,
-                        raw_web_path, raw_path_1x1, comp_path_1x1}
+        # Background CDN backfill — uniques set collapses with-name
+        # placeholders onto their no-name source files (comp_path is
+        # raw_path's alias, etc.), so each unique file uploads once.
+        unique_paths = {
+            raw_path, comp_path, web_path, raw_web_path,
+            raw_path_3x4, raw_web_path_3x4, comp_path_3x4,
+            raw_path_1x1, raw_web_path_1x1, comp_path_1x1,
+        }
         def _backfill_cdn():
             try:
                 upload_futures = {
@@ -1789,7 +1840,11 @@ def _process_job(job: dict):
                 comp_cdn = upload_cdn[comp_path]
                 web_cdn = upload_cdn[web_path]
                 raw_web_cdn = upload_cdn[raw_web_path]
+                raw_3x4_cdn = upload_cdn[raw_path_3x4]
+                raw_web_3x4_cdn = upload_cdn[raw_web_path_3x4]
+                comp_3x4_cdn = upload_cdn[comp_path_3x4]
                 raw_1x1_cdn = upload_cdn[raw_path_1x1]
+                raw_web_1x1_cdn = upload_cdn[raw_web_path_1x1]
                 comp_1x1_cdn = upload_cdn[comp_path_1x1]
                 if not comp_cdn:
                     log.warning("CDN backfill incomplete for job %s — comp_cdn empty", job_id)
@@ -1799,7 +1854,11 @@ def _process_job(job: dict):
                     raw_preview=raw_web_cdn or f"/preview/{raw_web_path.name}",
                     composited=web_cdn or f"/preview/{web_path.name}",
                     composited_png_cdn=comp_cdn or f"/preview/{comp_path.name}",
+                    raw_3x4=raw_3x4_cdn or f"/preview/{raw_path_3x4.name}",
+                    composited_3x4_preview=raw_web_3x4_cdn or f"/preview/{raw_web_path_3x4.name}",
+                    composited_png_3x4_cdn=comp_3x4_cdn or f"/preview/{comp_path_3x4.name}",
                     raw_1x1=raw_1x1_cdn or f"/preview/{raw_path_1x1.name}",
+                    composited_1x1_preview=raw_web_1x1_cdn or f"/preview/{raw_web_path_1x1.name}",
                     composited_png_1x1_cdn=comp_1x1_cdn or f"/preview/{comp_path_1x1.name}",
                     cdn="1" if comp_cdn else "0",
                 )

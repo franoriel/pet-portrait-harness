@@ -332,11 +332,46 @@ def extract_mockup_urls(result: dict) -> list[dict]:
 # Main orchestrator
 # ---------------------------------------------------------------------------
 
+# Aspect-of-variant lookup. The mockup task receives one source image per
+# variant, so each variant must be matched with the per-aspect derivative
+# whose front face matches its physical canvas. Magnets and posters have
+# no per-aspect derivatives — they use the 4:5 master.
+_VARIANT_ASPECT: dict[str, tuple[int, int]] = {
+    # canvas
+    "12x12": (1, 1), "16x16": (1, 1),
+    "12x16": (3, 4), "16x12": (3, 4),
+    "16x20": (4, 5), "20x16": (4, 5),
+    # framed canvas (same labels as canvas; same aspects)
+}
+
+
+def _aspect_for_variant(label: str) -> tuple[int, int]:
+    """Return the front-face aspect (w, h) for a Printful variant label
+    like '12x16'. Falls back to 4:5 for any unknown / non-canvas label."""
+    aspect = _VARIANT_ASPECT.get(label)
+    if aspect:
+        return aspect
+    # Best-effort parse: "WxH" → reduced ratio. If parsing fails, fall back
+    # to 4:5 so the call still works.
+    try:
+        w_s, h_s = label.lower().split("x", 1)
+        w, h = int(w_s), int(h_s)
+        if w == h:
+            return (1, 1)
+        # Reduce by GCD so 12x16 → 3:4, 16x20 → 4:5, etc.
+        from math import gcd
+        g = gcd(w, h)
+        return (w // g, h // g)
+    except Exception:
+        return (4, 5)
+
+
 def generate_mockups(
     image_filename: str,
     product_type: str,
     image_url: Optional[str] = None,
     variants: Optional[list[str]] = None,
+    image_urls_by_aspect: Optional[dict[str, str]] = None,
 ) -> list[dict]:
     """
     Generate Printful mockups for a portrait image.
@@ -348,6 +383,12 @@ def generate_mockups(
                    falls back to constructing from RAILWAY_PUBLIC_URL + image_filename.
         variants: Optional list of variant labels (e.g. ['12x18']) to generate.
                   If None, generates all variants for the product type.
+        image_urls_by_aspect: Optional dict mapping aspect strings ('1:1',
+                  '3:4', '4:5') to per-aspect public URLs. When supplied,
+                  each variant's mockup task is built from the URL whose
+                  aspect matches the variant's front face — so no Printful
+                  cover-crop zoom-up. Falls back to image_url for any
+                  aspect not present in the dict.
 
     Returns:
         List of { 'variant': '10x10', 'url': 'https://...', 'placement': 'default' }
@@ -360,6 +401,25 @@ def generate_mockups(
     # Use provided CDN URL, or fall back to Railway preview URL
     if not image_url:
         image_url = f"{_public_base()}/preview/{image_filename}"
+
+    # Per-aspect URLs are optional — when missing, every variant uses
+    # `image_url`. When present, look up by aspect string ("1:1", "3:4",
+    # "4:5") and fall back to image_url if the requested aspect is absent.
+    aspect_urls: dict[tuple[int, int], str] = {}
+    if image_urls_by_aspect:
+        for k, v in image_urls_by_aspect.items():
+            if not v:
+                continue
+            try:
+                w_s, h_s = k.split(":", 1)
+                aspect_urls[(int(w_s), int(h_s))] = v
+            except Exception:
+                continue
+
+    def _url_for(label: str) -> str:
+        if not aspect_urls:
+            return image_url
+        return aspect_urls.get(_aspect_for_variant(label), image_url)
 
     # Resolve variant IDs
     variant_map = _resolve_variant_ids(product_type)
@@ -382,9 +442,11 @@ def generate_mockups(
         if i > 0:
             time.sleep(8)
 
+        per_variant_url = _url_for(label)
+
         for attempt in range(3):
             try:
-                task_id = create_mockup_task(image_url, catalog_id, [variant_id])
+                task_id = create_mockup_task(per_variant_url, catalog_id, [variant_id])
                 result = poll_mockup_result(task_id)
                 raw_mockups = extract_mockup_urls(result)
 

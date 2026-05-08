@@ -43,33 +43,65 @@ log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Print-ready dimensions (pixels at 300 DPI)
+#
+# Canvas (in) and framed canvas: Printful's customer templates ship a
+# print file +6" on each axis vs the physical canvas, i.e. 3" of bleed
+# on every side. The CUSTOMER-VISIBLE FRONT FACE is the inner rectangle
+# (file minus 3" all around); the outer 3" wraps around the stretcher
+# bars + back of the canvas. Verified against the official Printful
+# customer templates in PetPrintables Admin/Canvas (in) templates and
+# …/Framed_canvas_in_guideline.
+#
+# Magnets ship at die-cut size + 1/8" bleed each side (legacy values kept).
 # ---------------------------------------------------------------------------
 
+# Bleed inset, in pixels at 300 DPI, applied uniformly to every side of
+# canvas/framed-canvas print files. 3" * 300 dpi = 900 px.
+CANVAS_BLEED_PX = 900
+
 PRINT_SIZES: dict[str, tuple[int, int]] = {
-    # Unframed canvas (pixels at 300 DPI)
-    "canvas-12x12":        (3600, 3600),
-    "canvas-12x16":        (3600, 4800),
-    "canvas-16x16":        (4800, 4800),
-    "canvas-16x20":        (4800, 6000),
-    # Framed canvas (8x10 + 18x24 retired 2026-04-22 — no live Shopify variants)
-    "canvas-12x12-framed": (3600, 3600),
-    "canvas-12x16-framed": (3600, 4800),
-    "canvas-16x16-framed": (4800, 4800),
-    "canvas-16x20-framed": (4800, 6000),
+    # Canvas (in) — file dims include 3" bleed on each side
+    "canvas-12x12":        (5400, 5400),   # front face 3600×3600
+    "canvas-12x16":        (5400, 6600),   # front face 3600×4800
+    "canvas-16x16":        (6600, 6600),   # front face 4800×4800
+    "canvas-16x20":        (6600, 7800),   # front face 4800×6000
+    # Framed canvas — same 3" bleed (same physical canvas, in a frame)
+    "canvas-12x12-framed": (5400, 5400),
+    "canvas-12x16-framed": (5400, 6600),
+    "canvas-16x16-framed": (6600, 6600),
+    "canvas-16x20-framed": (6600, 7800),
     # Die-Cut Magnets (300 DPI, +1/8" bleed each side → +0.25" total).
     "magnet-3x3":          (975,  975),
     "magnet-4x4":          (1275, 1275),
     "magnet-6x6":          (1875, 1875),
 }
 
-# Aspect ratios for each product type (width:height)
+# Front-face dimensions (the customer-visible area — file minus bleed).
+# This is the area the pet + name composition must fit inside; everything
+# outside this rectangle wraps around the stretcher bars and is only
+# visible from the side of the canvas.
+FRONT_FACE_SIZES: dict[str, tuple[int, int]] = {
+    "canvas-12x12":        (3600, 3600),
+    "canvas-12x16":        (3600, 4800),
+    "canvas-16x16":        (4800, 4800),
+    "canvas-16x20":        (4800, 6000),
+    "canvas-12x12-framed": (3600, 3600),
+    "canvas-12x16-framed": (3600, 4800),
+    "canvas-16x16-framed": (4800, 4800),
+    "canvas-16x20-framed": (4800, 6000),
+    # Magnets have no wrap; front face == file.
+    "magnet-3x3":          (975,  975),
+    "magnet-4x4":          (1275, 1275),
+    "magnet-6x6":          (1875, 1875),
+}
+
+# Aspect ratios of the FRONT FACE (what the customer sees). Used to pick
+# which per-aspect master to derive each variant's print file from.
 PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
-    # Unframed
     "canvas-12x12":        (1, 1),
     "canvas-12x16":        (3, 4),
     "canvas-16x16":        (1, 1),
     "canvas-16x20":        (4, 5),
-    # Framed (8x10 + 18x24 retired 2026-04-22)
     "canvas-12x12-framed": (1, 1),
     "canvas-12x16-framed": (3, 4),
     "canvas-16x16-framed": (1, 1),
@@ -78,6 +110,13 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
     "magnet-4x4":          (1, 1),
     "magnet-6x6":          (1, 1),
 }
+
+
+def _is_canvas(product_key: str) -> bool:
+    """True when this product needs a 3" wrap-bleed border on the
+    print file. Magnets ship at file dimensions (no wrap), so they
+    bypass the wrap-padding step in generate_print_file()."""
+    return product_key.startswith("canvas-")
 
 # Printful catalog variant IDs are resolved DYNAMICALLY at runtime via
 # mockups._resolve_variant_ids() which hits GET /products/<catalog_id>.
@@ -144,6 +183,66 @@ def verify_shopify_webhook(data: bytes, hmac_header: str) -> bool:
     return hmac.compare_digest(expected, hmac_header)
 
 
+def _sample_corner_color(img: Image.Image) -> tuple[int, int, int]:
+    """Average RGB of the four corner regions — used to fill the wrap-bleed
+    band around a canvas print. Stylised pet portraits sit on a calm,
+    relatively flat background, so the four-corner average is a faithful
+    extension of the painting beyond the front face.
+    """
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+    w, h = rgb.size
+    corner_size = max(8, min(w, h) // 50)
+    pixels: list[tuple[int, int, int]] = []
+    for x0, y0 in (
+        (0, 0),
+        (w - corner_size, 0),
+        (0, h - corner_size),
+        (w - corner_size, h - corner_size),
+    ):
+        pixels.extend(rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata())
+    if not pixels:
+        return (255, 255, 255)
+    r = sum(p[0] for p in pixels) // len(pixels)
+    g = sum(p[1] for p in pixels) // len(pixels)
+    b = sum(p[2] for p in pixels) // len(pixels)
+    return (r, g, b)
+
+
+def wrap_print_file_with_bleed(
+    front_face: Image.Image,
+    product_key: str,
+) -> Image.Image:
+    """Place a front-face-correct composition into a Printful canvas
+    print file with the required 3" wrap bleed on every side.
+
+    The customer-visible art lives in the inner FRONT_FACE_SIZES rectangle.
+    The surrounding CANVAS_BLEED_PX band is filled with the sampled corner
+    background colour so the gallery wrap reads as a calm continuation of
+    the painting rather than a visible seam.
+
+    No-op for non-canvas products (magnets/etc.) — they ship at file
+    dimensions with no wrap.
+    """
+    if not _is_canvas(product_key):
+        return front_face
+
+    file_w, file_h = PRINT_SIZES[product_key]
+    front_w, front_h = FRONT_FACE_SIZES[product_key]
+
+    # Resize the front-face composition to exactly the front-face area
+    # (handles both upscale + downscale; LANCZOS preserves edge sharpness
+    # at the typical magnitudes — ~1.05–1.4× upscale from per-aspect master).
+    if (front_face.width, front_face.height) != (front_w, front_h):
+        front_face = front_face.resize((front_w, front_h), Image.LANCZOS)
+
+    bg = _sample_corner_color(front_face)
+    file_canvas = Image.new("RGB", (file_w, file_h), bg)
+    inset_x = (file_w - front_w) // 2
+    inset_y = (file_h - front_h) // 2
+    file_canvas.paste(front_face, (inset_x, inset_y))
+    return file_canvas
+
+
 # ---------------------------------------------------------------------------
 # Hi-res print file generation
 # ---------------------------------------------------------------------------
@@ -181,12 +280,13 @@ def generate_print_file(
     from PIL import ImageFilter
     from storage import download_from_r2
 
-    target_w, target_h = PRINT_SIZES[product_key]
+    file_w, file_h = PRINT_SIZES[product_key]
+    front_w, front_h = FRONT_FACE_SIZES[product_key]
     ratio = PRODUCT_RATIOS[product_key]
 
     log.info(
-        "Generating print file: %s %s '%s' → %dx%d",
-        style, product_key, pet_name, target_w, target_h,
+        "Generating print file: %s %s '%s' → %dx%d (front face %dx%d)",
+        style, product_key, pet_name, file_w, file_h, front_w, front_h,
     )
 
     # ── Preferred path: upscale from R2 composited PNG ───────────
@@ -199,29 +299,25 @@ def generate_print_file(
         img = Image.open(r2_path)
         img.load()
 
-        # Crop to product aspect ratio with center gravity. The Pillow
-        # composite_name() step below overlays the pet name at ~82% of the
-        # CROPPED image, so the name always lands safely inside the frame
-        # regardless of the source aspect. Gemini-integrated names (top
-        # safe-zone) also survive this crop.
+        # Crop the source to the FRONT-FACE aspect (1:1 / 3:4 / 4:5).
+        # The wrap padding is added later by wrap_print_file_with_bleed().
         img = crop_to_ratio(img, ratio, gravity="center")
 
-        # Resize to print dimensions (handles BOTH upscale AND downscale).
-        # Magnet sizes (1275–1875 px) are smaller than PORTRAIT_MIN_SIZE
-        # (3000×3750), so the composited R2 source needs to be DOWNSIZED for
-        # magnet variants — the previous `<` check skipped this and shipped
-        # oversized PNGs to Printful for every magnet order.
-        needs_upscale = img.width < target_w or img.height < target_h
-        if (img.width, img.height) != (target_w, target_h):
-            img = img.resize((target_w, target_h), Image.LANCZOS)
+        # Resize to FRONT-FACE pixel dimensions. The wrap step below pads
+        # this up to file dimensions; the name is composited at front-face
+        # coordinates so its position is independent of the wrap.
+        needs_upscale = img.width < front_w or img.height < front_h
+        if (img.width, img.height) != (front_w, front_h):
+            img = img.resize((front_w, front_h), Image.LANCZOS)
 
-        # Sharpen ONLY when upscaling. Applying UnsharpMask after a LANCZOS
-        # downscale would over-sharpen edges and produce halos.
+        # Sharpen ONLY when upscaling — LANCZOS downscale + UnsharpMask
+        # produces halos.
         if needs_upscale:
             img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
-        # Composite pet name AFTER cropping to correct ratio. Skip for mugs,
-        # and honor the customer's _Show Name=No selection from the cart.
+        # Composite pet name on the front-face image (zone_top is a
+        # fraction of the front face, not the file). Skip for mugs, and
+        # honor the customer's _Show Name=No selection from the cart.
         style_key = _map_style_id(style)
         skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
         if not skip_name:
@@ -246,27 +342,28 @@ def generate_print_file(
         from generate import add_background_padding as _pad
         img = _pad(img, padding_ratio=0.12)
 
-        # Crop to product aspect ratio with center gravity. The Pillow
-        # composite_name() step below overlays the pet name at ~82% of the
-        # CROPPED image, so the name always lands safely inside the frame
-        # regardless of the source aspect. Gemini-integrated names (top
-        # safe-zone) also survive this crop.
+        # Crop to FRONT-FACE aspect ratio with center gravity. Wrap is
+        # padded around this in wrap_print_file_with_bleed() below.
         img = crop_to_ratio(img, ratio, gravity="center")
 
         # Apply style-specific post-processing
         if style_key != "watercolor":
             img = POST_PROCESS.get(style_key, lambda x: x)(img)
 
-        # Resize to print dimensions (handles BOTH upscale AND downscale).
-        # Magnet target sizes are smaller than the post-processed source.
-        if (img.width, img.height) != (target_w, target_h):
-            img = img.resize((target_w, target_h), Image.LANCZOS)
+        # Resize to FRONT-FACE dimensions (the customer-visible area).
+        if (img.width, img.height) != (front_w, front_h):
+            img = img.resize((front_w, front_h), Image.LANCZOS)
 
-        # Composite pet name AFTER cropping. Skip for mugs, and honor the
-        # customer's _Show Name=No selection from the cart.
+        # Composite pet name on the front-face image. Skip for mugs and
+        # honor the customer's _Show Name=No selection from the cart.
         skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
         if not skip_name:
             img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
+
+    # For canvas variants, expand the front-face composition to the full
+    # file dimensions by padding sampled-bg-coloured wrap around it. For
+    # magnets (no wrap), wrap_print_file_with_bleed is a no-op.
+    img = wrap_print_file_with_bleed(img, product_key)
 
     # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -643,6 +740,8 @@ def parse_order_items(order: dict) -> list[dict]:
             "preview_url": preview_url,
             "print_file_url": props.get("_Print File URL", ""),
             "no_name_url": props.get("_No Name URL", ""),
+            "print_file_url_3x4": props.get("_Print File URL 3x4", ""),
+            "no_name_url_3x4": props.get("_No Name URL 3x4", ""),
             "print_file_url_1x1": props.get("_Print File URL 1x1", ""),
             "no_name_url_1x1": props.get("_No Name URL 1x1", ""),
             "product_type": product_type,

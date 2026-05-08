@@ -814,6 +814,21 @@ vertical level, chest centred under the head, body widening naturally \
 from the neck down. The body silhouette is mirror-symmetric across the \
 vertical centre line — never one shoulder cut off while the other \
 extends to the edge.
+- CLOSED OUTER SILHOUETTE — CRITICAL: the pet's outer silhouette is a \
+SINGLE continuous CLOSED shape. Background colour NEVER cuts INTO the \
+pet area from outside the silhouette: NO triangular wedges, NO V-shaped \
+notches, NO arrow points, NO peninsulas, NO slots, NO darts of bg colour \
+penetrating the body, chest, neck, shoulders, or head. RECURRING FAILURE \
+MODE TO AVOID: a triangular wedge of bg colour cutting INWARD between the \
+chest blaze and the shoulder/body, leaving the silhouette looking like a \
+chunk has been bitten out of the pet. The chest blaze is rendered as an \
+INTERNAL lighter colour block sitting INSIDE the closed body silhouette \
+— never as bg colour breaking through from the edges. From the neckline \
+down to the bottom edge of the canvas, the body silhouette ONLY widens \
+or stays constant; it NEVER pinches inward, indents, or admits a wedge \
+of bg colour. The only legitimate openings in the silhouette are at the \
+very bottom edge between the front paws (a small symmetric V at the \
+floor line, if rendered at all) — never along the sides or upper chest.
 - Head and chest, strong forward-facing pose, graphic impact.
 - The PET itself occupies 78-83% of image height — top of ears at \
 ~15-18% from top, chest at ~96-99% from top, centred horizontally. The \
@@ -839,8 +854,11 @@ profile / side-view / 3⁄4 view poses, head tilts, asymmetric body \
 silhouettes, off-centre or tilted-axis compositions, tongue-shaped or \
 tube-shaped colour zones, sausage forms, swooping ribbon highlights, \
 paisley curls, S-curves, teardrop shapes, narrow elongated rounded-end \
-shapes anywhere inside the pet, phallic or suggestive silhouettes, text, \
-watermark, border, solid color bars or panels at image edges.\
+shapes anywhere inside the pet, phallic or suggestive silhouettes, \
+bg-colour wedges / notches / V-cuts / triangular gaps cutting INWARD \
+into the pet's silhouette from outside, indented or pinched body \
+contours below the neckline, chunks-bitten-out-of-the-pet effects, \
+text, watermark, border, solid color bars or panels at image edges.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
@@ -1148,11 +1166,29 @@ def _flatten_poster_bg(
         int_left   = (d2_left  < interior_tol_sq)  & interior & left_half
         int_right  = (d2_right < interior_tol_sq)  & interior & right_half
 
-        arr[peri_left | int_left]   = bg_left_arr
-        arr[peri_right | int_right] = bg_right_arr
+        # Pass 3: cross-half snap. Gemini's "wrong-half rectangle"
+        # failure mode drops a patch of the OPPOSITE half's bg colour
+        # inside the current half (e.g. a deep-aubergine block in the
+        # vivid-violet light half). Same-half snap can never catch it
+        # because the patch's RGB distance from the local bg exceeds
+        # the tol that protects pet edges. Cross-half snap targets
+        # pixels close to the OPPOSITE half's bg and re-paints them
+        # with their OWN half's bg so the seam stays clean.
+        #
+        # Safety: pet accent colours are >190 RGB from both bg hexes
+        # by palette design, so the OPPOSITE-bg distance check cannot
+        # accidentally repaint a pet faceting block.
+        cross_left  = (d2_right < interior_tol_sq) & left_half  & ~peri_right
+        cross_right = (d2_left  < interior_tol_sq) & right_half & ~peri_left
+
+        arr[peri_left | int_left | cross_left]    = bg_left_arr
+        arr[peri_right | int_right | cross_right] = bg_right_arr
         return Image.fromarray(arr.astype(np.uint8), mode="RGB")
     except ImportError:
-        # Pure-PIL fallback. Slow but correct — mirrors the two-pass logic.
+        # Pure-PIL fallback. Slow but correct — mirrors the same-half +
+        # cross-half logic from the numpy path so the "wrong-half
+        # rectangle" failure mode is caught regardless of which path
+        # runs at request time.
         px = img.load()
         for y in range(h):
             in_top = y < top_band_h
@@ -1163,12 +1199,18 @@ def _flatten_poster_bg(
                 tol_sq = perimeter_tol_sq if in_perimeter else interior_tol_sq
                 r, g, b = px[x, y]
                 if x < mid:
-                    br, bg_, bb = bg_left
+                    own_r, own_g, own_b   = bg_left
+                    other_r, other_g, other_b = bg_right
                 else:
-                    br, bg_, bb = bg_right
-                d2 = (r - br) ** 2 + (g - bg_) ** 2 + (b - bb) ** 2
-                if d2 < tol_sq:
-                    px[x, y] = (br, bg_, bb)
+                    own_r, own_g, own_b   = bg_right
+                    other_r, other_g, other_b = bg_left
+                d2_own   = (r - own_r) ** 2 + (g - own_g) ** 2 + (b - own_b) ** 2
+                d2_other = (r - other_r) ** 2 + (g - other_g) ** 2 + (b - other_b) ** 2
+                # Same-half snap (own bg) OR cross-half snap (other bg's
+                # interior tol) → repaint with OWN-half bg so the seam
+                # stays clean.
+                if d2_own < tol_sq or d2_other < interior_tol_sq:
+                    px[x, y] = (own_r, own_g, own_b)
         return img
 
 _CHARCOAL_TEMPLATE = """\
@@ -2555,6 +2597,7 @@ def _pad_sides_to_aspect(
 # aspect instead of cover-cropping a 4:5 source and losing the
 # pet's bottom (or the name area at the top).
 PRINT_ASPECT_4_5 = (4, 5)
+PRINT_ASPECT_3_4 = (3, 4)
 PRINT_ASPECT_1_1 = (1, 1)
 
 
@@ -3859,53 +3902,88 @@ def _generate_inner(
         ai_image_no_name.close()
     ai_image_no_name = processed_no_name
 
-    # Save the hi-res no-name 4:5 master and the watermarked WebP that
-    # the customer actually sees on the preview screen. Everything else
-    # — the with-name PNG (comp_path), the with-name WebP (web_path),
-    # and both 1:1 derivatives — is byte-identical to one of these two
-    # files at preview time:
-    #   - comp_path / comp_path_1x1: no name has been composited yet;
-    #     generate_with_name_on_demand() produces the real with-name
-    #     files at add-to-cart time.
-    #   - web_path: same content as raw_web_path; it'd be a duplicate
-    #     watermarked WebP.
-    #   - raw_path_1x1: an aspect derivative the cart doesn't reference
-    #     anymore (the JS revert dropped per-aspect plumbing — Printful
-    #     gets the 4:5 master regardless of canvas variant).
+    # Save per-aspect no-name masters: 4:5 (default), 3:4 (canvas-12x16),
+    # and 1:1 (canvas-12x12 / 16x16). The 3:4 is a side-crop of the 4:5
+    # master (vertical positions preserved); the 1:1 is the style-aware
+    # derive_aspect output so each style's pet positioning still lands
+    # correctly on a square canvas. Each PNG gets a watermarked WebP
+    # preview alongside it for storefront PDP display.
     #
-    # Skipping the redundant saves removes ~2-4s of synchronous work
-    # before the customer sees the preview. Aliasing the unused outputs
-    # to raw_path / raw_web_path keeps the 6-tuple return shape; the
-    # worker dedupes by file path before submitting CDN uploads, so the
-    # CDN only sees two unique objects per generation.
-    # _tighten_top_after_name is intentionally NOT called here. With
-    # the universal flush-bottom rule (add_background_padding now uses
-    # pad_bottom_ratio=0 for every style), the pet already sits at the
-    # canvas bottom edge. Re-tightening would crop into the pet content
-    # AND re-pad the bottom with a sampled-edge colour (which on the
-    # flush layout is the pet itself, not bg) — producing a visible
-    # band where the pet used to sit flush.
+    # The "with-name" placeholder slots (comp_path / comp_path_3x4 /
+    # comp_path_1x1 / web_path) alias the matching no-name file at
+    # preview time — generate_with_name_on_demand() overwrites the
+    # composited_* fields in the job record with real with-name PNGs +
+    # WebPs at add-to-cart time. This means a customer who never adds a
+    # name still ships a real per-aspect no-name file to Printful's
+    # mockup task and order, instead of cover-cropping a 4:5 source.
+    # _tighten_top_after_name is intentionally NOT called here — with
+    # the universal flush-bottom rule the pet already sits at the canvas
+    # bottom edge; re-tightening would re-pad the bottom with a sampled
+    # edge colour that's now the pet itself, not bg.
 
     raw_path = out / f"{uid}_{style}_raw.png"
     ai_image_no_name.save(raw_path, "PNG", dpi=(300, 300))
     log.info("           raw (no name) → %s (%dx%d @ 300 DPI)",
              raw_path, ai_image_no_name.width, ai_image_no_name.height)
+    raw_web_path = save_web_preview(ai_image_no_name, raw_path, watermark=True)
 
-    raw_web_path = save_web_preview(
-        ai_image_no_name,
-        raw_path,
-        watermark=True,
-    )
+    # 3:4 derivative — centred side-crop of the 4:5 master. 4:5 (0.80) →
+    # 3:4 (0.75) is a sides-only crop, so name-zone position and pet
+    # flush-bottom land at the same fractional Y on every canvas.
+    derived_3x4 = crop_to_ratio(ai_image_no_name, PRINT_ASPECT_3_4, gravity="center")
+    raw_path_3x4 = out / f"{uid}_{style}_raw_3x4.png"
+    derived_3x4.save(raw_path_3x4, "PNG", dpi=(300, 300))
+    log.info("           raw 3x4 (no name) → %s (%dx%d @ 300 DPI)",
+             raw_path_3x4, derived_3x4.width, derived_3x4.height)
+    raw_web_path_3x4 = save_web_preview(derived_3x4, raw_path_3x4, watermark=True)
+    derived_3x4.close()
 
-    # Aliases — same files, different roles. The frontend is fine with
-    # this at preview time because /add-name regenerates the named PNG
-    # and WebP fresh before the customer ever sees a name on the print.
+    # 1:1 derivative — style-aware derive_aspect so each style's pet
+    # positioning + corner-sampled bg padding lands correctly on the
+    # square canvas (a naïve crop would lose the chest cut + bg halo).
+    derived_1x1 = derive_aspect(ai_image_no_name, PRINT_ASPECT_1_1, style)
+    min_w, min_h = PORTRAIT_MIN_SIZE
+    if derived_1x1.width < min_w or derived_1x1.height < min_h:
+        scale = max(min_w / derived_1x1.width, min_h / derived_1x1.height)
+        derived_1x1 = derived_1x1.resize(
+            (int(derived_1x1.width * scale), int(derived_1x1.height * scale)),
+            Image.LANCZOS,
+        )
+    raw_path_1x1 = out / f"{uid}_{style}_raw_1x1.png"
+    derived_1x1.save(raw_path_1x1, "PNG", dpi=(300, 300))
+    log.info("           raw 1x1 (no name) → %s (%dx%d @ 300 DPI)",
+             raw_path_1x1, derived_1x1.width, derived_1x1.height)
+    raw_web_path_1x1 = save_web_preview(derived_1x1, raw_path_1x1, watermark=True)
+    derived_1x1.close()
+
+    # With-name placeholder aliases — overwritten by /add-name at
+    # add-to-cart time. Keeping them aliased here means the customer
+    # who never adds a name still ships the no-name file as their
+    # "composited" output, which is the correct behaviour.
     comp_path = raw_path
-    raw_path_1x1 = raw_path
-    comp_path_1x1 = raw_path
     web_path = raw_web_path
+    comp_path_3x4 = raw_path_3x4
+    comp_path_1x1 = raw_path_1x1
 
-    return raw_path, comp_path, web_path, raw_web_path, raw_path_1x1, comp_path_1x1
+    # Returned in slot-stable order. Slots 0–5 preserve the historical
+    # 6-tuple shape (raw, comp, web, raw_web, raw_1x1, comp_1x1) so
+    # existing audit/test scripts continue to unpack the same way; the
+    # 1:1 derivative is now a real file instead of an alias of the 4:5.
+    # Slots 6–9 are new: 3:4 PNG/WebP + 1:1 WebP + 3:4 with-name
+    # placeholder, used by the worker to populate per-aspect job-record
+    # fields and by /add-name to override the with-name placeholders.
+    return (
+        raw_path,           # 0: 4:5 PNG, no name
+        comp_path,          # 1: 4:5 PNG, with-name placeholder = raw_path
+        web_path,           # 2: 4:5 WebP, with-name placeholder = raw_web_path
+        raw_web_path,       # 3: 4:5 WebP, watermarked
+        raw_path_1x1,       # 4: 1:1 PNG, no name (real per-aspect derivative)
+        comp_path_1x1,      # 5: 1:1 PNG, with-name placeholder = raw_path_1x1
+        raw_path_3x4,       # 6: 3:4 PNG, no name
+        raw_web_path_3x4,   # 7: 3:4 WebP, watermarked
+        raw_web_path_1x1,   # 8: 1:1 WebP, watermarked
+        comp_path_3x4,      # 9: 3:4 PNG, with-name placeholder = raw_path_3x4
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -3918,15 +3996,27 @@ def generate_with_name_on_demand(
     style: str,
     output_dir: Optional[Path] = None,
     background_mode: Optional[str] = "auto",
-) -> tuple[Path, Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path, Path, Path]:
     """Add the pet's name to an already-generated no-name portrait.
     Called at add-to-cart time to halve the up-front Gemini cost.
 
-    Returns: (comp_path_4x5, web_preview_path, comp_path_1x1, web_preview_path_1x1)
+    Returns: (
+        comp_path_4x5,  web_preview_path,
+        comp_path_3x4,  web_preview_path_3x4,
+        comp_path_1x1,  web_preview_path_1x1,
+    )
 
-    The 1:1 derivative is composited from the same name-applied source
-    so both square and tall canvas variants get a print file with the
-    name baked in at the correct position for each aspect.
+    Three per-aspect derivatives so each canvas variant's mockup task
+    receives a source matching its front-face aspect (no Printful
+    cover-crop zoom-up):
+      4:5  → canvas-16x20 / canvas-16x20-framed
+      3:4  → canvas-12x16 / canvas-12x16-framed
+      1:1  → canvas-12x12 / canvas-16x16 (and framed equivalents)
+
+    The 3:4 derivative is a centred side-crop of the already-composited
+    4:5 master — vertical positions are preserved, so the name + pet
+    flush-bottom land in the same fractional places without re-running
+    the per-style reframe / composite_name pipeline.
     """
     if not _generation_semaphore.acquire(timeout=2):
         raise RuntimeError("BUSY")
@@ -3966,6 +4056,18 @@ def generate_with_name_on_demand(
 
         web_path = save_web_preview(composited, comp_path)
 
+        # 3:4 derivative — centred side-crop of the 4:5 master. 4:5 (0.80)
+        # → 3:4 (0.75) is sides-only crop, so name centre and pet bottom
+        # stay at the same fractional y position the customer sees on the
+        # 4:5 preview. Used for canvas-12x16 mockups + print files so
+        # Printful never has to cover-crop a 4:5 source onto a 3:4 face.
+        composited_3x4 = crop_to_ratio(composited, PRINT_ASPECT_3_4, gravity="center")
+        comp_path_3x4 = out / f"{uid}_{style}_{safe_name}_named_3x4.png"
+        composited_3x4.save(comp_path_3x4, "PNG", dpi=(300, 300))
+        log.info("           comp 3x4 (with name) → %s (%dx%d @ 300 DPI)",
+                 comp_path_3x4, composited_3x4.width, composited_3x4.height)
+        web_path_3x4 = save_web_preview(composited_3x4, comp_path_3x4)
+
         # 1:1 derivative with the name baked in. Derive the 1:1 master
         # from the NO-NAME source first, then composite the name on the
         # 1:1 separately. Compositing on the 4:5 first and then deriving
@@ -3999,9 +4101,14 @@ def generate_with_name_on_demand(
         web_path_1x1 = save_web_preview(composited_1x1, comp_path_1x1)
 
         composited.close()
+        composited_3x4.close()
         composited_1x1.close()
         derived_1x1.close()
-        return comp_path, web_path, comp_path_1x1, web_path_1x1
+        return (
+            comp_path, web_path,
+            comp_path_3x4, web_path_3x4,
+            comp_path_1x1, web_path_1x1,
+        )
     finally:
         _generation_semaphore.release()
 
@@ -4038,8 +4145,8 @@ def main():
             "COLOR_PALETTE": args.color_palette,
         }.items() if v is not None}
 
-    raw_path, comp_path, web_path, raw_web_path = generate(args.photo_path, args.pet_name, args.style,
-                                                            style_vars=style_vars)
+    _gen_paths = generate(args.photo_path, args.pet_name, args.style, style_vars=style_vars)
+    raw_path, comp_path, web_path, raw_web_path = _gen_paths[0], _gen_paths[1], _gen_paths[2], _gen_paths[3]
     print(f"\nRaw output:   {raw_path}")
     print(f"Composited:   {comp_path}")
     print(f"Web preview:  {web_path}")
