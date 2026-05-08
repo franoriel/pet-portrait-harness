@@ -678,6 +678,12 @@
       var has1x1 = !!data.namedPreviewUrl1x1;
       var useSquareSrc = isSquareVariant && data.wantsName !== false && has1x1;
       if (hasAllPrintful && !isSquareVariant) {
+        // Cache the Printful URL on the slide so renderActiveImage can
+        // restore it when the customer toggles name back ON. Printful
+        // mockups are baked with the named artwork — when name is OFF
+        // we rebuild as a client canvas mockup instead, but still need
+        // to remember the Printful URL for the YES state.
+        mockupSlide.setAttribute('data-printful-url', printfulByVariant[sizeKey].url);
         var mockupImg = document.createElement('img');
         mockupImg.src = printfulByVariant[sizeKey].url;
         mockupImg.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
@@ -750,6 +756,10 @@
             var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
             var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
             if (slideEl) {
+              // Stash the Printful URL so the name toggle can restore it
+              // when the customer flips back to YES — same idea as the
+              // initial-render branch above.
+              slideEl.setAttribute('data-printful-url', m.url);
               slideEl.innerHTML = '';
               var newImg = document.createElement('img');
               newImg.src = m.url;
@@ -1090,28 +1100,42 @@
       var mainImg = gallery.querySelector('.product-gallery__slide:first-child img');
       if (mainImg) mainImg.src = heroUrl;
       if (thumb) thumb.src = heroUrl;
-      // Square variants need the 1:1 derivative — cover-cropping the
-      // 4:5 master onto a square face clips the name band off the top.
       // Source-aspect change means the slide's cropping math is wrong
-      // for the new src, so rebuild client mockup slides instead of
-      // just swapping the src on the inner <img>.
+      // for the new src, so always rebuild the slide rather than just
+      // swapping <img>.src.
+      //
+      // Toggle YES on a Printful-backed slide: restore the Printful
+      // mockup URL (cached as data-printful-url at render time). Printful
+      // mockups are baked with the named artwork — they're the polished
+      // canvas-on-wall scene customers should see by default.
+      //
+      // Toggle NO on a Printful-backed slide: rebuild as a client canvas
+      // mockup with the no-name art. The customer keeps a canvas frame +
+      // dimensions reference (instead of a raw zoomed preview) and the
+      // name visibly drops. We never have a Printful mockup of the
+      // un-named artwork to fall back to, so the client mockup is the
+      // canonical "no-name" view.
       var sizesMap = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
       gallery.querySelectorAll('.product-gallery__slide--mockup').forEach(function (slide) {
         var sizeKey = slide.getAttribute('data-variant-size') || '';
         var dim = sizesMap[sizeKey];
-        var isSq = dim ? (dim.w === dim.h) : false;
+        if (!dim) return;
+        var isSq = dim.w === dim.h;
         var useSquareSrc = isSq && !!url1x1;
         var srcForSlide = useSquareSrc ? url1x1 : url;
-        // Printful mockup slides have a single bare <img>; client-side
-        // ones have a nested canvas-wrap with a portrait <img> inside.
-        var isClientMockup = !!slide.querySelector('[style*="aspect-ratio"]');
-        if (isClientMockup && dim) {
-          slide.innerHTML = '';
+        var printfulUrl = slide.getAttribute('data-printful-url') || '';
+
+        slide.innerHTML = '';
+        if (showName && printfulUrl && !isSq) {
+          var img = document.createElement('img');
+          img.src = printfulUrl;
+          img.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
+          img.loading = 'lazy';
+          img.style.cssText = 'width:100%;display:block;border-radius:16px;';
+          slide.appendChild(img);
+        } else {
           var rebuilt = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
           slide.appendChild(rebuilt);
-        } else {
-          var slideImg = slide.querySelector('img');
-          if (slideImg) slideImg.src = srcForSlide;
         }
       });
     }
