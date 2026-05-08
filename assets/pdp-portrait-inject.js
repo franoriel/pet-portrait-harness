@@ -435,12 +435,20 @@
         cropBotFrac = 0;
         cropSideFrac = 0;
       } else {
-        // Square face from a 4:5 master — keep small side trim, no
-        // vertical crop (pet's name band and chest cut both need to
-        // survive on the square face).
+        // 4:5 master on a square face (no-name fallback — with-name uses
+        // the 1:1 derivative). The 4:5 source has the pet flush at the
+        // bottom edge (universal flush-bottom rule). A center-top cover
+        // crop loses the bottom ~28% of source, which is exactly where
+        // the pet's chest sits. We cover-crop with bottom anchoring
+        // instead, so the chest stays intact and the empty name-safe-
+        // zone paper at the top is what gets trimmed (acceptable in the
+        // no-name case — the top 20% above the ears is just paper).
+        // No side trim either: keeps the watercolor wash extending
+        // edge-to-edge horizontally rather than introducing margins.
         cropTopFrac = 0;
         cropBotFrac = 0;
-        cropSideFrac = 0.05;
+        cropSideFrac = 0;
+        coverPosition = 'center bottom';
       }
       hScale = 100 / (1 - 2 * cropSideFrac);
       vScale = 100 / (1 - cropTopFrac - cropBotFrac);
