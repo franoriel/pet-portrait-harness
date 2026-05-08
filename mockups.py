@@ -366,6 +366,99 @@ def _aspect_for_variant(label: str) -> tuple[int, int]:
         return (4, 5)
 
 
+def _bleed_padded_mockup_url(
+    front_face_url: str,
+    variant_label: str,
+    product_type: str,
+) -> Optional[str]:
+    """Download a per-aspect FRONT-FACE-only image, wrap it with the canvas
+    bleed for the given variant, upload to R2, and return the new public URL.
+
+    WHY THIS EXISTS — Printful's canvas mockup template assumes the source
+    file already includes the wrap bleed (PRINT_SIZES). When we hand it a
+    front-face-only file (FRONT_FACE_SIZES — what the customer composed
+    on-PDP), the template treats it as if the bleed is baked in, then
+    centre-extracts an inner region as the rendered "front face" — which
+    is a heavily zoomed crop of our content (the centre 67×73% on a 12×16,
+    centre 73×73% on a 12×12). Result: the pet's head fills the mockup
+    and the name band is clipped off the top.
+
+    Wrapping the front face with bleed before submitting the mockup task
+    aligns our source dimensions with Printful's expectations, so the
+    template's centre-extraction lands exactly on the customer-composed
+    front face.
+
+    Returns None if the helper isn't applicable (non-canvas variant) or
+    any step fails (R2 misconfigured, fetch failure, encode error). Caller
+    falls back to the unpadded URL — printful then renders the broken
+    zoom but at least the mockup task doesn't error out.
+    """
+    if product_type not in ("canvas", "canvas-framed"):
+        return None
+
+    suffix = "-framed" if product_type == "canvas-framed" else ""
+    product_key = f"canvas-{variant_label}{suffix}"
+
+    try:
+        from io import BytesIO
+        import uuid as _uuid
+
+        from PIL import Image  # lazy: avoid Pillow import when mockups.py is loaded but unused
+
+        # Lazy: avoid a mockups → fulfillment → mockups circular import.
+        # fulfillment.py already imports _resolve_variant_ids from mockups,
+        # so the reverse must stay deferred to function call time.
+        from fulfillment import wrap_print_file_with_bleed, FRONT_FACE_SIZES
+        from storage import upload_bytes
+
+        if product_key not in FRONT_FACE_SIZES:
+            log.warning("[mockup-bleed] no FRONT_FACE_SIZES for %s — skipping", product_key)
+            return None
+
+        resp = requests.get(front_face_url, timeout=30)
+        resp.raise_for_status()
+
+        front_face = Image.open(BytesIO(resp.content))
+        front_face.load()
+        if front_face.mode != "RGB":
+            front_face = front_face.convert("RGB")
+
+        # Resize to the exact front-face dims the wrap helper expects.
+        # The cart-side per-aspect URLs may point at the print-quality PNG
+        # (correct dims) OR the watermarked WebP preview (~800px max) —
+        # the latter would produce a soft mockup. wrap_print_file_with_bleed
+        # also resizes internally, but doing it here keeps the LANCZOS
+        # upscale visible in logs and lets us bail early if the source
+        # is impossibly small.
+        target_w, target_h = FRONT_FACE_SIZES[product_key]
+        if (front_face.width, front_face.height) != (target_w, target_h):
+            front_face = front_face.resize((target_w, target_h), Image.LANCZOS)
+
+        bleed_padded = wrap_print_file_with_bleed(front_face, product_key)
+
+        out_buf = BytesIO()
+        bleed_padded.save(out_buf, "PNG")
+
+        key = f"mockup-bleed/{_uuid.uuid4().hex}_{product_key}.png"
+        public_url = upload_bytes(out_buf.getvalue(), key, content_type="image/png")
+        if not public_url:
+            log.warning("[mockup-bleed] R2 upload returned None for %s", key)
+            return None
+        log.info(
+            "[mockup-bleed] %s wrapped %dx%d → %dx%d, uploaded to %s",
+            variant_label, target_w, target_h,
+            bleed_padded.width, bleed_padded.height, public_url,
+        )
+        return public_url
+    except Exception as exc:
+        log.warning(
+            "[mockup-bleed] padding failed (variant=%s product_type=%s): %s — "
+            "falling back to non-padded URL (mockup will look zoomed)",
+            variant_label, product_type, exc,
+        )
+        return None
+
+
 def generate_mockups(
     image_filename: str,
     product_type: str,
@@ -443,6 +536,16 @@ def generate_mockups(
             time.sleep(8)
 
         per_variant_url = _url_for(label)
+
+        # Canvas mockups require a bleed-padded source. Without this,
+        # Printful's mockup template centre-extracts an inner region as
+        # the front face, producing a heavily zoomed render with the name
+        # band clipped off. See _bleed_padded_mockup_url() docstring for
+        # the full rationale. Magnets ship at file dims (no wrap), so the
+        # helper returns None and we keep the original URL.
+        bleed_url = _bleed_padded_mockup_url(per_variant_url, label, product_type)
+        if bleed_url:
+            per_variant_url = bleed_url
 
         for attempt in range(3):
             try:
