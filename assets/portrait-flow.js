@@ -301,8 +301,41 @@ function saveLibrary(list) {
   } catch {}
 }
 
+// Pick the first URL from a list that will survive a page reload.
+// /preview/<filename> URLs point at the Railway worker's local disk —
+// they're transient and break across dyno cycles, leaving the saved-
+// portraits gallery showing browser broken-image icons. Prefer
+// durable forms: R2/CDN HTTPS URLs, or base64 data URLs (heavy but
+// always work). Returns '' if no stable URL is available.
+function pickStableUrl(urls) {
+  if (!Array.isArray(urls)) return '';
+  for (const u of urls) {
+    if (!u) continue;
+    if (u.startsWith('data:')) return u;
+    if (u.indexOf('/preview/') !== -1) continue;
+    if (u.startsWith('http')) return u;
+  }
+  return '';
+}
+
 function addToLibrary(state) {
   if (!state.imageFilename && !state.previewCdnUrls?.length) return;
+
+  // Skip the entry entirely if no stable URL is available yet — saving
+  // a /preview/ URL guarantees a broken card on next reload. The CDN-
+  // upgrade poll in generate() re-calls addToLibrary once R2 URLs land,
+  // so eligible portraits still make it into the library.
+  const previewUrl = pickStableUrl(state.previewCdnUrls)
+    || pickStableUrl(state.previewImages)
+    || '';
+  if (!previewUrl) return;
+
+  const stableNoName = pickStableUrl(state.previewCdnUrls);
+  const stablePrint = state.printFileUrl
+    && state.printFileUrl.indexOf('/preview/') === -1
+    && state.printFileUrl.startsWith('http')
+    ? state.printFileUrl : '';
+
   const list = loadLibrary();
   const id = state.jobId || state.imageFilename || `p-${Date.now()}`;
   // Dedupe — replace if an entry with same id already exists
@@ -311,9 +344,9 @@ function addToLibrary(state) {
     id,
     petName: state.petName || 'Pet',
     styleId: state.selectedStyleId || 'soft-watercolour',
-    previewUrl: (state.previewCdnUrls || [])[0] || (state.previewImages || [])[0] || '',
-    noNameUrl: (state.previewCdnUrls || [])[0] || '',
-    printUrl: state.printFileUrl || '',
+    previewUrl,
+    noNameUrl: stableNoName,
+    printUrl: stablePrint,
     createdAt: state.generatedAt || new Date().toISOString(),
     imageFilename: state.imageFilename || '',
     jobId: state.jobId || '',
@@ -1210,6 +1243,11 @@ function usePortraitFlow() {
                 Object.assign(session, upgrade);
                 localStorage.setItem(LS_KEY, JSON.stringify(session));
               } catch (_) { /* ignore storage errors */ }
+              // Refresh the library entry now that durable CDN URLs are
+              // available. addToLibrary skips entries with only /preview/
+              // URLs at generate time, so this is the path that adds new
+              // entries to the saved-portraits gallery for fast clicks.
+              addToLibrary({ ...state, ...newState, ...upgrade });
               break;
             } catch (_) { /* keep polling */ }
           }
@@ -1707,6 +1745,13 @@ function YourPortraits({ onOrderPortrait }) {
   // discards a saved portrait without the customer's explicit second
   // confirmation.
   const [pendingDelete, setPendingDelete] = useState(null);
+  // IDs of library entries whose thumbnail URL failed to load. These
+  // are typically older entries saved before the stable-URL filter, or
+  // entries whose CDN object was pruned server-side. We render a
+  // tasteful "Image unavailable" placeholder for these so the customer
+  // never sees a browser broken-image icon — the existing × delete
+  // still works to clear them.
+  const [brokenIds, setBrokenIds] = useState(() => new Set());
 
   if (!library.length) return null;
 
@@ -1716,7 +1761,19 @@ function YourPortraits({ onOrderPortrait }) {
     removeFromLibrary(id);
     setLibrary(loadLibrary());
     setPendingDelete(null);
+    setBrokenIds(prev => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
+  const markBroken = (id) => setBrokenIds(prev => {
+    if (prev.has(id)) return prev;
+    const next = new Set(prev);
+    next.add(id);
+    return next;
+  });
 
   return React.createElement('div', {
     style: {
@@ -1740,6 +1797,29 @@ function YourPortraits({ onOrderPortrait }) {
       library.map(p => {
         const daysLeft = daysRemaining(p.createdAt);
         const isPending = pendingDelete === p.id;
+        const isBroken = brokenIds.has(p.id) || !p.previewUrl;
+        const thumbnail = isBroken
+          ? React.createElement('div', {
+              style: {
+                width: '120px', height: '150px', borderRadius: '10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center', padding: '12px',
+                background: 'rgba(28,28,28,0.04)',
+                border: `1px dashed ${tokens.colorBorder}`,
+                fontFamily: fontSans, fontSize: 'var(--text-xs)',
+                color: tokens.colorMuted, lineHeight: 1.4,
+                boxSizing: 'border-box',
+              },
+            }, 'Image unavailable')
+          : React.createElement('img', {
+              src: p.previewUrl, alt: `${p.petName} portrait`,
+              onError: () => markBroken(p.id),
+              style: {
+                width: '120px', height: '150px', objectFit: 'cover',
+                borderRadius: '10px', display: 'block',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              },
+            });
         return React.createElement('div', {
           key: p.id,
           style: { flex: '0 0 auto', width: '120px', textAlign: 'left', position: 'relative' },
@@ -1747,21 +1827,16 @@ function YourPortraits({ onOrderPortrait }) {
           React.createElement('button', {
             type: 'button',
             onClick: () => onOrderPortrait(p),
-            disabled: isPending,
+            disabled: isPending || isBroken,
             style: {
               width: '120px', padding: 0, border: 'none', background: 'none',
-              cursor: isPending ? 'default' : 'pointer', outline: 'none', textAlign: 'left',
+              cursor: (isPending || isBroken) ? 'default' : 'pointer', outline: 'none', textAlign: 'left',
             },
-            'aria-label': `Order ${p.petName}'s portrait`,
+            'aria-label': isBroken
+              ? `${p.petName}'s portrait is no longer available — use × to remove`
+              : `Order ${p.petName}'s portrait`,
           },
-            React.createElement('img', {
-              src: p.previewUrl, alt: `${p.petName} portrait`,
-              style: {
-                width: '120px', height: '150px', objectFit: 'cover',
-                borderRadius: '10px', display: 'block',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              },
-            }),
+            thumbnail,
             React.createElement('p', {
               style: {
                 fontFamily: fontSerif, fontStyle: 'italic', fontSize: 'var(--text-base)',
