@@ -960,6 +960,38 @@ drawn from this palette only: {{POSTER_ACCENTS}}. Repeat colours \
 across multiple blocks to create rhythm.
 - NO gradients, NO airbrush, NO soft shading, NO photographic detail, \
 NO drawn fur strands. Each block is uniformly flat colour.
+
+PET FILL — CRITICAL (anti-stencil rule):
+- The pet's silhouette is FULLY OPAQUE. Every single pixel inside the \
+pet's outline is filled with one of the {{POSTER_ACCENTS}} palette \
+colours. The background colour NEVER shows through the pet — there are \
+NO transparent gaps, NO holes, NO slivers of bg colour visible inside \
+the silhouette. If you traced the pet's outline and flood-filled the \
+inside, every pixel in the fill region would be a palette accent (no \
+pixel inside the silhouette is the bg's left-half hex or right-half \
+hex — those colours live ONLY outside the pet).
+- Use AT LEAST 4 distinct palette colours across the pet's body — \
+never collapse to a single dark stamp. Light-coat areas (cheeks, brow, \
+chest blaze, muzzle highlights) use the palette's LIGHTER accents; \
+shadow-coat areas (ear interiors, eye sockets, jaw underside, chest \
+shadow) use the palette's DARKER accents; mid-tones use the medium \
+accents. The pet should read like image 2 in our reference set: a \
+FULLY-COLOURED cubist mosaic with visible peach/cream/mustard/etc. \
+facets across the body, not a dark silhouette on coloured paper.
+- Each colour block has VISUAL MASS — it's a confident polygonal area, \
+not a hairline sliver, not a thin angular stroke. Blocks are SHAPES, \
+not LINES. If a "block" is so narrow it reads as a stroke or pen mark, \
+it's wrong; widen it into a clear flat-fill polygon.
+- RECURRING FAILURE MODE TO AVOID: the pet rendered as a flat dark \
+stencil / ink stamp / silhouette made of thin angular dark strokes, \
+with the background colour visible through the gaps where the \
+"strokes" don't cover. This is FORBIDDEN. The pet is NOT an inked \
+overlay on top of the bg; the pet is a fully-painted cubist mosaic \
+where every internal pixel is a palette accent colour. If the result \
+looks like a coloring-book outline that hasn't been filled in yet, \
+or like a dark sticker placed on a flat coloured card, the image is \
+wrong. Compare against the WPAP / Tsevis reference: every facet of \
+the pet is a confident filled colour block, not a line drawing.
 - Eyes are stylised as a single dark angular SLIT or NARROW WEDGE — a \
 closed-eye / half-closed expression. NO whites, NO iris detail, NO \
 catchlight, NO pupil dot. Where the pet was looking forward in the \
@@ -1088,21 +1120,25 @@ still ships the chest intact.
 Avoid: photography, photorealism, soft or curved edges WITHIN the pet, \
 gradients, watercolor, painterly strokes, 3D render, blurry, detailed \
 fur texture, drawn fur strands, hatching, eye whites, irises, pupils, \
-catchlights, eyelashes, decorative shapes, foliage, props, halos, \
-frames, framed-art look, poster-pinned-to-wall look, inset rectangle \
-behind the pet, nested background rectangles, darker rectangular block \
-surrounding the pet, four-quadrant background, vertical edge strip, \
-vertical pillar or sidebar at left or right edge, three-region \
-vertical background, additional vertical seams beyond the central one, \
-darker corner patch, top-left corner rectangle, top-right corner \
-rectangle, bottom-left corner rectangle, bottom-right corner \
-rectangle, L-shaped corner shadows, triangular corner gradients, \
-window-frame look, picture-rail moulding, cropped wall panel, \
-photographed-corner-of-room look, more than two background colours, \
-horizontal background splits, diagonal background splits, curved \
-background seams, gradient backgrounds, off-centre seam, background \
-patterns, drop shadows, text, watermark, border, solid color bars or \
-panels at image edges.\
+catchlights, eyelashes, stencil look, ink-stamp look, sticker look, \
+silhouette with bg showing through, dark angular strokes overlaid on \
+flat bg, coloring-book outline, hollow pet figure, single-colour pet \
+stamp, monochrome pet on coloured field, thin sliver "blocks", \
+hairline angular strokes inside the pet, decorative shapes, foliage, \
+props, halos, frames, framed-art look, poster-pinned-to-wall look, \
+inset rectangle behind the pet, nested background rectangles, darker \
+rectangular block surrounding the pet, four-quadrant background, \
+vertical edge strip, vertical pillar or sidebar at left or right edge, \
+three-region vertical background, additional vertical seams beyond \
+the central one, darker corner patch, top-left corner rectangle, \
+top-right corner rectangle, bottom-left corner rectangle, \
+bottom-right corner rectangle, L-shaped corner shadows, triangular \
+corner gradients, window-frame look, picture-rail moulding, cropped \
+wall panel, photographed-corner-of-room look, more than two \
+background colours, horizontal background splits, diagonal background \
+splits, curved background seams, gradient backgrounds, off-centre \
+seam, background patterns, drop shadows, text, watermark, border, \
+solid color bars or panels at image edges.\
 """
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
@@ -1405,9 +1441,27 @@ edges, no curtain folds, no window frames.
 concrete, no marble, no granite, no fabric, no leather, no metal. \
 Just clean white watercolor paper with the watercolor wash painted \
 on it. RECURRING FAILURE MODE TO AVOID: faint horizontal pencil-like \
-streaks running across the lower third of the canvas (the model \
-imagining a wooden floor or shelf the pet is on). DO NOT add these \
-streaks at any opacity.
+streaks running across the lower third of the canvas, OR drifting \
+across the RIGHT or LEFT third at chest/leg height (the model \
+imagining a wooden floor, shelf, table edge, baseboard, or counter \
+the pet is on or near). DO NOT add these streaks at any opacity, \
+in any colour, at any length, anywhere on the canvas — including \
+short fragments that only span 10-30% of the width. If a viewer can \
+trace a straight or near-straight horizontal segment on the canvas, \
+the image is wrong.
+
+WASH SHAPE — CRITICAL:
+- The wash is a SOFT, ROUNDED, ORGANIC HALO around the pet. Edges of \
+the wash are irregular petal shapes, lobed and curved, with feathered \
+wet-on-wet bleeds. The wash CAN and SHOULD bleed and wrap around the \
+sides of the canvas — that is encouraged — but ONLY as soft rounded \
+bleeds, never as straight bands or horizontal striations.
+- The wash NEVER has a straight edge. Not at the top, not at the \
+bottom, not at either side. No flat horizon, no flat shoreline, no \
+flat baseline, no ruled-line termination. If the wash thins out or \
+fades, it does so in soft scalloped curves, not in straight cuts.
+- Splatters and dots are fine. Lines are not. A "splash" is allowed; \
+a "stripe" is not.
 
 WATERCOLOR WASH COVERAGE — CRITICAL:
 - The painted watercolor wash (the soft wet bleeds, washes, and color halo \
@@ -1458,12 +1512,16 @@ Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
 blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border, \
 narrow watercolor wash column with bare white paper at the sides, \
 horizontal streaks, horizontal lines, horizontal bands, horizontal stripes, \
+horizontal pencil marks, faint horizontal scuffs, ruled-out floor lines, \
+right-side floor streaks, left-side floor streaks, partial horizontal \
+fragments behind the pet's legs or chest, straight wash edges, ruled \
+wash terminations, flat-bottomed wash, flat-topped wash, \
 top tint band, top colour band, top warm-cream band over cooler paper, \
 horizontal seam between a tinted top zone and the rest of the canvas, \
 visible y-axis colour transition at any height, two-tone paper split, \
 wood grain, wood panelling, shiplap, plank lines, floorboards, shelf, \
-table, wall texture, surface texture behind the pet, ruled lines, \
-banding, scanner lines.\
+table, table edge, counter line, baseboard, wall texture, surface \
+texture behind the pet, ruled lines, banding, scanner lines.\
 """
 
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
@@ -1602,6 +1660,16 @@ corner, including the LEFT and RIGHT margins around the pet. Never leave \
 narrow strips of light or untinted paper at the sides. The dark wash is \
 unbroken, edge-to-edge, with organic painterly variation in tone but \
 never a hard boundary.
+
+WASH SHAPE — CRITICAL:
+- ABSOLUTELY NO horizontal lines, streaks, bands, stripes, ruled marks, \
+floor lines, shelf lines, table edges, baseboards, horizon lines, or \
+any straight horizontal segment anywhere on the canvas — at any opacity, \
+at any length. This includes faint pencil-like scuffs across the lower \
+or right or left third of the canvas. Recurring failure mode: the model \
+imagining a wooden floor, table, or shelf the pet is on; do NOT do this.
+- The wash is soft, rounded, organic — variation comes from wet-on-wet \
+bleeds and subtle pigment pools, never from straight strokes.
 
 NAME SAFE ZONE — CRITICAL: A handwritten pet name will be composited \
 into the TOP of the finished image. Reserve the upper ~22% of the canvas \
