@@ -493,6 +493,27 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
   if (termsAcceptedAt) {
     formData.append('terms_accepted_at', termsAcceptedAt);
   }
+  // Variation seed — when this customer recently generated a portrait
+  // with the same style, send a non-zero seed so the server appends a
+  // variation hint to the prompt and Gemini produces a visibly different
+  // composition. Without this, repeat generations of same photo + same
+  // style converge on near-identical outputs (especially Bold Graphic
+  // Poster's tightly-constrained style space) and the customer sees the
+  // "two cart items look identical" complaint.
+  try {
+    const styleKey = STYLE_MAP[styleId] || styleId || 'classic';
+    const COUNTS_KEY = 'petPrintables_styleGenCounts';
+    const counts = JSON.parse(localStorage.getItem(COUNTS_KEY) || '{}');
+    const prior = parseInt(counts[styleKey] || '0', 10) || 0;
+    if (prior > 0) {
+      // Use the count + a timestamp jitter so consecutive regenerations
+      // also pick different hints from the rotation.
+      const seed = (prior * 17 + Math.floor(Date.now() / 1000)) % 10000;
+      formData.append('variation_seed', String(seed));
+    }
+    counts[styleKey] = prior + 1;
+    localStorage.setItem(COUNTS_KEY, JSON.stringify(counts));
+  } catch {}
 
   // Step 1: Submit the job
   const submitRes = await fetch(`${API_BASE}/generate`, {
