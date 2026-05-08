@@ -1053,16 +1053,40 @@ or {{POSTER_BG_RIGHT_HEX}} ({{POSTER_BG_RIGHT_NAME}}) — the bg \
 colours NEVER appear inside the pet, including inside the eye \
 shapes. The iris uses a palette accent that visibly contrasts the \
 immediately surrounding face blocks, so the eye reads as a discrete \
-shape rather than disappearing into the cheek. RECURRING FAILURE \
-MODE TO AVOID #1: eyes rendered as closed slits, narrow wedges, \
-squinted half-moons, or sleeping-emoji curves — the pet must look \
-ALIVE and ALERT, never asleep, never squinting, never zen-meditating. \
-Closed or near-closed eyes on a commercial pet portrait read as \
-sleeping, sick, or dead, which is the opposite of the joyful \
-"beloved family pet" vibe we ship. RECURRING FAILURE MODE TO AVOID \
-#2: eyes rendered in the bg colour so they read as empty sockets / \
-hollow holes / the bg showing through, making the pet look eyeless \
-or zombie-like. Both failure modes are FORBIDDEN.
+shape rather than disappearing into the cheek.
+- EYE SIZE — HARD RULE (anti-slit, anti-sleeping): each eye iris is \
+a substantial polygonal shape whose vertical extent is AT LEAST 6% \
+of the head's height — visible from across the room. Iris height-\
+to-width ratio sits in the 0.7–1.1 range (round-ish to softly \
+almond). Iris height less than 5% of head height = WRONG. Iris \
+height-to-width ratio under 0.4 (a thin horizontal sliver) = WRONG. \
+Both eyes are clearly OPEN, visibly engaging the viewer.
+- FLUFFY-FACED BREED OVERRIDE — CRITICAL: for breeds with long fur \
+covering the face (Goldendoodle, Maltipoo, Shih Tzu, Yorkie, Lhasa \
+Apso, Old English Sheepdog, Bichon, Cocker Spaniel, Cavoodle, any \
+"teddy-bear" or "doodle" mix), the source photo OFTEN shows the \
+eyes partially or fully covered by fur strands hanging over the \
+brow. In the rendered portrait, the eyes MUST still be drawn as \
+FULLY OPEN, FULLY VISIBLE iconic polygonal shapes at the size rule \
+above — render the pet AS IF the fur has been gently brushed away \
+from the eyes for a clean portrait. Use the breed's normal eye \
+shape (round, dark, alert) rather than copying the obscured-by-\
+fur appearance from the photo. NEVER render closed slits, hidden \
+eyes, fur-only zone where eyes should be, or "looking through fur" \
+effects. The customer wants a portrait that captures their pet's \
+SPIRIT and GAZE, not a literal redraw of an awkward photo angle.
+- RECURRING FAILURE MODE TO AVOID #1: eyes rendered as closed slits, \
+narrow wedges, squinted half-moons, sleeping-emoji curves, or thin \
+horizontal lines — the pet must look ALIVE and ALERT, never asleep, \
+never squinting, never zen-meditating. Closed or near-closed eyes \
+on a commercial pet portrait read as sleeping, sick, or dead, which \
+is the opposite of the joyful "beloved family pet" vibe we ship. \
+RECURRING FAILURE MODE TO AVOID #2: eyes rendered in the bg colour \
+so they read as empty sockets / hollow holes / the bg showing \
+through, making the pet look eyeless or zombie-like. RECURRING \
+FAILURE MODE TO AVOID #3: eyes hidden behind fur strands or omitted \
+entirely on long-coated breeds — see FLUFFY-FACED BREED OVERRIDE. \
+All three failure modes are FORBIDDEN.
 - The nose is a single dark angular polygonal block. The muzzle / mouth \
 line is implied by the meeting edge of two adjacent colour blocks, not \
 drawn as a stroke.
