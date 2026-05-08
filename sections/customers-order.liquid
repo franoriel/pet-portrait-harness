@@ -4,6 +4,104 @@
     <h1>Order {{ order.name }}</h1>
     <p class="text-muted" style="margin-bottom:32px;">Placed on {{ order.created_at | date: '%B %-d, %Y' }}</p>
 
+    {%- assign df = order.metafields.petprintables.digital_files.value -%}
+    {%- if df and df.portraits.size > 0 -%}
+      <section class="digital-files" style="margin-bottom:48px;padding:32px;border:1px solid var(--color-border, #E4DDD4);border-radius:12px;background:#FAF8F5;">
+        <header style="margin-bottom:24px;">
+          <p class="eyebrow" style="font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#8B7D6B;margin:0 0 8px;">Your digital files</p>
+          <h2 style="margin:0 0 6px;font-size:1.6rem;">
+            {%- if df.portraits.size == 1 -%}
+              {{ df.portraits[0].pet_name | default: 'Your portrait' }} is ready to download
+            {%- else -%}
+              {{ df.portraits.size }} portraits ready to download
+            {%- endif -%}
+          </h2>
+          <p class="text-muted" style="margin:0;font-size:0.85rem;">Links are good until {{ df.expires_at | date: '%B %-d, %Y' }}. Save the originals — they expire.</p>
+        </header>
+
+        {%- for portrait in df.portraits -%}
+          <article class="digital-portrait" style="display:grid;grid-template-columns:160px 1fr;gap:24px;padding:20px 0;{% unless forloop.last %}border-bottom:1px solid var(--color-border, #E4DDD4);{% endunless %}">
+            <a href="{{ portrait.original_url }}" style="display:block;">
+              <img src="{{ portrait.preview_url }}" alt="{{ portrait.pet_name }} portrait" loading="lazy" style="width:100%;height:auto;border-radius:8px;display:block;" />
+            </a>
+            <div>
+              <h3 style="margin:0 0 4px;font-size:1.1rem;">{{ portrait.pet_name }}</h3>
+              {%- if portrait.style != blank -%}
+                <p class="text-muted" style="margin:0 0 16px;font-size:0.85rem;">{{ portrait.style }}</p>
+              {%- endif -%}
+
+              <div class="dl-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
+                {%- if portrait.downloads.square != blank -%}
+                  <a href="{{ portrait.downloads.square }}" class="dl-btn" download>
+                    <strong>Square</strong><span>Instagram post</span>
+                  </a>
+                {%- endif -%}
+                {%- if portrait.downloads.story != blank -%}
+                  <a href="{{ portrait.downloads.story }}" class="dl-btn" download>
+                    <strong>Story</strong><span>IG &amp; FB story</span>
+                  </a>
+                {%- endif -%}
+                {%- if portrait.downloads.portrait != blank -%}
+                  <a href="{{ portrait.downloads.portrait }}" class="dl-btn" download>
+                    <strong>Portrait</strong><span>IG feed (4:5)</span>
+                  </a>
+                {%- endif -%}
+                {%- if portrait.downloads.wallpaper != blank -%}
+                  <a href="{{ portrait.downloads.wallpaper }}" class="dl-btn" download>
+                    <strong>Wallpaper</strong><span>Phone lock screen</span>
+                  </a>
+                {%- endif -%}
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <a href="{{ portrait.original_url }}" class="dl-btn dl-btn--solid" download>Download original</a>
+                <button type="button" class="dl-btn dl-btn--ghost" data-share-url="{{ portrait.original_url }}" data-share-name="{{ portrait.pet_name | escape }}">Share</button>
+                {%- if portrait.gallery_submit_url != blank -%}
+                  <a href="{{ portrait.gallery_submit_url }}" class="dl-btn dl-btn--ghost">Submit to gallery</a>
+                {%- endif -%}
+              </div>
+            </div>
+          </article>
+        {%- endfor -%}
+
+        <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--color-border, #E4DDD4);text-align:center;">
+          <p class="eyebrow" style="font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#8B7D6B;margin:0 0 8px;">How was your order?</p>
+          <h3 style="margin:0 0 12px;font-size:1.2rem;">Leave a review</h3>
+          <div class="jdgm-order-reviews-widget" data-order-id="{{ order.id }}" data-template="order-status"></div>
+        </div>
+      </section>
+
+      <style>
+        .digital-files .dl-btn { display:flex; flex-direction:column; align-items:flex-start; padding:12px 14px; border:1px solid #1C1C1C; border-radius:6px; background:#fff; color:#1C1C1C; text-decoration:none; font-size:0.85rem; cursor:pointer; font-family:inherit; text-align:left; }
+        .digital-files .dl-btn strong { font-size:0.92rem; font-weight:600; }
+        .digital-files .dl-btn span { font-size:0.72rem; color:#6B6B63; margin-top:2px; }
+        .digital-files .dl-btn--solid { background:#2F2F2A; color:#fff; border-color:#2F2F2A; }
+        .digital-files .dl-btn--solid:hover { background:#1C1C1C; }
+        .digital-files .dl-btn--ghost { background:transparent; }
+        @media (max-width: 600px) {
+          .digital-files article { grid-template-columns: 1fr !important; }
+          .digital-files .dl-grid { grid-template-columns: 1fr !important; }
+        }
+      </style>
+      <script>
+        (function () {
+          document.querySelectorAll('.digital-files [data-share-url]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+              var url = btn.getAttribute('data-share-url');
+              var name = btn.getAttribute('data-share-name') || 'pet portrait';
+              var shareData = { title: name + ' portrait', text: 'Look at ' + name + ' 🐾', url: url };
+              try {
+                if (navigator.share) { await navigator.share(shareData); return; }
+                await navigator.clipboard.writeText(url);
+                btn.textContent = 'Link copied';
+                setTimeout(function () { btn.textContent = 'Share'; }, 2000);
+              } catch (e) { /* user cancelled or unsupported */ }
+            });
+          });
+        })();
+      </script>
+    {%- endif -%}
+
     <div class="order-layout">
       <div class="order-items">
         {%- for line_item in order.line_items -%}
