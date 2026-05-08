@@ -646,9 +646,9 @@ MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
     "cream":      ("#F4EFE7", "warm off-white cream"),
     "clay":       ("#E2C7A8", "soft warm clay"),
     "sage":       ("#B6C2A3", "muted sage green"),
-    "terracotta": ("#C77B58", "dusty terracotta"),
+    "terracotta": ("#D9A28D", "soft dusty terracotta"),
     "mauve":      ("#C9A4A4", "soft dusty mauve"),
-    "mustard":    ("#C9A352", "warm mustard ochre"),
+    "mustard":    ("#D4B884", "soft warm wheat"),
     "navy":       ("#1D2A44", "deep navy ink"),
     "charcoal":   ("#2E2A26", "warm charcoal"),
 }
@@ -751,8 +751,28 @@ tones. A white cat uses cool ivory + pale grey shadow shapes. Preserve the \
 recognisable pattern of the specific animal — chest blaze, tan points, \
 calico patches, tabby markings — rendered as bold simple flat shapes, not \
 realistic detail.
-- Match the animal's actual eye shape and gaze from the photo. Eyes are \
-small flat shapes with crisp pupil + iris colour, no rendered glints.
+- EYES — FLAT GRAPHIC ICONS, NOT REALISTIC ANATOMY (CRITICAL): \
+Match the animal's actual eye shape and gaze direction from the photo, \
+but render the eye itself as a stylised vector ICON: TWO flat solid \
+colour blocks total — one for the iris (a single uniform shade, no \
+inner gradient, no outer ring of a second colour, no rim lighting, no \
+shading toward the pupil) and one for the pupil (a single solid dark \
+shape, no highlight inside it, no reflective sheen). NO catchlights, \
+NO white glints, NO sparkles, NO reflective dots, NO crescent \
+highlights anywhere on or around the eyes. NO secondary iris ring \
+of a different colour. NO gradient WITHIN the iris from light to dark. \
+NO visible sclera (white of the eye) — the iris fills the entire \
+visible eye opening. NO drop shadow under the upper eyelid onto the \
+eye. The eye must read as something a vector designer would draw with \
+two filled paths in Illustrator — graphic, iconic, deliberately \
+flat — NOT as an anatomically rendered eye with depth, moisture, or \
+light interaction. RECURRING FAILURE MODE TO AVOID: a small white dot \
+catchlight in the upper portion of the iris combined with a darker \
+ring around the pupil — this single detail collapses the entire \
+flat-vector aesthetic into uncanny-valley realism. If you find \
+yourself adding ANY second tone, glint, or shading inside the eye \
+shape, stop and render it as one flat iris colour + one flat pupil \
+shape only.
 - COLOR HARMONY — CRITICAL: the pet's coat palette and the \
 {{MODERN_BG_NAME}} background must read as ONE intentional, harmonious \
 palette. Pick coat shades that contrast comfortably with \
@@ -873,7 +893,20 @@ ONLY the pet on a uniform {{MODERN_BG_HEX}} field — nothing else.
 curve resembling R, O, G, B, S, etc., or a vertical stroke beside a \
 loop), erase it and replace with pure {{MODERN_BG_HEX}} background. The \
 upper portion of the canvas above the ears MUST be a clean, unbroken \
-field of {{MODERN_BG_HEX}}.\
+field of {{MODERN_BG_HEX}}.
+
+FINAL CHECK BEFORE OUTPUT — EYES ARE FLAT ICONS:
+- Look at each eye. It must be exactly TWO flat solid colour blocks: \
+iris (one uniform colour) + pupil (one uniform dark shape). Nothing \
+more.
+- If you see a white catchlight, glint, sparkle, dot, or any small \
+brighter shape on or near the eye, ERASE it. The flat-vector \
+aesthetic does not survive the addition of a single highlight dot.
+- If the iris has any gradient, shading, inner ring of a second \
+colour, or transition from light to dark, FLATTEN it to one solid \
+hue.
+- The eye should read like an icon a designer drew with two filled \
+paths — not like a photo of an eye, not like a Pixar character's eye.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\

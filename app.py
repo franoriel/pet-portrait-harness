@@ -1129,6 +1129,46 @@ def _push_klaviyo_order_event(
             properties["portrait_count"] = len(items)
             properties["all_preview_urls"] = [it.get("preview_url") for it in items if it.get("preview_url")]
 
+        # Phase 2 — social-optimised variants for the "A gift for you"
+        # Klaviyo email. Generated lazily here at order-completion time
+        # rather than at preview generation, so we only spend R2 storage
+        # on portraits that actually became orders. Each variant gets a
+        # 30-day signed token (vs the 24h preview token above) — long
+        # enough that customers who don't open the email until next week
+        # still have working links.
+        #
+        # Multi-portrait orders only get social variants for the FIRST
+        # item — keeping the email scannable, and most multi-pet orders
+        # are gifting one of the portraits anyway. If multi-pet support
+        # becomes a real ask, expand this to a per-pet variants array.
+        try:
+            from social_variants import generate_social_variants
+            print_file_4x5 = first_item.get("print_file_url") or ""
+            print_file_1x1 = first_item.get("print_file_url_1x1") or ""
+            if print_file_4x5 or print_file_1x1:
+                SOCIAL_TTL_S = 30 * 86400  # 30 days
+                social_keys = generate_social_variants(
+                    print_file_4x5, print_file_1x1, order_id,
+                )
+                for variant_name, r2_key in social_keys.items():
+                    social_token = make_download_token(r2_key, ttl_seconds=SOCIAL_TTL_S)
+                    properties[f"download_url_{variant_name}"] = (
+                        f"{backend_base}/portrait/download/{social_token}"
+                    )
+                if social_keys:
+                    social_expires = datetime.now(timezone.utc) + timedelta(days=30)
+                    # "December 8" — used by the email body for the expiry callout
+                    properties["download_expires_social_at"] = social_expires.strftime("%B %-d")
+                    log.info(
+                        "[klaviyo] order=%s generated %d social variants (%s)",
+                        order_id, len(social_keys), ", ".join(sorted(social_keys.keys())),
+                    )
+        except Exception as exc:
+            log.warning(
+                "[klaviyo] order=%s social variant generation failed: %s",
+                order_id, exc,
+            )
+
         body = {
             "data": {
                 "type": "profile",
