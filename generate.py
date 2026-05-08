@@ -992,11 +992,23 @@ looks like a coloring-book outline that hasn't been filled in yet, \
 or like a dark sticker placed on a flat coloured card, the image is \
 wrong. Compare against the WPAP / Tsevis reference: every facet of \
 the pet is a confident filled colour block, not a line drawing.
-- Eyes are stylised as a single dark angular SLIT or NARROW WEDGE — a \
+- Eyes are stylised as a small angular SLIT or NARROW WEDGE — a \
 closed-eye / half-closed expression. NO whites, NO iris detail, NO \
 catchlight, NO pupil dot. Where the pet was looking forward in the \
-photo, render two small angular dark slits where the eyes sit; the \
-faceted blocks of the face flow around them.
+photo, render two small angular slits where the eyes sit; the faceted \
+blocks of the face flow around them.
+- EYE FILL — HARD RULE: the eye polygon is FULLY OPAQUE in the \
+palette's DARKEST accent (the charcoal / aubergine / deepest-tone \
+colour from {{POSTER_ACCENTS}} — whichever accent has the lowest \
+lightness). The eye is NEVER filled with {{POSTER_BG_LEFT_HEX}} \
+({{POSTER_BG_LEFT_NAME}}) or {{POSTER_BG_RIGHT_HEX}} \
+({{POSTER_BG_RIGHT_NAME}}) — the bg colours NEVER appear inside the \
+pet, including inside the eye slits. RECURRING FAILURE MODE TO \
+AVOID: eyes rendered in the bg colour so they read as empty sockets / \
+hollow holes / the bg showing through, making the pet look eyeless \
+or zombie-like. Each eye slit must read as a confident solid dark \
+mark sitting on top of the pet's face, distinct in colour from BOTH \
+the surrounding face blocks and the background.
 - The nose is a single dark angular polygonal block. The muzzle / mouth \
 line is implied by the meeting edge of two adjacent colour blocks, not \
 drawn as a stroke.

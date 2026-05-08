@@ -748,6 +748,237 @@ def portrait_download(token):
 
 
 # ---------------------------------------------------------------------------
+# Gallery submission — one-click "submit my portrait to the public gallery"
+# from the Klaviyo digital-gift email. The link is HMAC-signed at order time
+# (encoding r2_key + pet_name + order_id) so the customer doesn't see a form;
+# they just click and their portrait lands on petprintables.ca/pages/gallery.
+#
+# Idempotent: the metaobject handle is `gallery-{order_id}`, so repeat clicks
+# (multi-device, forwarded to themselves, etc.) update in place rather than
+# creating duplicates. Auto-publishes — every metaobject created here is
+# `active` immediately. Trust boundary: the token is unforgeable, and the only
+# image that can be submitted is the one we generated for that customer's
+# paid order, so there's no moderation queue.
+# ---------------------------------------------------------------------------
+
+def _gallery_secret() -> bytes:
+    """HMAC secret for signing/verifying gallery-submit tokens. Falls back to
+    the download-token secret (same trust boundary). Separated so a future
+    rotation of one doesn't invalidate the other."""
+    return (os.environ.get("GALLERY_TOKEN_SECRET")
+            or os.environ.get("DOWNLOAD_TOKEN_SECRET")
+            or os.environ.get("SHOPIFY_WEBHOOK_SECRET")
+            or "dev-secret-do-not-use-in-prod").encode("utf-8")
+
+
+def make_gallery_token(r2_key: str, pet_name: str, order_id: str,
+                       ttl_seconds: int = 30 * 86400) -> str:
+    """Sign (r2_key, pet_name, order_id) with HMAC + expiry. URL-quotes each
+    field so '|' can't appear inside any of them. 30-day default TTL matches
+    the social-variant tokens issued at the same time."""
+    import base64, hmac, hashlib, time
+    from urllib.parse import quote
+    expires = int(time.time()) + ttl_seconds
+    parts = [quote(s or "", safe="") for s in (r2_key, pet_name, order_id, str(expires))]
+    payload = "|".join(parts).encode("utf-8")
+    sig = hmac.new(_gallery_secret(), payload, hashlib.sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=") + "." + sig
+
+
+def verify_gallery_token(token: str) -> Optional[dict]:
+    """Verify a token returned by make_gallery_token. Returns
+    {r2_key, pet_name, order_id} on success, None on signature failure or
+    expiry."""
+    import base64, hmac, hashlib, time
+    from urllib.parse import unquote
+    try:
+        b64_payload, sig = token.rsplit(".", 1)
+        padding = 4 - (len(b64_payload) % 4)
+        if padding != 4:
+            b64_payload += "=" * padding
+        payload = base64.urlsafe_b64decode(b64_payload)
+        expected = hmac.new(_gallery_secret(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+        parts = payload.decode("utf-8").split("|")
+        if len(parts) != 4:
+            return None
+        r2_key, pet_name, order_id, expires_str = (unquote(p) for p in parts)
+        if int(expires_str) < int(time.time()):
+            return None
+        return {"r2_key": r2_key, "pet_name": pet_name, "order_id": order_id}
+    except Exception:
+        return None
+
+
+def _shopify_admin_graphql(query: str, variables: dict) -> dict:
+    """POST a GraphQL query to the Shopify Admin API. Raises on transport
+    error; returns the parsed JSON body otherwise (caller checks userErrors).
+    """
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    admin_token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not admin_token:
+        raise RuntimeError("SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set")
+    url = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}/graphql.json"
+    resp = _req.post(
+        url,
+        headers={
+            "X-Shopify-Access-Token": admin_token,
+            "Content-Type": "application/json",
+        },
+        json={"query": query, "variables": variables},
+        timeout=15,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _submit_to_gallery(r2_key: str, pet_name: str, order_id: str) -> tuple[bool, str]:
+    """Upload the R2 preview to Shopify Files and upsert a `gallery_submission`
+    metaobject keyed on order_id. Returns (ok, detail). The metaobject handle
+    is `gallery-{order_id}` so repeat clicks are idempotent."""
+    r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+    if not r2_public:
+        return False, "R2_PUBLIC_URL not configured"
+    image_url = f"{r2_public}/{r2_key}"
+    handle = f"gallery-{order_id}"
+
+    # 1. Idempotency — if a metaobject with this handle already exists, skip
+    #    file upload + creation entirely. Avoids stacking new file uploads
+    #    every time the customer re-clicks.
+    existing_q = """
+      query ExistingSubmission($handle: MetaobjectHandleInput!) {
+        metaobjectByHandle(handle: $handle) { id handle }
+      }
+    """
+    try:
+        existing = _shopify_admin_graphql(existing_q, {
+            "handle": {"type": "gallery_submission", "handle": handle},
+        })
+        if (existing.get("data") or {}).get("metaobjectByHandle"):
+            return True, "already-submitted"
+    except Exception as exc:
+        log.warning("[gallery] order=%s existing-check failed: %s", order_id, exc)
+
+    # 2. Upload the R2 image to Shopify Files. Shopify fetches by URL
+    #    server-side; the file appears in the shop's Files collection and
+    #    a permanent CDN URL is assigned.
+    file_create_q = """
+      mutation FileCreate($files: [FileCreateInput!]!) {
+        fileCreate(files: $files) {
+          files { id alt fileStatus }
+          userErrors { field message }
+        }
+      }
+    """
+    alt = (pet_name or "Pet portrait").strip()[:80]
+    try:
+        file_resp = _shopify_admin_graphql(file_create_q, {
+            "files": [{
+                "alt": alt,
+                "contentType": "IMAGE",
+                "originalSource": image_url,
+            }],
+        })
+    except Exception as exc:
+        log.warning("[gallery] order=%s fileCreate transport failed: %s", order_id, exc)
+        return False, f"fileCreate transport failed: {exc}"
+
+    file_data = ((file_resp.get("data") or {}).get("fileCreate") or {})
+    user_errors = file_data.get("userErrors") or []
+    if user_errors:
+        return False, f"fileCreate userErrors: {user_errors}"
+    files = file_data.get("files") or []
+    if not files:
+        return False, "fileCreate returned no files"
+    file_id = files[0].get("id")
+    if not file_id:
+        return False, "fileCreate returned no file id"
+
+    # 3. Upsert the metaobject. metaobjectUpsert handles the
+    #    create-or-update-by-handle in one call, which is what we want for
+    #    idempotency without a separate read-then-write.
+    upsert_q = """
+      mutation MetaobjectUpsert(
+        $handle: MetaobjectHandleInput!,
+        $metaobject: MetaobjectUpsertInput!
+      ) {
+        metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
+          metaobject { id handle type }
+          userErrors { field message }
+        }
+      }
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    submitted_at = _dt.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        upsert_resp = _shopify_admin_graphql(upsert_q, {
+            "handle": {"type": "gallery_submission", "handle": handle},
+            "metaobject": {
+                "capabilities": {"publishable": {"status": "ACTIVE"}},
+                "fields": [
+                    {"key": "image", "value": file_id},
+                    {"key": "pet_name", "value": (pet_name or "")[:60]},
+                    {"key": "category", "value": "dogs"},
+                    {"key": "order_id", "value": str(order_id)},
+                    {"key": "submitted_at", "value": submitted_at},
+                ],
+            },
+        })
+    except Exception as exc:
+        return False, f"metaobjectUpsert transport failed: {exc}"
+
+    upsert_data = ((upsert_resp.get("data") or {}).get("metaobjectUpsert") or {})
+    user_errors = upsert_data.get("userErrors") or []
+    if user_errors:
+        return False, f"metaobjectUpsert userErrors: {user_errors}"
+    if not upsert_data.get("metaobject"):
+        return False, "metaobjectUpsert returned no metaobject"
+    return True, "ok"
+
+
+@app.route("/gallery/submit/<token>")
+def gallery_submit(token):
+    """Land the customer in the public gallery in one click from the email.
+    Verifies the HMAC token, uploads the preview image to Shopify Files,
+    upserts a gallery_submission metaobject, then 302s to the thank-you page.
+
+    On any failure, still redirects to the thank-you page with ?status=error
+    so the customer doesn't hit a stack trace — and we log the detail. The
+    gallery section reads `shop.metaobjects.gallery_submission.values` and
+    renders new submissions automatically."""
+    from flask import redirect
+
+    storefront = os.environ.get("STOREFRONT_BASE_URL", "https://petprintables.ca").rstrip("/")
+    thanks_url = f"{storefront}/pages/gallery-thanks"
+
+    ip = _client_ip()
+    allowed, _ = check_rate_limit(ip, "gallery")
+    if not allowed:
+        return "Too many requests", 429
+
+    payload = verify_gallery_token(token)
+    if not payload:
+        log.info("[gallery] token rejected (expired or invalid) ip=%s", ip)
+        return redirect(f"{thanks_url}?status=expired", code=302)
+
+    ok, detail = _submit_to_gallery(
+        payload["r2_key"], payload["pet_name"], payload["order_id"],
+    )
+    if ok:
+        log.info(
+            "[gallery] order=%s pet=%s ✓ %s",
+            payload["order_id"], payload["pet_name"] or "(unknown)", detail,
+        )
+        return redirect(thanks_url, code=302)
+    log.warning(
+        "[gallery] order=%s pet=%s ✗ %s",
+        payload["order_id"], payload["pet_name"] or "(unknown)", detail,
+    )
+    return redirect(f"{thanks_url}?status=error", code=302)
+
+
+# ---------------------------------------------------------------------------
 # Printful mockup generation
 # ---------------------------------------------------------------------------
 
@@ -1124,11 +1355,21 @@ def _push_klaviyo_order_event(
         # Format expiry as "Saturday at 11pm" style — friendly for email body
         expires_str = expires_at.strftime("%A at %-I%p").lower().replace("am", "am").replace("pm", "pm")
 
+        # Gallery submission link — one-click "add to public gallery" from the
+        # digital-gift email. 30-day TTL matches the social variant tokens
+        # below, since both live in the same email.
+        gallery_token = make_gallery_token(
+            r2_key, pet_name or "your pet", str(order_id),
+            ttl_seconds=30 * 86400,
+        )
+        gallery_submit_url = f"{backend_base}/gallery/submit/{gallery_token}"
+
         properties = {
             "pet_name": pet_name or "your pet",
             "pet_preview_url": preview_url,
             "download_url": download_url,
             "download_expires_at": expires_str,
+            "gallery_submit_url": gallery_submit_url,
             "last_order_id": order_id,
             "last_order_number": str(order.get("order_number") or order.get("name") or order_id),
         }
