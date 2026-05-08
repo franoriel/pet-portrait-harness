@@ -858,7 +858,22 @@ shapes anywhere inside the pet, phallic or suggestive silhouettes, \
 bg-colour wedges / notches / V-cuts / triangular gaps cutting INWARD \
 into the pet's silhouette from outside, indented or pinched body \
 contours below the neckline, chunks-bitten-out-of-the-pet effects, \
-text, watermark, border, solid color bars or panels at image edges.\
+text, watermark, border, solid color bars or panels at image edges.
+
+FINAL CHECK BEFORE OUTPUT — TEXT-FREE GUARANTEE (modern-shape-art is \
+the WORST style for hallucinated lettering, so re-read this last):
+- Scan the WHOLE canvas, especially the upper band above the pet. NO \
+letters, NO words, NO glyphs, NO letterforms of ANY alphabet, NO \
+character-shaped curves or strokes anywhere in the image.
+- Modern editorial pet posters often include the pet's name in real \
+products. DO NOT replicate that here. The name will be added later, \
+outside this generation, by a separate process. Your job is to render \
+ONLY the pet on a uniform {{MODERN_BG_HEX}} field — nothing else.
+- If you have rendered ANY shape that could be misread as a letter (a \
+curve resembling R, O, G, B, S, etc., or a vertical stroke beside a \
+loop), erase it and replace with pure {{MODERN_BG_HEX}} background. The \
+upper portion of the canvas above the ears MUST be a clean, unbroken \
+field of {{MODERN_BG_HEX}}.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
@@ -1784,9 +1799,20 @@ _COMPOSITION_RULE_NO_NAME = (
     "clipped by any edge of the source image. If you can't fit the pet "
     "inside the bounding box above intact, render the pet a touch smaller. "
     "Never push features off any edge.\n"
-    "- NO TEXT ANYWHERE IN THE IMAGE. No letters, numbers, words, names, "
-    "watermarks, or signatures. Collars and tags render blank. The "
-    "breathing room above the pet stays quiet, unbroken background.\n"
+    "- NO TEXT ANYWHERE IN THE IMAGE — ZERO tolerance, this is "
+    "non-negotiable. NO letters, NO numbers, NO words, NO names, NO "
+    "watermarks, NO signatures, NO glyphs, NO letterforms, NO character "
+    "shapes, NO calligraphy, NO inscriptions, NO labels, NO monograms, "
+    "NO initials. The TOP 25% of the canvas (where the pet's ears live) "
+    "must contain ONLY uninterrupted background colour and pet ear-tips — "
+    "absolutely nothing that resembles a letter, glyph, or alphabetical "
+    "character of ANY alphabet (Latin, Cyrillic, Greek, Arabic, Hebrew, "
+    "Han, Hangul, etc.). RECURRING FAILURE MODE TO AVOID: hallucinating "
+    "the pet's name as decorative text above the head — DO NOT do this. "
+    "If a shape you are drawing resembles the silhouette of an R, O, B, "
+    "S, or any other letterform, immediately redraw it as background. "
+    "Collars and tags render blank. The breathing room above the pet "
+    "stays quiet, unbroken background.\n"
     "- NO RESERVED BANDS OR PANELS: never output a solid colour bar, empty "
     "rectangle, letterbox stripe, or framed panel at the top or bottom. "
     "The artwork's native scenery extends uniformly to every edge.\n"
@@ -2621,9 +2647,17 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
             # render flush at the canvas-face bottom — universal flush-
             # bottom rule. pad_bottom_ratio=0 lands the pet's flat
             # chest cut on the canvas-face bottom edge with no gap.
+            #
+            # pad_top_ratio bumped from 0.18 → 0.30: at 0.18 the AI's
+            # ear tips were landing right at the canvas top edge on
+            # broader-headed pets (Lab/Golden silhouettes), reading as
+            # a clipped head. 0.30 buys clear breathing room above the
+            # ears without shrinking the pet enough to feel small —
+            # still well below the 0.45 with-name version that has to
+            # host the name band.
             return _modern_shape_art_reframe(
                 img,
-                pad_top_ratio=0.18,
+                pad_top_ratio=0.30,
                 pad_side_ratio=0.06,
                 pad_bottom_ratio=0,
                 target_aspect=PRINT_ASPECT_1_1,
@@ -3355,6 +3389,73 @@ def composite_name(
 
 
 # ---------------------------------------------------------------------------
+# Hallucinated-text safety net
+# ---------------------------------------------------------------------------
+
+# Tesseract confidence (0-100) below which a detection is treated as noise.
+# 70 is the conventional "very likely real text" threshold; lower values
+# pick up too many false positives from pet anatomy (eyes ≈ "O", nose
+# triangle ≈ "v", etc.) on stylised illustrations.
+_OCR_MIN_CONFIDENCE = 70
+
+# Words shorter than this are ignored — single stray glyphs are almost
+# always anatomy mis-read by Tesseract, not actual hallucinated text.
+_OCR_MIN_WORD_LENGTH = 3
+
+
+def _detect_hallucinated_text(image: Image.Image) -> Optional[str]:
+    """Return the first text fragment Tesseract reads from the image with
+    confidence above _OCR_MIN_CONFIDENCE, or None if the image looks clean.
+
+    Used to catch Gemini ignoring the no-text instruction and rendering
+    the pet's name as decorative lettering above the head — a recurring
+    failure mode on modern-shape-art and bold-graphic-poster styles.
+
+    The function returns None on any error (Tesseract not installed,
+    binary missing, etc.) so production never fails open. Set the env
+    var PP_DISABLE_OCR_CHECK=1 to bypass the check entirely.
+    """
+    if os.environ.get("PP_DISABLE_OCR_CHECK") == "1":
+        return None
+    try:
+        import pytesseract
+    except ImportError:
+        log.debug("[ocr-check] pytesseract not installed — skipping")
+        return None
+    try:
+        # PSM 11 = sparse text, no assumed page structure. Best fit for
+        # an illustration that *might* contain text floating anywhere.
+        data = pytesseract.image_to_data(
+            image,
+            output_type=pytesseract.Output.DICT,
+            config="--psm 11",
+        )
+    except Exception as e:
+        log.warning("[ocr-check] tesseract failed (%s) — assuming clean", e)
+        return None
+
+    texts = data.get("text") or []
+    confs = data.get("conf") or []
+    for txt, raw_conf in zip(texts, confs):
+        word = (txt or "").strip()
+        if len(word) < _OCR_MIN_WORD_LENGTH:
+            continue
+        # Tesseract returns confidence as int or string; normalise.
+        try:
+            conf = int(float(raw_conf))
+        except (ValueError, TypeError):
+            conf = -1
+        if conf < _OCR_MIN_CONFIDENCE:
+            continue
+        # Only flag words that are predominantly alphabetic — random
+        # punctuation soup ("!@#") is almost always noise.
+        alpha_count = sum(1 for c in word if c.isalpha())
+        if alpha_count >= _OCR_MIN_WORD_LENGTH:
+            return word
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Image utilities
 # ---------------------------------------------------------------------------
 
@@ -3819,10 +3920,46 @@ def _generate_inner(
     # Preview generation: ONE Gemini call — no-name version only.
     # The with-name version is generated lazily by add_name_endpoint
     # when the user adds to cart (halves per-portrait Gemini cost).
-    raw_bytes = call_gemini(photo, style, style_vars, pet_name="", background_mode=background_mode)
-
-    ai_image_no_name = Image.open(BytesIO(raw_bytes))
-    ai_image_no_name.load()
+    #
+    # OCR safety net: Gemini sometimes hallucinates text into the no-name
+    # source despite explicit "NO TEXT" instructions in the prompt — most
+    # commonly the pet's name or generic placeholder names rendered as
+    # decorative lettering above the head. If composite_name later draws
+    # the real name on top, the two layers ghost into doubled letters
+    # ("RROGEER"). We OCR the output and regenerate up to 2 extra times
+    # if Tesseract reads any high-confidence multi-character text.
+    _OCR_MAX_REGEN = 2
+    raw_bytes: Optional[bytes] = None
+    ai_image_no_name: Optional[Image.Image] = None
+    for ocr_attempt in range(_OCR_MAX_REGEN + 1):
+        candidate_bytes = call_gemini(
+            photo, style, style_vars, pet_name="", background_mode=background_mode
+        )
+        candidate_img = Image.open(BytesIO(candidate_bytes))
+        candidate_img.load()
+        leaked = _detect_hallucinated_text(candidate_img)
+        if leaked is None:
+            raw_bytes = candidate_bytes
+            ai_image_no_name = candidate_img
+            break
+        log.warning(
+            "[generate] OCR detected hallucinated text '%s' on attempt %d/%d "
+            "— regenerating no-name source",
+            leaked, ocr_attempt + 1, _OCR_MAX_REGEN + 1,
+        )
+        candidate_img.close()
+    else:
+        # Exhausted retries — ship the last attempt rather than failing the
+        # whole job. Composite_name will still ghost, but at least the
+        # customer gets a portrait. The warning above is the breadcrumb
+        # for ops to look at the prompt or model behaviour.
+        log.error(
+            "[generate] OCR safety net exhausted after %d attempts — "
+            "shipping last no-name source anyway",
+            _OCR_MAX_REGEN + 1,
+        )
+        raw_bytes = candidate_bytes
+        ai_image_no_name = candidate_img
 
     # Add background padding so the pet has breathing room around it.
     # Gemini routinely ignores prompt-based size constraints and renders
