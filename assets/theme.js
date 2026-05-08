@@ -580,7 +580,7 @@
                  You're <strong>${this.fmt(remainingCents)}</strong> from free shipping
                </div>
                <div class="cart-drawer__ship-bar"><div style="width:${progressPct}%"></div></div>
-               <a href="/pages/create" class="cart-drawer__ship-cta">+ Add another portrait</a>
+               <a href="/pages/create?new=1" class="cart-drawer__ship-cta">+ Add another portrait</a>
              </div>`
           : `<div class="cart-drawer__ship-tracker cart-drawer__ship-tracker--achieved">
                You've unlocked <strong>free shipping</strong>.

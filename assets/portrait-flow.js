@@ -962,9 +962,31 @@ function blobToFile(blob, filename, mimeType) {
 }
 
 function usePortraitFlow() {
+  // ?new=1 URL flag — sent by the cart drawer's "+ Add another portrait"
+  // CTA and the cart page's "Create another portrait for your family"
+  // CTA. Treat the visit as an explicit fresh start: clear the saved
+  // session so the page lands on the upload step, not on the previously
+  // generated portrait at the preview step. Library entries (saved
+  // portraits gallery) are kept untouched. Strip the flag from the URL
+  // so a refresh doesn't re-trigger the wipe and discard a portrait the
+  // customer just generated.
+  let forceFresh = false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('new') === '1') {
+      forceFresh = true;
+      clearSession();
+      try { localStorage.removeItem('petPrintables_pending'); } catch {}
+      params.delete('new');
+      const cleanQs = params.toString();
+      const cleanUrl = window.location.pathname + (cleanQs ? '?' + cleanQs : '') + window.location.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  } catch {}
+
   // Check for saved session first, then pending PDP upload
-  const saved = loadSession();
-  const pending = !saved ? loadPending() : null;
+  const saved = forceFresh ? null : loadSession();
+  const pending = (!saved && !forceFresh) ? loadPending() : null;
 
   const [state, setState] = useState({
     // If pending from PDP, skip to Style step with photo + name pre-filled.
@@ -1479,6 +1501,16 @@ function usePortraitFlow() {
         fontSize: 'var(--text-sm)',
         backgroundMode: 'auto',
         imageFilename: '', originalPhotoUrl: '', printFileUrl: '',
+        // CRITICAL: every URL field that carries the previous portrait's
+        // R2 prefix must be reset here. Leaving any of these populated
+        // means a subsequent /add-name or ATC can commit URLs from the
+        // OLD generation alongside URLs from the NEW one — the customer
+        // sees a correct preview but receives the wrong physical print.
+        noNamePrintFileUrl: '',
+        printFileUrl3x4: '', printFileUrl1x1: '',
+        previewUrl3x4: '', previewUrl1x1: '',
+        namedPreviewUrl: '',
+        namedPreviewUrl3x4: '', namedPreviewUrl1x1: '',
         jobId: null, restoredSession: false,
         pendingPhoto: null,
         termsAccepted: false, termsAcceptedAt: null,
