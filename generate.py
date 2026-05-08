@@ -1684,77 +1684,91 @@ table, table edge, counter line, baseboard, wall texture, surface \
 texture behind the pet, ruled lines, banding, scanner lines.\
 """
 
-def _trim_cream_margin(
+def _trim_off_palette_margin(
     img: Image.Image,
-    near_white_tol: int = 25,
-    row_threshold: float = 0.70,
+    palette: dict[str, str],
+    bg_match_tol: int = 70,
+    row_threshold: float = 0.55,
 ) -> Image.Image:
-    """Crop off cream / near-white margin rows and columns from the
-    edges of a bold-graphic-poster AI output.
+    """Crop perimeter rows/columns that don't match the canonical bg.
 
-    When Gemini ignores the prompt's edge-to-edge rule and renders the
-    coloured split with a sliver of cream above (or sides), the cream
-    survives _flatten_poster_bg (it's too far from either bg hex to
-    snap) and shows up as a visible border in the final print. Detect
-    rows/columns where >`row_threshold` fraction of pixels are near-
-    white and crop them off the top / sides / bottom (top is the most
-    common offender; the others are guarded for free).
+    Generalizes the old "_trim_cream_margin" helper. Any margin row/col
+    where fewer than `row_threshold` of pixels are within `bg_match_tol`
+    RGB distance of EITHER canonical bg colour gets trimmed.
+
+    Catches both directions of Gemini's edge-to-edge failures:
+      - cream / near-white sliver above the colored split (old bug)
+      - subtle perimeter darkening / vignette (new bug — visible as a
+        darker frame between the bleed and the actual artwork in the
+        printed canvas mockup)
+
+    Bails if the trim would crop more than 50% of the image (safety
+    against false positives — e.g. a very dark portrait that legitimately
+    fills the perimeter).
     """
     rgb = img.convert("RGB") if img.mode != "RGB" else img
     w, h = rgb.size
-    threshold = 255 - near_white_tol
+    bg_left = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+    tol_sq = bg_match_tol * bg_match_tol
 
     try:
         import numpy as np
-        arr = np.asarray(rgb, dtype=np.uint8)
-        is_near_white = (
-            (arr[..., 0] >= threshold)
-            & (arr[..., 1] >= threshold)
-            & (arr[..., 2] >= threshold)
-        )
-        row_white_frac = is_near_white.mean(axis=1)
-        col_white_frac = is_near_white.mean(axis=0)
+        arr = np.asarray(rgb, dtype=np.int32)
+        # Distance² to each canonical bg colour; "matches" if within tol of either.
+        dl = (arr - np.array(bg_left, dtype=np.int32)) ** 2
+        dr = (arr - np.array(bg_right, dtype=np.int32)) ** 2
+        match_left = dl.sum(axis=2) <= tol_sq
+        match_right = dr.sum(axis=2) <= tol_sq
+        match_bg = match_left | match_right
+        row_match_frac = match_bg.mean(axis=1)
+        col_match_frac = match_bg.mean(axis=0)
     except ImportError:
-        # Pure-PIL fallback
-        r, g, b = rgb.split()
-        mr = r.point(lambda v: 255 if v >= threshold else 0, "L")
-        mg = g.point(lambda v: 255 if v >= threshold else 0, "L")
-        mb = b.point(lambda v: 255 if v >= threshold else 0, "L")
-        from PIL import ImageChops
-        mask = ImageChops.multiply(ImageChops.multiply(mr, mg), mb).point(
-            lambda v: 1 if v > 0 else 0, "L"
-        )
-        row_white_frac = [
-            sum(mask.crop((0, y, w, y + 1)).getdata()) / w for y in range(h)
-        ]
-        col_white_frac = [
-            sum(mask.crop((x, 0, x + 1, h)).getdata()) / h for x in range(w)
-        ]
+        # Pure-PIL fallback — slower but correct.
+        def _frac_match(strip: Image.Image) -> float:
+            n = strip.width * strip.height
+            if n == 0:
+                return 0.0
+            count = 0
+            for px in strip.getdata():
+                dl_v = (px[0] - bg_left[0])**2 + (px[1] - bg_left[1])**2 + (px[2] - bg_left[2])**2
+                dr_v = (px[0] - bg_right[0])**2 + (px[1] - bg_right[1])**2 + (px[2] - bg_right[2])**2
+                if dl_v <= tol_sq or dr_v <= tol_sq:
+                    count += 1
+            return count / n
+        row_match_frac = [_frac_match(rgb.crop((0, y, w, y + 1))) for y in range(h)]
+        col_match_frac = [_frac_match(rgb.crop((x, 0, x + 1, h))) for x in range(w)]
 
+    # Walk INWARD from each edge, trimming rows/columns where fewer than
+    # `row_threshold` of pixels match either canonical bg. Stop as soon as
+    # we hit a row/col that's clearly content (matches threshold).
     top = 0
-    while top < h and row_white_frac[top] >= row_threshold:
+    while top < h and row_match_frac[top] < row_threshold:
         top += 1
     bottom = h
-    while bottom > top and row_white_frac[bottom - 1] >= row_threshold:
+    while bottom > top and row_match_frac[bottom - 1] < row_threshold:
         bottom -= 1
     left = 0
-    while left < w and col_white_frac[left] >= row_threshold:
+    while left < w and col_match_frac[left] < row_threshold:
         left += 1
     right = w
-    while right > left and col_white_frac[right - 1] >= row_threshold:
+    while right > left and col_match_frac[right - 1] < row_threshold:
         right -= 1
 
-    # Only crop if we actually found cream — and require at least 4%
-    # remaining content height/width so we don't crop into the artwork
-    # if Gemini did the right thing.
     if (top, left, bottom, right) == (0, 0, h, w):
         return rgb
+    # Safety: bail if we'd crop more than 50% of either dimension. That
+    # would indicate a darker portrait whose perimeter is genuinely off-
+    # palette but still legitimate — better to leave it than gouge the
+    # artwork.
     if (bottom - top) < int(h * 0.5) or (right - left) < int(w * 0.5):
-        return rgb  # something looks wrong — bail
-    if top == 0 and left == 0 and bottom == h and right == w:
+        log.info(
+            "bold-graphic-poster: skipped trim (would crop >50%%): top=%d left=%d bottom=%d right=%d",
+            top, left, h - bottom, w - right,
+        )
         return rgb
     log.info(
-        "bold-graphic-poster: trimmed cream margin top=%d left=%d bottom=%d right=%d (was %dx%d)",
+        "bold-graphic-poster: trimmed off-palette margin top=%d left=%d bottom=%d right=%d (was %dx%d)",
         top, left, h - bottom, w - right, w, h,
     )
     return rgb.crop((left, top, right, bottom))
@@ -4480,11 +4494,13 @@ def _generate_inner(
             palette_id = (style_vars or {}).get("poster_palette") or "teal"
             if palette_id in POSTER_PALETTES:
                 _palette = POSTER_PALETTES[palette_id]
-                # Trim any cream margin Gemini left around the colored
-                # split before padding — otherwise the cream survives
-                # the flatten/halo passes (too far from either bg hex)
-                # and reads as a border in the final print.
-                trimmed = _trim_cream_margin(ai_image_no_name)
+                # Trim any off-palette margin Gemini left around the
+                # colored split before padding. Catches both directions:
+                # near-white slivers above the split, AND subtle perimeter
+                # darkening / vignette that would otherwise read as a
+                # darker frame between the bleed and the artwork in the
+                # final printed canvas.
+                trimmed = _trim_off_palette_margin(ai_image_no_name, _palette)
                 padded = _pad_split_bg(
                     trimmed, _palette,
                     padding_ratio=0.12, pad_bottom_ratio=0,
