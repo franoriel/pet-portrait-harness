@@ -531,7 +531,22 @@ def generate_route():
     # default 'teal' when the request didn't carry a valid palette id.
     if style == "bold-graphic-poster" and background_mode not in POSTER_PALETTES:
         background_mode = "teal"
-    log.info("[/generate] style=%s bg_mode=%s (raw=%r)", style, background_mode, background_mode_raw)
+    # Optional variation seed — when the customer regenerates the same
+    # photo + style they used recently, the client passes a non-zero
+    # seed and the server picks one of N variation hints to nudge Gemini
+    # away from converging on a near-identical composition. Cleanly
+    # parsed; if absent or non-numeric, no variation hint is used.
+    variation_seed_raw = (request.form.get("variation_seed") or "").strip()
+    variation_seed: Optional[int] = None
+    if variation_seed_raw:
+        try:
+            variation_seed = int(variation_seed_raw) % 10_000
+        except (TypeError, ValueError):
+            variation_seed = None
+    log.info(
+        "[/generate] style=%s bg_mode=%s variation_seed=%s (raw=%r)",
+        style, background_mode, variation_seed, background_mode_raw,
+    )
 
     # ── Photo-license consent (audit trail) ──────────────────────────────────
     # Frontend checkbox sends an ISO-8601 timestamp when the customer ticks
@@ -607,6 +622,7 @@ def generate_route():
         terms_accepted_at=terms_accepted_at,
         client_ip=ip,
         background_mode=background_mode,
+        variation_seed=variation_seed,
     )
     depth = queue_depth()
 
@@ -2218,7 +2234,11 @@ def _process_job(job: dict):
     file_owned = True
     try:
         worker_bg = job.get("background_mode") or "auto"
-        log.info("[worker] job=%s style=%s bg_mode=%s", job_id, job["style"], worker_bg)
+        worker_seed = job.get("variation_seed")
+        log.info(
+            "[worker] job=%s style=%s bg_mode=%s variation_seed=%s",
+            job_id, job["style"], worker_bg, worker_seed,
+        )
         (
             raw_path, comp_path, web_path, raw_web_path,
             raw_path_1x1, comp_path_1x1,
@@ -2228,6 +2248,7 @@ def _process_job(job: dict):
             job["pet_name"],
             job["style"],
             background_mode=worker_bg,
+            variation_seed=worker_seed,
         )
 
         # Mark the job complete with LOCAL /preview/ URLs the moment

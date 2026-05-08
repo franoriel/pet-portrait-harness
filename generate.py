@@ -3827,7 +3827,20 @@ def composite_name(
         name_band_h = max(1, int(h * 0.22))
         name_band = img.crop((0, 0, w, name_band_h))
         existing_text = _detect_hallucinated_text(name_band)
-        if existing_text:
+        # Conservative thresholds — Tesseract reliably mis-reads cubist
+        # angular shapes (Bold Graphic Poster ear tips, Modern Shape Art
+        # facets) as 3-character "words" like "MAA" / "VVV" / "ILI".
+        # Only skip the composite when the detection is BOTH long enough
+        # AND looks like real text — must contain alphabetic characters
+        # and be at least 4 chars after stripping noise. Real composited
+        # names are virtually always ≥ 4 letters; 3-letter false positives
+        # were causing the "no name visible despite Yes toggle" regression.
+        normalized = (existing_text or "").strip()
+        looks_like_real_text = (
+            len(normalized) >= 4
+            and sum(1 for c in normalized if c.isalpha()) >= 4
+        )
+        if existing_text and looks_like_real_text:
             log.warning(
                 "[composite_name] input's name-safe zone already contains "
                 "text '%s' — skipping composite for pet_name='%s' to avoid "
@@ -3836,6 +3849,15 @@ def composite_name(
                 existing_text, pet_name,
             )
             return img
+        elif existing_text:
+            log.debug(
+                "[composite_name] OCR found short/noisy text '%s' (len=%d, "
+                "alpha=%d) — likely false positive on stylized art, "
+                "proceeding with composite for pet_name='%s'.",
+                existing_text, len(normalized),
+                sum(1 for c in normalized if c.isalpha()),
+                pet_name,
+            )
     except Exception as exc:
         log.debug("[composite_name] OCR pre-check skipped: %s", exc)
 
@@ -4305,6 +4327,25 @@ def add_name_to_image(
     raise last_exc  # type: ignore[misc]
 
 
+# Variation hints appended to the prompt when the customer regenerates
+# the same photo + style combo. Bold Graphic Poster's tightly-constrained
+# output space causes Gemini to converge on near-identical compositions
+# from the same input — even with different uuids and different R2 keys,
+# customers see "the same image" twice in the cart and assume one was
+# overwritten. Picking one of these per generation breaks the convergence
+# without changing the baseline aesthetic.
+_VARIATION_HINTS = (
+    "Lean toward the cooler end of the accent palette in the pet's shading.",
+    "Lean toward the warmer end of the accent palette in the pet's shading.",
+    "Favor slightly larger polygonal shapes inside the pet silhouette.",
+    "Favor slightly smaller polygonal shapes for finer faceting detail.",
+    "Tilt the head a touch toward the camera-left side.",
+    "Tilt the head a touch toward the camera-right side.",
+    "Render with a marginally tighter crop on the head and chest.",
+    "Render with a marginally wider framing — slightly more bg around the pet.",
+)
+
+
 def call_gemini(
     photo_path: Path,
     style: str,
@@ -4312,12 +4353,18 @@ def call_gemini(
     max_retries: int = 2,
     pet_name: str = "",
     background_mode: Optional[str] = "auto",
+    variation_seed: Optional[int] = None,
 ) -> bytes:
     """Send photo + prompt to Gemini; return raw PNG/JPEG bytes of the generated image.
 
     When pet_name is provided, the name is integrated into the artwork natively
     (hand-painted into watercolor, engraved into renaissance, etc.) rather than
     composited as a flat text overlay afterward.
+
+    When variation_seed is provided, a small variation hint is appended to the
+    prompt so re-generations of the same (photo, style) combo produce visibly
+    different outputs. The customer-visible baseline stays the same on the
+    first generation (no seed → no hint).
 
     Retries transient failures with exponential backoff.
     """
@@ -4331,6 +4378,13 @@ def call_gemini(
             _resolve_prompt_body(style, style_vars, background_mode)
             + _composition_rule(has_name=False)
             + _NO_BORDER_RULE
+        )
+    if variation_seed is not None:
+        hint = _VARIATION_HINTS[variation_seed % len(_VARIATION_HINTS)]
+        prompt = prompt + "\n\nVARIATION FOR THIS RENDER: " + hint
+        log.info(
+            "[generate] variation_seed=%d → hint='%s'",
+            variation_seed, hint[:60],
         )
 
     last_exc: Optional[Exception] = None
@@ -4399,6 +4453,7 @@ def generate(
     output_dir: Optional[Path] = None,
     style_vars: Optional[dict] = None,
     background_mode: Optional[str] = "auto",
+    variation_seed: Optional[int] = None,
 ) -> tuple[Path, Path, Path, Path]:
     """
     Generate a portrait and composite the pet name onto it.
@@ -4420,7 +4475,10 @@ def generate(
         raise RuntimeError("BUSY")
 
     try:
-        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars, background_mode)  # type: ignore[return-value]
+        return _generate_inner(  # type: ignore[return-value]
+            photo_path, pet_name, style, output_dir, style_vars,
+            background_mode, variation_seed,
+        )
     finally:
         _generation_semaphore.release()
 
@@ -4432,6 +4490,7 @@ def _generate_inner(
     output_dir: Optional[Path],
     style_vars: Optional[dict],
     background_mode: Optional[str] = "auto",
+    variation_seed: Optional[int] = None,
 ) -> tuple[Path, Path]:
     import uuid as _uuid
     out = output_dir or OUTPUT_DIR
@@ -4473,7 +4532,9 @@ def _generate_inner(
     ai_image_no_name: Optional[Image.Image] = None
     for ocr_attempt in range(_OCR_MAX_REGEN + 1):
         candidate_bytes = call_gemini(
-            photo, style, style_vars, pet_name="", background_mode=background_mode
+            photo, style, style_vars, pet_name="",
+            background_mode=background_mode,
+            variation_seed=variation_seed,
         )
         candidate_img = Image.open(BytesIO(candidate_bytes))
         candidate_img.load()

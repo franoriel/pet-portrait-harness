@@ -61,6 +61,7 @@ def create_job(
     terms_accepted_at: str = "",
     client_ip: str = "",
     background_mode: str = "auto",
+    variation_seed: Optional[int] = None,
 ) -> dict:
     """Create a job, enqueue it, and return the job dict."""
     job_id = uuid.uuid4().hex[:12]
@@ -71,6 +72,7 @@ def create_job(
         "pet_name": pet_name,
         "style": style,
         "background_mode": background_mode or "auto",
+        "variation_seed": variation_seed if variation_seed is not None else "",
         "upload_path": upload_path,
         "created_at": now,
         "updated_at": now,
