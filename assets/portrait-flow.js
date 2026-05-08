@@ -3244,15 +3244,14 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
             onClick: retryFromStyle,
             'aria-label': 'Go back to change the art style',
           }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
-          // Regenerate keeps the current style + photo + name and re-runs the
-          // model. Replaces the redundant pair of "Try another" + a separate
-          // "Regenerate Portrait" that called startFresh — one labelled
-          // action, one clear behaviour.
+          // Restart wipes the in-progress portrait and returns to the
+          // upload step so the customer can re-upload, re-pick style,
+          // re-enter name from scratch.
           React.createElement('button', {
             type: 'button', style: s.secondaryLinkUnderline,
-            onClick: generate,
-            'aria-label': 'Regenerate a new portrait in the same style',
-          }, iconLabel(React.createElement(SparkleIcon, { size: 14 }), 'Regenerate Portrait')),
+            onClick: startFresh,
+            'aria-label': 'Start over from the beginning',
+          }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Restart')),
         ),
       ),
     ),
