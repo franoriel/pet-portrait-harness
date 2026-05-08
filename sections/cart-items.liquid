@@ -632,7 +632,7 @@
 
       {%- comment -%}
         Newsletter recapture modal — only fires if the customer skipped the
-        10%-off popup on the create page (pf_newsletter_status === 'skipped'
+        $5-off popup on the create page (pf_newsletter_status === 'skipped'
         in localStorage). Intercepts the checkout button click, asks if
         they're sure, and either re-runs the signup flow with the new email
         + applies /discount/PETFAM2026 OR proceeds to checkout untouched.
@@ -647,7 +647,7 @@
       >
         <div class="newsletter-recapture-modal">
           <h3 id="newsletter-recapture-title">Hold up — your dog won't be impressed</h3>
-          <p>You skipped 10% off. Sure you want to leave money on the table when your pet's looking?</p>
+          <p>You skipped $5 off. Sure you want to leave money on the table when your pet's looking?</p>
           <form id="newsletter-recapture-form" novalidate>
             <div class="newsletter-recapture-row">
               <input
@@ -682,7 +682,7 @@
             </label>
             <p class="newsletter-recapture-error" role="alert" hidden></p>
             <button type="submit" class="btn btn--primary btn--full">
-              You're right, gimme 10% off
+              You're right, gimme $5 off
             </button>
           </form>
           <button type="button" id="newsletter-recapture-skip" class="newsletter-recapture-skip">
@@ -1627,7 +1627,7 @@
 
   /* ──────────────────────────────────────────────────────────────
    * Newsletter recapture — final-chance modal for shoppers who
-   * skipped the 10%-off popup on the create page. Triggered only
+   * skipped the $5-off popup on the create page. Triggered only
    * if pf_newsletter_status === 'skipped'. Submits email to
    * Shopify newsletter (/contact) + applies /discount/PETFAM2026,
    * then continues to checkout. Skipping the recapture proceeds
@@ -1752,7 +1752,7 @@
 
       // Klaviyo subscribe + apply discount cookie. Discount is the priority
       // here — if Klaviyo errors out, we still want to ship the customer
-      // to checkout with the 10% applied (better UX than a hard error).
+      // to checkout with the $5 applied (better UX than a hard error).
       var klaviyoCall = (companyId && listId)
         ? fetch(
             'https://a.klaviyo.com/client/subscriptions?company_id=' + encodeURIComponent(companyId),
