@@ -255,19 +255,29 @@ def _edge_replicate_pad(
 def wrap_print_file_with_bleed(
     front_face: Image.Image,
     product_key: str,
+    style: Optional[str] = None,
 ) -> Image.Image:
     """Place a front-face-correct composition into a Printful canvas
     print file with the required wrap bleed on every side: 3" for
     gallery-wrap (canvas-*), 1.5" for framed canvas (canvas-*-framed).
 
     The customer-visible art lives in the inner FRONT_FACE_SIZES rectangle.
-    The surrounding bleed band is filled with the sampled corner
-    background colour so the wrap (or frame-edge band) reads as a calm
-    continuation of the painting rather than a visible seam.
+    The surrounding bleed band continues the front face's bg outward.
 
-    Bleed depth is implicit in PRINT_SIZES vs FRONT_FACE_SIZES — the
-    helper just pads to whatever the file dims demand, so changing the
-    bleed for a future product class is a one-line edit in the constants.
+    Two strategies depending on style:
+
+    - **bold-graphic-poster** (and any future flat-bg style): SAMPLE the
+      median colour of the front face's left + right edge columns and
+      PAINT the bleed with that exact colour, split at 50% width.
+      Edge replication on these styles can propagate ~1-2 RGB shifts
+      from the LANCZOS resize / UnsharpMask path, which produces a
+      visible "darker frame" between the bleed and the front face.
+      Sampling a robust median + painting flat eliminates that artifact.
+
+    - **everything else** (watercolor, charcoal, aura, etc.): edge-
+      replicate the outermost column outward. Right call for organic
+      backgrounds where the bg has natural texture / wash variation
+      that should continue smoothly into the bleed.
 
     No-op for non-canvas products (magnets/etc.) — they ship at file
     dimensions with no wrap.
@@ -284,7 +294,59 @@ def wrap_print_file_with_bleed(
     if (front_face.width, front_face.height) != (front_w, front_h):
         front_face = front_face.resize((front_w, front_h), Image.LANCZOS)
 
+    # Bold Graphic Poster: paint bleed with canonical split colours
+    # sampled from the front face's left + right edge medians.
+    if style == "bold-graphic-poster":
+        return _split_bg_pad(front_face, file_w, file_h)
+
     return _edge_replicate_pad(front_face, file_w, file_h)
+
+
+def _split_bg_pad(
+    front: Image.Image,
+    target_w: int,
+    target_h: int,
+) -> Image.Image:
+    """Pad `front` to (target_w, target_h) by painting the bleed with
+    the median colour of `front`'s left + right edge columns. Used for
+    Bold Graphic Poster's 2-tone vertical split: left half of bleed
+    gets left-edge median, right half gets right-edge median.
+
+    This sidesteps edge-replication artifacts where 1-2 RGB shifts
+    introduced by the LANCZOS resize + UnsharpMask path produce a
+    visible "darker frame" between the bleed and the front face.
+    Sampling the median (not mean — robust to anti-aliased outliers)
+    and painting flat keeps the bleed exactly the canonical bg colour."""
+    rgb = front.convert("RGB") if front.mode != "RGB" else front
+    w, h = rgb.size
+
+    def _median_color(strip):
+        # Median per channel — robust to outliers (anti-aliased edge
+        # pixels at the seam between bg_left and bg_right halves).
+        pixels = list(strip.getdata())
+        if not pixels:
+            return (0, 0, 0)
+        n = len(pixels)
+        rs = sorted(p[0] for p in pixels)
+        gs = sorted(p[1] for p in pixels)
+        bs = sorted(p[2] for p in pixels)
+        return (rs[n // 2], gs[n // 2], bs[n // 2])
+
+    left_color = _median_color(rgb.crop((0, 0, 1, h)))
+    right_color = _median_color(rgb.crop((w - 1, 0, w, h)))
+
+    pad_l = (target_w - w) // 2
+    pad_t = (target_h - h) // 2
+
+    # Build target: left half = left_color, right half = right_color.
+    # The seam is at the centre of the TARGET canvas, which lines up
+    # with the seam in the front face when pasted centred.
+    out = Image.new("RGB", (target_w, target_h), left_color)
+    mid = target_w // 2
+    right_half = Image.new("RGB", (target_w - mid, target_h), right_color)
+    out.paste(right_half, (mid, 0))
+    out.paste(rgb, (pad_l, pad_t))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -416,7 +478,7 @@ def generate_print_file(
     # For canvas variants, expand the front-face composition to the full
     # file dimensions by padding sampled-bg-coloured wrap around it. For
     # magnets (no wrap), wrap_print_file_with_bleed is a no-op.
-    img = wrap_print_file_with_bleed(img, product_key)
+    img = wrap_print_file_with_bleed(img, product_key, style=_map_style_id(style))
 
     # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
