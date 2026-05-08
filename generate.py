@@ -1632,6 +1632,124 @@ table, table edge, counter line, baseboard, wall texture, surface \
 texture behind the pet, ruled lines, banding, scanner lines.\
 """
 
+def _trim_cream_margin(
+    img: Image.Image,
+    near_white_tol: int = 25,
+    row_threshold: float = 0.70,
+) -> Image.Image:
+    """Crop off cream / near-white margin rows and columns from the
+    edges of a bold-graphic-poster AI output.
+
+    When Gemini ignores the prompt's edge-to-edge rule and renders the
+    coloured split with a sliver of cream above (or sides), the cream
+    survives _flatten_poster_bg (it's too far from either bg hex to
+    snap) and shows up as a visible border in the final print. Detect
+    rows/columns where >`row_threshold` fraction of pixels are near-
+    white and crop them off the top / sides / bottom (top is the most
+    common offender; the others are guarded for free).
+    """
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+    w, h = rgb.size
+    threshold = 255 - near_white_tol
+
+    try:
+        import numpy as np
+        arr = np.asarray(rgb, dtype=np.uint8)
+        is_near_white = (
+            (arr[..., 0] >= threshold)
+            & (arr[..., 1] >= threshold)
+            & (arr[..., 2] >= threshold)
+        )
+        row_white_frac = is_near_white.mean(axis=1)
+        col_white_frac = is_near_white.mean(axis=0)
+    except ImportError:
+        # Pure-PIL fallback
+        r, g, b = rgb.split()
+        mr = r.point(lambda v: 255 if v >= threshold else 0, "L")
+        mg = g.point(lambda v: 255 if v >= threshold else 0, "L")
+        mb = b.point(lambda v: 255 if v >= threshold else 0, "L")
+        from PIL import ImageChops
+        mask = ImageChops.multiply(ImageChops.multiply(mr, mg), mb).point(
+            lambda v: 1 if v > 0 else 0, "L"
+        )
+        row_white_frac = [
+            sum(mask.crop((0, y, w, y + 1)).getdata()) / w for y in range(h)
+        ]
+        col_white_frac = [
+            sum(mask.crop((x, 0, x + 1, h)).getdata()) / h for x in range(w)
+        ]
+
+    top = 0
+    while top < h and row_white_frac[top] >= row_threshold:
+        top += 1
+    bottom = h
+    while bottom > top and row_white_frac[bottom - 1] >= row_threshold:
+        bottom -= 1
+    left = 0
+    while left < w and col_white_frac[left] >= row_threshold:
+        left += 1
+    right = w
+    while right > left and col_white_frac[right - 1] >= row_threshold:
+        right -= 1
+
+    # Only crop if we actually found cream — and require at least 4%
+    # remaining content height/width so we don't crop into the artwork
+    # if Gemini did the right thing.
+    if (top, left, bottom, right) == (0, 0, h, w):
+        return rgb
+    if (bottom - top) < int(h * 0.5) or (right - left) < int(w * 0.5):
+        return rgb  # something looks wrong — bail
+    if top == 0 and left == 0 and bottom == h and right == w:
+        return rgb
+    log.info(
+        "bold-graphic-poster: trimmed cream margin top=%d left=%d bottom=%d right=%d (was %dx%d)",
+        top, left, h - bottom, w - right, w, h,
+    )
+    return rgb.crop((left, top, right, bottom))
+
+
+def _pad_split_bg(
+    img: Image.Image,
+    palette: dict[str, str],
+    padding_ratio: float = 0.12,
+    pad_bottom_ratio: float = 0.0,
+) -> Image.Image:
+    """Pad a bold-graphic-poster front face onto a larger canvas whose
+    bleed band is filled with the canonical 2-tone split — left half
+    bg_left, right half bg_right — extending the seam vertically.
+
+    Replaces edge-replication padding for bold-graphic-poster: when
+    Gemini leaves a sliver of cream/white outside the colored split
+    (a recurring failure mode where it doesn't honour edge-to-edge),
+    edge-replication propagates the cream into the bleed band and the
+    customer sees a visible cream border around the artwork. Drawing
+    the canonical split first and pasting the AI image centered on
+    top eliminates that whole class of error.
+
+    The AI image is pasted centered, so its internal seam (which the
+    prompt anchors at 50% of the rendered width) lines up with the new
+    canvas seam at 50% of the padded width.
+    """
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+    w, h = rgb.size
+    pad_w = int(w * padding_ratio)
+    pad_h = int(h * padding_ratio)
+    pad_b = int(h * pad_bottom_ratio)
+
+    bg_left = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+
+    target_w = w + 2 * pad_w
+    target_h = h + pad_h + pad_b
+
+    out = Image.new("RGB", (target_w, target_h), bg_left)
+    mid = target_w // 2
+    right_half = Image.new("RGB", (target_w - mid, target_h), bg_right)
+    out.paste(right_half, (mid, 0))
+    out.paste(rgb, (pad_w, pad_h))
+    return out
+
+
 def _remove_poster_halos(
     img: Image.Image,
     palette: dict[str, str],
@@ -4300,31 +4418,35 @@ def _generate_inner(
                 pad_bottom_ratio=0,
             )
         elif style == "bold-graphic-poster":
-            # Cubist 2-tone vertical-split bg: corner-sampling would average
-            # the left + right halves into a meaningless mid-tone (and a
-            # solid fill would smother the seam). Edge replication is the
-            # right call here — the pet keeps ~8-12% clean bg on each side
-            # per the composition rule, so the left + right edges are pure
-            # bg. Replication preserves left-half colour on the left pad,
-            # right-half colour on the right pad, and (since the top-edge
-            # 1px strip carries the seam at 50%) the seam itself extends
-            # vertically into the top pad.
-            padded = add_background_padding(
-                ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
-            )
-            # BG FLATTEN — Gemini reliably reads the prompt's "vertical
-            # 2-tone split" but routinely drops a soft vignette / corner
-            # darkening / faint room-shadow into one of the halves. Even
-            # with the prompt explicitly forbidding it, the failure mode
-            # recurs on every other roll. Robust fix: snap any pixel that
-            # is "close enough" to the expected bg hex (per the customer's
-            # poster_palette pick) to the EXACT bg hex. The pet uses
-            # palette accent colours that sit far from either bg colour
-            # in RGB space, so the snap leaves the cubist faceting intact
-            # while flattening any soft bg variation away.
+            # Cubist 2-tone vertical-split bg. We KNOW the exact target
+            # bg colours from the palette pick, so pad with the canonical
+            # 2-tone split rather than edge-replicating the AI's outermost
+            # 1px row/column. Edge replication used to leak cream/white
+            # into the bleed band when Gemini ignored the edge-to-edge
+            # rule and rendered the split bg with a sliver of cream above
+            # it — _pad_split_bg eliminates that whole failure mode.
             palette_id = (style_vars or {}).get("poster_palette") or "teal"
             if palette_id in POSTER_PALETTES:
                 _palette = POSTER_PALETTES[palette_id]
+                # Trim any cream margin Gemini left around the colored
+                # split before padding — otherwise the cream survives
+                # the flatten/halo passes (too far from either bg hex)
+                # and reads as a border in the final print.
+                trimmed = _trim_cream_margin(ai_image_no_name)
+                padded = _pad_split_bg(
+                    trimmed, _palette,
+                    padding_ratio=0.12, pad_bottom_ratio=0,
+                )
+                # BG FLATTEN — Gemini reliably reads the prompt's "vertical
+                # 2-tone split" but routinely drops a soft vignette / corner
+                # darkening / faint room-shadow into one of the halves. Even
+                # with the prompt explicitly forbidding it, the failure mode
+                # recurs on every other roll. Snap any pixel that is "close
+                # enough" to the expected bg hex (per the customer's
+                # poster_palette pick) to the EXACT bg hex. The pet uses
+                # palette accent colours that sit far from either bg colour
+                # in RGB space, so the snap leaves the cubist faceting intact
+                # while flattening any soft bg variation away.
                 # Cool palettes (teal/cobalt/forest/violet) override
                 # interior_tol downward so natural pet-shadow tones in the
                 # pet's bg-adjacent colour family don't get snapped to bg
@@ -4334,6 +4456,10 @@ def _generate_inner(
                     padded, _palette, interior_tol=_interior_tol,
                 )
                 padded = _remove_poster_halos(padded, _palette)
+            else:
+                padded = add_background_padding(
+                    ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
+                )
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
             # renaissance, line art): pad top + sides only so the pet's
