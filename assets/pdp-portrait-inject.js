@@ -601,16 +601,9 @@
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
     canvasFace.appendChild(weave);
 
-    // Brand watermark overlay — uses the actual Pet Printables logo
-    // asset tiled across the OUTER mockup container (linen + canvas)
-    // so it spans the entire visible preview and can't be cropped by
-    // the source-image zoom inside the canvas-face.
-    var watermark = document.createElement('div');
-    watermark.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3;'
-      + 'opacity:0.02;'
-      + "background-image:url(" + _assetBase + "watermark-logo.png);"
-      + 'background-repeat:repeat;background-size:160px auto;';
-    container.appendChild(watermark);
+    // Tiled CSS watermark overlay removed — server-side
+    // apply_preview_watermark already bakes a diagonal Pet Printables
+    // watermark into the WebP preview the PDP shows.
 
     // Canvas edge highlight — only on the unframed canvas (the wood
     // frame already provides clear edge separation, and the 4-sided

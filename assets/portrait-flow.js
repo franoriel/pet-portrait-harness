@@ -3140,20 +3140,10 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
           aspectRatio: '4/5', position: 'relative',
         },
       },
-        // Brand watermark overlay — uses the Pet Printables logo
-        // asset tiled across the OUTER container so it spans the full
-        // visible preview and isn't constrained by the cropped source.
-        // Same mark used on the customize step + PDP mockup so all
-        // three preview surfaces match.
-        React.createElement('div', {
-          style: {
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            opacity: 0.02, zIndex: 2,
-            backgroundImage: `url(${_pfAssetBase}watermark-logo.png)`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '160px auto',
-          },
-        }),
+        // Tiled CSS watermark overlay removed — server-side
+        // apply_preview_watermark already bakes a diagonal Pet
+        // Printables watermark into the WebP preview, and stacking a
+        // second tiled mark on top read as duplicates.
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
           style: {
@@ -3569,19 +3559,8 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
           // shading on the printed face. The artwork now mocks up flat.
         ),
       ),
-      // Brand watermark overlay — uses the Pet Printables logo asset
-      // tiled across the OUTER linen container so it always spans the
-      // full visible preview and can't be cropped by the source-image
-      // zoom inside the canvas-face.
-      React.createElement('div', {
-        style: {
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          opacity: 0.02, zIndex: 2,
-          backgroundImage: `url(${_pfAssetBase}watermark-logo.png)`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '160px auto',
-        },
-      }),
+      // Tiled CSS watermark overlay removed — server-side
+      // apply_preview_watermark bakes a diagonal mark into the preview.
       // Loading overlay when fetching named version — spinner + progressive copy
       generatingNamedPreview && React.createElement('div', {
         style: {
