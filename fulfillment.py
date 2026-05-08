@@ -345,7 +345,15 @@ def generate_print_file(
 
         # Crop the source to the FRONT-FACE aspect (1:1 / 3:4 / 4:5).
         # The wrap padding is added later by wrap_print_file_with_bleed().
-        img = crop_to_ratio(img, ratio, gravity="center")
+        # Skip the crop entirely when the source already matches the target
+        # aspect (per-aspect URLs picked by _pick_source_url usually hit
+        # this path) — avoids a redundant pass that could subtly shift
+        # composition if the source dims are unexpected. "Already matches"
+        # = within 1% tolerance to allow for minor sub-pixel rounding.
+        target_ratio = ratio[0] / ratio[1]
+        source_ratio = img.width / img.height
+        if abs(source_ratio - target_ratio) > 0.01:
+            img = crop_to_ratio(img, ratio, gravity="center")
 
         # Resize to FRONT-FACE pixel dimensions. The wrap step below pads
         # this up to file dimensions; the name is composited at front-face

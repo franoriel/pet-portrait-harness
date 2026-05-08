@@ -3806,6 +3806,30 @@ def composite_name(
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
     w, h = img.size
 
+    # IDEMPOTENCY GUARD — if the input already contains compositied text
+    # (almost always the customer's previous pet name baked into a stale
+    # source URL), DO NOT add another layer. A second composite at a
+    # slightly different scale / position produces ghost-doubled letters
+    # ("EDUARDO RAMIREZ" overlapping itself, "JEWEL" + "WILDER" → JEWILDER).
+    # Better to ship the existing name unchanged than to ship a doubled
+    # mess that customers see and can't ignore.
+    #
+    # Falls open silently if Tesseract isn't installed in the environment
+    # (returns None) — behavior is unchanged from before. With Tesseract,
+    # any high-confidence multi-character text trips the skip.
+    try:
+        existing_text = _detect_hallucinated_text(img)
+        if existing_text:
+            log.warning(
+                "[composite_name] input already contains text '%s' — "
+                "skipping composite for pet_name='%s' to avoid double-name "
+                "ghosting. Source state likely had a stale namedPreviewUrl.",
+                existing_text, pet_name,
+            )
+            return img
+    except Exception as exc:
+        log.debug("[composite_name] OCR pre-check skipped: %s", exc)
+
     # Get style-specific config
     cfg = STYLE_TEXT_CONFIG.get(style, _DEFAULT_TEXT_CONFIG)
 
@@ -3846,6 +3870,25 @@ def composite_name(
     bbox = draw.textbbox((0, 0), name, font=font)
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
+
+    # AUTO-FIT — long names ("JORDAN" + a 0.04 letter-spacing on the
+    # bold-graphic-poster style adds ~25% width overhead, "Eduardo
+    # Ramirez" pushes to ~95% of canvas width at the default size_ratio)
+    # would render past the canvas edge and get clipped at print time
+    # ("JORDAN" → "JORDA"). Shrink the font until the text fits within
+    # 88% of the canvas width, leaving 6% margin on each side. The
+    # minimum 16px floor still applies (set above) so we never render
+    # illegible text — we just shrink to fit.
+    max_text_width = int(w * 0.88)
+    if text_w > max_text_width and text_w > 0:
+        shrink = max_text_width / text_w
+        new_size = max(16, int(font_size * shrink))
+        if new_size < font_size:
+            font_size = new_size
+            font = get_font(font_size, style=style)
+            bbox = draw.textbbox((0, 0), name, font=font)
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
 
     # zone_top is now the VERTICAL CENTRE of the name as a fraction of
     # canvas height — interpreted as "halfway between the top of the
