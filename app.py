@@ -31,6 +31,7 @@ from fulfillment import (
     generate_print_file,
     upload_print_file,
     parse_order_items,
+    set_order_metafield,
     tag_shopify_order,
     tags_from_order_items,
     verify_shopify_webhook,
@@ -1316,6 +1317,19 @@ def webhook_order_created():
     return jsonify(status="accepted", items=len(items)), 200
 
 
+def _join_names(names: list[str]) -> str:
+    """Format a list of pet names as 'Luna', 'Luna and Milo', or
+    'Luna, Milo, and Buddy' for use in email copy."""
+    cleaned = [n for n in (s.strip() for s in names) if n]
+    if not cleaned:
+        return "your pets"
+    if len(cleaned) == 1:
+        return cleaned[0]
+    if len(cleaned) == 2:
+        return f"{cleaned[0]} and {cleaned[1]}"
+    return ", ".join(cleaned[:-1]) + f", and {cleaned[-1]}"
+
+
 def _push_klaviyo_order_event(
     customer_email: str,
     order_id: str,
@@ -1343,79 +1357,141 @@ def _push_klaviyo_order_event(
         return
     try:
         from datetime import datetime, timezone, timedelta
-        first_item = items[0] or {}
-        preview_url = first_item.get("preview_url") or ""
-        pet_name = (first_item.get("pet_name") or "").strip()
-        # Sign a download token from the R2 key (extracted from preview_url)
-        r2_key = _r2_key_from_url(preview_url) or preview_url.split("/")[-1]
-        token = make_download_token(r2_key, ttl_seconds=86400)
+        from social_variants import generate_social_variants
+        import hashlib as _hashlib
+
+        SOCIAL_TTL_S = 30 * 86400  # 30 days
         backend_base = os.environ.get("PUBLIC_BASE_URL", "https://api.petprintables.ca").rstrip("/")
-        download_url = f"{backend_base}/portrait/download/{token}"
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-        # Format expiry as "Saturday at 11pm" style — friendly for email body
-        expires_str = expires_at.strftime("%A at %-I%p").lower().replace("am", "am").replace("pm", "pm")
+        shop_base = os.environ.get(
+            "SHOPIFY_STOREFRONT_URL", "https://petprintables.ca",
+        ).rstrip("/")
+        order_token = (order.get("token") or "").strip()
+        order_number = str(order.get("order_number") or order.get("name") or order_id)
 
-        # Gallery submission link — one-click "add to public gallery" from the
-        # digital-gift email. 30-day TTL matches the social variant tokens
-        # below, since both live in the same email.
-        gallery_token = make_gallery_token(
-            r2_key, pet_name or "your pet", str(order_id),
-            ttl_seconds=30 * 86400,
-        )
-        gallery_submit_url = f"{backend_base}/gallery/submit/{gallery_token}"
+        # Dedupe items into unique portraits keyed by (pet, style, preview_url,
+        # show_name). Same portrait on two products (canvas + magnet) collapses
+        # into one set of downloads.
+        unique: dict[tuple, dict] = {}
+        order_unique = []
+        for it in items:
+            preview_url = (it.get("preview_url") or "").strip()
+            if not preview_url:
+                continue
+            pet_name = (it.get("pet_name") or "").strip() or "your pet"
+            style = (it.get("style") or "").strip()
+            show_name_lc = ((it.get("show_name") or "Yes").strip().lower())
+            key = (pet_name.lower(), style.lower(), preview_url, show_name_lc)
+            if key in unique:
+                continue
+            portrait_id = _hashlib.sha1(
+                f"{pet_name}|{style}|{preview_url}|{show_name_lc}".encode()
+            ).hexdigest()[:12]
+            unique[key] = {
+                "id": portrait_id,
+                "pet_name": pet_name,
+                "style": style,
+                "show_name": "No" if show_name_lc == "no" else "Yes",
+                "preview_url": preview_url,
+                "_print_4x5": (
+                    it.get("no_name_url") if show_name_lc == "no" and it.get("no_name_url")
+                    else (it.get("print_file_url") or "")
+                ),
+                "_print_1x1": (
+                    it.get("no_name_url_1x1") if show_name_lc == "no" and it.get("no_name_url_1x1")
+                    else (it.get("print_file_url_1x1") or "")
+                ),
+            }
+            order_unique.append(unique[key])
 
-        properties = {
-            "pet_name": pet_name or "your pet",
-            "pet_preview_url": preview_url,
-            "download_url": download_url,
-            "download_expires_at": expires_str,
-            "gallery_submit_url": gallery_submit_url,
-            "last_order_id": order_id,
-            "last_order_number": str(order.get("order_number") or order.get("name") or order_id),
-        }
-        # If this is a multi-portrait order, expose every preview URL too
-        if len(items) > 1:
-            properties["portrait_count"] = len(items)
-            properties["all_preview_urls"] = [it.get("preview_url") for it in items if it.get("preview_url")]
+        if not order_unique:
+            log.warning("[klaviyo] order=%s no unique portraits to publish", order_id)
+            return
 
-        # Phase 2 — social-optimised variants for the "A gift for you"
-        # Klaviyo email. Generated lazily here at order-completion time
-        # rather than at preview generation, so we only spend R2 storage
-        # on portraits that actually became orders. Each variant gets a
-        # 30-day signed token (vs the 24h preview token above) — long
-        # enough that customers who don't open the email until next week
-        # still have working links.
-        #
-        # Multi-portrait orders only get social variants for the FIRST
-        # item — keeping the email scannable, and most multi-pet orders
-        # are gifting one of the portraits anyway. If multi-pet support
-        # becomes a real ask, expand this to a per-pet variants array.
-        try:
-            from social_variants import generate_social_variants
-            print_file_4x5 = first_item.get("print_file_url") or ""
-            print_file_1x1 = first_item.get("print_file_url_1x1") or ""
-            if print_file_4x5 or print_file_1x1:
-                SOCIAL_TTL_S = 30 * 86400  # 30 days
+        # For each unique portrait, sign download tokens and generate social
+        # variants under a per-portrait subdir so multi-portrait orders don't
+        # overwrite each other in R2.
+        portraits_payload = []
+        for p in order_unique:
+            preview_url = p["preview_url"]
+            preview_r2_key = _r2_key_from_url(preview_url) or preview_url.split("/")[-1]
+            preview_token = make_download_token(preview_r2_key, ttl_seconds=SOCIAL_TTL_S)
+            original_url = f"{backend_base}/portrait/download/{preview_token}"
+
+            gallery_token = make_gallery_token(
+                preview_r2_key, p["pet_name"], str(order_id),
+                ttl_seconds=SOCIAL_TTL_S,
+            )
+            gallery_submit_url = f"{backend_base}/gallery/submit/{gallery_token}"
+
+            downloads: dict[str, str] = {}
+            try:
                 social_keys = generate_social_variants(
-                    print_file_4x5, print_file_1x1, order_id,
+                    p["_print_4x5"], p["_print_1x1"], order_id,
+                    subdir=p["id"],
                 )
                 for variant_name, r2_key in social_keys.items():
-                    social_token = make_download_token(r2_key, ttl_seconds=SOCIAL_TTL_S)
-                    properties[f"download_url_{variant_name}"] = (
-                        f"{backend_base}/portrait/download/{social_token}"
-                    )
-                if social_keys:
-                    social_expires = datetime.now(timezone.utc) + timedelta(days=30)
-                    # "December 8" — used by the email body for the expiry callout
-                    properties["download_expires_social_at"] = social_expires.strftime("%B %-d")
-                    log.info(
-                        "[klaviyo] order=%s generated %d social variants (%s)",
-                        order_id, len(social_keys), ", ".join(sorted(social_keys.keys())),
-                    )
+                    tok = make_download_token(r2_key, ttl_seconds=SOCIAL_TTL_S)
+                    downloads[variant_name] = f"{backend_base}/portrait/download/{tok}"
+            except Exception as exc:
+                log.warning(
+                    "[klaviyo] order=%s portrait=%s social variant gen failed: %s",
+                    order_id, p["id"], exc,
+                )
+
+            portraits_payload.append({
+                "id": p["id"],
+                "pet_name": p["pet_name"],
+                "style": p["style"],
+                "show_name": p["show_name"],
+                "preview_url": preview_url,
+                "original_url": original_url,
+                "gallery_submit_url": gallery_submit_url,
+                "downloads": downloads,
+            })
+
+        social_expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        digital_files_record = {
+            "version": 1,
+            "order_id": str(order_id),
+            "order_number": order_number,
+            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "expires_at": social_expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "portraits": portraits_payload,
+        }
+
+        # Persist canonical record on the Shopify order. The customer account
+        # order detail page reads this via Liquid as
+        # {{ order.metafields.petprintables.digital_files.value }}.
+        try:
+            set_order_metafield(
+                str(order_id), "petprintables", "digital_files",
+                digital_files_record, value_type="json",
+            )
         except Exception as exc:
             log.warning(
-                "[klaviyo] order=%s social variant generation failed: %s",
+                "[klaviyo] order=%s metafield write failed: %s",
                 order_id, exc,
+            )
+
+        # Klaviyo payload — minimal. The email is now a single CTA pointing
+        # to /account/orders/<token>; downloads + sharing live on that page.
+        first_p = portraits_payload[0]
+        order_url = (
+            f"{shop_base}/account/orders/{order_token}" if order_token
+            else f"{shop_base}/account"
+        )
+        properties = {
+            "pet_name": first_p["pet_name"],
+            "pet_preview_url": first_p["preview_url"],
+            "portrait_count": len(portraits_payload),
+            "order_url": order_url,
+            "last_order_id": str(order_id),
+            "last_order_number": order_number,
+        }
+        if len(portraits_payload) > 1:
+            properties["all_preview_urls"] = [p["preview_url"] for p in portraits_payload]
+            properties["pet_names_text"] = _join_names(
+                [p["pet_name"] for p in portraits_payload]
             )
 
         body = {

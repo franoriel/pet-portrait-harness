@@ -521,6 +521,109 @@ def tag_shopify_order(order_id: str, tags_to_add: list[str]) -> bool:
         return False
 
 
+def set_order_metafield(
+    order_id: str,
+    namespace: str,
+    key: str,
+    value,
+    value_type: str = "json",
+) -> bool:
+    """Upsert a metafield on a Shopify order via the Admin REST API.
+
+    Tries POST first (creates new). If Shopify returns 422 (already
+    exists), GETs the order's metafields, finds the matching
+    namespace/key, and PUTs to its id. Both paths are idempotent — safe
+    to call repeatedly with the same value.
+
+    For value_type='json', a non-string value is JSON-encoded
+    automatically. Strings are passed through unchanged.
+
+    Returns True on success, False on any failure (logged — never raises).
+    """
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not token:
+        log.warning(
+            "Order %s: skipping metafield write — SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set",
+            order_id,
+        )
+        return False
+
+    if value_type == "json" and not isinstance(value, str):
+        value_str = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    else:
+        value_str = str(value)
+
+    headers = {
+        "X-Shopify-Access-Token": token,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    base = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}"
+    create_url = f"{base}/orders/{order_id}/metafields.json"
+    payload = {
+        "metafield": {
+            "namespace": namespace,
+            "key": key,
+            "value": value_str,
+            "type": value_type,
+        }
+    }
+
+    try:
+        r = requests.post(create_url, headers=headers, json=payload, timeout=15)
+        if r.status_code in (200, 201):
+            log.info("Order %s: metafield %s.%s created", order_id, namespace, key)
+            return True
+
+        if r.status_code != 422:
+            log.error(
+                "Order %s: metafield create failed (HTTP %s): %s",
+                order_id, r.status_code, r.text[:300],
+            )
+            return False
+
+        # 422 — likely a duplicate. Find existing metafield id and PUT.
+        list_url = f"{base}/orders/{order_id}/metafields.json"
+        rl = requests.get(
+            list_url, headers=headers,
+            params={"namespace": namespace, "key": key},
+            timeout=15,
+        )
+        if rl.status_code != 200:
+            log.error(
+                "Order %s: metafield lookup failed (HTTP %s): %s",
+                order_id, rl.status_code, rl.text[:300],
+            )
+            return False
+        existing = (rl.json().get("metafields") or [])
+        match = next(
+            (m for m in existing if m.get("namespace") == namespace and m.get("key") == key),
+            None,
+        )
+        if not match:
+            log.error("Order %s: 422 on create but no existing metafield found", order_id)
+            return False
+        mf_id = match["id"]
+        update_url = f"{base}/metafields/{mf_id}.json"
+        ru = requests.put(
+            update_url, headers=headers,
+            json={"metafield": {"id": mf_id, "value": value_str, "type": value_type}},
+            timeout=15,
+        )
+        if ru.status_code in (200, 201):
+            log.info("Order %s: metafield %s.%s updated (id=%s)", order_id, namespace, key, mf_id)
+            return True
+        log.error(
+            "Order %s: metafield update failed (HTTP %s): %s",
+            order_id, ru.status_code, ru.text[:300],
+        )
+        return False
+    except Exception:
+        log.exception("Order %s: metafield write failed unexpectedly", order_id)
+        return False
+
+
 def tags_from_order_items(items: list[dict]) -> list[str]:
     """Build a tag list from parsed order items.
 

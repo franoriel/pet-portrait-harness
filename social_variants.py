@@ -135,6 +135,7 @@ def generate_social_variants(
     print_file_url_4x5: str,
     print_file_url_1x1: str,
     order_id: str,
+    subdir: str = "",
 ) -> dict[str, str]:
     """Generate, upload, and return R2 keys for each social variant.
 
@@ -146,6 +147,9 @@ def generate_social_variants(
         order_id: Shopify order id — used to namespace R2 keys under
                   social/{order_id}/{variant}.jpg so an R2 lifecycle rule
                   can clean them up after 30 days without complex matching.
+        subdir: Optional sub-namespace for multi-portrait orders. When
+                non-empty, keys become social/{order_id}/{subdir}/{variant}.jpg
+                so portrait B's variants don't overwrite portrait A's.
 
     Returns:
         dict mapping variant name (e.g. "square") to R2 key (e.g.
@@ -201,7 +205,10 @@ def generate_social_variants(
             canvas.save(buf, "JPEG", quality=JPEG_QUALITY, optimize=True)
             buf.seek(0)
 
-            key = f"social/{order_id}/{variant_name}.jpg"
+            if subdir:
+                key = f"social/{order_id}/{subdir}/{variant_name}.jpg"
+            else:
+                key = f"social/{order_id}/{variant_name}.jpg"
             public_url = upload_bytes(
                 buf.getvalue(), key, content_type="image/jpeg",
             )
