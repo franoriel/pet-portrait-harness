@@ -1584,7 +1584,14 @@
     // hidden input from the freshest values. The customer's current
     // Show-Name toggle state is read from the form input itself rather
     // than LS, since toggle state isn't persisted to LS today.
+    // Flag flips true after we've passed all the guards, so the
+    // programmatic .submit() that re-triggers this listener doesn't
+    // re-run them in an infinite loop.
+    var atcGuardsPassed = false;
+
     form.addEventListener('submit', function (e) {
+      if (atcGuardsPassed) return; // already validated, allow Shopify to handle
+
       var freshData;
       try {
         var raw = localStorage.getItem(LS_KEY);
@@ -1672,6 +1679,66 @@
       setProp('_No Name Preview URL', cdnUrls[1] || cdnUrls[0] || '');
       // _Frame is a PDP-only UI toggle not persisted to LS — leave the
       // current input untouched.
+
+      // CROSS-CART DUPLICATE GUARD — last line of defense against the
+      // "two line items show the same image" regression. The R2 prefix
+      // guard above only catches mixed prefixes WITHIN this submission;
+      // it can't detect when the entire submission is the OLD portrait's
+      // URLs being committed under a new pet name (state staleness path
+      // where saveSession partially updated petName but not preview
+      // URLs). Fetch the live cart and refuse if our _Portrait URL
+      // matches an existing line item whose Pet Name differs.
+      //
+      // Async — preventDefault now and re-submit programmatically with
+      // atcGuardsPassed=true if validation passes.
+      if (e && e.preventDefault) e.preventDefault();
+      if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+      fetch('/cart.js', { headers: { 'Accept': 'application/json' } })
+        .then(function (r) { return r.ok ? r.json() : { items: [] }; })
+        .catch(function () { return { items: [] }; })
+        .then(function (cart) {
+          var items = (cart && cart.items) || [];
+          var conflict = null;
+          for (var i = 0; i < items.length; i++) {
+            var props = items[i].properties || {};
+            var existingPortraitUrl = props['_Portrait URL'] || '';
+            var existingPetName = (props['Pet Name'] || '').trim();
+            var newPetName = (freshData.petName || '').trim();
+            // Same _Portrait URL + DIFFERENT Pet Name = the customer
+            // thinks they're adding a new portrait but is committing
+            // the previous one. Block with a clear message. Same URL +
+            // same name = legitimate "same portrait at different size",
+            // allow.
+            if (
+              existingPortraitUrl &&
+              existingPortraitUrl === primaryPreviewUrl &&
+              existingPetName.toLowerCase() !== newPetName.toLowerCase()
+            ) {
+              conflict = { existingPetName: existingPetName, existingTitle: items[i].product_title };
+              break;
+            }
+          }
+
+          if (conflict) {
+            console.error(
+              '[PetPrintables] BLOCKED ATC — _Portrait URL matches an existing cart item ' +
+              '(' + conflict.existingTitle + ' / ' + conflict.existingPetName + ') ' +
+              'but Pet Name differs (' + freshData.petName + '). State staleness ' +
+              'committed the previous portrait\'s URL under a new name.'
+            );
+            alert(
+              'It looks like this portrait is the same as one already in your cart. ' +
+              'To add a different design for ' + (freshData.petName || 'this pet') + ', ' +
+              'please go back and generate a new portrait first.'
+            );
+            return;
+          }
+
+          // All guards passed — let Shopify's submit handler run.
+          atcGuardsPassed = true;
+          form.submit();
+        });
     }, true); // capture=true → runs BEFORE Shopify's submit handler
   }
 
