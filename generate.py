@@ -1261,7 +1261,30 @@ wall panel, photographed-corner-of-room look, more than two \
 background colours, horizontal background splits, diagonal background \
 splits, curved background seams, gradient backgrounds, off-centre \
 seam, background patterns, drop shadows, text, watermark, border, \
-solid color bars or panels at image edges.\
+solid color bars or panels at image edges.
+
+FINAL CHECK BEFORE OUTPUT — TEXT-FREE GUARANTEE (CRITICAL — read this LAST):
+- Scan the WHOLE canvas, especially the empty bg band above the pet's \
+head. The image contains ZERO letters, ZERO words, ZERO glyphs, ZERO \
+numerals, ZERO letterforms of ANY alphabet (Latin, Cyrillic, CJK, \
+Arabic — none), ZERO character-shaped curves, ZERO inscriptions, \
+ZERO captions, ZERO signatures, ZERO date stamps, ZERO logos.
+- NO pet name anywhere on the canvas. NO "JIM", NO "MAX", NO any \
+name. The pet's name is composited onto the image LATER by a separate \
+typography pipeline at a precise position with a chosen typeface — \
+your job is to deliver a CLEAN portrait with a LETTER-FREE band of \
+clean bg colour above the pet's head where the typography pipeline \
+will place the name.
+- RECURRING FAILURE MODE TO AVOID: rendering 2-4 stylized cubist \
+glyphs at the top of the canvas to "feel like a poster." This is \
+FORBIDDEN — when the typography pipeline composites the customer's \
+real pet name on top, the result is overlapping illegible text \
+("JJ I'M" / "JEWILDER" / "MAXMAXX" effects) that looks like a bug \
+to the customer. The TOP 22% of the canvas must be uninterrupted \
+flat bg colour from the canvas edge down to the pet's ear tips, with \
+no decoration of any kind in that band.
+- If ANY shape inside the image resembles a letter, redraw it as a \
+non-letter polygonal shape or remove it entirely.\
 """
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
