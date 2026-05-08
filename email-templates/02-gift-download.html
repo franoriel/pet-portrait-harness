@@ -1,243 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="x-apple-disable-message-reformatting">
-  <title>A gift for you</title>
-  <!--[if mso]>
-  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
-  <![endif]-->
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Inter:wght@400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: #FAF8F5; }
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="x-apple-disable-message-reformatting"/>
+    <title>Your portraits are ready</title>
+  </head>
+  <body>
+    <span href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&amp;family=Inter:wght@400;500;600;700&amp;family=Kalam:wght@300;400;700&amp;display=swap" rel="stylesheet"></span>
+    <style>
+      body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: #FAF8F5; }
+      .serif { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 400; line-height: 1.05; color: #1C1C1C; }
+      .sans { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #1C1C1C; }
+      .eyebrow { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; }
+      .handwritten { font-family: 'Kalam', 'Comic Sans MS', cursive; color: #2A2A26; font-weight: 400; }
+      .cta-btn { background: #2F2F2A; color: #FFFFFF; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; padding: 18px 36px; text-decoration: none; display: inline-block; border-radius: 4px; }
+      @media (max-width: 620px) {
+        .container { width: 100% !important; max-width: 100% !important; }
+        .px-mobile { padding-left: 24px !important; padding-right: 24px !important; }
+        .h1-mobile { font-size: 32px !important; }
+      }
+    </style>
+    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#FAF8F5;" width="100%">
+      <tr>
+        <td align="center" style="padding:32px 0 16px;">
 
-    .serif-heading { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 400; line-height: 1.05; color: #1C1C1C; }
-    .sans { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #1C1C1C; }
-    .eyebrow { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; }
-    .handwritten { font-family: 'Caveat', 'Brush Script MT', cursive; color: #2F2F2A; }
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td align="center" style="padding:8px 0 32px;">
+                <span class="serif" style="font-size:24px;color:#1C1C1C;letter-spacing:0.02em;">Pet Printables</span>
+              </td>
+            </tr>
+          </table>
 
-    .cta-primary { background: #2F2F2A; color: #FFFFFF !important; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; padding: 16px 32px; text-decoration: none !important; display: inline-block; border-radius: 4px; }
-    .cta-outline { background: #FFFFFF; color: #1C1C1C !important; border: 1px solid #1C1C1C; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; padding: 14px 24px; text-decoration: none !important; display: inline-block; border-radius: 4px; }
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td align="center" class="px-mobile" style="padding:0 48px 24px;">
+                <p class="eyebrow" style="margin:0 0 16px;">A small gift, while you wait</p>
+                {% if person.portrait_count == 1 %}
+                  <h1 class="serif h1-mobile" style="margin:0 0 20px;font-size:48px;line-height:1.02;">
+                    A digital copy<br/>of {{ person.pet_name|default:'your pet' }}, on us.
+                  </h1>
+                  <p class="sans" style="margin:0;font-size:15px;line-height:1.65;color:#6B6B63;max-width:440px;margin-left:auto;margin-right:auto;">
+                    Your order is in production. Until it lands at your door, we've prepared a digital copy in every format you'd want to share &mdash; feed, story, profile pic, even a phone wallpaper.
+                  </p>
+                {% else %}
+                  <h1 class="serif h1-mobile" style="margin:0 0 20px;font-size:48px;line-height:1.02;">
+                    Digital copies<br/>of your {{ person.portrait_count }} portraits, on us.
+                  </h1>
+                  <p class="sans" style="margin:0;font-size:15px;line-height:1.65;color:#6B6B63;max-width:440px;margin-left:auto;margin-right:auto;">
+                    Your order is in production. Until it lands at your door, we've prepared every portrait in every format you'd want to share &mdash; feed, story, profile pic, even a phone wallpaper.
+                  </p>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
 
-    .countdown-pill {
-      display: inline-block;
-      padding: 6px 14px;
-      background: rgba(199, 123, 88, 0.12);
-      color: #C77B58;
-      border: 1px solid rgba(199, 123, 88, 0.24);
-      border-radius: 999px;
-      font-family: 'Inter', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td align="center" class="px-mobile" style="padding:8px 60px 24px;">
+                <a href="{{ person.order_url|default:'https://petprintables.ca/account' }}" style="text-decoration:none;display:block;">
+                  <img alt="{{ person.pet_name|default:'Your pet' }}'s portrait" src="{{ person.pet_preview_url|default:'https://petprintables.ca/cdn/shop/t/3/assets/example-modern-shape-art-v2.webp' }}" style="display:block;width:100%;max-width:480px;height:auto;border:0;outline:none;margin:0 auto;border-radius:8px;" width="480"/>
+                </a>
+              </td>
+            </tr>
+          </table>
 
-    @media (max-width: 620px) {
-      .container { width: 100% !important; max-width: 100% !important; }
-      .px-mobile { padding-left: 24px !important; padding-right: 24px !important; }
-      .stack { display: block !important; width: 100% !important; }
-      .stack-pad { padding: 8px 0 !important; }
-      .h1-mobile { font-size: 32px !important; }
-    }
-  </style>
-</head>
-<body style="margin:0;padding:0;background:#FAF8F5;">
-  <div style="display:none;font-size:1px;color:#FAF8F5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
-    A high-resolution copy of {{ event.line_items.0.properties.pet_name|default:"your pet" }}, free for the next 24 hours.
-  </div>
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td align="center" class="px-mobile" style="padding:8px 48px 8px;">
+                <a class="cta-btn" href="{{ person.order_url|default:'https://petprintables.ca/account' }}">
+                  {% if person.portrait_count == 1 %}DOWNLOAD &amp; SHARE{% else %}DOWNLOAD ALL FORMATS{% endif %}
+                </a>
+                <p class="sans" style="margin:16px 0 0;font-size:12px;color:#8B7D6B;">
+                  Sign in with your email to access. No password needed.
+                </p>
+              </td>
+            </tr>
+          </table>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF8F5;">
-    <tr>
-      <td align="center" style="padding:32px 0 16px;">
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td class="px-mobile" style="padding:48px 48px 0;">
+                <div style="height:1px;background:#E4DDD4;line-height:1px;font-size:1px;">&nbsp;</div>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td class="px-mobile" style="padding:32px 48px 0;">
+                <p class="eyebrow" style="margin:0 0 12px;text-align:center;">What's on the page</p>
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="margin:0 auto;max-width:440px;">
+                  <tr>
+                    <td class="sans" style="padding:8px 0;font-size:14px;line-height:1.55;color:#1C1C1C;">
+                      <strong>Four social formats</strong> &mdash; Square, Story, Portrait, and phone Wallpaper.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="sans" style="padding:8px 0;font-size:14px;line-height:1.55;color:#1C1C1C;">
+                      <strong>The original print-quality file</strong> for your archive.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="sans" style="padding:8px 0;font-size:14px;line-height:1.55;color:#1C1C1C;">
+                      <strong>One-tap sharing</strong> straight to Instagram or wherever you post.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="sans" style="padding:8px 0;font-size:14px;line-height:1.55;color:#1C1C1C;">
+                      <strong>Submit to our gallery</strong> &mdash; future customers see what's possible.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
 
-        <!-- LOGO -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td align="center" style="padding:8px 0 32px;">
-              <span class="serif-heading" style="font-size:24px;color:#1C1C1C;letter-spacing:0.02em;">Pet Printables</span>
-            </td>
-          </tr>
-        </table>
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td align="center" class="px-mobile" style="padding:48px 48px 16px;">
+                <p class="handwritten" style="margin:0;font-size:18px;line-height:1.55;color:#2A2A26;max-width:420px;margin-left:auto;margin-right:auto;">
+                  Whatever you do with {% if person.portrait_count == 1 %}it{% else %}them{% endif %}, we hope they make someone smile.
+                </p>
+                <img alt="The Pet Printables team" src="https://d3k81ch9hvuctc.cloudfront.net/company/SPKeMf/images/d43fe51e-ccc8-4f48-a1fa-7a043733e4aa.png" style="display:block;width:280px;max-width:100%;height:auto;border:0;outline:none;margin:14px auto 0;" width="280"/>
+              </td>
+            </tr>
+          </table>
 
-        <!-- ============ HERO — gift card framing ============ -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td align="center" class="px-mobile" style="padding:0 48px 24px;">
-              <p class="eyebrow" style="margin:0 0 16px;">A small gift, while you wait</p>
-              <h1 class="serif-heading h1-mobile" style="margin:0 0 20px;font-size:48px;line-height:1.02;">
-                A high-res copy<br>of {{ event.line_items.0.properties.pet_name|default:"your pet"|capitalize }}, on us.
-              </h1>
-              <p class="sans" style="margin:0;font-size:15px;line-height:1.65;color:#6B6B63;max-width:440px;margin-left:auto;margin-right:auto;">
-                Your canvas is in production. Until it lands at your door, here's a digital copy of {{ event.line_items.0.properties.pet_name|default:"your pet" }} you can save, share, set as your phone background, or send to the group chat.
-              </p>
-            </td>
-          </tr>
-        </table>
+          <table border="0" cellpadding="0" cellspacing="0" class="container" role="presentation" style="max-width:600px;" width="600">
+            <tr>
+              <td align="center" style="padding:48px 48px 32px;border-top:1px solid #E4DDD4;margin-top:32px;">
+                <p class="serif" style="margin:0 0 12px;font-size:18px;color:#1C1C1C;">Pet Printables</p>
+                <p class="sans" style="margin:0 0 8px;font-size:12px;color:#6B6B63;">A modern tribute to unconditional love.</p>
+                <p class="sans" style="margin:0 0 16px;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">Vancouver, BC</p>
+                <p class="sans" style="margin:0;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
+                  {% unsubscribe 'Unsubscribe' %} &middot;
+                  <a href="https://petprintables.ca" style="color:#8B7D6B;text-decoration:underline;">petprintables.ca</a> &middot;
+                  <a href="https://instagram.com/mypetprintables" style="color:#8B7D6B;text-decoration:underline;">@mypetprintables</a>
+                </p>
+              </td>
+            </tr>
+          </table>
 
-        <!-- IMAGE -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td align="center" style="padding:0;">
-              <img
-                src="{{ event.line_items.0.properties.preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
-                alt="{{ event.line_items.0.properties.pet_name|default:'Your pet' }}'s portrait"
-                width="600"
-                style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;"
-              />
-            </td>
-          </tr>
-        </table>
-
-        <!-- DOWNLOAD CTA -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td align="center" class="px-mobile" style="padding:32px 48px 8px;">
-              <a href="{{ event.line_items.0.properties.download_url|default:'https://petprintables.ca/portrait/download' }}" class="cta-primary" style="background:#2F2F2A;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;padding:16px 32px;text-decoration:none;display:inline-block;border-radius:4px;">
-                DOWNLOAD HIGH-RES
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" class="px-mobile" style="padding:8px 48px 8px;">
-              <span class="countdown-pill">AVAILABLE FOR 24 HOURS</span>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" class="px-mobile" style="padding:8px 48px 0;">
-              <p class="sans" style="margin:0;font-size:12px;color:#6B6B63;font-style:italic;">
-                The link expires {{ event.extra.download_expires_at|default:"24 hours after this email is sent" }}.
-              </p>
-            </td>
-          </tr>
-        </table>
-
-        <!-- ============ DIVIDER ============ -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td class="px-mobile" style="padding:48px 48px 0;">
-              <div style="height:1px;background:#E4DDD4;line-height:1px;font-size:1px;">&nbsp;</div>
-            </td>
-          </tr>
-        </table>
-
-        <!-- ============ SHARE ON SOCIAL ============ -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td class="px-mobile" style="padding:40px 48px 8px;">
-              <p class="eyebrow" style="margin:0 0 12px;text-align:center;">Show them off</p>
-              <h2 class="serif-heading" style="margin:0 0 16px;font-size:30px;line-height:1.1;text-align:center;">
-                Share {{ event.line_items.0.properties.pet_name|default:"them"|capitalize }} with the world.
-              </h2>
-              <p class="sans" style="margin:0 0 24px;font-size:15px;line-height:1.65;color:#6B6B63;text-align:center;max-width:440px;margin-left:auto;margin-right:auto;">
-                Post {{ event.line_items.0.properties.pet_name|default:"your portrait" }} to your Instagram or Facebook story and tag <strong style="color:#1C1C1C;">@mypetprintables</strong>. We'll reshare every one we see.
-              </p>
-
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td align="center" style="padding:8px 0;">
-
-                    <!--[if mso]>
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td>
-                    <![endif]-->
-
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;">
-                      <tr>
-                        <td class="stack stack-pad" style="padding:0 6px;">
-                          <a href="https://petprintables.ca/share/instagram?order={{ event.extra.order_id|default:event.id }}" class="cta-outline" style="background:#FFFFFF;color:#1C1C1C;border:1px solid #1C1C1C;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.06em;padding:14px 24px;text-decoration:none;display:inline-block;border-radius:4px;">
-                            SHARE TO INSTAGRAM
-                          </a>
-                        </td>
-                        <td class="stack stack-pad" style="padding:0 6px;">
-                          <a href="https://petprintables.ca/share/facebook?order={{ event.extra.order_id|default:event.id }}" class="cta-outline" style="background:#FFFFFF;color:#1C1C1C;border:1px solid #1C1C1C;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.06em;padding:14px 24px;text-decoration:none;display:inline-block;border-radius:4px;">
-                            SHARE TO FACEBOOK
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-
-                    <!--[if mso]>
-                    </td></tr></table>
-                    <![endif]-->
-
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-
-        <!-- DIVIDER -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td class="px-mobile" style="padding:48px 48px 0;">
-              <div style="height:1px;background:#E4DDD4;line-height:1px;font-size:1px;">&nbsp;</div>
-            </td>
-          </tr>
-        </table>
-
-        <!-- ============ SUBMIT TO GALLERY ============ -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td class="px-mobile" style="padding:40px 48px 8px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F3EDE6;border-radius:8px;">
-                <tr>
-                  <td style="padding:36px 36px 32px;">
-                    <p class="eyebrow" style="margin:0 0 12px;color:#8B7D6B;">Featured on petprintables.ca</p>
-                    <h2 class="serif-heading" style="margin:0 0 16px;font-size:28px;line-height:1.1;">
-                      Want {{ event.line_items.0.properties.pet_name|default:"them" }} in our gallery?
-                    </h2>
-                    <p class="sans" style="margin:0 0 24px;font-size:15px;line-height:1.65;color:#1C1C1C;">
-                      Submit {{ event.line_items.0.properties.pet_name|default:"your portrait" }} to our public gallery so future customers can see what's possible. You can write a short note with the submission. A name. A date. The story behind the photo. Anything that makes them theirs.
-                    </p>
-                    <a href="{{ person.gallery_submit_url|default:'https://petprintables.ca/pages/gallery' }}" class="cta-primary" style="background:#2F2F2A;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;padding:16px 32px;text-decoration:none;display:inline-block;border-radius:4px;">
-                      SUBMIT TO GALLERY
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-
-        <!-- ============ HANDWRITTEN SIGN-OFF ============ -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td align="center" class="px-mobile" style="padding:48px 48px 24px;">
-              <p class="handwritten" style="margin:0;font-size:24px;line-height:1.45;color:#2F2F2A;max-width:420px;">
-                Whatever you do with it, we hope {{ event.line_items.0.properties.pet_name|default:"they" }} makes someone smile.
-              </p>
-              <p class="handwritten" style="margin:14px 0 0;font-size:20px;color:#8B7D6B;">
-                — The Pet Printables team
-              </p>
-            </td>
-          </tr>
-        </table>
-
-        <!-- ============ FOOTER ============ -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
-          <tr>
-            <td align="center" style="padding:48px 48px 32px;border-top:1px solid #E4DDD4;margin-top:32px;">
-              <p class="serif-heading" style="margin:0 0 12px;font-size:18px;color:#1C1C1C;">Pet Printables</p>
-              <p class="sans" style="margin:0 0 8px;font-size:12px;color:#6B6B63;">
-                A modern tribute to unconditional love.
-              </p>
-              <p class="sans" style="margin:0 0 16px;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
-                808 Nelson Street, Vancouver, BC V6Z 2A9
-              </p>
-              <p class="sans" style="margin:0;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
-                {% unsubscribe 'Unsubscribe' %} · <a href="https://petprintables.ca" style="color:#8B7D6B;text-decoration:underline;">petprintables.ca</a> · <a href="https://instagram.com/mypetprintables" style="color:#8B7D6B;text-decoration:underline;">@mypetprintables</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-
-      </td>
-    </tr>
-  </table>
-</body>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>
