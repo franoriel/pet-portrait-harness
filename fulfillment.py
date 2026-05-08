@@ -44,32 +44,37 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Print-ready dimensions (pixels at 300 DPI)
 #
-# Canvas (in) and framed canvas: Printful's customer templates ship a
-# print file +6" on each axis vs the physical canvas, i.e. 3" of bleed
-# on every side. The CUSTOMER-VISIBLE FRONT FACE is the inner rectangle
-# (file minus 3" all around); the outer 3" wraps around the stretcher
-# bars + back of the canvas. Verified against the official Printful
-# customer templates in PetPrintables Admin/Canvas (in) templates and
-# …/Framed_canvas_in_guideline.
+# Canvas (in) — gallery-wrap canvas: file = front face + 3" bleed each
+#   side. The bleed wraps around the 1.25" stretcher bars + onto the back.
+# Framed canvas (in) — flat canvas in a frame: file = front face + 1.5"
+#   bleed each side. Less bleed because the frame physically covers the
+#   outer band rather than wrapping it around bars.
+# Verified against the official Printful customer templates in
+#   PetPrintables Admin/Canvas (in) templates  → +3" each side
+#   …/Framed_canvas_in_guideline                → +1.5" each side
 #
 # Magnets ship at die-cut size + 1/8" bleed each side (legacy values kept).
 # ---------------------------------------------------------------------------
 
-# Bleed inset, in pixels at 300 DPI, applied uniformly to every side of
-# canvas/framed-canvas print files. 3" * 300 dpi = 900 px.
-CANVAS_BLEED_PX = 900
+# Bleed inset per side, in pixels at 300 DPI. Different per product class
+# because gallery-wrap and framed canvas have physically different bleed
+# requirements (Printful's customer templates confirm this).
+GALLERY_WRAP_BLEED_PX = 900   # 3"  → canvas-*  (gallery wrap)
+FRAMED_CANVAS_BLEED_PX = 450  # 1.5" → canvas-*-framed
+# Backwards-compat alias (older code paths reference the unified name).
+CANVAS_BLEED_PX = GALLERY_WRAP_BLEED_PX
 
 PRINT_SIZES: dict[str, tuple[int, int]] = {
-    # Canvas (in) — file dims include 3" bleed on each side
+    # Canvas (in) — gallery wrap, +3" bleed each side (front_face + 6")
     "canvas-12x12":        (5400, 5400),   # front face 3600×3600
     "canvas-12x16":        (5400, 6600),   # front face 3600×4800
     "canvas-16x16":        (6600, 6600),   # front face 4800×4800
     "canvas-16x20":        (6600, 7800),   # front face 4800×6000
-    # Framed canvas — same 3" bleed (same physical canvas, in a frame)
-    "canvas-12x12-framed": (5400, 5400),
-    "canvas-12x16-framed": (5400, 6600),
-    "canvas-16x16-framed": (6600, 6600),
-    "canvas-16x20-framed": (6600, 7800),
+    # Framed canvas — +1.5" bleed each side (front_face + 3")
+    "canvas-12x12-framed": (4500, 4500),   # front face 3600×3600
+    "canvas-12x16-framed": (4500, 5700),   # front face 3600×4800
+    "canvas-16x16-framed": (5700, 5700),   # front face 4800×4800
+    "canvas-16x20-framed": (5700, 6900),   # front face 4800×6000
     # Die-Cut Magnets (300 DPI, +1/8" bleed each side → +0.25" total).
     "magnet-3x3":          (975,  975),
     "magnet-4x4":          (1275, 1275),
@@ -78,8 +83,8 @@ PRINT_SIZES: dict[str, tuple[int, int]] = {
 
 # Front-face dimensions (the customer-visible area — file minus bleed).
 # This is the area the pet + name composition must fit inside; everything
-# outside this rectangle wraps around the stretcher bars and is only
-# visible from the side of the canvas.
+# outside this rectangle either wraps around stretcher bars (gallery wrap)
+# or sits behind the frame (framed canvas).
 FRONT_FACE_SIZES: dict[str, tuple[int, int]] = {
     "canvas-12x12":        (3600, 3600),
     "canvas-12x16":        (3600, 4800),
@@ -89,7 +94,7 @@ FRONT_FACE_SIZES: dict[str, tuple[int, int]] = {
     "canvas-12x16-framed": (3600, 4800),
     "canvas-16x16-framed": (4800, 4800),
     "canvas-16x20-framed": (4800, 6000),
-    # Magnets have no wrap; front face == file.
+    # Magnets have no wrap/frame; front face == file.
     "magnet-3x3":          (975,  975),
     "magnet-4x4":          (1275, 1275),
     "magnet-6x6":          (1875, 1875),
@@ -113,9 +118,10 @@ PRODUCT_RATIOS: dict[str, tuple[int, int]] = {
 
 
 def _is_canvas(product_key: str) -> bool:
-    """True when this product needs a 3" wrap-bleed border on the
-    print file. Magnets ship at file dimensions (no wrap), so they
-    bypass the wrap-padding step in generate_print_file()."""
+    """True when this product needs a wrap-bleed border on the print file
+    (3" each side for gallery-wrap canvas-*, 1.5" each side for
+    canvas-*-framed). Magnets ship at file dimensions with no wrap, so
+    they bypass the wrap-padding step in generate_print_file()."""
     return product_key.startswith("canvas-")
 
 # Printful catalog variant IDs are resolved DYNAMICALLY at runtime via
@@ -213,12 +219,17 @@ def wrap_print_file_with_bleed(
     product_key: str,
 ) -> Image.Image:
     """Place a front-face-correct composition into a Printful canvas
-    print file with the required 3" wrap bleed on every side.
+    print file with the required wrap bleed on every side: 3" for
+    gallery-wrap (canvas-*), 1.5" for framed canvas (canvas-*-framed).
 
     The customer-visible art lives in the inner FRONT_FACE_SIZES rectangle.
-    The surrounding CANVAS_BLEED_PX band is filled with the sampled corner
-    background colour so the gallery wrap reads as a calm continuation of
-    the painting rather than a visible seam.
+    The surrounding bleed band is filled with the sampled corner
+    background colour so the wrap (or frame-edge band) reads as a calm
+    continuation of the painting rather than a visible seam.
+
+    Bleed depth is implicit in PRINT_SIZES vs FRONT_FACE_SIZES — the
+    helper just pads to whatever the file dims demand, so changing the
+    bleed for a future product class is a one-line edit in the constants.
 
     No-op for non-canvas products (magnets/etc.) — they ship at file
     dimensions with no wrap.
