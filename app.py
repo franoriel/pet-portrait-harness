@@ -923,8 +923,24 @@ def mockups():
     variants = data.get("variants")
     image_urls_by_aspect_raw = data.get("image_urls_by_aspect")
 
-    # Validate product_type is a simple handle
-    if product_type not in ("canvas", "poster", "mug"):
+    # Shopify product-handle aliases → backend catalog keys. The PDP
+    # injection script reads productHandle straight from the URL path
+    # (e.g. /products/framed-canvas → "framed-canvas"), but mockups.py's
+    # CATALOG_PRODUCTS keys use a different word order ("canvas-framed")
+    # so the fulfillment-side product_key naming stays consistent
+    # ("canvas-12x16-framed", etc.). Without this normalisation the
+    # /mockups call from a framed PDP 400s — silently breaking framed-
+    # canvas mockups while gallery-wrap continues to work.
+    _PRODUCT_TYPE_ALIASES = {
+        "framed-canvas": "canvas-framed",
+    }
+    product_type = _PRODUCT_TYPE_ALIASES.get(product_type, product_type)
+
+    # Validate product_type is a simple handle. Allowlist mirrors
+    # CATALOG_PRODUCTS keys in mockups.py + legacy "poster" / "mug"
+    # values that still flow through this endpoint from older theme
+    # builds (generate_mockups silently no-ops on unknown types).
+    if product_type not in ("canvas", "canvas-framed", "poster", "mug"):
         return jsonify(error="Invalid product type."), 400
 
     # Path traversal guard on filename
