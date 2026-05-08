@@ -1483,6 +1483,72 @@
     // clicks Add to Cart the named preview URL is already present in
     // properties[_Print File URL] and the form can submit cleanly.
     // The ATC button stays "Add to Cart" throughout — no loading hijack.
+
+    // ── Submit-time refresh from the freshest session ─────────
+    // The hidden cart props above are populated once at script load from
+    // `data` (captured at line 70). If the customer regenerates with a
+    // different style elsewhere — e.g. /pages/create → Restart → pick a
+    // new style → back to PDP via cached navigation — a stale-data
+    // window can leave the form holding the old _Style / _Job ID even
+    // though the rest of the page (toggle, image) has caught up.
+    //
+    // Re-read localStorage in the submit capture phase (before Shopify's
+    // /cart/add handler reads the form) and rewrite every session-derived
+    // hidden input from the freshest values. The customer's current
+    // Show-Name toggle state is read from the form input itself rather
+    // than LS, since toggle state isn't persisted to LS today.
+    form.addEventListener('submit', function () {
+      var freshData;
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && parsed.version === 1) freshData = parsed;
+        }
+      } catch (e) { /* keep existing inputs if LS is unreadable */ }
+      if (!freshData) return;
+
+      function setProp(key, value) {
+        var input = form.querySelector('input[name="properties[' + key + ']"]');
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'properties[' + key + ']';
+          form.appendChild(input);
+        }
+        input.value = value || '';
+      }
+
+      // Customer's current name choice — toggle is the source of truth.
+      var showNameInput = form.querySelector('input[name="properties[_Show Name]"]');
+      var withName = showNameInput
+        ? showNameInput.value === 'Yes'
+        : (freshData.wantsName !== false);
+
+      var cdnUrls = freshData.previewCdnUrls || [];
+      var defaultPreview = cdnUrls[freshData.selectedPreviewIndex || 0]
+        || cdnUrls[0] || '';
+      var primaryPreviewUrl = withName
+        ? (freshData.namedPreviewUrl || defaultPreview)
+        : defaultPreview;
+      var primaryPrintFile = withName
+        ? (freshData.printFileUrl || primaryPreviewUrl)
+        : (freshData.noNamePrintFileUrl || freshData.printFileUrl || primaryPreviewUrl);
+
+      setProp('Pet Name', freshData.petName || '');
+      setProp('_Style', freshData.styleId || '');
+      setProp('_Font Size', freshData.fontSize || 'medium');
+      setProp('_Show Name', withName ? 'Yes' : 'No');
+      setProp('_Job ID', freshData.jobId || '');
+      setProp('_Portrait URL', primaryPreviewUrl);
+      setProp('_Print File URL', primaryPrintFile);
+      setProp('_No Name URL', freshData.noNamePrintFileUrl || primaryPrintFile);
+      setProp('_Print File URL 3x4', freshData.printFileUrl3x4 || '');
+      setProp('_Print File URL 1x1', freshData.printFileUrl1x1 || '');
+      setProp('_No Name Preview URL', cdnUrls[1] || cdnUrls[0] || '');
+      // _Frame is a PDP-only UI toggle not persisted to LS — leave the
+      // current input untouched.
+    }, true); // capture=true → runs BEFORE Shopify's submit handler
   }
 
   } // end runInjection
