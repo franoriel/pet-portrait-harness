@@ -491,7 +491,16 @@
         cropTopFrac = 0;
         cropBotFrac = 0;
         cropSideFrac = 0;
-        coverPosition = 'center bottom';
+        // BUT — if the customer has Show Name = Yes, the top of the 4:5
+        // master has the composited name. Bottom-anchoring would clip it
+        // off and the customer would see a no-name canvas mockup despite
+        // the toggle being Yes. Anchor TOP instead so the name survives;
+        // the pet's lower chest gets a slight clip but the customer-
+        // visible name is preserved. The 1:1 derivative path (srcIs1x1)
+        // is the proper fix and renders cleanly when available — this is
+        // only a fallback for the brief window after toggling Yes before
+        // /add-name's 1:1 derivative lands in session.
+        coverPosition = showName ? 'center top' : 'center bottom';
       }
       hScale = 100 / (1 - 2 * cropSideFrac);
       vScale = 100 / (1 - cropTopFrac - cropBotFrac);
@@ -1228,15 +1237,82 @@
         } catch (_) {}
         // Live data refs so the gallery rebuild + cart writer below pick
         // up the new per-aspect URLs without a refresh.
+        data.namedPreviewUrl = newUrl;
         data.namedPreviewUrl3x4 = newUrl3x4 || data.namedPreviewUrl3x4;
         data.namedPreviewUrl1x1 = newUrl1x1 || data.namedPreviewUrl1x1;
         data.printFileUrl3x4 = newPrint3x4 || data.printFileUrl3x4;
         data.printFileUrl1x1 = newPrint1x1 || data.printFileUrl1x1;
 
+        // Invalidate any cached Printful mockup URLs on slides — they
+        // were generated from the NO-NAME source, so they're stale now
+        // that we have a named version. Without this, renderActiveImage
+        // would keep showing the no-name Printful mockup on non-square
+        // variants (12×16, 16×20) even after the customer toggled Yes.
+        // The slide will fall back to a client mockup with the named
+        // source until a fresh /mockups call returns Printful mockups
+        // generated from the named master.
+        if (showName) {
+          gallery.querySelectorAll('.product-gallery__slide--mockup').forEach(function (slide) {
+            slide.removeAttribute('data-printful-url');
+          });
+        }
+
         if (showName) renderActiveImage(newUrl);
         updateHiddenProps(showName, resp.composited_png_cdn || newUrl, newUrl);
         setLoading(false);
         setButtonsDisabled(false);
+
+        // Fire a fresh /mockups call with the new named source so the
+        // canvas-on-wall Printful mockups update for this customer's
+        // chosen name. Background — the client mockups already work
+        // fine if this fails or takes a while.
+        if (showName && data.imageFilename) {
+          var perAspect = {};
+          if (newUrl) perAspect['4:5'] = newUrl;
+          if (newUrl3x4) perAspect['3:4'] = newUrl3x4;
+          if (newUrl1x1) perAspect['1:1'] = newUrl1x1;
+          if (Object.keys(perAspect).length) {
+            fetch(API_BASE + '/mockups', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image_filename: data.imageFilename,
+                product_type: productHandle,
+                image_urls_by_aspect: perAspect,
+              }),
+            })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (mockResp) {
+              if (!mockResp || !mockResp.mockups || !mockResp.mockups.length) return;
+              try {
+                var sessNow = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+                if (!sessNow.mockups) sessNow.mockups = {};
+                sessNow.mockups[productHandle] = mockResp.mockups;
+                localStorage.setItem(LS_KEY, JSON.stringify(sessNow));
+              } catch (_) {}
+              mockResp.mockups.forEach(function (m) {
+                if (m.placement !== 'default') return;
+                var nums = m.variant.match(/(\d+)\D+(\d+)/);
+                var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
+                var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
+                if (!slideEl) return;
+                // Don't overwrite if customer toggled back to No since
+                // we fired this fetch — that would put the named mockup
+                // back on a no-name slide.
+                if (!showName) return;
+                slideEl.setAttribute('data-printful-url', m.url);
+                slideEl.innerHTML = '';
+                var newImg = document.createElement('img');
+                newImg.src = m.url;
+                newImg.alt = (petName || 'Portrait') + ' ' + key + ' mockup';
+                newImg.loading = 'lazy';
+                newImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
+                slideEl.appendChild(newImg);
+              });
+            })
+            .catch(function () { /* client mockups still work */ });
+          }
+        }
       })
       .catch(function (err) {
         setLoading(false);
