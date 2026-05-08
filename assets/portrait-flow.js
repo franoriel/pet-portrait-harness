@@ -356,6 +356,13 @@ function saveSession(state) {
       // the customer toggles "Show name = No". Kept distinct from the
       // previewCdnUrls (which are watermarked) so neither side leaks.
       noNamePrintFileUrl: state.noNamePrintFileUrl || '',
+      // Per-aspect no-name PNGs + watermarked previews. Persisted so
+      // the PDP can read them from session and pass them to /mockups +
+      // the cart writer when the customer never adds a name.
+      printFileUrl3x4: state.printFileUrl3x4 || '',
+      printFileUrl1x1: state.printFileUrl1x1 || '',
+      previewUrl3x4: state.previewUrl3x4 || '',
+      previewUrl1x1: state.previewUrl1x1 || '',
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) { /* quota exceeded — silently fail */ }
@@ -521,7 +528,24 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
       // watermarked preview so fulfillment never receives a watermarked
       // file, and the customer never sees an un-watermarked one.
       const noNamePrintFileUrl = absolutize(status.raw) || '';
-      return { jobId, previews, filename: status.filename || '', cdn: status.cdn === '1' || status.cdn === true, originalPhoto, printFileUrl, noNamePrintFileUrl };
+      // Per-aspect no-name PNGs — used by the cart writer + /mockups
+      // call when the customer never adds a name, so canvas-12x12 /
+      // 16x16 (1:1) and canvas-12x16 (3:4) variants ship a source that
+      // matches their front-face aspect instead of cover-cropping the
+      // 4:5 master. Watermarked WebPs are the same per-aspect content
+      // for storefront PDP display. /add-name overrides these later if
+      // the customer toggles a name on.
+      const printFileUrl3x4 = absolutize(status.composited_png_3x4_cdn) || '';
+      const printFileUrl1x1 = absolutize(status.composited_png_1x1_cdn) || '';
+      const previewUrl3x4 = absolutize(status.composited_3x4_preview) || '';
+      const previewUrl1x1 = absolutize(status.composited_1x1_preview) || '';
+      return {
+        jobId, previews, filename: status.filename || '',
+        cdn: status.cdn === '1' || status.cdn === true,
+        originalPhoto, printFileUrl, noNamePrintFileUrl,
+        printFileUrl3x4, printFileUrl1x1,
+        previewUrl3x4, previewUrl1x1,
+      };
     }
 
     if (status.status === 'failed') {
@@ -932,6 +956,11 @@ function usePortraitFlow() {
     imageFilename: saved?.imageFilename || '',
     originalPhotoUrl: saved?.originalPhotoUrl || '',
     printFileUrl: saved?.printFileUrl || '',
+    noNamePrintFileUrl: saved?.noNamePrintFileUrl || '',
+    printFileUrl3x4: saved?.printFileUrl3x4 || '',
+    printFileUrl1x1: saved?.printFileUrl1x1 || '',
+    previewUrl3x4: saved?.previewUrl3x4 || '',
+    previewUrl1x1: saved?.previewUrl1x1 || '',
     jobId: saved?.jobId || null,
     restoredSession: !!saved,
     pendingPhoto: pending,  // hold pending for later conversion to File
@@ -1121,8 +1150,15 @@ function usePortraitFlow() {
         previewDataUrls: validDataUrls,
         previewCdnUrls: result.previews,  // always save original URLs as fallback
         originalPhotoUrl: result.originalPhoto || state.originalPhotoUrl || '',
-        printFileUrl: result.printFileUrl || '',  // hi-res PNG for Printful
-        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // hi-res no-name PNG for Printful
+        printFileUrl: result.printFileUrl || '',  // hi-res 4:5 PNG for Printful
+        noNamePrintFileUrl: result.noNamePrintFileUrl || '',  // hi-res 4:5 no-name PNG
+        // Per-aspect no-name PNGs + watermarked previews so customers
+        // who never add a name still ship a source matching every canvas
+        // variant's front-face aspect (no Printful cover-crop).
+        printFileUrl3x4: result.printFileUrl3x4 || '',
+        printFileUrl1x1: result.printFileUrl1x1 || '',
+        previewUrl3x4: result.previewUrl3x4 || '',
+        previewUrl1x1: result.previewUrl1x1 || '',
         selectedPreviewIndex: 0, jobId: result.jobId, restoredSession: false,
         imageFilename: result.filename, generationError: null, generationErrorTips: null,
       };
@@ -1153,11 +1189,19 @@ function usePortraitFlow() {
               const cdnPreviews = [s.composited, s.raw_preview || s.raw].filter(Boolean).map(absolutize);
               const cdnPrintFile = absolutize(s.composited_png_cdn) || '';
               const cdnNoNamePrint = absolutize(s.raw) || '';
+              const cdnPrintFile3x4 = absolutize(s.composited_png_3x4_cdn) || '';
+              const cdnPrintFile1x1 = absolutize(s.composited_png_1x1_cdn) || '';
+              const cdnPreview3x4 = absolutize(s.composited_3x4_preview) || '';
+              const cdnPreview1x1 = absolutize(s.composited_1x1_preview) || '';
               const cdnOriginal = s.original_cdn || '';
               const upgrade = {
                 previewCdnUrls: cdnPreviews,
                 printFileUrl: cdnPrintFile || newState.printFileUrl,
                 noNamePrintFileUrl: cdnNoNamePrint || newState.noNamePrintFileUrl,
+                printFileUrl3x4: cdnPrintFile3x4 || newState.printFileUrl3x4,
+                printFileUrl1x1: cdnPrintFile1x1 || newState.printFileUrl1x1,
+                previewUrl3x4: cdnPreview3x4 || newState.previewUrl3x4,
+                previewUrl1x1: cdnPreview1x1 || newState.previewUrl1x1,
                 originalPhotoUrl: cdnOriginal || newState.originalPhotoUrl,
               };
               update(upgrade);
@@ -3321,6 +3365,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const [wantsFrame, setWantsFrame] = useState(false);
   const [generatingNamedPreview, setGeneratingNamedPreview] = useState(false);
   const [namedPreviewUrl, setNamedPreviewUrl] = useState(null);
+  const [namedPreviewUrl3x4, setNamedPreviewUrl3x4] = useState(null);
   const [namedPreviewUrl1x1, setNamedPreviewUrl1x1] = useState(null);
   const [nameError, setNameError] = useState(null);
   const [localName, setLocalName] = useState(state.petName || '');
@@ -3423,18 +3468,33 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       const url = resp.composited || resp.composited_png_cdn;
       if (!url) throw new Error('No image returned');
       setNamedPreviewUrl(url);
-      // Capture the 1:1 derivative URL too — square canvas variants
-      // (12×12, 16×16) need to render their PDP mockup from this file
-      // rather than cover-cropping the 4:5 master and clipping the name.
-      // Prefer the watermarked WebP (composited_1x1_preview) for the
-      // display surface so the diagonal Pet Printables watermark is
-      // baked in. Falls back to the un-watermarked print PNG only on
-      // older backend deploys that don't return the WebP yet.
+      // Capture the 3:4 and 1:1 derivative URLs too — every canvas
+      // variant's PDP mockup now renders from a source matching its
+      // front-face aspect, rather than cover-cropping a 4:5 master.
+      // Prefer the watermarked WebPs (composited_3x4_preview /
+      // composited_1x1_preview) so the diagonal Pet Printables watermark
+      // stays visible; fall back to the un-watermarked print PNG only
+      // on older backend deploys that don't return the WebP yet.
+      const url3x4 = resp.composited_3x4_preview
+        || resp.composited_png_3x4_cdn
+        || null;
       const url1x1 = resp.composited_1x1_preview
         || resp.composited_png_1x1_cdn
         || resp.composited_1x1
         || null;
+      if (url3x4) setNamedPreviewUrl3x4(url3x4);
       if (url1x1) setNamedPreviewUrl1x1(url1x1);
+      // Hi-res un-watermarked print files for cart properties + per-
+      // variant Printful mockup tasks. Stored in localStorage so the
+      // PDP/cart writers can read them without another /add-name call.
+      try {
+        const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        if (resp.composited_png_3x4_cdn) session.printFileUrl3x4 = resp.composited_png_3x4_cdn;
+        if (resp.composited_png_1x1_cdn) session.printFileUrl1x1 = resp.composited_png_1x1_cdn;
+        if (url3x4) session.namedPreviewUrl3x4 = url3x4;
+        if (url1x1) session.namedPreviewUrl1x1 = url1x1;
+        localStorage.setItem(LS_KEY, JSON.stringify(session));
+      } catch {}
       setGeneratingNamedPreview(false);
     })
     .catch(err => {
@@ -3455,6 +3515,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       session.wantsName = effectiveWantsName;
       session.wantsFrame = wantsFrame;
       if (namedPreviewUrl) session.namedPreviewUrl = namedPreviewUrl;
+      if (namedPreviewUrl3x4) session.namedPreviewUrl3x4 = namedPreviewUrl3x4;
       if (namedPreviewUrl1x1) session.namedPreviewUrl1x1 = namedPreviewUrl1x1;
       localStorage.setItem(LS_KEY, JSON.stringify(session));
     } catch {}

@@ -94,6 +94,10 @@
     var urls = (data.previewCdnUrls || []).concat([
       data.printFileUrl || '',
       data.noNamePrintFileUrl || '',
+      data.printFileUrl3x4 || '',
+      data.printFileUrl1x1 || '',
+      data.previewUrl3x4 || '',
+      data.previewUrl1x1 || '',
     ]);
     var hasLocal = urls.some(function (u) { return u && u.indexOf('/preview/') !== -1; });
     if (!hasLocal || !data.jobId) return;
@@ -111,6 +115,14 @@
           previewCdnUrls: cdnPreviews,
           printFileUrl: absolutize(s.composited_png_cdn) || data.printFileUrl,
           noNamePrintFileUrl: absolutize(s.raw) || data.noNamePrintFileUrl,
+          // Per-aspect no-name URLs — same upgrade pattern. The job
+          // record gets these populated by both the initial worker
+          // commit and the CDN backfill, so /status returns whichever
+          // is most recent.
+          printFileUrl3x4: absolutize(s.composited_png_3x4_cdn) || data.printFileUrl3x4,
+          printFileUrl1x1: absolutize(s.composited_png_1x1_cdn) || data.printFileUrl1x1,
+          previewUrl3x4: absolutize(s.composited_3x4_preview) || data.previewUrl3x4,
+          previewUrl1x1: absolutize(s.composited_1x1_preview) || data.previewUrl1x1,
           originalPhotoUrl: s.original_cdn || data.originalPhotoUrl,
         };
         Object.assign(data, upgrade);
@@ -686,10 +698,38 @@
     var totalSizes = Object.keys(sizes).length;
     if (hasPrintful < totalSizes && data.imageFilename) {
       var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+
+      // Per-aspect mockup sources. The mockup task receives one source
+      // per variant, matched to the variant's front-face aspect — so
+      // Printful never has to cover-crop a 4:5 master onto a 3:4 or 1:1
+      // canvas (which clipped the name band off the top of square slides
+      // and zoomed 12×16 mockups). Precedence per aspect:
+      //   1. namedPreviewUrl* (watermarked WebP after /add-name) — best
+      //      because it's both correct-aspect AND watermarked.
+      //   2. previewUrl* (watermarked WebP from initial no-name generate)
+      //      — covers customers who never added a name.
+      //   3. un-watermarked PNG — last-resort fallback if a deploy hasn't
+      //      backfilled the watermarked WebPs yet.
+      var perAspect = {};
+      var url4x5 = data.namedPreviewUrl
+        || ((data.previewCdnUrls || [])[0])
+        || data.printFileUrl
+        || '';
+      var url3x4 = data.namedPreviewUrl3x4 || data.previewUrl3x4 || data.printFileUrl3x4 || '';
+      var url1x1 = data.namedPreviewUrl1x1 || data.previewUrl1x1 || data.printFileUrl1x1 || '';
+      if (url4x5) perAspect['4:5'] = url4x5;
+      if (url3x4) perAspect['3:4'] = url3x4;
+      if (url1x1) perAspect['1:1'] = url1x1;
+
+      var mockupBody = { image_filename: data.imageFilename, product_type: productHandle };
+      if (Object.keys(perAspect).length) {
+        mockupBody.image_urls_by_aspect = perAspect;
+      }
+
       fetch(API_BASE + '/mockups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_filename: data.imageFilename, product_type: productHandle }),
+        body: JSON.stringify(mockupBody),
       })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (resp) {
@@ -699,17 +739,15 @@
           if (!session.mockups) session.mockups = {};
           session.mockups[productHandle] = resp.mockups;
           localStorage.setItem(LS_KEY, JSON.stringify(session));
-          // Replace client mockups with Printful mockups (no full reload)
+          // Replace client mockups with Printful mockups (no full reload).
+          // 1:1 used to be skipped here because the backend sent a 4:5
+          // master to every variant and Printful cover-cropped the name
+          // off square canvases. Per-aspect sources eliminate that crop,
+          // so all variants are now safe to replace.
           resp.mockups.forEach(function (m) {
             if (m.placement !== 'default') return;
             var nums = m.variant.match(/(\d+)\D+(\d+)/);
             var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
-            // Square variants: keep the client-side linen+canvas mockup.
-            // Printful renders the 4:5 master onto the square face and
-            // centre-crops it, clipping the name band off the top — so
-            // we never let Printful replace square slides.
-            var isSq = nums && nums[1] === nums[2];
-            if (isSq) return;
             var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
             if (slideEl) {
               slideEl.innerHTML = '';
@@ -1087,6 +1125,16 @@
         var portraitInput = form.querySelector('input[name="properties[_Portrait URL]"]');
         if (portraitInput) portraitInput.value = portraitUrl;
       }
+      // Per-aspect URLs — fulfillment._pick_source_url uses these to
+      // pick the right per-front-face derivative when the customer's
+      // chosen variant isn't 4:5. data.printFileUrl3x4/1x1 were just
+      // populated by /add-name; no-op when they're empty.
+      if (withText) {
+        var printInput3x4 = form.querySelector('input[name="properties[_Print File URL 3x4]"]');
+        if (printInput3x4 && data.printFileUrl3x4) printInput3x4.value = data.printFileUrl3x4;
+        var printInput1x1 = form.querySelector('input[name="properties[_Print File URL 1x1]"]');
+        if (printInput1x1 && data.printFileUrl1x1) printInput1x1.value = data.printFileUrl1x1;
+      }
     }
 
     // Run /add-name for the current petName + style + background. Used by
@@ -1121,26 +1169,41 @@
         var newUrl = resp.composited_png_cdn || resp.composited;
         if (!newUrl) throw new Error('No image URL returned');
         withTextUrl = newUrl;
-        // Prefer the watermarked 1:1 WebP (composited_1x1_preview) for
-        // square-variant display so the diagonal Pet Printables
-        // watermark is visible. Falls back to the un-watermarked print
-        // PNG only when the backend hasn't been redeployed yet.
+        // Prefer the watermarked per-aspect WebPs (composited_3x4_preview,
+        // composited_1x1_preview) for variant display so the diagonal Pet
+        // Printables watermark is visible. Fall back to the un-watermarked
+        // print PNGs only when the backend hasn't been redeployed yet.
+        var newUrl3x4 = resp.composited_3x4_preview
+          || resp.composited_png_3x4_cdn
+          || null;
         var newUrl1x1 = resp.composited_1x1_preview
           || resp.composited_png_1x1_cdn
           || resp.composited_1x1
           || null;
+        // Hi-res un-watermarked print files for Printful + per-variant
+        // mockup tasks. These match the front-face aspect of each canvas
+        // size so Printful never has to cover-crop a 4:5 source.
+        var newPrint3x4 = resp.composited_png_3x4_cdn || null;
+        var newPrint1x1 = resp.composited_png_1x1_cdn || null;
 
         // Persist for future PDP loads so we don't re-fetch on refresh
         try {
           var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
           sess.namedPreviewUrl = newUrl;
+          if (newUrl3x4) sess.namedPreviewUrl3x4 = newUrl3x4;
           if (newUrl1x1) sess.namedPreviewUrl1x1 = newUrl1x1;
+          if (newPrint3x4) sess.printFileUrl3x4 = newPrint3x4;
+          if (newPrint1x1) sess.printFileUrl1x1 = newPrint1x1;
           sess.petName = petName;
           sess.printFileUrl = resp.composited_png_cdn || sess.printFileUrl;
           localStorage.setItem(LS_KEY, JSON.stringify(sess));
         } catch (_) {}
-        // Live data ref so the gallery rebuild below picks up the new URL
+        // Live data refs so the gallery rebuild + cart writer below pick
+        // up the new per-aspect URLs without a refresh.
+        data.namedPreviewUrl3x4 = newUrl3x4 || data.namedPreviewUrl3x4;
         data.namedPreviewUrl1x1 = newUrl1x1 || data.namedPreviewUrl1x1;
+        data.printFileUrl3x4 = newPrint3x4 || data.printFileUrl3x4;
+        data.printFileUrl1x1 = newPrint1x1 || data.printFileUrl1x1;
 
         if (showName) renderActiveImage(newUrl);
         updateHiddenProps(showName, resp.composited_png_cdn || newUrl, newUrl);
@@ -1328,6 +1391,13 @@
     // file even if Gemini hasn't been re-run.
     var noNamePrintFileUrl = data.noNamePrintFileUrl || printFileUrl;
 
+    // Per-aspect print files (front-face-correct, wrap-aware on the
+    // server side). Populated by /add-name when the customer adds a
+    // name; empty for the no-name path. Fulfillment._pick_source_url
+    // falls back to the 4:5 master if the requested aspect is empty.
+    var printFileUrl3x4 = data.printFileUrl3x4 || '';
+    var printFileUrl1x1 = data.printFileUrl1x1 || '';
+
     var props = {
       'Pet Name': petName,
       '_Style': data.styleId || '',
@@ -1336,8 +1406,10 @@
       '_Frame': wantsFrame ? 'Framed' : 'No frame',
       '_Job ID': data.jobId || '',
       '_Portrait URL': previewUrlForCart,                    // watermarked preview for display
-      '_Print File URL': printFileUrl,                       // un-watermarked hi-res PNG for Printful
+      '_Print File URL': printFileUrl,                       // un-watermarked hi-res 4:5 PNG for Printful
       '_No Name URL': noNamePrintFileUrl,                    // un-watermarked hi-res no-name PNG for Printful
+      '_Print File URL 3x4': printFileUrl3x4,                // un-watermarked hi-res 3:4 PNG (canvas-12x16)
+      '_Print File URL 1x1': printFileUrl1x1,                // un-watermarked hi-res 1:1 PNG (canvas-12x12 / 16x16)
       '_No Name Preview URL': cdnUrls[1] || cdnUrls[0] || '', // watermarked no-name WebP for cart display (e.g. magnet upsell thumbnail)
     };
     Object.keys(props).forEach(function (key) {
