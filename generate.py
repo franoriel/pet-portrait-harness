@@ -3717,9 +3717,14 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
             pad_bottom_ratio=0,
             target_aspect=PRINT_ASPECT_1_1,
         )
+    # pad_top_ratio dropped from 0.22 → 0.18: 0.22 leaves a visibly empty
+    # cream band above the name on 4:5 canvases (the cat sits noticeably
+    # lower than the canvas centre). 0.18 lands the head at y≈18-19% with
+    # the name centred at y≈11% (cfg.zone_top), keeping clear breathing
+    # room above the ears without the floating-in-empty-space look.
     return _modern_shape_art_reframe(
         image,
-        pad_top_ratio=0.22,
+        pad_top_ratio=0.18,
         pad_side_ratio=0.02,
         target_aspect=PORTRAIT_RATIO,
     )
@@ -3803,11 +3808,37 @@ def composite_name(
     add_background_padding), with auto-detected text colour for contrast
     against whatever's behind it.
     """
+    # Preserve PIL info dict (PNG metadata text chunks) across the .copy()
+    # so the metadata-based idempotency check below can see flags written
+    # by a previous composite_name pass. The default RGB.copy() preserves
+    # info; convert("RGB") on a non-RGB source does too.
+    src_info = dict(getattr(image, "info", {}) or {})
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
+    img.info.update(src_info)
     w, h = img.size
 
-    # IDEMPOTENCY GUARD — if the input already contains composited text
-    # ANYWHERE in the upper half of the canvas, DO NOT add another layer.
+    # METADATA IDEMPOTENCY GUARD — defeats the OCR limitation on cursive
+    # fonts (watercolor's Caveat script defeats Tesseract — confidence
+    # too low to trip the OCR check below — so OCR alone can't catch
+    # double-composite on watercolor). PIL's info dict carries PNG text
+    # chunks across save/load, so once composite_name has run on a
+    # source, the resulting file carries 'pp_named=1' and any subsequent
+    # composite_name pass sees it and bails. Catches every style at the
+    # earliest possible point, no Tesseract dependency.
+    if img.info.get("pp_named") == "1":
+        log.warning(
+            "[composite_name] input already carries pp_named=1 metadata — "
+            "skipping composite for pet_name='%s' to avoid double-name "
+            "ghosting.",
+            pet_name,
+        )
+        return img
+
+    # IDEMPOTENCY GUARD #2 (OCR) — if the input already contains composited
+    # text ANYWHERE in the upper half of the canvas, DO NOT add another
+    # layer. Backup for the metadata check above when an external pipeline
+    # (Gemini's no-name source that hallucinated text, or a re-encoded
+    # JPEG that stripped PNG metadata) didn't carry pp_named.
     # A second composite at slightly different scale / position produces
     # ghost-doubled letters ("EDUARDO RAMIREZ" overlapping itself, JEWEL
     # + WILDER → JEWILDER).
@@ -3940,6 +3971,12 @@ def composite_name(
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
 
+    # Stamp idempotency metadata. Callers MUST pass pnginfo through to
+    # img.save() for this to persist on disk — see _save_with_pp_named()
+    # for the helper. Without that, the metadata lives only in memory.
+    img.info["pp_named"] = "1"
+    img.info["pp_named_value"] = (pet_name or "").strip()[:60]
+
     # Note: we no longer call _tighten_top_after_name here. The raw
     # no-name master is already pre-tightened (in `generate`) before
     # composite_name ever sees it, so a second tighten here would
@@ -3947,6 +3984,23 @@ def composite_name(
     # canvas top edge. The pre-tighten alone gives the name a
     # comfortable margin below the canvas top.
     return img
+
+
+def _save_with_pp_named(img: Image.Image, path: Path, **save_kwargs) -> None:
+    """Save a composited PIL image to PNG with the pp_named=1 metadata
+    chunk preserved. Use this in place of img.save(...) for any image
+    that has been through composite_name — it ensures the idempotency
+    flag survives across the save/load roundtrip so a later composite_name
+    pass on the same file early-exits instead of doubling the name.
+    """
+    from PIL import PngImagePlugin
+    pnginfo = save_kwargs.pop("pnginfo", None) or PngImagePlugin.PngInfo()
+    if img.info.get("pp_named") == "1":
+        pnginfo.add_text("pp_named", "1")
+        pp_val = img.info.get("pp_named_value") or ""
+        if pp_val:
+            pnginfo.add_text("pp_named_value", str(pp_val)[:60])
+    img.save(path, "PNG", pnginfo=pnginfo, **save_kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -4806,7 +4860,7 @@ def generate_with_name_on_demand(
 
         safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
         comp_path = out / f"{uid}_{style}_{safe_name}_named.png"
-        composited.save(comp_path, "PNG", dpi=(300, 300))
+        _save_with_pp_named(composited, comp_path, dpi=(300, 300))
         log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path, composited.width, composited.height)
 
@@ -4818,8 +4872,11 @@ def generate_with_name_on_demand(
         # 4:5 preview. Used for canvas-12x16 mockups + print files so
         # Printful never has to cover-crop a 4:5 source onto a 3:4 face.
         composited_3x4 = crop_to_ratio(composited, PRINT_ASPECT_3_4, gravity="center")
+        # crop_to_ratio doesn't preserve PIL info dict — re-stamp pp_named.
+        composited_3x4.info["pp_named"] = "1"
+        composited_3x4.info["pp_named_value"] = composited.info.get("pp_named_value", "")
         comp_path_3x4 = out / f"{uid}_{style}_{safe_name}_named_3x4.png"
-        composited_3x4.save(comp_path_3x4, "PNG", dpi=(300, 300))
+        _save_with_pp_named(composited_3x4, comp_path_3x4, dpi=(300, 300))
         log.info("           comp 3x4 (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path_3x4, composited_3x4.width, composited_3x4.height)
         web_path_3x4 = save_web_preview(composited_3x4, comp_path_3x4)
@@ -4845,7 +4902,7 @@ def generate_with_name_on_demand(
             laid_out_1x1 = derived_1x1
         composited_1x1 = composite_name(laid_out_1x1, pet_name, style=style)
         comp_path_1x1 = out / f"{uid}_{style}_{safe_name}_named_1x1.png"
-        composited_1x1.save(comp_path_1x1, "PNG", dpi=(300, 300))
+        _save_with_pp_named(composited_1x1, comp_path_1x1, dpi=(300, 300))
         log.info("           comp 1x1 (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path_1x1, composited_1x1.width, composited_1x1.height)
 
