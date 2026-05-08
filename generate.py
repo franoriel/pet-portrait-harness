@@ -1356,10 +1356,24 @@ above the ears.
 - BOTTOM SILHOUETTE — CRITICAL: the chest must dissolve organically into the \
 paper texture with looser strokes, never end in a flat horizontal cut.
 - BACKGROUND: warm cream paper texture (#F4EFE7 base) with subtle organic \
-paper-fibre grain extending uniformly to all four edges. The same cream tone \
-in every corner. NO rectangles, NO frames, NO inner panel of a different \
-shade, NO mat, NO border, NO letterbox bar, NO geometric splits. Pet and \
-paper are drawn in the same medium in the same pass.
+paper-fibre grain extending uniformly to all four edges. The cream hue is \
+the EXACT SAME RGB tone in every region of the canvas — top edge, bottom \
+edge, all four corners, behind the pet, above the pet, in the upper safe \
+zone. The paper does NOT shift warmer near the top, cooler near the bottom, \
+or pinker / rosier / peachier in any region. NO rectangles, NO frames, NO \
+inner panel of a different shade, NO mat, NO border, NO letterbox bar, NO \
+geometric splits, NO tea-stain wash, NO aged-paper vignette, NO subtle \
+pink / rose / peach cast at the edges or corners, NO colour gradient \
+across the paper. Pet and paper are drawn in the same medium in the same \
+pass.
+- RECURRING FAILURE MODE TO AVOID: a faint rosy / warm-pink / peach cast \
+across the top portion of the canvas (especially in the upper safe zone \
+or above the pet's head) — Gemini sometimes mimics aged-paper / \
+tea-stained-paper / vintage-photograph effects that introduce a localised \
+warm tint. The paper is FLAT uniform #F4EFE7 cream — never a rosy wash, \
+never a warm vignette, never a coloured halo around the pet. If any pixel \
+in the bg is more saturated than the base cream (e.g. a pink-tinted band \
+along the top or a peachy glow behind the pet), the image is wrong.
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere.
 
 Avoid: photography, photorealism, oil paint, watercolor, ink wash, neon, \
