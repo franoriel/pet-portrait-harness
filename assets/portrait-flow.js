@@ -658,7 +658,7 @@ const KEYFRAME_CSS = `
   from { opacity: 0; transform: scale(0.94) translateY(8px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
-/* Pulses the floating "Get 10% off" pill in red so it actually catches
+/* Pulses the floating "Get $5 off" pill in red so it actually catches
    the eye against the dark footer background. The box-shadow ring grows
    and fades on each cycle for a soft notification feel — not aggressive. */
 @keyframes pf-pill-pulse-red {
@@ -2719,7 +2719,7 @@ function GeneratingState() {
   );
 }
 
-/* ── Newsletter / 10%-off popup ────────────────────────────── */
+/* ── Newsletter / $5-off popup ────────────────────────────── */
 
 /* Captures email during the generation wait and applies the PETFAM2026
  * automatic discount via /discount/PETFAM2026. Status is persisted in
@@ -2804,7 +2804,7 @@ async function submitNewsletterSignup({ firstName, lastName, email, phoneE164, s
     throw new Error('Klaviyo signup failed (' + res.status + '): ' + txt.slice(0, 120));
   }
 
-  // Apply the 10%-off discount cookie regardless of whether the customer
+  // Apply the $5-off discount cookie regardless of whether the customer
   // also opted into SMS — the discount is for joining the email list.
   await fetch('/discount/PETFAM2026', {
     credentials: 'same-origin', redirect: 'manual',
@@ -2914,7 +2914,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
             }, "You're in. Your dog's proud."),
             React.createElement('p', {
               key: 'p', style: { ...s.bodyMuted, margin: '0 0 8px', fontSize: 'var(--text-sm)' },
-            }, '10% off is on your cart automatically.'),
+            }, '$5 off is on your cart automatically.'),
             React.createElement('p', {
               key: 'p2', style: { ...s.bodyMuted, margin: 0, fontSize: 'var(--text-xs)' },
             }, "Check your inbox — we sent a confirmation email to make sure it's really you."),
@@ -2923,11 +2923,11 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
             React.createElement('h3', {
               key: 'h', id: 'pf-newsletter-title',
               style: { ...s.serifHeading, fontSize: 'var(--text-lg)', margin: '0 0 8px', color: tokens.colorBrand, lineHeight: 1.2 },
-            }, '10% off? Or pay full price like a stranger?'),
+            }, '$5 off? Or pay full price like a stranger?'),
             React.createElement('p', {
               key: 'sub',
               style: { ...s.bodyMuted, margin: '0 0 18px', fontSize: 'var(--text-sm)', lineHeight: 1.5 },
-            }, "Join PetFam — 10% off your first order, applied automatically. Your dog already RSVP'd."),
+            }, "Join PetFam — $5 off your first order, applied automatically. Your dog already RSVP'd."),
             React.createElement('form', {
               key: 'f', onSubmit: handleSubmit, noValidate: true,
               style: { display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left' },
@@ -3000,7 +3000,7 @@ function NewsletterModal({ isOpen, onClose, onSignedUp }) {
               React.createElement('button', {
                 type: 'submit', disabled: submitting,
                 style: { ...s.primaryBtn, opacity: submitting ? 0.7 : 1, marginTop: '6px' },
-              }, submitting ? 'Signing you up…' : 'Yes, I want 10% off'),
+              }, submitting ? 'Signing you up…' : 'Yes, I want $5 off'),
             ),
             React.createElement('button', {
               key: 'skip', type: 'button', onClick: handleSkip,
@@ -3023,7 +3023,7 @@ function NewsletterPill({ onClick, onDismiss, visible }) {
   return React.createElement('div', {
     'data-pf-pill': '',
     role: 'group',
-    'aria-label': '10% off offer',
+    'aria-label': '$5 off offer',
     style: {
       position: 'fixed', bottom: '18px', right: '18px', zIndex: 9998,
       display: 'inline-flex', alignItems: 'stretch',
@@ -3039,19 +3039,19 @@ function NewsletterPill({ onClick, onDismiss, visible }) {
     React.createElement('button', {
       type: 'button',
       onClick,
-      'aria-label': 'Reopen the 10% off offer',
+      'aria-label': 'Reopen the $5 off offer',
       style: {
         background: 'transparent', color: 'inherit', border: 'none',
         padding: '12px 8px 12px 18px',
         fontFamily: 'inherit', fontWeight: 'inherit', fontSize: 'inherit',
         cursor: 'pointer', borderRadius: '999px 0 0 999px',
       },
-    }, 'Get 10% off'),
+    }, 'Get $5 off'),
     // Dismiss × — closes the pill permanently for this device
     React.createElement('button', {
       type: 'button',
       onClick: (e) => { e.stopPropagation(); if (onDismiss) onDismiss(); },
-      'aria-label': 'Dismiss the 10% off offer',
+      'aria-label': 'Dismiss the $5 off offer',
       style: {
         background: 'transparent', color: 'inherit', border: 'none',
         padding: '12px 14px 12px 6px',
@@ -3986,7 +3986,7 @@ function PortraitFlow() {
   const { state } = flow;
   useEffect(() => { injectKeyframes(); }, []);
 
-  // Newsletter / 10%-off popup state. Shows when generation starts so the
+  // Newsletter / $5-off popup state. Shows when generation starts so the
   // user has something to do during the wait. Persists in localStorage so a
   // dismissal carries through to the cart-side recapture modal.
   const initialNlStatus = loadNewsletterStatus();
