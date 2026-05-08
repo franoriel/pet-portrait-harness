@@ -119,7 +119,7 @@ const STYLES = [
     name: 'Soft Watercolour',
     available: true,
     exampleImage: 'example-soft-watercolour.webp',
-    backgrounds: ['auto', 'light'],
+    backgrounds: ['auto'],
   },
   {
     id: 'minimal-line-art',

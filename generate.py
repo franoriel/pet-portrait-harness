@@ -1277,18 +1277,25 @@ clearly wider than the pet itself.
 sideways into the upper corners — but the TOP of the canvas above the \
 pet is treated as a calm clean-paper area (see NAME SAFE ZONE).
 
-NAME SAFE ZONE — CRITICAL: A handwritten pet name will be composited \
-into the TOP of the finished image. Reserve the upper ~22% of the canvas \
-as a CALM, OPEN paper area suitable for legible script:
+NAME CLEARANCE — CRITICAL: A handwritten pet name will be composited \
+into the upper portion of the finished image. The pet must be positioned \
+so the upper area is free of subject detail:
 - The pet's head, ears, fur fly-aways, watercolor splatters, dark wash \
 strokes, and ink linework MUST stay BELOW y=22% of the canvas. The top \
 of the tallest ear sits at y≈25-28% — never closer to the canvas top.
-- Within the top ~22% the paper should remain mostly clean — at most a \
-gentle wash of soft colour (3-8% opacity tint, no visible brush detail, \
-no splatters, no dark accents, no ink). Think of an artist leaving \
-breathing room above the subject for a calligraphed name.
-- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5). It is \
-what keeps the pet's eyes/ears from being overwritten by the script.
+- The paper / wash above the pet is the SAME continuous medium as the \
+rest of the image — same paper colour, same ambient wash tone, same \
+texture. There is NO separate top zone, NO tinted band, NO panel, NO \
+strip, NO horizontal seam, NO gradient transition, NO change of colour \
+or value where the wash thins out above the head. The wash simply \
+breathes more lightly toward the top because the pet isn't there — but \
+the paper underneath it is one uninterrupted sheet, edge to edge.
+- ABSOLUTELY NO horizontal edge or colour shift across the canvas at \
+any height — no band of warmer cream above a cooler white, no rectangle \
+of tinted paper sitting over the rest, no visible transition line. If a \
+viewer can point to a horizontal y-coordinate and say "the colour \
+changes here", the image is wrong.
+- This rule is non-negotiable on every aspect (1:1, 3:4, 4:5).
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation)
@@ -1305,6 +1312,9 @@ Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
 blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border, \
 narrow watercolor wash column with bare white paper at the sides, \
 horizontal streaks, horizontal lines, horizontal bands, horizontal stripes, \
+top tint band, top colour band, top warm-cream band over cooler paper, \
+horizontal seam between a tinted top zone and the rest of the canvas, \
+visible y-axis colour transition at any height, two-tone paper split, \
 wood grain, wood panelling, shiplap, plank lines, floorboards, shelf, \
 table, wall texture, surface texture behind the pet, ruled lines, \
 banding, scanner lines.\
@@ -1730,7 +1740,7 @@ _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     "naturalist":          {"auto"},
     # Only three current styles expose light/dark — the rest keep their
     # baked-in look. Matches portrait-flow.js STYLES[].backgrounds.
-    "watercolor":          {"auto", "light", "dark"},
+    "watercolor":          {"auto"},
     "minimal-line-art":    {"auto", "light", "dark"},
     # Modern + Bold Graphic Poster expose dedicated colour palettes instead
     # of auto/light/dark — Modern uses MODERN_BG_COLORS (8 single-tone
