@@ -106,18 +106,23 @@
 
       <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
 
+      {%- comment -%}
+        Pet Printables is 100% print-on-demand (Printful-fulfilled): no
+        variant ever truly goes out of stock. A stale Shopify availability
+        flag (location-fulfillment misconfig, Printful sync lag, etc.) used
+        to render the button as disabled with "Sold Out" text even when
+        the customer was holding a bespoke portrait ready to add to cart.
+        We always render the button enabled with "Add to Cart"; if a
+        future product is genuinely limited-stock, gate this on a
+        per-product metafield rather than the global product.available.
+      {%- endcomment -%}
       <button
         type="submit"
         name="add"
         class="btn btn--primary btn--full btn--large atc-btn"
-        {% unless product.available %}disabled{% endunless %}
         aria-label="Add {{ product.title }} to cart"
       >
-        {%- if product.available -%}
-          Add to Cart — {{ product.price_min | money }} CAD
-        {%- else -%}
-          Sold Out
-        {%- endif -%}
+        Add to Cart — {{ product.price_min | money }} CAD
       </button>
     {%- endform -%}
 

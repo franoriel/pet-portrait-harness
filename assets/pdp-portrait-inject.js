@@ -28,6 +28,14 @@
       atcBtn.setAttribute('type', 'button');
       atcBtn.removeAttribute('name');
       atcBtn.setAttribute('data-pregen', 'true'); // flag so theme.js skips updating it
+      // Print-on-demand: variants never go truly out of stock. If
+      // Shopify rendered the button as disabled because product.available
+      // was false (location-fulfillment misconfig, Printful sync lag,
+      // etc.), the customer is blocked from a CTA that just navigates to
+      // /pages/create — no inventory check needed. Force-enable so the
+      // CTA always works.
+      atcBtn.disabled = false;
+      atcBtn.removeAttribute('disabled');
 
       // Other scripts (theme.js variant updates) try to rewrite the ATC label
       // with a price string — restore the CTA text whenever that happens.
@@ -901,6 +909,20 @@
     // var urgencyBanner = buildUrgencyBanner();
     // insertTarget.parentNode.insertBefore(urgencyBanner, insertTarget);
     insertTarget.parentNode.insertBefore(strip, insertTarget);
+  }
+
+  // Print-on-demand override: the ATC button's `disabled` + "Sold Out"
+  // label come from Liquid's {% unless product.available %} check. For
+  // a POD product fulfilled by Printful that's never truly out of stock,
+  // a stale Shopify availability flag (location-fulfillment misconfig
+  // or Printful sync lag) shouldn't block a customer who has just spent
+  // 2-3 minutes generating a bespoke portrait. Force-enable + relabel.
+  if (atcBtn && (atcBtn.disabled || /sold\s*out/i.test(atcBtn.textContent || ''))) {
+    atcBtn.disabled = false;
+    atcBtn.removeAttribute('disabled');
+    if (/sold\s*out/i.test(atcBtn.textContent || '')) {
+      atcBtn.textContent = 'Add to Cart';
+    }
   }
 
   // ── "With name / Without name" toggle ─────────────────────

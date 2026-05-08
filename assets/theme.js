@@ -272,14 +272,17 @@
       }
 
       // Update ATC button (skip if in pre-gen mode — controlled by pdp-portrait-inject.js)
+      // Pet Printables is 100% print-on-demand (Printful-fulfilled): no variant
+      // is ever truly out of stock, so we don't honour Shopify's `available`
+      // flag here. A stale availability state (location-fulfillment misconfig,
+      // Printful sync lag, etc.) used to render "Sold Out" + disabled button
+      // even though the customer's bespoke portrait was sitting right there
+      // ready to be added to cart. If a future product is genuinely
+      // limited-stock, gate the disable behind a per-product attribute.
       if (atcBtn && !atcBtn.hasAttribute('data-pregen')) {
-        if (variant.available) {
-          atcBtn.disabled = false;
-          atcBtn.textContent = 'Add to Cart \u2014 ' + variant.priceFormatted + ' CAD';
-        } else {
-          atcBtn.disabled = true;
-          atcBtn.textContent = 'Sold Out';
-        }
+        atcBtn.disabled = false;
+        atcBtn.removeAttribute('disabled');
+        atcBtn.textContent = 'Add to Cart \u2014 ' + variant.priceFormatted + ' CAD';
       }
 
       // Scroll gallery to mockup slide for this variant (if available)
