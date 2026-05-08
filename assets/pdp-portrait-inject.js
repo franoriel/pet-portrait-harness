@@ -1191,11 +1191,22 @@
       }, 3500);
 
       var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
+      // Prefer the un-watermarked print PNG so compositing happens on a
+      // clean source. The watermarked WebP (noTextUrl, used for the
+      // gallery hero) carries the diagonal "Pet Printables" tile text —
+      // sending that to /add-name produces a result with the watermark
+      // baked in alongside the new name AND can trip the OCR guard in
+      // composite_name (it reads the watermark text in the top safe
+      // zone and skips the composite). Mirrors ProductGallery's
+      // preference order on /pages/create.
+      var addNameSource = data.noNamePrintFileUrl
+        || data.printFileUrl
+        || noTextUrl;
       return fetch(API_BASE + '/add-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image_url: noTextUrl,
+          image_url: addNameSource,
           pet_name: petName,
           style: data.styleId || '',
           background_mode: backgroundMode,
