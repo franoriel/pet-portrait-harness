@@ -12,7 +12,6 @@
     "product-upload": {
       "type": "product-upload",
       "settings": {
-        "show_upload": true,
         "inventory_threshold": 0
       }
     },

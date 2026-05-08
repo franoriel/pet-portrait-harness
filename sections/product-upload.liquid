@@ -94,46 +94,15 @@
         {%- endfor -%}
       {%- endunless -%}
 
-      <!-- Upload widget -->
-      {%- if section.settings.show_upload -%}
-        <div style="margin-bottom:8px;">
-          <p class="variant-picker__label">Step 1 — Upload your pet's photo</p>
-          <div class="upload-widget" role="button" tabindex="0" aria-label="Tap to upload your pet's photo">
-            <input
-              type="file"
-              id="PetPhotoUpload"
-              name="properties[Pet Photo]"
-              accept="image/*"
-              class="visually-hidden"
-              aria-label="Upload pet photo"
-            >
-            <div class="upload-widget__icon" aria-hidden="true">✦</div>
-            <p class="upload-widget__title">Tap to upload your pet's photo</p>
-            <p class="upload-widget__sub">JPG, PNG or WebP · Max 20 MB</p>
-            <div class="upload-widget__preview"><img src="" alt="Uploaded pet photo preview" loading="lazy"></div>
-          </div>
-        </div>
-
-        <!-- Pet name line art property -->
-        <div class="variant-picker" style="margin-bottom:20px;">
-          <label class="variant-picker__label" for="PetName" style="display:flex;align-items:baseline;justify-content:space-between;">
-            <span>Step 2 — Your pet's name (for the portrait)</span>
-            <span id="PetNameCounter" aria-live="polite" style="font-size:0.78rem;font-weight:500;color:var(--color-muted);letter-spacing:0;text-transform:none;">0/20</span>
-          </label>
-          <input
-            type="text"
-            id="PetName"
-            name="properties[Pet Name]"
-            placeholder="e.g. Biscuit"
-            maxlength="20"
-            style="width:100%;padding:12px 14px;border:1.5px solid var(--color-border);border-radius:var(--radius-sm);font-size:0.95rem;background:var(--color-surface);color:var(--color-ink);font-family:var(--font-body);outline:none;transition:border-color 0.2s;"
-            onfocus="this.style.borderColor='var(--color-primary)'"
-            onblur="this.style.borderColor='var(--color-border)'"
-            oninput="var c=document.getElementById('PetNameCounter');if(c){c.textContent=this.value.length+'/20';c.style.color=this.value.length>=17?'var(--color-warning,#c78b00)':'var(--color-muted)';}"
-          >
-          <p style="margin:6px 0 0;font-size:0.9rem;color:var(--color-muted);">Short names print the clearest — up to 20 characters fit on the canvas.</p>
-        </div>
-      {%- endif -%}
+      {%- comment -%}
+        Step 1 (upload) and Step 2 (name) used to live here so a customer
+        could fill them inline and be redirected into /pages/create with
+        the values pre-loaded. The new flow centralises everything in
+        /pages/create — a no-portrait PDP shows a single "Create my
+        portrait" CTA (set up by pdp-portrait-inject.js) that links
+        straight there. With a portrait in localStorage, the same script
+        replaces the CTA with the live ATC button.
+      {%- endcomment -%}
 
       <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
 
@@ -272,7 +241,6 @@
 {
   "name": "Product Upload Form",
   "settings": [
-    { "type": "checkbox", "id": "show_upload", "label": "Show photo upload widget", "default": true },
     { "type": "range", "id": "inventory_threshold", "label": "Show scarcity when stock below", "min": 0, "max": 20, "step": 1, "default": 5 }
   ]
 }
