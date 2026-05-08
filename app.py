@@ -1100,7 +1100,15 @@ def _push_klaviyo_order_event(
     not a blocker)."""
     api_key = os.environ.get("KLAVIYO_API_KEY", "").strip()
     if not api_key:
-        log.info("[klaviyo] no KLAVIYO_API_KEY set, skipping profile push for order %s", order_id)
+        # Bump to warning so it shows up clearly in Railway logs — this is
+        # the most common cause of the "gift email shows the placeholder
+        # image instead of the customer's pet" symptom, since no profile
+        # properties get pushed without the API key.
+        log.warning(
+            "[klaviyo] order=%s ✗ no KLAVIYO_API_KEY set — skipping profile push "
+            "(this is why preview emails will show the fallback image)",
+            order_id,
+        )
         return
     try:
         from datetime import datetime, timezone, timedelta
@@ -1191,12 +1199,29 @@ def _push_klaviyo_order_event(
             timeout=8,
         )
         if resp.status_code >= 400:
-            log.warning("[klaviyo] profile push %s: %s", resp.status_code, resp.text[:300])
+            log.warning(
+                "[klaviyo] order=%s ✗ profile push FAILED status=%s body=%s",
+                order_id, resp.status_code, resp.text[:300],
+            )
         else:
-            log.info("[klaviyo] order=%s profile=%s download_url set, expires %s",
-                     order_id, customer_email, expires_str)
+            # Single-line success log with the full property set so you can
+            # grep "[klaviyo] order=12345 ✓" and verify pet_preview_url +
+            # the social variant tokens all made it onto the profile.
+            preview_short = (
+                preview_url[:64] + "…" if len(preview_url) > 64 else preview_url
+            )
+            log.info(
+                "[klaviyo] order=%s ✓ profile push OK email=%s pet=%s "
+                "preview=%s | %d properties: %s",
+                order_id, customer_email, pet_name or "(unknown)",
+                preview_short or "(none)",
+                len(properties), ", ".join(properties.keys()),
+            )
     except Exception as exc:
-        log.warning("[klaviyo] order=%s profile push failed: %s", order_id, exc)
+        log.warning(
+            "[klaviyo] order=%s ✗ profile push EXCEPTION: %s",
+            order_id, exc,
+        )
 
 
 # ---------------------------------------------------------------------------
