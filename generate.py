@@ -826,15 +826,44 @@ the pet rendered as a mosaic of bold angular polygonal colour blocks meeting \
 at sharp clean edges, set against a vertical TWO-TONE BACKGROUND SPLIT.
 
 COLOR ACCURACY — THIS IS CRITICAL:
-- Use the animal's actual fur/coat pattern from the photo as the \
-structural guide for which colour block goes where. A golden dog reads \
-through warm orange + cream + deep-shadow blocks. A grey cat reads \
-through soft pinks + ivory + lavender blocks. A black dog reads through \
-deep navy/teal + ivory highlight + charcoal blocks. Preserve the \
-recognisable identity of the specific pet — the breed shape, the head \
-angle, any major chest blaze or markings.
+- Use the animal's actual fur/coat PATTERN from the photo as the \
+structural guide for which colour block goes where (light areas → \
+lighter palette colours, shadow areas → darker palette colours, \
+distinctive markings preserved). DO NOT match the literal coat hue. \
+The pet's faceting uses ONLY the {{POSTER_ACCENTS}} palette below — \
+the customer's chosen palette is the law, the animal's natural coat \
+hue is just a guide for light/dark distribution within those palette \
+colours. A golden dog on a teal palette reads through ochre + cream \
++ navy blocks (NOT warm orange). A black dog on a rose palette reads \
+through plum + ivory + deep aubergine blocks (NOT charcoal). Preserve \
+the recognisable identity of the specific pet — the breed shape, the \
+head angle, any major chest blaze or markings — but always through \
+the chosen palette's accent colours.
 - Eye placement and head angle stay TRUE to the source photo, but the \
 eyes themselves are stylised as flat angular slit shapes (see STYLE).
+- BG / PET CONTRAST IS NON-NEGOTIABLE: the pet's silhouette MUST read \
+distinctly against BOTH bg halves — left and right. NEVER use a pet \
+facet colour that shares a hue or lightness with either bg colour. \
+If the customer's pet is naturally a colour close to the bg (e.g. a \
+golden retriever on the rust palette where the bg is warm rust + \
+deep maroon), substitute the warm-orange / russet tones on the pet \
+with the palette's CONTRASTING accents. Bg-toned blocks on the pet \
+are FORBIDDEN — they merge with the bg and erase the silhouette.
+- FULL TONAL RANGE IS NON-NEGOTIABLE: the pet uses the DARKEST \
+accent in the palette prominently for shadows, the LIGHTEST accent \
+prominently for highlights, AND a mid-tone accent for the broad \
+masses. The contrast between the deepest and lightest pet blocks \
+must be high enough that the pet pops as a confident graphic shape \
+on a poster. NEVER pick only the muted / mid-range accents and \
+skip the deepest / lightest ones — that produces a washed-out, \
+"all the same value" pet that fails to read as bold WPAP poster \
+art. RECURRING FAILURE MODE TO AVOID: a pet rendered in only the \
+lightest 2-3 palette accents (e.g. on the rose palette: ivory + \
+peachy blush + dusty mauve, all light), skipping deep aubergine \
+entirely. The pet looks limp and pastel instead of bold and \
+graphic. EVERY pet MUST include the palette's deepest accent in \
+substantial blocks (at least 20-30% of the pet's faceted area) so \
+the chiaroscuro reads correctly.
 
 STYLE — CUBIST FLAT GRAPHIC:
 - The pet's face and chest are reinterpreted as a CUBIST FACETED MOSAIC: \
