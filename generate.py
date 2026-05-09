@@ -4540,7 +4540,13 @@ def call_gemini(
             + _composition_rule(has_name=False)
             + _NO_BORDER_RULE
         )
-    if variation_seed is not None:
+    # Accept only an int seed. The job-record round-trip stores the absence
+    # of a seed as "" (Redis HSET string-coerces None → ""), and `"" is
+    # not None` evaluates True — so a naive `is not None` check used to
+    # fall through into `"" % len(_VARIATION_HINTS)` and raise
+    # "TypeError: not all arguments converted during string formatting"
+    # which leaked to the customer's UI.
+    if isinstance(variation_seed, int):
         hint = _VARIATION_HINTS[variation_seed % len(_VARIATION_HINTS)]
         prompt = prompt + "\n\nVARIATION FOR THIS RENDER: " + hint
         log.info(
