@@ -4685,6 +4685,131 @@ def verify_image_is_pet(photo_path: Path) -> tuple[bool, str]:
         return False, "Could not verify the uploaded image. Please try a different photo of your pet."
 
 
+# ---------------------------------------------------------------------------
+# Eye-quality critic (Gemini-as-judge)
+# ---------------------------------------------------------------------------
+#
+# Phase 2 detector for failure modes that don't show up in pixel statistics:
+#   • creepy eyes (saturated headlight irises, taxidermy stare)
+#   • missing eyes (fluffy-faced breeds where eyes get lost in fur)
+#   • divergent gaze (one pupil left, the other right)
+#
+# These three classes are hard to catch with PIL math because they require
+# knowing where the eyes ARE in the image — and pet eyes occupy a tiny
+# fraction of the canvas (typically <2%), with no fixed location across
+# breeds and styles. Rather than ship an eye-region segmentation model
+# (~10 MB on disk, ~50 ms inference), we send the generated image to
+# Gemini Flash text-only as a critic and ask it to rate the eyes on three
+# axes. Cost is ~$0.0001 per call (vs. ~$0.04 for the original Gemini
+# image generation), so even firing on every BGP/MSA generation, it's
+# rounding-error in the per-portrait budget.
+#
+# Failure-mode definition: any axis scoring < 3 on the 1–5 scale flips
+# the verdict to "fail" and the orchestrator decides whether to retry.
+#
+# Disable in production by setting env var PP_DISABLE_EYE_CRITIC=1.
+
+_EYE_CRITIC_MIN_SCORE = 3
+_EYE_CRITIC_PROMPT = (
+    "Look at this pet portrait. Rate the EYES on three axes (1=worst, "
+    "5=best) and return JSON only — no markdown, no code fence, no prose:\n"
+    "\n"
+    "  visible — both eyes clearly drawn and discernible (5), partially "
+    "obscured by fur (3), or entirely missing/blocked (1)\n"
+    "  non_creepy — eyes look natural/alive (5), or glowing/headlight/"
+    "taxidermy/uncanny-valley (1). Saturated yellow/red irises against "
+    "a saturated background are usually creepy. Tiny pinprick pupils "
+    "inside large saturated irises are usually creepy.\n"
+    "  gaze_symmetric — both pupils point in the same direction "
+    "relative to their irises (5), or diverge / one centred + one "
+    "off-axis / different vertical heights (1)\n"
+    "\n"
+    "Return EXACTLY this JSON shape:\n"
+    '{"visible": N, "non_creepy": N, "gaze_symmetric": N, '
+    '"issues": "brief explanation if any score is below 4, else empty"}'
+)
+
+
+def _critique_eyes(
+    image_bytes: bytes,
+    mime_type: str = "image/png",
+) -> Optional[dict]:
+    """Send the generated portrait to Gemini Flash text-only and ask it
+    to rate the eyes on three axes (visible, non_creepy, gaze_symmetric).
+
+    Returns the rating dict on success, or None on any error (Gemini
+    unreachable, JSON parse failure, env-var disable, missing API key).
+    Fails OPEN — the caller must treat None as "no signal, ship the
+    candidate." This keeps the critic from blocking real generations
+    when Gemini Flash itself has an outage.
+
+    The dict has shape:
+        {"visible": int, "non_creepy": int, "gaze_symmetric": int,
+         "issues": str, "min_score": int}
+
+    `min_score` is computed from the three axes for easy threshold-
+    based filtering by the caller.
+    """
+    if os.environ.get("PP_DISABLE_EYE_CRITIC") == "1":
+        return None
+    if not os.environ.get("GEMINI_API_KEY", ""):
+        return None
+
+    try:
+        client = _get_client()
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",  # text-only critic, ~$0.0001/call
+            contents=[
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                        types.Part.from_text(text=_EYE_CRITIC_PROMPT),
+                    ],
+                )
+            ],
+        )
+
+        text = ""
+        for candidate in response.candidates:
+            for part in candidate.content.parts:
+                if hasattr(part, "text") and part.text:
+                    text += part.text
+
+        # Strip markdown fence even though the prompt forbids it.
+        import json as _json
+        text = text.strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*", "", text)
+            text = re.sub(r"\s*```$", "", text)
+
+        result = _json.loads(text)
+        # Coerce score fields to int and clamp 1–5. Any missing axis
+        # defaults to 5 (best) so a partially-malformed response only
+        # trips the verdict on the axes the model actually returned.
+        def _score(key: str) -> int:
+            v = result.get(key, 5)
+            try:
+                return max(1, min(5, int(v)))
+            except (TypeError, ValueError):
+                return 5
+
+        out = {
+            "visible": _score("visible"),
+            "non_creepy": _score("non_creepy"),
+            "gaze_symmetric": _score("gaze_symmetric"),
+            "issues": str(result.get("issues") or "")[:160],
+        }
+        out["min_score"] = min(out["visible"], out["non_creepy"], out["gaze_symmetric"])
+        return out
+
+    except Exception as exc:
+        # Fail open — log the issue, return None so the caller ships
+        # the candidate without retry.
+        log.debug("[eye-critic] failed: %s", exc)
+        return None
+
+
 def add_name_to_image(
     image_bytes: bytes,
     style: str,
@@ -5016,6 +5141,37 @@ def _generate_inner(
                 )
             else:
                 log.debug("[generate] flat-sticker check passed (style=%s)", style)
+
+        # Failure-mode check #4: eye-quality critic (Gemini-as-judge).
+        # LOG ONLY for now — same calibration rollout as dark-stencil.
+        # Scoped to BGP + modern-shape-art because those are where eye
+        # failures surfaced (creepy/glowing irises, missing eyes on
+        # fluffy faces, divergent gaze). The critic costs ~$0.0001 per
+        # call — rounding error on the $0.04 base generation cost — so
+        # firing it on every candidate is fine. Set
+        # PP_DISABLE_EYE_CRITIC=1 to bypass.
+        if style in ("bold-graphic-poster", "modern-shape-art"):
+            critique = _critique_eyes(candidate_bytes)
+            if critique is not None:
+                if critique["min_score"] < _EYE_CRITIC_MIN_SCORE:
+                    log.warning(
+                        "[generate] eye-critic min_score=%d (visible=%d "
+                        "non_creepy=%d gaze=%d) issues=%r on attempt %d/%d "
+                        "(style=%s) — NOT retrying yet (logging-only mode); "
+                        "shipping this candidate",
+                        critique["min_score"], critique["visible"],
+                        critique["non_creepy"], critique["gaze_symmetric"],
+                        critique["issues"], ocr_attempt + 1,
+                        _OCR_MAX_REGEN + 1, style,
+                    )
+                else:
+                    log.debug(
+                        "[generate] eye-critic passed min_score=%d (style=%s)",
+                        critique["min_score"], style,
+                    )
+            # critique is None → fail-open (Gemini critic unreachable or
+            # disabled). Don't log warning — that's the expected disabled
+            # path, not a failure.
 
         # All blocking checks passed — accept this candidate.
         raw_bytes = candidate_bytes
