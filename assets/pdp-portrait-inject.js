@@ -1009,7 +1009,14 @@
   // If Step 4 already produced a named preview (data.namedPreviewUrl), we
   // use it directly so the toggle swap is instant.
   var noTextUrl   = previewUrls[0] || previewUrls[1] || previewUrl;
-  var withTextUrl = data.namedPreviewUrl || previewUrls[1] || null; // may be null until Yes is clicked
+  // CRITICAL: withTextUrl must ONLY be the actual NAMED URL or null.
+  // The previous fallback to previewUrls[1] was a no-name watermarked
+  // WebP — toggling Yes would treat that no-name URL as the named one
+  // and commit it to the cart with _Show Name=Yes. Result: customer
+  // sees Yes selected but cart line item points at the no-name file
+  // (and Printful prints the no-name version). No spinner fired
+  // because the toggle handler thought it already had a named URL.
+  var withTextUrl = data.namedPreviewUrl || null;
   // Some styles ship without a name on purpose (saturated neon, moody
   // renaissance, soft aura) — type would break the aesthetic. Force
   // showName off and skip the toggle UI entirely for those.
