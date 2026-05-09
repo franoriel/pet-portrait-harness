@@ -4306,6 +4306,87 @@ def _detect_bg_bleed_through(
     return leak_ratio if leak_ratio > _BG_BLEED_THRESHOLD else None
 
 
+# ---------------------------------------------------------------------------
+# Flat-sticker failure-mode detector
+# ---------------------------------------------------------------------------
+#
+# Recurring failure mode: Gemini renders the pet as a single dark uniform
+# silhouette ("flat sticker") instead of the multi-tone WPAP / cubist
+# faceting the prompt asks for. Cousin of dark-stencil but distinct: a
+# flat sticker has NO bg leaking through (it's a solid filled shape),
+# but ALSO has no internal colour variation. Both fail the WPAP aesthetic
+# differently and need separate detection.
+#
+# Detection algorithm:
+#   1. Build the silhouette mask (pixels NOT close to bg colours), same
+#      as the dark-stencil detector.
+#   2. Within the silhouette pixels, sample a luminance distribution.
+#   3. If the std-dev of luminance inside the silhouette is below a
+#      threshold, the pet is a flat solid blob — failure.
+#
+# Rationale: WPAP / cubist faceting always produces multi-tone palette
+# accents distributed across the silhouette, regardless of the pet's
+# real-world coat colour (a black cat on a teal palette still gets
+# charcoal + ivory + accent blocks from the palette, NOT one solid
+# black shape). Std-dev of luminance in a properly-faceted portrait is
+# typically 35–60 (on the 0–255 scale). A flat-sticker output sits
+# below 15.
+#
+# Threshold calibration (subject to tuning from prod telemetry):
+#   stddev > 30 → healthy faceted portrait
+#   stddev 15–30 → low-contrast palette but acceptable
+#   stddev < 15 → flat-sticker failure
+
+_FLAT_STICKER_MIN_STDDEV = 15.0
+_FLAT_STICKER_MIN_PET_PX = 200
+
+
+def _detect_flat_sticker(
+    image: Image.Image,
+    bg_colors: list[tuple[int, int, int]],
+) -> Optional[float]:
+    """Return the in-silhouette luminance std-dev if the image shows the
+    flat-sticker failure (pet rendered as a single uniform colour blob),
+    or None when the image passes. Pure-PIL — no numpy dependency.
+
+    None is also returned when bg_colors is empty (detector disabled) or
+    when the silhouette is too small to evaluate (mostly bg image).
+    """
+    if not bg_colors:
+        return None
+
+    rgb = image.convert("RGB").resize(_BG_BLEED_DOWNSCALE, Image.LANCZOS)
+    pixels = list(rgb.getdata())
+    tol = _BG_BLEED_TOLERANCE
+
+    def _is_bg(p: tuple) -> bool:
+        r, g, b = p[0], p[1], p[2]
+        for br, bgg, bb in bg_colors:
+            if abs(r - br) <= tol and abs(g - bgg) <= tol and abs(b - bb) <= tol:
+                return True
+        return False
+
+    # Collect luminance values for silhouette pixels only. Rec. 709
+    # luminance: 0.2126·R + 0.7152·G + 0.0722·B.
+    lums: list[float] = []
+    for p in pixels:
+        if _is_bg(p):
+            continue
+        r, g, b = p[0], p[1], p[2]
+        lums.append(0.2126 * r + 0.7152 * g + 0.0722 * b)
+
+    if len(lums) < _FLAT_STICKER_MIN_PET_PX:
+        return None
+
+    # Population std-dev (no Bessel correction needed; we have ≥200
+    # samples).
+    mean = sum(lums) / len(lums)
+    var = sum((x - mean) ** 2 for x in lums) / len(lums)
+    stddev = var ** 0.5
+
+    return stddev if stddev < _FLAT_STICKER_MIN_STDDEV else None
+
+
 def _detect_hallucinated_text(image: Image.Image) -> Optional[str]:
     """Return the first text fragment Tesseract reads from the image with
     confidence above _OCR_MIN_CONFIDENCE, or None if the image looks clean.
@@ -4919,6 +5000,22 @@ def _generate_inner(
                 )
             else:
                 log.debug("[generate] dark-stencil check passed (style=%s)", style)
+
+        # Failure-mode check #3: flat-sticker. LOG ONLY for now — same
+        # rollout pattern as dark-stencil. Emits std-dev so we can tune
+        # the threshold from production data. Grep
+        # "[generate] flat-sticker stddev=" to see hit rate.
+        if _bg_bleed_palette:
+            stddev = _detect_flat_sticker(candidate_img, _bg_bleed_palette)
+            if stddev is not None:
+                log.warning(
+                    "[generate] flat-sticker stddev=%.2f detected on attempt %d/%d "
+                    "(style=%s) — NOT retrying yet (logging-only mode); "
+                    "shipping this candidate",
+                    stddev, ocr_attempt + 1, _OCR_MAX_REGEN + 1, style,
+                )
+            else:
+                log.debug("[generate] flat-sticker check passed (style=%s)", style)
 
         # All blocking checks passed — accept this candidate.
         raw_bytes = candidate_bytes
