@@ -1213,17 +1213,26 @@
       }, 3500);
 
       var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-      // Prefer the un-watermarked print PNG so compositing happens on a
-      // clean source. The watermarked WebP (noTextUrl, used for the
-      // gallery hero) carries the diagonal "Pet Printables" tile text —
-      // sending that to /add-name produces a result with the watermark
-      // baked in alongside the new name AND can trip the OCR guard in
-      // composite_name (it reads the watermark text in the top safe
-      // zone and skips the composite). Mirrors ProductGallery's
-      // preference order on /pages/create.
-      var addNameSource = data.noNamePrintFileUrl
-        || data.printFileUrl
-        || noTextUrl;
+      // CRITICAL: only ever pass a NO-NAME source URL. data.printFileUrl
+      // used to be in this fallback chain (commit history) but it points
+      // at the NAMED hi-res PNG — sending that to /add-name composites a
+      // SECOND name on top of the existing one and produces "ROOGEER" /
+      // "JEWILDER" double-name ghosts that no downstream idempotency
+      // guard can fully recover from. The chain now ONLY contains
+      // confirmed no-name sources:
+      //   1. noNamePrintFileUrl — un-watermarked no-name PNG (best)
+      //   2. previewUrls[0] / noTextUrl — watermarked no-name WebP
+      //      (acceptable; backend strips the watermark by re-rendering
+      //      from the source bytes)
+      // If neither exists, return early — failing loudly is far better
+      // than re-doubling a name onto an already-named file.
+      var addNameSource = data.noNamePrintFileUrl || noTextUrl;
+      if (!addNameSource) {
+        console.error('[PetPrintables] No no-name source available for /add-name — aborting');
+        setLoading(false);
+        setButtonsDisabled(false);
+        return Promise.reject(new Error('NO_NO_NAME_SOURCE'));
+      }
       return fetch(API_BASE + '/add-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
