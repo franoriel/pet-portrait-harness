@@ -672,6 +672,10 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#1B6B6E", "bg_right_name": "deep teal",
         "accents":       "warm orange (#F4A340), golden mustard (#F2CB52), warm ivory (#F4EFE7), and charcoal black (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        # Cool bg overlaps natural shadow tones in stylised pet rendering.
+        # Tighten interior snap so a midtone teal-grey shadow on the pet
+        # doesn't get snapped to canonical bg → silhouette breach.
+        "interior_tol":  50,
     },
     "cobalt": {
         "label":         "Cobalt",
@@ -679,6 +683,7 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#1B2E58", "bg_right_name": "deep navy ink",
         "accents":       "warm yellow (#F4D641), ivory (#F4EFE7), hot red (#E63946), and charcoal (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        "interior_tol":  50,
     },
     "rose": {
         "label":         "Rose",
@@ -700,6 +705,7 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#1F4A30", "bg_right_name": "deep forest green",
         "accents":       "warm mustard (#C9A352), ivory (#F4EFE7), terracotta (#C77B58), and charcoal (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        "interior_tol":  50,
     },
     "rust": {
         "label":         "Rust",
@@ -714,6 +720,9 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "bg_right_hex":  "#3F1F58", "bg_right_name": "deep aubergine purple",
         "accents":       "warm yellow (#F2CB52), ivory (#F4EFE7), hot pink (#E68FB5), and charcoal (#1B1B1B)",
         "name_ink":      "warm ivory #F4EFE7",
+        # Deep aubergine sits close to charcoal/dark-shadow tones — same
+        # over-snap risk as the other cool palettes, slightly less acute.
+        "interior_tol":  60,
     },
     "ember": {
         "label":         "Ember",
@@ -815,6 +824,34 @@ shading is one or two flat blocks following the leg axis, never curved \
 bands that snake across the body. If a shape would read as suggestive or \
 phallic in isolation, redraw it as an angular plane or merge it into the \
 adjacent block.
+- BODY RESOLUTION — CRITICAL: the pet's lower body must read as a clear, \
+readable sitting posture with FRONT PAWS visible at the bottom. The chest \
+blaze and the front legs are DISTINCT shapes that meet at the chest's \
+bottom edge, not a single fused heart-shaped or shield-shaped blob. The \
+silhouette from neck to floor must show: (1) a defined chest area in the \
+middle, (2) two front legs/forepaws as broad parallel masses on either \
+side of the chest, (3) two visible front paws at the very bottom edge \
+sitting flush at the canvas floor. NEVER let the legs disappear into a \
+fluffy chest mass; NEVER end the body in a single pointy V-shape; NEVER \
+merge the chest blaze with the front legs into one shield-like silhouette. \
+The pet should read as anatomically articulated — a viewer should be \
+able to trace a finger along the silhouette and identify where chest ends \
+and legs begin. RECURRING FAILURE MODE TO AVOID: a fluffy long-coated dog \
+(Goldendoodle, Maltipoo, Bichon, Cavoodle) rendered with all the lower-\
+body fur fused into a single drooping heart/shield blob with no visible \
+legs or paws — this reads as a children's book illustration, not the \
+editorial vector portrait we ship.
+- AESTHETIC PUSH — CRITICAL: bias the entire rendering toward EDITORIAL \
+SOPHISTICATION. The reference is a magazine illustration, a Spotify \
+Wrapped portrait, an Apple TV+ character key art card. NOT a Disney \
+mascot, NOT a children's storybook page, NOT a pet birthday card, NOT a \
+greeting-card-aisle "fur baby" sticker. Specific tells that this rule \
+is being violated: oversized doe-eyes, exaggerated cute proportions, \
+soft pastel-rainbow palettes, smiling mouth-opening animation, "kawaii" \
+roundness. If the result feels like it could go on a child's bedroom \
+wall to make them smile, you have over-cartooned it; pull back toward \
+"this is a refined art print someone in their 30s would hang in a calm \
+adult living room."
 - THE PET IS THE ONLY SUBJECT. Do NOT add decorative elements, abstract \
 shapes, arcs, circles, dots, foliage, halos, frames, or any other graphic \
 ornaments around the pet. The composition is just the pet on a single \
@@ -928,8 +965,11 @@ through plum + ivory + deep aubergine blocks (NOT charcoal). Preserve \
 the recognisable identity of the specific pet — the breed shape, the \
 head angle, any major chest blaze or markings — but always through \
 the chosen palette's accent colours.
-- Eye placement and head angle stay TRUE to the source photo, but the \
-eyes themselves are stylised as flat angular slit shapes (see STYLE).
+- Eye placement, gaze direction, and head angle stay TRUE to the \
+source photo. The eyes themselves are stylised as bold OPEN graphic \
+shapes — flat polygonal iris + flat polygonal pupil — that engage \
+the viewer (see STYLE). The pet must look ALIVE and ALERT, never \
+asleep, never squinting.
 - BG / PET CONTRAST IS NON-NEGOTIABLE: the pet's silhouette MUST read \
 distinctly against BOTH bg halves — left and right. NEVER use a pet \
 facet colour that shares a hue or lightness with either bg colour. \
@@ -960,19 +1000,158 @@ drawn from this palette only: {{POSTER_ACCENTS}}. Repeat colours \
 across multiple blocks to create rhythm.
 - NO gradients, NO airbrush, NO soft shading, NO photographic detail, \
 NO drawn fur strands. Each block is uniformly flat colour.
-- Eyes are stylised as a single dark angular SLIT or NARROW WEDGE — a \
-closed-eye / half-closed expression. NO whites, NO iris detail, NO \
-catchlight, NO pupil dot. Where the pet was looking forward in the \
-photo, render two small angular dark slits where the eyes sit; the \
-faceted blocks of the face flow around them.
+
+PET FILL — CRITICAL (anti-stencil rule):
+- The pet's silhouette is FULLY OPAQUE. Every single pixel inside the \
+pet's outline is filled with one of the {{POSTER_ACCENTS}} palette \
+colours (the ONE exception is the tongue — see TONGUE EXCEPTION \
+below). The background colour NEVER shows through the pet — there \
+are NO transparent gaps, NO holes, NO slivers of bg colour visible \
+inside the silhouette. If you traced the pet's outline and flood- \
+filled the inside, every pixel in the fill region would be a palette \
+accent or the tongue carve-out colour (no pixel inside the silhouette \
+is the bg's left-half hex or right-half hex — those colours live \
+ONLY outside the pet).
+- TONGUE EXCEPTION — the ONE pixel-level override of the palette-only \
+rule: if the source photo shows the pet's tongue (open-mouth panting \
+smile, lolling tongue, visible inside-of-mouth), render the tongue \
+as a single flat warm CORAL-PINK polygon (#E07A6B). This is the \
+ONLY area inside the pet's silhouette that may sit outside the \
+{{POSTER_ACCENTS}} palette. Reason: a tongue rendered in any palette \
+accent (teal, charcoal, ochre, ivory, mustard, etc.) reads as a sick \
+/ poisoned / dead animal — pink is universally read as "alive and \
+happy," and a non-pink tongue collapses the joyful pet-portrait vibe \
+into uncanny-valley creep. The tongue polygon gets the same flat- \
+faceted treatment as everything else (one flat block, sharp clean \
+edges, no gradient, no shading). Mouth interior shadow behind the \
+tongue, if shown, uses the palette's darkest accent. RECURRING \
+FAILURE MODE TO AVOID: tongue rendered in teal / blue / charcoal / \
+ivory / ochre / any non-pink colour — FORBIDDEN. The tongue is \
+always a clean flat coral-pink polygon, regardless of which palette \
+the customer picked.
+- Use AT LEAST 4 distinct palette colours across the pet's body — \
+never collapse to a single dark stamp. Light-coat areas (cheeks, brow, \
+chest blaze, muzzle highlights) use the palette's LIGHTER accents; \
+shadow-coat areas (ear interiors, eye sockets, jaw underside, chest \
+shadow) use the palette's DARKER accents; mid-tones use the medium \
+accents. The pet should read like image 2 in our reference set: a \
+FULLY-COLOURED cubist mosaic with visible peach/cream/mustard/etc. \
+facets across the body, not a dark silhouette on coloured paper.
+- Each colour block has VISUAL MASS — it's a confident polygonal area, \
+not a hairline sliver, not a thin angular stroke. Blocks are SHAPES, \
+not LINES. If a "block" is so narrow it reads as a stroke or pen mark, \
+it's wrong; widen it into a clear flat-fill polygon.
+- RECURRING FAILURE MODE TO AVOID: the pet rendered as a flat dark \
+stencil / ink stamp / silhouette made of thin angular dark strokes, \
+with the background colour visible through the gaps where the \
+"strokes" don't cover. This is FORBIDDEN. The pet is NOT an inked \
+overlay on top of the bg; the pet is a fully-painted cubist mosaic \
+where every internal pixel is a palette accent colour. If the result \
+looks like a coloring-book outline that hasn't been filled in yet, \
+or like a dark sticker placed on a flat coloured card, the image is \
+wrong. Compare against the WPAP / Tsevis reference: every facet of \
+the pet is a confident filled colour block, not a line drawing.
+- Eyes are stylised as bold OPEN graphic shapes — vector-icon eyes \
+that lock with the viewer (or follow whatever gaze direction the \
+source photo shows). Each eye is exactly TWO flat polygonal colour \
+blocks: an IRIS (a single uniform palette accent — typically a \
+warmer mid-accent like ochre / mustard / peach / blush, OR ivory / \
+cream for darker pets where ivory contrasts the face blocks) and a \
+PUPIL (a single solid polygon in the palette's DARKEST accent — \
+charcoal / aubergine / deep navy / etc.). The pupil sits inside \
+the iris, positioned to match the gaze direction in the source \
+photo (forward = pupil centred; slight off-camera tilt = pupil \
+shifted to that side). Eye SHAPE follows the source: round eyes \
+get round-ish polygons, almond eyes get almond polygons, alert \
+eyes are wide, relaxed eyes are softer — but the eyes are always \
+clearly OPEN.
+- EYE FLATNESS — HARD RULE (preserve the WPAP vector aesthetic): \
+NO catchlights, NO white glints, NO sparkle dots, NO sclera (no \
+"whites of the eye" visible — the iris fills the entire visible \
+eye opening). NO gradient WITHIN the iris from light to dark. NO \
+secondary ring of a different colour around the pupil. NO drop \
+shadow of the upper eyelid onto the eye. Two flat polygonal blocks \
+per eye — iris + pupil — and that's the entire eye. Same vector- \
+icon treatment a screen-print designer would draw with two filled \
+paths in Illustrator. The eye reads as graphic and iconic, NOT as \
+anatomically rendered with depth or moisture.
+- EYE FILL — HARD RULE: neither the iris nor the pupil polygon is \
+ever filled with {{POSTER_BG_LEFT_HEX}} ({{POSTER_BG_LEFT_NAME}}) \
+or {{POSTER_BG_RIGHT_HEX}} ({{POSTER_BG_RIGHT_NAME}}) — the bg \
+colours NEVER appear inside the pet, including inside the eye \
+shapes. The iris uses a palette accent that visibly contrasts the \
+immediately surrounding face blocks, so the eye reads as a discrete \
+shape rather than disappearing into the cheek.
+- EYE SIZE — HARD RULE (anti-slit, anti-sleeping): each eye iris is \
+a substantial polygonal shape whose vertical extent is AT LEAST 6% \
+of the head's height — visible from across the room. Iris height-\
+to-width ratio sits in the 0.7–1.1 range (round-ish to softly \
+almond). Iris height less than 5% of head height = WRONG. Iris \
+height-to-width ratio under 0.4 (a thin horizontal sliver) = WRONG. \
+Both eyes are clearly OPEN, visibly engaging the viewer.
+- FLUFFY-FACED BREED OVERRIDE — CRITICAL: for breeds with long fur \
+covering the face (Goldendoodle, Maltipoo, Shih Tzu, Yorkie, Lhasa \
+Apso, Old English Sheepdog, Bichon, Cocker Spaniel, Cavoodle, any \
+"teddy-bear" or "doodle" mix), the source photo OFTEN shows the \
+eyes partially or fully covered by fur strands hanging over the \
+brow. In the rendered portrait, the eyes MUST still be drawn as \
+FULLY OPEN, FULLY VISIBLE iconic polygonal shapes at the size rule \
+above — render the pet AS IF the fur has been gently brushed away \
+from the eyes for a clean portrait. Use the breed's normal eye \
+shape (round, dark, alert) rather than copying the obscured-by-\
+fur appearance from the photo. NEVER render closed slits, hidden \
+eyes, fur-only zone where eyes should be, or "looking through fur" \
+effects. The customer wants a portrait that captures their pet's \
+SPIRIT and GAZE, not a literal redraw of an awkward photo angle.
+- CAT OVERRIDE — CRITICAL: cats in source photos OFTEN have \
+naturally squinted, half-closed, or near-closed eyes (sunshine \
+photos, contented "loaf" pose, slow-blink trust gesture). Render \
+cat eyes in the portrait as FULLY OPEN with the iris clearly \
+visible — round-to-almond polygons at the EYE SIZE minimum above. \
+Cat irises typically show the breed's natural eye colour (gold, \
+green, copper, blue, ice) — pick the closest palette accent. Cats \
+have vertical slit pupils when alert in bright light; render the \
+PUPIL as a vertical narrow shape inside the iris (this is the cat- \
+specific iconic detail), but the IRIS itself is wide-open and \
+visible — not the whole eye reduced to a horizontal slit. NEVER \
+render cat eyes as horizontal slits, sleeping crescents, contented \
+half-moons, or zen-meditating squints — those collapse the portrait \
+into a "sleepy cat sticker" instead of a confident vector portrait. \
+The owner wants their cat to look ALERT and ENGAGING, not asleep.
+- RECURRING FAILURE MODE TO AVOID #1: eyes rendered as closed slits, \
+narrow wedges, squinted half-moons, sleeping-emoji curves, or thin \
+horizontal lines — the pet must look ALIVE and ALERT, never asleep, \
+never squinting, never zen-meditating. Closed or near-closed eyes \
+on a commercial pet portrait read as sleeping, sick, or dead, which \
+is the opposite of the joyful "beloved family pet" vibe we ship. \
+RECURRING FAILURE MODE TO AVOID #2: eyes rendered in the bg colour \
+so they read as empty sockets / hollow holes / the bg showing \
+through, making the pet look eyeless or zombie-like. RECURRING \
+FAILURE MODE TO AVOID #3: eyes hidden behind fur strands or omitted \
+entirely on long-coated breeds — see FLUFFY-FACED BREED OVERRIDE. \
+All three failure modes are FORBIDDEN.
 - The nose is a single dark angular polygonal block. The muzzle / mouth \
 line is implied by the meeting edge of two adjacent colour blocks, not \
 drawn as a stroke.
 - Fur direction along the chest and edges of the silhouette is implied \
 by ZIG-ZAG triangular block patterns (alternating light/dark wedges \
 running along the contour) — never by drawn fur strands.
-- Mid-century WPAP / Tsevis / Fairey "Obey" graphic energy: high \
-contrast, bold saturated colour, posterised, screen-print feel.
+- WPAP / Tsevis cubist-vector graphic energy: high contrast, bold \
+saturated colour, posterised, geometric. The reference is a CLEAN \
+DIGITAL VECTOR ILLUSTRATION (Adobe Illustrator output) — NOT a \
+screen-print, NOT silk-screened ink, NOT distressed Risograph, NOT \
+hand-pulled poster art.
+- ABSOLUTELY NO TEXTURE OF ANY KIND inside any colour block. Each \
+polygon is a SINGLE flat solid hex value, edge to edge. NO ink \
+spatter, NO ink grain, NO halftone dots, NO Risograph misalignment, \
+NO paper-fibre texture, NO grunge, NO distressed edges, NO noise, \
+NO film grain, NO dust scratches, NO worn-printed-poster effect, \
+NO weathered look. The output should look like a vector file, not a \
+photographed silk-screen poster. RECURRING FAILURE MODE TO AVOID: \
+the model adds a subtle gritty / weathered / inked texture to every \
+colour block to "feel like a real print" — this is FORBIDDEN. The \
+print produces texture from the canvas weave; the artwork file is a \
+clean flat-colour vector composition.
 - Fine art illustration style, high resolution 300dpi, print-ready.
 
 BACKGROUND — VERTICAL TWO-TONE SPLIT (CRITICAL):
@@ -1087,22 +1266,53 @@ still ships the chest intact.
 
 Avoid: photography, photorealism, soft or curved edges WITHIN the pet, \
 gradients, watercolor, painterly strokes, 3D render, blurry, detailed \
-fur texture, drawn fur strands, hatching, eye whites, irises, pupils, \
-catchlights, eyelashes, decorative shapes, foliage, props, halos, \
-frames, framed-art look, poster-pinned-to-wall look, inset rectangle \
-behind the pet, nested background rectangles, darker rectangular block \
-surrounding the pet, four-quadrant background, vertical edge strip, \
-vertical pillar or sidebar at left or right edge, three-region \
-vertical background, additional vertical seams beyond the central one, \
-darker corner patch, top-left corner rectangle, top-right corner \
-rectangle, bottom-left corner rectangle, bottom-right corner \
-rectangle, L-shaped corner shadows, triangular corner gradients, \
-window-frame look, picture-rail moulding, cropped wall panel, \
-photographed-corner-of-room look, more than two background colours, \
-horizontal background splits, diagonal background splits, curved \
-background seams, gradient backgrounds, off-centre seam, background \
-patterns, drop shadows, text, watermark, border, solid color bars or \
-panels at image edges.\
+fur texture, drawn fur strands, hatching, eye whites / sclera, gradient- \
+filled iris, secondary iris ring, catchlights, white glints in the \
+eye, sparkle dots, eyelashes, closed slit eyes, half-closed eyes, \
+squinted eyes, sleeping-emoji eye curves, asleep / zen / meditating \
+expression, teal tongue, blue tongue, charcoal tongue, ivory tongue, \
+any non-pink tongue, stencil look, ink-stamp look, sticker look, \
+silhouette with bg showing through, dark angular strokes overlaid on \
+flat bg, coloring-book outline, hollow pet figure, single-colour pet \
+stamp, monochrome pet on coloured field, thin sliver "blocks", \
+hairline angular strokes inside the pet, decorative shapes, foliage, \
+props, halos, frames, framed-art look, poster-pinned-to-wall look, \
+inset rectangle behind the pet, nested background rectangles, darker \
+rectangular block surrounding the pet, four-quadrant background, \
+vertical edge strip, vertical pillar or sidebar at left or right edge, \
+three-region vertical background, additional vertical seams beyond \
+the central one, darker corner patch, top-left corner rectangle, \
+top-right corner rectangle, bottom-left corner rectangle, \
+bottom-right corner rectangle, L-shaped corner shadows, triangular \
+corner gradients, window-frame look, picture-rail moulding, cropped \
+wall panel, photographed-corner-of-room look, more than two \
+background colours, horizontal background splits, diagonal background \
+splits, curved background seams, gradient backgrounds, off-centre \
+seam, background patterns, drop shadows, text, watermark, border, \
+solid color bars or panels at image edges.
+
+FINAL CHECK BEFORE OUTPUT — TEXT-FREE GUARANTEE (CRITICAL — read this LAST):
+- Scan the WHOLE canvas, especially the empty bg band above the pet's \
+head. The image contains ZERO letters, ZERO words, ZERO glyphs, ZERO \
+numerals, ZERO letterforms of ANY alphabet (Latin, Cyrillic, CJK, \
+Arabic — none), ZERO character-shaped curves, ZERO inscriptions, \
+ZERO captions, ZERO signatures, ZERO date stamps, ZERO logos.
+- NO pet name anywhere on the canvas. NO "JIM", NO "MAX", NO any \
+name. The pet's name is composited onto the image LATER by a separate \
+typography pipeline at a precise position with a chosen typeface — \
+your job is to deliver a CLEAN portrait with a LETTER-FREE band of \
+clean bg colour above the pet's head where the typography pipeline \
+will place the name.
+- RECURRING FAILURE MODE TO AVOID: rendering 2-4 stylized cubist \
+glyphs at the top of the canvas to "feel like a poster." This is \
+FORBIDDEN — when the typography pipeline composites the customer's \
+real pet name on top, the result is overlapping illegible text \
+("JJ I'M" / "JEWILDER" / "MAXMAXX" effects) that looks like a bug \
+to the customer. The TOP 22% of the canvas must be uninterrupted \
+flat bg colour from the canvas edge down to the pet's ear tips, with \
+no decoration of any kind in that band.
+- If ANY shape inside the image resembles a letter, redraw it as a \
+non-letter polygonal shape or remove it entirely.\
 """
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
@@ -1308,10 +1518,24 @@ above the ears.
 - BOTTOM SILHOUETTE — CRITICAL: the chest must dissolve organically into the \
 paper texture with looser strokes, never end in a flat horizontal cut.
 - BACKGROUND: warm cream paper texture (#F4EFE7 base) with subtle organic \
-paper-fibre grain extending uniformly to all four edges. The same cream tone \
-in every corner. NO rectangles, NO frames, NO inner panel of a different \
-shade, NO mat, NO border, NO letterbox bar, NO geometric splits. Pet and \
-paper are drawn in the same medium in the same pass.
+paper-fibre grain extending uniformly to all four edges. The cream hue is \
+the EXACT SAME RGB tone in every region of the canvas — top edge, bottom \
+edge, all four corners, behind the pet, above the pet, in the upper safe \
+zone. The paper does NOT shift warmer near the top, cooler near the bottom, \
+or pinker / rosier / peachier in any region. NO rectangles, NO frames, NO \
+inner panel of a different shade, NO mat, NO border, NO letterbox bar, NO \
+geometric splits, NO tea-stain wash, NO aged-paper vignette, NO subtle \
+pink / rose / peach cast at the edges or corners, NO colour gradient \
+across the paper. Pet and paper are drawn in the same medium in the same \
+pass.
+- RECURRING FAILURE MODE TO AVOID: a faint rosy / warm-pink / peach cast \
+across the top portion of the canvas (especially in the upper safe zone \
+or above the pet's head) — Gemini sometimes mimics aged-paper / \
+tea-stained-paper / vintage-photograph effects that introduce a localised \
+warm tint. The paper is FLAT uniform #F4EFE7 cream — never a rosy wash, \
+never a warm vignette, never a coloured halo around the pet. If any pixel \
+in the bg is more saturated than the base cream (e.g. a pink-tinted band \
+along the top or a peachy glow behind the pet), the image is wrong.
 - Do NOT include any text, words, letters, watermarks, or signatures anywhere.
 
 Avoid: photography, photorealism, oil paint, watercolor, ink wash, neon, \
@@ -1405,9 +1629,27 @@ edges, no curtain folds, no window frames.
 concrete, no marble, no granite, no fabric, no leather, no metal. \
 Just clean white watercolor paper with the watercolor wash painted \
 on it. RECURRING FAILURE MODE TO AVOID: faint horizontal pencil-like \
-streaks running across the lower third of the canvas (the model \
-imagining a wooden floor or shelf the pet is on). DO NOT add these \
-streaks at any opacity.
+streaks running across the lower third of the canvas, OR drifting \
+across the RIGHT or LEFT third at chest/leg height (the model \
+imagining a wooden floor, shelf, table edge, baseboard, or counter \
+the pet is on or near). DO NOT add these streaks at any opacity, \
+in any colour, at any length, anywhere on the canvas — including \
+short fragments that only span 10-30% of the width. If a viewer can \
+trace a straight or near-straight horizontal segment on the canvas, \
+the image is wrong.
+
+WASH SHAPE — CRITICAL:
+- The wash is a SOFT, ROUNDED, ORGANIC HALO around the pet. Edges of \
+the wash are irregular petal shapes, lobed and curved, with feathered \
+wet-on-wet bleeds. The wash CAN and SHOULD bleed and wrap around the \
+sides of the canvas — that is encouraged — but ONLY as soft rounded \
+bleeds, never as straight bands or horizontal striations.
+- The wash NEVER has a straight edge. Not at the top, not at the \
+bottom, not at either side. No flat horizon, no flat shoreline, no \
+flat baseline, no ruled-line termination. If the wash thins out or \
+fades, it does so in soft scalloped curves, not in straight cuts.
+- Splatters and dots are fine. Lines are not. A "splash" is allowed; \
+a "stripe" is not.
 
 WATERCOLOR WASH COVERAGE — CRITICAL:
 - The painted watercolor wash (the soft wet bleeds, washes, and color halo \
@@ -1458,13 +1700,307 @@ Avoid: photography, photorealism, harsh shadows, dark background, pixelation, \
 blurry, low resolution, cartoon, anime, 3D render, clipping, text, watermark, border, \
 narrow watercolor wash column with bare white paper at the sides, \
 horizontal streaks, horizontal lines, horizontal bands, horizontal stripes, \
+horizontal pencil marks, faint horizontal scuffs, ruled-out floor lines, \
+right-side floor streaks, left-side floor streaks, partial horizontal \
+fragments behind the pet's legs or chest, straight wash edges, ruled \
+wash terminations, flat-bottomed wash, flat-topped wash, \
 top tint band, top colour band, top warm-cream band over cooler paper, \
 horizontal seam between a tinted top zone and the rest of the canvas, \
 visible y-axis colour transition at any height, two-tone paper split, \
 wood grain, wood panelling, shiplap, plank lines, floorboards, shelf, \
-table, wall texture, surface texture behind the pet, ruled lines, \
-banding, scanner lines.\
+table, table edge, counter line, baseboard, wall texture, surface \
+texture behind the pet, ruled lines, banding, scanner lines.\
 """
+
+def _trim_off_palette_margin(
+    img: Image.Image,
+    palette: dict[str, str],
+    bg_match_tol: int = 70,
+    row_threshold: float = 0.55,
+) -> Image.Image:
+    """Crop perimeter rows/columns that don't match the canonical bg.
+
+    Generalizes the old "_trim_cream_margin" helper. Any margin row/col
+    where fewer than `row_threshold` of pixels are within `bg_match_tol`
+    RGB distance of EITHER canonical bg colour gets trimmed.
+
+    Catches both directions of Gemini's edge-to-edge failures:
+      - cream / near-white sliver above the colored split (old bug)
+      - subtle perimeter darkening / vignette (new bug — visible as a
+        darker frame between the bleed and the actual artwork in the
+        printed canvas mockup)
+
+    Bails if the trim would crop more than 50% of the image (safety
+    against false positives — e.g. a very dark portrait that legitimately
+    fills the perimeter).
+    """
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+    w, h = rgb.size
+    bg_left = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+    tol_sq = bg_match_tol * bg_match_tol
+
+    try:
+        import numpy as np
+        arr = np.asarray(rgb, dtype=np.int32)
+        # Distance² to each canonical bg colour; "matches" if within tol of either.
+        dl = (arr - np.array(bg_left, dtype=np.int32)) ** 2
+        dr = (arr - np.array(bg_right, dtype=np.int32)) ** 2
+        match_left = dl.sum(axis=2) <= tol_sq
+        match_right = dr.sum(axis=2) <= tol_sq
+        match_bg = match_left | match_right
+        row_match_frac = match_bg.mean(axis=1)
+        col_match_frac = match_bg.mean(axis=0)
+    except ImportError:
+        # Pure-PIL fallback — slower but correct.
+        def _frac_match(strip: Image.Image) -> float:
+            n = strip.width * strip.height
+            if n == 0:
+                return 0.0
+            count = 0
+            for px in strip.getdata():
+                dl_v = (px[0] - bg_left[0])**2 + (px[1] - bg_left[1])**2 + (px[2] - bg_left[2])**2
+                dr_v = (px[0] - bg_right[0])**2 + (px[1] - bg_right[1])**2 + (px[2] - bg_right[2])**2
+                if dl_v <= tol_sq or dr_v <= tol_sq:
+                    count += 1
+            return count / n
+        row_match_frac = [_frac_match(rgb.crop((0, y, w, y + 1))) for y in range(h)]
+        col_match_frac = [_frac_match(rgb.crop((x, 0, x + 1, h))) for x in range(w)]
+
+    # Walk INWARD from each edge, trimming rows/columns where fewer than
+    # `row_threshold` of pixels match either canonical bg. Stop as soon as
+    # we hit a row/col that's clearly content (matches threshold).
+    top = 0
+    while top < h and row_match_frac[top] < row_threshold:
+        top += 1
+    bottom = h
+    while bottom > top and row_match_frac[bottom - 1] < row_threshold:
+        bottom -= 1
+    left = 0
+    while left < w and col_match_frac[left] < row_threshold:
+        left += 1
+    right = w
+    while right > left and col_match_frac[right - 1] < row_threshold:
+        right -= 1
+
+    if (top, left, bottom, right) == (0, 0, h, w):
+        return rgb
+    # Safety: bail if we'd crop more than 50% of either dimension. That
+    # would indicate a darker portrait whose perimeter is genuinely off-
+    # palette but still legitimate — better to leave it than gouge the
+    # artwork.
+    if (bottom - top) < int(h * 0.5) or (right - left) < int(w * 0.5):
+        log.info(
+            "bold-graphic-poster: skipped trim (would crop >50%%): top=%d left=%d bottom=%d right=%d",
+            top, left, h - bottom, w - right,
+        )
+        return rgb
+    log.info(
+        "bold-graphic-poster: trimmed off-palette margin top=%d left=%d bottom=%d right=%d (was %dx%d)",
+        top, left, h - bottom, w - right, w, h,
+    )
+    return rgb.crop((left, top, right, bottom))
+
+
+def _pad_split_bg(
+    img: Image.Image,
+    palette: dict[str, str],
+    padding_ratio: float = 0.12,
+    pad_bottom_ratio: float = 0.0,
+) -> Image.Image:
+    """Pad a bold-graphic-poster front face onto a larger canvas whose
+    bleed band is filled with the canonical 2-tone split — left half
+    bg_left, right half bg_right — extending the seam vertically.
+
+    Replaces edge-replication padding for bold-graphic-poster: when
+    Gemini leaves a sliver of cream/white outside the colored split
+    (a recurring failure mode where it doesn't honour edge-to-edge),
+    edge-replication propagates the cream into the bleed band and the
+    customer sees a visible cream border around the artwork. Drawing
+    the canonical split first and pasting the AI image centered on
+    top eliminates that whole class of error.
+
+    The AI image is pasted centered, so its internal seam (which the
+    prompt anchors at 50% of the rendered width) lines up with the new
+    canvas seam at 50% of the padded width.
+    """
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+    w, h = rgb.size
+    pad_w = int(w * padding_ratio)
+    pad_h = int(h * padding_ratio)
+    pad_b = int(h * pad_bottom_ratio)
+
+    bg_left = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+
+    target_w = w + 2 * pad_w
+    target_h = h + pad_h + pad_b
+
+    out = Image.new("RGB", (target_w, target_h), bg_left)
+    mid = target_w // 2
+    right_half = Image.new("RGB", (target_w - mid, target_h), bg_right)
+    out.paste(right_half, (mid, 0))
+    out.paste(rgb, (pad_w, pad_h))
+    return out
+
+
+def _remove_poster_halos(
+    img: Image.Image,
+    palette: dict[str, str],
+    white_tol: int = 20,
+    halo_thickness_px: int = 3,
+) -> Image.Image:
+    """Erase the thin near-white halo Gemini sometimes leaves between dark
+    line work and the colored background in bold-graphic-poster output.
+
+    Distinguishes halos from intentional white fur by THICKNESS — halos
+    are thin (1–3 px) strips at dark/bg boundaries; fur is a wider
+    connected region. Erodes the near-white mask by `halo_thickness_px`
+    to keep only "fat" white (fur), then recolors the eroded-off thin
+    strips to the local bg hex (left half → bg_left, right half → bg_right).
+
+    `white_tol=20` keeps the threshold (235 per channel) above palette
+    ivory accents like #F4EFE7 (b=231), so genuine ivory stays untouched.
+
+    Pure-PIL implementation so no scipy/cv2 dependency is needed.
+    """
+    from PIL import ImageChops, ImageFilter
+
+    img = img.convert("RGB")
+    w, h = img.size
+    bg_left = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+    mid = w // 2
+
+    # Per-channel threshold mask: pixel is "near-white" only if r,g,b all
+    # exceed (255 - white_tol).
+    threshold = 255 - white_tol
+    r, g, b = img.split()
+    mask_r = r.point(lambda v: 255 if v > threshold else 0, "L")
+    mask_g = g.point(lambda v: 255 if v > threshold else 0, "L")
+    mask_b = b.point(lambda v: 255 if v > threshold else 0, "L")
+    is_white = ImageChops.multiply(ImageChops.multiply(mask_r, mask_g), mask_b)
+    is_white = is_white.point(lambda v: 255 if v > 0 else 0, "L")
+
+    # Erode `halo_thickness_px` times — anything that survives is "fat"
+    # white (fur). Anything that doesn't is a thin halo strip.
+    fat_white = is_white
+    for _ in range(halo_thickness_px):
+        fat_white = fat_white.filter(ImageFilter.MinFilter(3))
+    halo_mask = ImageChops.subtract(is_white, fat_white)
+
+    if halo_mask.getbbox() is None:
+        return img  # no halo pixels → fast path
+
+    # Safety gate: only recolour thin whites that sit adjacent to a
+    # canonical-bg pixel (because _flatten_poster_bg ran first, "canonical
+    # bg" means an exact RGB match with bg_left or bg_right). Thin whites
+    # *inside* the pet (e.g. a narrow neck of white fur connecting two
+    # wider patches) are surrounded by pet colours, not bg, so they fall
+    # outside the dilated bg mask and stay untouched.
+    def _exact_match_mask(channel: Image.Image, target: int) -> Image.Image:
+        return channel.point(lambda v, t=target: 255 if v == t else 0, "L")
+
+    bg_left_mask = ImageChops.multiply(
+        ImageChops.multiply(_exact_match_mask(r, bg_left[0]), _exact_match_mask(g, bg_left[1])),
+        _exact_match_mask(b, bg_left[2]),
+    )
+    bg_right_mask = ImageChops.multiply(
+        ImageChops.multiply(_exact_match_mask(r, bg_right[0]), _exact_match_mask(g, bg_right[1])),
+        _exact_match_mask(b, bg_right[2]),
+    )
+    is_bg = ImageChops.add(bg_left_mask, bg_right_mask).point(
+        lambda v: 255 if v > 0 else 0, "L"
+    )
+    # Dilate bg mask by halo_thickness_px + 2 so any halo pixel within
+    # that distance of a bg pixel is gated in.
+    bg_dilated = is_bg
+    for _ in range(halo_thickness_px + 2):
+        bg_dilated = bg_dilated.filter(ImageFilter.MaxFilter(3))
+    halo_mask = ImageChops.multiply(halo_mask, bg_dilated).point(
+        lambda v: 255 if v > 0 else 0, "L"
+    )
+
+    if halo_mask.getbbox() is None:
+        return img
+
+    # Build a "left bg | right bg" composite that covers the whole canvas,
+    # then paste through the halo mask so only halo pixels get recoloured.
+    bg_full = Image.new("RGB", (w, h), bg_left)
+    right_half = Image.new("RGB", (w - mid, h), bg_right)
+    bg_full.paste(right_half, (mid, 0))
+
+    out = img.copy()
+    out.paste(bg_full, (0, 0), halo_mask)
+    log.info(
+        "bold-graphic-poster: halo removed (mask bbox=%s)",
+        halo_mask.getbbox(),
+    )
+    return out
+
+
+def _snap_poster_to_palette(
+    img: Image.Image,
+    palette: dict[str, str],
+) -> Image.Image:
+    """Snap every pixel in the image to the NEAREST canonical palette
+    colour (bg_left, bg_right, or one of the accent hexes). Eliminates
+    Gemini's recurring failure mode of adding ink-grain / halftone /
+    distressed texture inside the polygon shapes despite the prompt's
+    "ABSOLUTELY NO TEXTURE" rule.
+
+    Result: every polygon shape is a single uniform palette colour, no
+    gradient, no noise, no texture. Reads as a clean vector
+    illustration rather than a photographed silk-screen poster.
+
+    Implementation: vectorised numpy distance computation. ~150ms on a
+    1024×1024 image with 9 palette colours.
+    """
+    import re as _re
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+
+    # Parse accent hexes from the palette's "accents" string.
+    accents_str = palette.get("accents", "")
+    accent_hexes = _re.findall(r'#[0-9A-Fa-f]{6}', accents_str)
+
+    # Build the target palette: bg_left, bg_right, accents, plus the
+    # tongue exception (warm coral pink #E07A6B for visible tongues —
+    # see the prompt's TONGUE EXCEPTION block).
+    palette_colors: list[tuple[int, int, int]] = [
+        _hex_to_rgb(palette["bg_left_hex"]),
+        _hex_to_rgb(palette["bg_right_hex"]),
+    ]
+    for hex_str in accent_hexes:
+        palette_colors.append(_hex_to_rgb(hex_str))
+    palette_colors.append((224, 122, 107))  # tongue coral
+
+    try:
+        import numpy as np
+        arr = np.asarray(rgb, dtype=np.int32)               # (H, W, 3)
+        palette_arr = np.array(palette_colors, dtype=np.int32)  # (N, 3)
+        # Compute distance from each pixel to each palette colour.
+        # Reshape so we can broadcast: arr (H,W,1,3), palette (1,1,N,3).
+        diff = arr[:, :, None, :] - palette_arr[None, None, :, :]
+        dist = (diff * diff).sum(axis=-1)                   # (H, W, N)
+        nearest = dist.argmin(axis=-1)                      # (H, W)
+        snapped = palette_arr[nearest].astype(np.uint8)     # (H, W, 3)
+        log.info(
+            "bold-graphic-poster: snapped pixels to %d-colour palette",
+            len(palette_colors),
+        )
+        return Image.fromarray(snapped, "RGB")
+    except ImportError:
+        log.warning(
+            "bold-graphic-poster: numpy not available — skipping palette snap"
+        )
+        return img
+    except Exception as exc:
+        log.warning(
+            "bold-graphic-poster: palette snap failed (%s) — returning original",
+            exc,
+        )
+        return img
+
 
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
     return _WATERCOLOR_TEMPLATE
@@ -1602,6 +2138,16 @@ corner, including the LEFT and RIGHT margins around the pet. Never leave \
 narrow strips of light or untinted paper at the sides. The dark wash is \
 unbroken, edge-to-edge, with organic painterly variation in tone but \
 never a hard boundary.
+
+WASH SHAPE — CRITICAL:
+- ABSOLUTELY NO horizontal lines, streaks, bands, stripes, ruled marks, \
+floor lines, shelf lines, table edges, baseboards, horizon lines, or \
+any straight horizontal segment anywhere on the canvas — at any opacity, \
+at any length. This includes faint pencil-like scuffs across the lower \
+or right or left third of the canvas. Recurring failure mode: the model \
+imagining a wooden floor, table, or shelf the pet is on; do NOT do this.
+- The wash is soft, rounded, organic — variation comes from wet-on-wet \
+bleeds and subtle pigment pools, never from straight strokes.
 
 NAME SAFE ZONE — CRITICAL: A handwritten pet name will be composited \
 into the TOP of the finished image. Reserve the upper ~22% of the canvas \
@@ -3262,9 +3808,16 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
             pad_bottom_ratio=0,
             target_aspect=PRINT_ASPECT_1_1,
         )
+    # pad_top_ratio dialed in over a few iterations:
+    #   0.22 → too much cream above; pet looks small / floats in empty space
+    #   0.18 → too tight; pet head close to the top edge, name pressed up
+    #   0.20 → goldilocks: head at y≈18%, name centred at y≈11% with a
+    #           clear cream band above it but no excess empty area.
+    # The original code comment ("0.20 lands head at y≈17%") matches this,
+    # so we're back to the documented target.
     return _modern_shape_art_reframe(
         image,
-        pad_top_ratio=0.22,
+        pad_top_ratio=0.20,
         pad_side_ratio=0.02,
         target_aspect=PORTRAIT_RATIO,
     )
@@ -3348,8 +3901,97 @@ def composite_name(
     add_background_padding), with auto-detected text colour for contrast
     against whatever's behind it.
     """
+    # Preserve PIL info dict (PNG metadata text chunks) across the .copy()
+    # so the metadata-based idempotency check below can see flags written
+    # by a previous composite_name pass. The default RGB.copy() preserves
+    # info; convert("RGB") on a non-RGB source does too.
+    src_info = dict(getattr(image, "info", {}) or {})
     img = image.copy() if image.mode == "RGB" else image.convert("RGB")
+    img.info.update(src_info)
     w, h = img.size
+
+    # METADATA IDEMPOTENCY GUARD — defeats the OCR limitation on cursive
+    # fonts (watercolor's Caveat script defeats Tesseract — confidence
+    # too low to trip the OCR check below — so OCR alone can't catch
+    # double-composite on watercolor). PIL's info dict carries PNG text
+    # chunks across save/load, so once composite_name has run on a
+    # source, the resulting file carries 'pp_named=1' and any subsequent
+    # composite_name pass sees it and bails. Catches every style at the
+    # earliest possible point, no Tesseract dependency.
+    if img.info.get("pp_named") == "1":
+        log.warning(
+            "[composite_name] input already carries pp_named=1 metadata — "
+            "skipping composite for pet_name='%s' to avoid double-name "
+            "ghosting.",
+            pet_name,
+        )
+        return img
+
+    # OCR-based idempotency check was REMOVED. It was causing more harm
+    # than good — false positives on cubist Modern Shape Art faces (eye
+    # shapes, ear tips, nose triangles read as letterforms by Tesseract)
+    # made composite_name skip the composite on legitimate fresh
+    # generations, producing "Yes toggled but no name visible" bugs.
+    #
+    # The structural guards above + at /add-name's URL filter cover the
+    # actual bug class (named files reused as no-name source) without
+    # needing OCR. Keeping the metadata check (pp_named) as the single
+    # idempotency layer:
+    #   - Reliable: deterministic boolean from PNG text chunks, not a
+    #     fuzzy text-detection model
+    #   - No false positives on stylized art
+    #   - Falls back to allowing the composite if metadata is absent,
+    #     which is the right default for fresh files
+    #
+    # Below the OCR-based skip is preserved as a no-op so the variable
+    # bindings and surrounding code don't error — but the threshold check
+    # is bypassed entirely.
+    # A second composite at slightly different scale / position produces
+    # ghost-doubled letters ("EDUARDO RAMIREZ" overlapping itself, JEWEL
+    # + WILDER → JEWILDER).
+    #
+    # The scan zone is the TOP 50% of the canvas — wider than the strict
+    # name-safe-zone band — because some style pipelines (e.g.
+    # _modern_open_name_band) re-canvas the image and shift an
+    # already-composited name from y≈11% to y≈30%, putting it OUTSIDE
+    # a strict top-22% scan. Top-50% catches names regardless of where
+    # earlier post-processing pushed them. Conservative alpha-char
+    # thresholds below keep false-positive risk low on stylized pet art.
+    #
+    # Falls open silently if Tesseract isn't installed (returns None) —
+    # behavior is unchanged from before in that case.
+    try:
+        # OCR-based idempotency removed (see comment above). Run the
+        # detector for diagnostic logging only — the result NEVER causes
+        # composite_name to skip. This way ops can still grep the logs
+        # for unexpected text in inputs to investigate manually, without
+        # the false-positive UX bug of skipping legitimate composites.
+        name_band_h = max(1, int(h * 0.50))
+        name_band = img.crop((0, 0, w, name_band_h))
+        existing_text = _detect_hallucinated_text(name_band)
+        normalized = (existing_text or "").strip()
+        if existing_text and len(normalized) >= 4 and sum(1 for c in normalized if c.isalpha()) >= 4:
+            # Logged at info level — composite_name proceeds anyway since
+            # the metadata check is the only guard that actually skips.
+            log.info(
+                "[composite_name] OCR detected text '%s' in input top 50%% "
+                "(pet_name='%s'). NOT skipping — pp_named metadata is the "
+                "authoritative idempotency check. If you see double-name "
+                "ghosting, the source URL is bypassing the /add-name "
+                "_named filter.",
+                existing_text, pet_name,
+            )
+        elif existing_text:
+            log.debug(
+                "[composite_name] OCR found short/noisy text '%s' (len=%d, "
+                "alpha=%d) — likely false positive on stylized art, "
+                "proceeding with composite for pet_name='%s'.",
+                existing_text, len(normalized),
+                sum(1 for c in normalized if c.isalpha()),
+                pet_name,
+            )
+    except Exception as exc:
+        log.debug("[composite_name] OCR pre-check skipped: %s", exc)
 
     # Get style-specific config
     cfg = STYLE_TEXT_CONFIG.get(style, _DEFAULT_TEXT_CONFIG)
@@ -3392,6 +4034,25 @@ def composite_name(
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
 
+    # AUTO-FIT — long names ("JORDAN" + a 0.04 letter-spacing on the
+    # bold-graphic-poster style adds ~25% width overhead, "Eduardo
+    # Ramirez" pushes to ~95% of canvas width at the default size_ratio)
+    # would render past the canvas edge and get clipped at print time
+    # ("JORDAN" → "JORDA"). Shrink the font until the text fits within
+    # 88% of the canvas width, leaving 6% margin on each side. The
+    # minimum 16px floor still applies (set above) so we never render
+    # illegible text — we just shrink to fit.
+    max_text_width = int(w * 0.88)
+    if text_w > max_text_width and text_w > 0:
+        shrink = max_text_width / text_w
+        new_size = max(16, int(font_size * shrink))
+        if new_size < font_size:
+            font_size = new_size
+            font = get_font(font_size, style=style)
+            bbox = draw.textbbox((0, 0), name, font=font)
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
+
     # zone_top is now the VERTICAL CENTRE of the name as a fraction of
     # canvas height — interpreted as "halfway between the top of the
     # canvas and the top of the pet's head." The rendered text is
@@ -3412,6 +4073,12 @@ def composite_name(
 
     draw.text((text_x, text_y), name, fill=text_color, font=font)
 
+    # Stamp idempotency metadata. Callers MUST pass pnginfo through to
+    # img.save() for this to persist on disk — see _save_with_pp_named()
+    # for the helper. Without that, the metadata lives only in memory.
+    img.info["pp_named"] = "1"
+    img.info["pp_named_value"] = (pet_name or "").strip()[:60]
+
     # Note: we no longer call _tighten_top_after_name here. The raw
     # no-name master is already pre-tightened (in `generate`) before
     # composite_name ever sees it, so a second tighten here would
@@ -3419,6 +4086,23 @@ def composite_name(
     # canvas top edge. The pre-tighten alone gives the name a
     # comfortable margin below the canvas top.
     return img
+
+
+def _save_with_pp_named(img: Image.Image, path: Path, **save_kwargs) -> None:
+    """Save a composited PIL image to PNG with the pp_named=1 metadata
+    chunk preserved. Use this in place of img.save(...) for any image
+    that has been through composite_name — it ensures the idempotency
+    flag survives across the save/load roundtrip so a later composite_name
+    pass on the same file early-exits instead of doubling the name.
+    """
+    from PIL import PngImagePlugin
+    pnginfo = save_kwargs.pop("pnginfo", None) or PngImagePlugin.PngInfo()
+    if img.info.get("pp_named") == "1":
+        pnginfo.add_text("pp_named", "1")
+        pp_val = img.info.get("pp_named_value") or ""
+        if pp_val:
+            pnginfo.add_text("pp_named_value", str(pp_val)[:60])
+    img.save(path, "PNG", pnginfo=pnginfo, **save_kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -3429,7 +4113,13 @@ def composite_name(
 # 70 is the conventional "very likely real text" threshold; lower values
 # pick up too many false positives from pet anatomy (eyes ≈ "O", nose
 # triangle ≈ "v", etc.) on stylised illustrations.
-_OCR_MIN_CONFIDENCE = 70
+# Lowered from 70 → 50 to catch cubist hallucinations on Bold Graphic
+# Poster / Modern Shape Art outputs. Gemini regularly slips stylized
+# letterforms ("MUS", "TRA", etc.) into the forehead/ear region; at
+# 70 confidence Tesseract often missed them on bold-poster fonts. 50
+# triggers more retries (slightly slower generation) but eliminates
+# the visible-glyph failure mode customers were seeing repeatedly.
+_OCR_MIN_CONFIDENCE = 50
 
 # Words shorter than this are ignored — single stray glyphs are almost
 # always anatomy mis-read by Tesseract, not actual hallucinated text.
@@ -3798,6 +4488,25 @@ def add_name_to_image(
     raise last_exc  # type: ignore[misc]
 
 
+# Variation hints appended to the prompt when the customer regenerates
+# the same photo + style combo. Bold Graphic Poster's tightly-constrained
+# output space causes Gemini to converge on near-identical compositions
+# from the same input — even with different uuids and different R2 keys,
+# customers see "the same image" twice in the cart and assume one was
+# overwritten. Picking one of these per generation breaks the convergence
+# without changing the baseline aesthetic.
+_VARIATION_HINTS = (
+    "Lean toward the cooler end of the accent palette in the pet's shading.",
+    "Lean toward the warmer end of the accent palette in the pet's shading.",
+    "Favor slightly larger polygonal shapes inside the pet silhouette.",
+    "Favor slightly smaller polygonal shapes for finer faceting detail.",
+    "Tilt the head a touch toward the camera-left side.",
+    "Tilt the head a touch toward the camera-right side.",
+    "Render with a marginally tighter crop on the head and chest.",
+    "Render with a marginally wider framing — slightly more bg around the pet.",
+)
+
+
 def call_gemini(
     photo_path: Path,
     style: str,
@@ -3805,12 +4514,18 @@ def call_gemini(
     max_retries: int = 2,
     pet_name: str = "",
     background_mode: Optional[str] = "auto",
+    variation_seed: Optional[int] = None,
 ) -> bytes:
     """Send photo + prompt to Gemini; return raw PNG/JPEG bytes of the generated image.
 
     When pet_name is provided, the name is integrated into the artwork natively
     (hand-painted into watercolor, engraved into renaissance, etc.) rather than
     composited as a flat text overlay afterward.
+
+    When variation_seed is provided, a small variation hint is appended to the
+    prompt so re-generations of the same (photo, style) combo produce visibly
+    different outputs. The customer-visible baseline stays the same on the
+    first generation (no seed → no hint).
 
     Retries transient failures with exponential backoff.
     """
@@ -3824,6 +4539,13 @@ def call_gemini(
             _resolve_prompt_body(style, style_vars, background_mode)
             + _composition_rule(has_name=False)
             + _NO_BORDER_RULE
+        )
+    if variation_seed is not None:
+        hint = _VARIATION_HINTS[variation_seed % len(_VARIATION_HINTS)]
+        prompt = prompt + "\n\nVARIATION FOR THIS RENDER: " + hint
+        log.info(
+            "[generate] variation_seed=%d → hint='%s'",
+            variation_seed, hint[:60],
         )
 
     last_exc: Optional[Exception] = None
@@ -3892,6 +4614,7 @@ def generate(
     output_dir: Optional[Path] = None,
     style_vars: Optional[dict] = None,
     background_mode: Optional[str] = "auto",
+    variation_seed: Optional[int] = None,
 ) -> tuple[Path, Path, Path, Path]:
     """
     Generate a portrait and composite the pet name onto it.
@@ -3913,7 +4636,10 @@ def generate(
         raise RuntimeError("BUSY")
 
     try:
-        return _generate_inner(photo_path, pet_name, style, output_dir, style_vars, background_mode)  # type: ignore[return-value]
+        return _generate_inner(  # type: ignore[return-value]
+            photo_path, pet_name, style, output_dir, style_vars,
+            background_mode, variation_seed,
+        )
     finally:
         _generation_semaphore.release()
 
@@ -3925,6 +4651,7 @@ def _generate_inner(
     output_dir: Optional[Path],
     style_vars: Optional[dict],
     background_mode: Optional[str] = "auto",
+    variation_seed: Optional[int] = None,
 ) -> tuple[Path, Path]:
     import uuid as _uuid
     out = output_dir or OUTPUT_DIR
@@ -3966,7 +4693,9 @@ def _generate_inner(
     ai_image_no_name: Optional[Image.Image] = None
     for ocr_attempt in range(_OCR_MAX_REGEN + 1):
         candidate_bytes = call_gemini(
-            photo, style, style_vars, pet_name="", background_mode=background_mode
+            photo, style, style_vars, pet_name="",
+            background_mode=background_mode,
+            variation_seed=variation_seed,
         )
         candidate_img = Image.open(BytesIO(candidate_bytes))
         candidate_img.load()
@@ -4029,31 +4758,59 @@ def _generate_inner(
                 pad_bottom_ratio=0,
             )
         elif style == "bold-graphic-poster":
-            # Cubist 2-tone vertical-split bg: corner-sampling would average
-            # the left + right halves into a meaningless mid-tone (and a
-            # solid fill would smother the seam). Edge replication is the
-            # right call here — the pet keeps ~8-12% clean bg on each side
-            # per the composition rule, so the left + right edges are pure
-            # bg. Replication preserves left-half colour on the left pad,
-            # right-half colour on the right pad, and (since the top-edge
-            # 1px strip carries the seam at 50%) the seam itself extends
-            # vertically into the top pad.
-            padded = add_background_padding(
-                ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
-            )
-            # BG FLATTEN — Gemini reliably reads the prompt's "vertical
-            # 2-tone split" but routinely drops a soft vignette / corner
-            # darkening / faint room-shadow into one of the halves. Even
-            # with the prompt explicitly forbidding it, the failure mode
-            # recurs on every other roll. Robust fix: snap any pixel that
-            # is "close enough" to the expected bg hex (per the customer's
-            # poster_palette pick) to the EXACT bg hex. The pet uses
-            # palette accent colours that sit far from either bg colour
-            # in RGB space, so the snap leaves the cubist faceting intact
-            # while flattening any soft bg variation away.
+            # Cubist 2-tone vertical-split bg. We KNOW the exact target
+            # bg colours from the palette pick, so pad with the canonical
+            # 2-tone split rather than edge-replicating the AI's outermost
+            # 1px row/column. Edge replication used to leak cream/white
+            # into the bleed band when Gemini ignored the edge-to-edge
+            # rule and rendered the split bg with a sliver of cream above
+            # it — _pad_split_bg eliminates that whole failure mode.
             palette_id = (style_vars or {}).get("poster_palette") or "teal"
             if palette_id in POSTER_PALETTES:
-                padded = _flatten_poster_bg(padded, POSTER_PALETTES[palette_id])
+                _palette = POSTER_PALETTES[palette_id]
+                # Trim any off-palette margin Gemini left around the
+                # colored split before padding. Catches both directions:
+                # near-white slivers above the split, AND subtle perimeter
+                # darkening / vignette that would otherwise read as a
+                # darker frame between the bleed and the artwork in the
+                # final printed canvas.
+                trimmed = _trim_off_palette_margin(ai_image_no_name, _palette)
+                padded = _pad_split_bg(
+                    trimmed, _palette,
+                    padding_ratio=0.12, pad_bottom_ratio=0,
+                )
+                # BG FLATTEN — Gemini reliably reads the prompt's "vertical
+                # 2-tone split" but routinely drops a soft vignette / corner
+                # darkening / faint room-shadow into one of the halves. Even
+                # with the prompt explicitly forbidding it, the failure mode
+                # recurs on every other roll. Snap any pixel that is "close
+                # enough" to the expected bg hex (per the customer's
+                # poster_palette pick) to the EXACT bg hex. The pet uses
+                # palette accent colours that sit far from either bg colour
+                # in RGB space, so the snap leaves the cubist faceting intact
+                # while flattening any soft bg variation away.
+                # Cool palettes (teal/cobalt/forest/violet) override
+                # interior_tol downward so natural pet-shadow tones in the
+                # pet's bg-adjacent colour family don't get snapped to bg
+                # and read as silhouette breaches.
+                _interior_tol = int(_palette.get("interior_tol", 90))
+                padded = _flatten_poster_bg(
+                    padded, _palette, interior_tol=_interior_tol,
+                )
+                padded = _remove_poster_halos(padded, _palette)
+                # _snap_poster_to_palette was tried here — it eliminated
+                # texture but was catastrophic on warm-coat pets in
+                # cool/warm palette mismatches: a golden dog on the rose
+                # palette has warm-brown fur pixels that are CLOSER to
+                # bg_left (#F2BAC2 dusty pink) than to any accent, so
+                # snapping collapsed the dog into bg. Disabled until we
+                # have a smarter "snap only pixels already near a
+                # palette colour" implementation that preserves pet
+                # pixels falling outside the palette.
+            else:
+                padded = add_background_padding(
+                    ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
+                )
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
             # renaissance, line art): pad top + sides only so the pet's
@@ -4220,7 +4977,7 @@ def generate_with_name_on_demand(
 
         safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
         comp_path = out / f"{uid}_{style}_{safe_name}_named.png"
-        composited.save(comp_path, "PNG", dpi=(300, 300))
+        _save_with_pp_named(composited, comp_path, dpi=(300, 300))
         log.info("           comp (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path, composited.width, composited.height)
 
@@ -4232,8 +4989,11 @@ def generate_with_name_on_demand(
         # 4:5 preview. Used for canvas-12x16 mockups + print files so
         # Printful never has to cover-crop a 4:5 source onto a 3:4 face.
         composited_3x4 = crop_to_ratio(composited, PRINT_ASPECT_3_4, gravity="center")
+        # crop_to_ratio doesn't preserve PIL info dict — re-stamp pp_named.
+        composited_3x4.info["pp_named"] = "1"
+        composited_3x4.info["pp_named_value"] = composited.info.get("pp_named_value", "")
         comp_path_3x4 = out / f"{uid}_{style}_{safe_name}_named_3x4.png"
-        composited_3x4.save(comp_path_3x4, "PNG", dpi=(300, 300))
+        _save_with_pp_named(composited_3x4, comp_path_3x4, dpi=(300, 300))
         log.info("           comp 3x4 (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path_3x4, composited_3x4.width, composited_3x4.height)
         web_path_3x4 = save_web_preview(composited_3x4, comp_path_3x4)
@@ -4259,7 +5019,7 @@ def generate_with_name_on_demand(
             laid_out_1x1 = derived_1x1
         composited_1x1 = composite_name(laid_out_1x1, pet_name, style=style)
         comp_path_1x1 = out / f"{uid}_{style}_{safe_name}_named_1x1.png"
-        composited_1x1.save(comp_path_1x1, "PNG", dpi=(300, 300))
+        _save_with_pp_named(composited_1x1, comp_path_1x1, dpi=(300, 300))
         log.info("           comp 1x1 (with name) → %s (%dx%d @ 300 DPI)",
                  comp_path_1x1, composited_1x1.width, composited_1x1.height)
 

@@ -53,14 +53,26 @@ def _public_base() -> str:
 # Catalog lookup — fetch variant IDs from Printful on first call
 # ---------------------------------------------------------------------------
 
-# Cache: { product_id: { "size_label": variant_id, ... } }
-_variant_cache: dict[int, dict[str, int]] = {}
+# Cache: { (product_id, color_filter): { "size_label": variant_id, ... } }
+# color_filter is the lowercased frame/colour name we accept ("" = any).
+_variant_cache: dict[tuple[int, str], dict[str, int]] = {}
 
 
-def get_catalog_variants(catalog_product_id: int) -> dict[str, int]:
-    """Fetch variants for a catalog product. Returns { 'size_label': variant_id }."""
-    if catalog_product_id in _variant_cache:
-        return _variant_cache[catalog_product_id]
+def get_catalog_variants(
+    catalog_product_id: int,
+    color_filter: Optional[str] = None,
+) -> dict[str, int]:
+    """Fetch variants for a catalog product. Returns { 'size_label': variant_id }.
+
+    If color_filter is set, only variants whose `color` field matches
+    (case-insensitive) are returned. Required for products that ship in
+    multiple colourways but where we only sell one — e.g. framed canvas
+    where we only stock black frames. Without the filter, size→variant
+    matching is non-deterministic (last-wins on duplicate sizes).
+    """
+    cache_key = (catalog_product_id, (color_filter or "").lower())
+    if cache_key in _variant_cache:
+        return _variant_cache[cache_key]
 
     # Use v1 API for catalog (more stable)
     url = f"{PRINTFUL_API_V1}/products/{catalog_product_id}"
@@ -68,15 +80,30 @@ def get_catalog_variants(catalog_product_id: int) -> dict[str, int]:
     resp.raise_for_status()
     data = resp.json()
 
-    variants = {}
+    wanted_color = (color_filter or "").lower()
+    variants: dict[str, int] = {}
+    skipped_colors: set[str] = set()
     for v in data.get("result", {}).get("variants", []):
         size = v.get("size", "")
         vid = v.get("id")
-        if size and vid:
-            variants[size] = vid
+        color = (v.get("color") or "").strip()
+        if not size or not vid:
+            continue
+        if wanted_color and color.lower() != wanted_color:
+            if color:
+                skipped_colors.add(color)
+            continue
+        variants[size] = vid
 
-    _variant_cache[catalog_product_id] = variants
-    log.info(f"Cached {len(variants)} variants for product {catalog_product_id}: {list(variants.keys())}")
+    _variant_cache[cache_key] = variants
+    if wanted_color:
+        log.info(
+            f"Cached {len(variants)} variants for product {catalog_product_id} "
+            f"(color={color_filter!r}): {list(variants.keys())}; "
+            f"skipped colors: {sorted(skipped_colors)}"
+        )
+    else:
+        log.info(f"Cached {len(variants)} variants for product {catalog_product_id}: {list(variants.keys())}")
     return variants
 
 
@@ -92,6 +119,15 @@ CATALOG_PRODUCTS = {
     "canvas":        3,
     "canvas-framed": 614,
     "magnet":        656,
+}
+
+# Frame/colour preference per product type. Printful's catalog returns multiple
+# colourways for some products (e.g. framed canvas: Black / White / Walnut),
+# but we only sell one. Without this filter, size→variant resolution picks
+# whichever variant happened to come last in the API response — which has
+# surfaced as white-framed mockups on the PDP when we only ship black.
+PRODUCT_COLOR = {
+    "canvas-framed": "Black",
 }
 
 # Printful uses unicode: 12″×12″ (U+2033 double prime, U+00D7 multiplication sign)
@@ -127,6 +163,12 @@ VARIANT_ID_FALLBACK = {
         "16x20": 6,
     },
     "canvas-framed": {
+        # ⚠ Frame colour of these IDs is unverified — they were captured from
+        # an unfiltered /products/614 call on 2026-04-29 which is non-
+        # deterministic across colourways. Live path now filters on
+        # PRODUCT_COLOR["canvas-framed"] = "Black" via the API; these
+        # fallbacks only fire when the API is unavailable. Re-verify after
+        # next successful API resolve and replace if any are non-black.
         "12x12": 15695,
         "12x16": 15696,
         "16x16": 15697,
@@ -148,10 +190,11 @@ def _resolve_variant_ids(product_type: str) -> dict[str, int]:
 
     size_map = VARIANT_SIZE_MAP.get(product_type, {})
     fallback = VARIANT_ID_FALLBACK.get(product_type, {})
+    color_filter = PRODUCT_COLOR.get(product_type)
 
     # Try API lookup first
     try:
-        all_variants = get_catalog_variants(catalog_id)
+        all_variants = get_catalog_variants(catalog_id, color_filter=color_filter)
     except Exception as e:
         log.warning(f"Catalog lookup failed, using fallback IDs: {e}")
         all_variants = {}
@@ -280,9 +323,31 @@ def poll_mockup_result(task_id: str, timeout: int = 60, interval: int = 3) -> di
     raise TimeoutError(f"Mockup task {task_id} timed out after {timeout}s")
 
 
+def _style_label(mockup: dict) -> str:
+    """Best-effort flatten of Printful's style/view metadata into a single
+    lowercased string we can substring-match. Different Printful API versions
+    expose this under different keys (style_name, view_name, style.name,
+    placement, etc.), so we concat anything plausible and let the caller
+    keyword-filter on the result."""
+    parts: list[str] = []
+    for key in ("style_name", "view_name", "view", "style", "placement", "title"):
+        val = mockup.get(key)
+        if isinstance(val, str):
+            parts.append(val)
+        elif isinstance(val, dict):
+            inner = val.get("name") or val.get("title") or ""
+            if isinstance(inner, str):
+                parts.append(inner)
+    return " ".join(parts).lower()
+
+
 def extract_mockup_urls(result: dict) -> list[dict]:
     """Extract mockup image URLs from completed task result.
-    Returns: [{ 'variant_id': int, 'url': str, 'placement': str }, ...]
+    Returns: [{ 'variant_id': int, 'url': str, 'placement': str, 'style': str }, ...]
+
+    'style' is a lowercased best-effort label sourced from style_name /
+    view_name / placement, used downstream to prefer head-on (front /
+    flat / default) renders over angled lifestyle / closeup renders.
     """
     log.info(f"Extracting mockups from result keys: {list(result.keys()) if isinstance(result, dict) else type(result)}")
     mockups = []
@@ -306,6 +371,7 @@ def extract_mockup_urls(result: dict) -> list[dict]:
                             "variant_id": variant_id,
                             "url": url,
                             "placement": placement,
+                            "style": _style_label(mockup),
                         })
 
     # If nothing found, try flattened format
@@ -320,12 +386,44 @@ def extract_mockup_urls(result: dict) -> list[dict]:
                             "variant_id": item.get("catalog_variant_id") or item.get("variant_id"),
                             "url": item["url"],
                             "placement": item.get("placement", "default"),
+                            "style": _style_label(item),
                         })
 
     if not mockups:
         log.warning(f"No mockups extracted. Full result: {str(result)[:500]}")
 
     return mockups
+
+
+# Keywords that signal a head-on / flat / centered mockup view.  Printful
+# returns multiple styles per variant (front, lifestyle, closeup, angled,
+# room shot, etc.); without filtering, the harness used to pick whichever
+# Printful happened to list first — frequently an angled "wall" view, which
+# made framed canvases look asymmetric (frame thicker on one side from the
+# perspective tilt).  We prefer the dead-on render so the customer sees the
+# product as if standing centred in front of it.
+_PREFERRED_STYLE_KEYWORDS = ("front", "flat", "straight", "default", "main", "head-on")
+# Keywords that strongly indicate an angled / contextualised render to skip.
+_AVOID_STYLE_KEYWORDS = ("lifestyle", "closeup", "close-up", "angle", "angled", "perspective", "context", "scene", "room", "interior", "corner", "tilt")
+
+
+def pick_preferred_mockup(candidates: list[dict]) -> Optional[dict]:
+    """Return the most head-on / centred candidate from a per-variant
+    mockup list. Falls back to the first candidate when nothing matches."""
+    if not candidates:
+        return None
+    # Pass 1: explicit "front" / "flat" / "default" hit.
+    for m in candidates:
+        style = m.get("style", "")
+        if any(k in style for k in _PREFERRED_STYLE_KEYWORDS):
+            return m
+    # Pass 2: anything that ISN'T tagged as angled / lifestyle / closeup.
+    for m in candidates:
+        style = m.get("style", "")
+        if not any(k in style for k in _AVOID_STYLE_KEYWORDS):
+            return m
+    # Pass 3: give up and use the first one.
+    return candidates[0]
 
 
 # ---------------------------------------------------------------------------
@@ -553,13 +651,23 @@ def generate_mockups(
                 result = poll_mockup_result(task_id)
                 raw_mockups = extract_mockup_urls(result)
 
-                for m in raw_mockups:
+                # Prefer the head-on / front render. Printful returns multiple
+                # styles per variant; an angled "wall" view makes the frame
+                # look asymmetric (thicker on one side from the tilt), so the
+                # customer reads the design as off-centre. pick_preferred_mockup
+                # filters for front/flat/default styles before falling back.
+                chosen = pick_preferred_mockup(raw_mockups)
+                if chosen:
+                    log.info(
+                        f"Chose mockup for {label} (variant {variant_id}): "
+                        f"style={chosen.get('style', '')!r} "
+                        f"out of {len(raw_mockups)} candidates"
+                    )
                     final.append({
                         "variant": label,
-                        "url": m["url"],
-                        "placement": m["placement"],
+                        "url": chosen["url"],
+                        "placement": chosen["placement"],
                     })
-                    break  # Just take the first mockup per variant
                 break  # Success, move to next variant
             except RuntimeError as e:
                 if "429" in str(e) and attempt < 2:

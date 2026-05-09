@@ -7,7 +7,7 @@ Two transactional email templates live in Klaviyo. This doc covers the wiring ne
 | Name | Template ID | Edit |
 | --- | --- | --- |
 | `PP — 01 Order Confirmation v2` | `UUeDPj` | https://www.klaviyo.com/email-editor/UUeDPj/edit |
-| `PP — 02 A Gift For You v2 (24h Download)` | `SGEuzS` | https://www.klaviyo.com/email-editor/SGEuzS/edit |
+| `PP — 02 A Gift For You v2 (24h Download)` | `Tsw3XT` | https://www.klaviyo.com/email-editor/Tsw3XT/edit |
 
 ⚠️ V1 templates (`TC4Ns6`, `UsWBWn`) had two issues — Liquid variables prefixed with underscores (Klaviyo blocks those) and reliance on Shopify line-item-property paths that didn't render in preview. **Delete the v1 templates from the Klaviyo Templates list** before going live.
 

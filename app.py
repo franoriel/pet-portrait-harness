@@ -31,19 +31,60 @@ from fulfillment import (
     generate_print_file,
     upload_print_file,
     parse_order_items,
+    set_order_metafield,
     tag_shopify_order,
     tags_from_order_items,
     verify_shopify_webhook,
 )
 from mockups import generate_mockups
 from storage import upload_portrait
-from jobs import create_job, get_job, dequeue_job, update_job, queue_depth
+from jobs import (
+    create_job, get_job, dequeue_job, update_job, queue_depth,
+    set_order_record, get_order_record,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger(__name__)
 
-# Background executor for async fulfillment (webhook responds immediately)
-_fulfillment_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="fulfill")
+# Background executor for async fulfillment (webhook responds immediately).
+# Wrapped in a class that auto-recreates the pool if a request hits a
+# worker mid-shutdown (Railway redeploy race) — without this, customers
+# see "cannot schedule new futures after shutdown" leak through to the UI.
+class _ResilientPool:
+    def __init__(self, max_workers, thread_name_prefix):
+        self._max_workers = max_workers
+        self._thread_name_prefix = thread_name_prefix
+        self._lock = Lock()
+        self._pool = ThreadPoolExecutor(
+            max_workers=max_workers, thread_name_prefix=thread_name_prefix,
+        )
+
+    def submit(self, fn, *args, **kwargs):
+        try:
+            return self._pool.submit(fn, *args, **kwargs)
+        except RuntimeError as exc:
+            msg = str(exc).lower()
+            if "shutdown" not in msg and "broken" not in msg:
+                raise
+            # Pool is dead (atexit fired or broken). Recreate once and retry.
+            with self._lock:
+                # Double-check inside the lock — another thread may have
+                # already recreated the pool.
+                try:
+                    return self._pool.submit(fn, *args, **kwargs)
+                except RuntimeError:
+                    log.warning(
+                        "Thread pool %s was shut down — recreating",
+                        self._thread_name_prefix,
+                    )
+                    self._pool = ThreadPoolExecutor(
+                        max_workers=self._max_workers,
+                        thread_name_prefix=self._thread_name_prefix,
+                    )
+                    return self._pool.submit(fn, *args, **kwargs)
+
+
+_fulfillment_pool = _ResilientPool(max_workers=4, thread_name_prefix="fulfill")
 
 # ─────────────────────────────────────────────────────────────
 # Rate limiting (per-IP, in-memory sliding window)
@@ -89,6 +130,14 @@ _SAFE_ERROR_LEAK_MARKERS = (
     "traceback",
     "**",            # markdown bold from a model dump
     "i have created",
+    # Python runtime / infrastructure jargon that leaks during graceful
+    # restarts and confuses non-technical customers.
+    "cannot schedule new futures",
+    "after shutdown",
+    "executor",
+    "concurrent.futures",
+    "broken pool",
+    "thread",
 )
 
 
@@ -485,7 +534,22 @@ def generate_route():
     # default 'teal' when the request didn't carry a valid palette id.
     if style == "bold-graphic-poster" and background_mode not in POSTER_PALETTES:
         background_mode = "teal"
-    log.info("[/generate] style=%s bg_mode=%s (raw=%r)", style, background_mode, background_mode_raw)
+    # Optional variation seed — when the customer regenerates the same
+    # photo + style they used recently, the client passes a non-zero
+    # seed and the server picks one of N variation hints to nudge Gemini
+    # away from converging on a near-identical composition. Cleanly
+    # parsed; if absent or non-numeric, no variation hint is used.
+    variation_seed_raw = (request.form.get("variation_seed") or "").strip()
+    variation_seed: Optional[int] = None
+    if variation_seed_raw:
+        try:
+            variation_seed = int(variation_seed_raw) % 10_000
+        except (TypeError, ValueError):
+            variation_seed = None
+    log.info(
+        "[/generate] style=%s bg_mode=%s variation_seed=%s (raw=%r)",
+        style, background_mode, variation_seed, background_mode_raw,
+    )
 
     # ── Photo-license consent (audit trail) ──────────────────────────────────
     # Frontend checkbox sends an ISO-8601 timestamp when the customer ticks
@@ -561,6 +625,7 @@ def generate_route():
         terms_accepted_at=terms_accepted_at,
         client_ip=ip,
         background_mode=background_mode,
+        variation_seed=variation_seed,
     )
     depth = queue_depth()
 
@@ -716,6 +781,247 @@ def verify_download_token(token: str) -> Optional[str]:
         return None
 
 
+def make_order_token(order_id: str, ttl_seconds: int = 90 * 86400) -> str:
+    """Sign an order_id with HMAC + expiry. Mirrors make_download_token's
+    format. Used for the /portraits/<token> digital-gift page link in
+    the post-purchase email — no Shopify account login required."""
+    import base64, hmac, hashlib, time
+    expires = int(time.time()) + ttl_seconds
+    payload = f"order:{order_id}|{expires}".encode("utf-8")
+    sig = hmac.new(_download_secret(), payload, hashlib.sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=") + "." + sig
+
+
+def verify_order_token(token: str) -> Optional[str]:
+    """Verify an order token. Returns the order_id on success, None on
+    signature failure or expiry."""
+    import base64, hmac, hashlib, time
+    try:
+        b64_payload, sig = token.rsplit(".", 1)
+        padding = 4 - (len(b64_payload) % 4)
+        if padding != 4:
+            b64_payload += "=" * padding
+        payload = base64.urlsafe_b64decode(b64_payload)
+        expected = hmac.new(_download_secret(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+        decoded = payload.decode("utf-8")
+        if not decoded.startswith("order:"):
+            return None
+        body, expires_str = decoded.rsplit("|", 1)
+        if int(expires_str) < int(time.time()):
+            return None
+        return body[len("order:"):]
+    except Exception:
+        return None
+
+
+# Self-contained HTML for the digital-gift page. Single CTA above the
+# fold, per-portrait card with downloads + share + gallery submit, plus
+# a soft review nudge. Inline CSS so it renders standalone — no theme
+# Liquid dependency. Brand-aligned with the email template (cream bg,
+# Cormorant Garamond serif italic, charcoal ink, no em-dashes).
+_PORTRAITS_PAGE_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Your portraits — Pet Printables</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 'Inter', -apple-system, sans-serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
+.header { text-align: center; padding: 16px 0 32px; }
+.brand { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 24px; color: #1C1C1C; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 8px; }
+.h1 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 38px; line-height: 1.1; margin: 0 0 12px; color: #1C1C1C; }
+.h1-sub { font-size: 14px; color: #6B6B63; line-height: 1.55; margin: 0 0 32px; }
+.expiry { font-size: 12px; color: #8B7D6B; margin: 0 0 24px; font-style: italic; }
+.portrait-card { background: #FFFFFF; border: 1px solid #E4DDD4; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.portrait-card__head { display: grid; grid-template-columns: 140px 1fr; gap: 20px; align-items: start; margin-bottom: 16px; }
+.portrait-card__img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; background: #F3EDE6; }
+.portrait-card__name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 22px; color: #1C1C1C; margin: 0 0 4px; }
+.portrait-card__style { font-size: 12px; color: #8B7D6B; margin: 0 0 14px; }
+.dl-section { margin-top: 14px; }
+.dl-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 10px; }
+.dl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.dl-btn { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 14px; border: 1px solid #1C1C1C; border-radius: 6px; background: #FFFFFF; color: #1C1C1C; text-decoration: none; cursor: pointer; font-family: inherit; font-size: 13px; transition: all 0.15s; }
+.dl-btn:hover { background: #F3EDE6; }
+.dl-btn strong { font-size: 14px; font-weight: 600; }
+.dl-btn span { font-size: 11px; color: #6B6B63; margin-top: 2px; }
+.dl-btn--solid { background: #2F2F2A; color: #fff; border-color: #2F2F2A; }
+.dl-btn--solid:hover { background: #1C1C1C; color: #fff; }
+.dl-btn--ghost { background: transparent; }
+.actions-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.review-cta { background: #F3EDE6; border-radius: 12px; padding: 28px; text-align: center; margin-top: 32px; }
+.review-cta h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 24px; margin: 0 0 8px; color: #1C1C1C; }
+.review-cta p { font-size: 14px; color: #6B6B63; margin: 0 0 16px; line-height: 1.55; }
+.btn-primary { display: inline-block; background: #2F2F2A; color: #FFFFFF; padding: 14px 28px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; }
+.footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid #E4DDD4; }
+.footer p { font-size: 11px; color: #8B7D6B; letter-spacing: 0.04em; margin: 4px 0; }
+.footer a { color: #8B7D6B; text-decoration: underline; }
+@media (max-width: 600px) {
+  .h1 { font-size: 30px; }
+  .portrait-card__head { grid-template-columns: 1fr; }
+  .portrait-card__img { max-width: 220px; margin: 0 auto; }
+  .dl-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <span class="brand">Pet Printables</span>
+  </header>
+  <p class="eyebrow">Your digital gift</p>
+  __HEADLINE__
+  <p class="expiry">Links are good until __EXPIRES__. Save the originals — they expire.</p>
+  __PORTRAITS__
+  <div class="review-cta">
+    <h2>How was your order?</h2>
+    <p>Your canvas is on its way. Once it lands, we'd love to hear what you think.</p>
+    <a href="https://petprintables.ca/account" class="btn-primary">LEAVE A REVIEW</a>
+  </div>
+  <footer class="footer">
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:#1C1C1C;">Pet Printables</p>
+    <p>A modern tribute to unconditional love. Vancouver, BC.</p>
+    <p><a href="https://petprintables.ca">petprintables.ca</a> · <a href="https://instagram.com/mypetprintables">@mypetprintables</a></p>
+  </footer>
+</div>
+<script>
+document.querySelectorAll('[data-share-url]').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    var url = btn.getAttribute('data-share-url');
+    var name = btn.getAttribute('data-share-name') || 'pet portrait';
+    var data = { title: name + ' portrait', text: 'Look at ' + name + ' \\ud83d\\udc3e', url: url };
+    try {
+      if (navigator.share) { await navigator.share(data); return; }
+      await navigator.clipboard.writeText(url);
+      var orig = btn.textContent;
+      btn.textContent = 'Link copied';
+      setTimeout(function () { btn.textContent = orig; }, 2000);
+    } catch (e) { /* user cancelled or unsupported */ }
+  });
+});
+</script>
+</body>
+</html>"""
+
+
+def _render_portraits_page(record: dict) -> str:
+    """Render the /portraits/<token> page from a digital_files record."""
+    import html as _html
+    portraits = record.get("portraits") or []
+    expires_at = record.get("expires_at") or ""
+    # Format expiry as "May 8, 2026" if it's an ISO timestamp
+    try:
+        from datetime import datetime as _dt
+        expiry_dt = _dt.strptime(expires_at[:10], "%Y-%m-%d") if expires_at else None
+        expires_str = expiry_dt.strftime("%B %-d, %Y") if expiry_dt else "soon"
+    except Exception:
+        expires_str = "soon"
+
+    # Headline branches on count
+    if len(portraits) == 1:
+        name = _html.escape(portraits[0].get("pet_name") or "your pet")
+        headline = (
+            f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
+            '<p class="h1-sub">Your order is in production. Until it lands at your door, '
+            'here is a digital copy in every format you would want to share — feed, '
+            'story, profile pic, even a phone wallpaper.</p>'
+        )
+    else:
+        headline = (
+            f'<h1 class="h1">Your {len(portraits)} portraits, ready to share.</h1>'
+            '<p class="h1-sub">Your order is in production. Until it lands at your door, '
+            'here is a digital copy of each portrait in every format you would want '
+            'to share — feed, story, profile pic, even a phone wallpaper.</p>'
+        )
+
+    cards = []
+    for p in portraits:
+        pet_name = _html.escape(p.get("pet_name") or "Pet")
+        style = _html.escape(p.get("style") or "")
+        preview = _html.escape(p.get("preview_url") or "")
+        original = _html.escape(p.get("original_url") or preview)
+        gallery = _html.escape(p.get("gallery_submit_url") or "")
+        downloads = p.get("downloads") or {}
+
+        dl_buttons = []
+        formats = [
+            ("square", "Square", "Instagram post"),
+            ("story", "Story", "IG &amp; FB story"),
+            ("portrait", "Portrait", "IG feed (4:5)"),
+            ("wallpaper", "Wallpaper", "Phone lock screen"),
+        ]
+        for key, label, desc in formats:
+            url = downloads.get(key)
+            if url:
+                dl_buttons.append(
+                    f'<a href="{_html.escape(url)}" class="dl-btn" download>'
+                    f'<strong>{label}</strong><span>{desc}</span></a>'
+                )
+
+        actions = [
+            f'<a href="{original}" class="dl-btn dl-btn--solid" download>Download original</a>',
+            f'<button type="button" class="dl-btn dl-btn--ghost" data-share-url="{original}" data-share-name="{pet_name}">Share</button>',
+        ]
+        if gallery:
+            actions.append(
+                f'<a href="{gallery}" class="dl-btn dl-btn--ghost">Submit to gallery</a>'
+            )
+
+        cards.append(f"""
+<article class="portrait-card">
+  <div class="portrait-card__head">
+    <a href="{original}" download><img class="portrait-card__img" src="{preview}" alt="{pet_name} portrait"/></a>
+    <div>
+      <p class="portrait-card__name">{pet_name}</p>
+      <p class="portrait-card__style">{style}</p>
+      <div class="actions-row">{"".join(actions)}</div>
+    </div>
+  </div>
+  <div class="dl-section">
+    <p class="dl-eyebrow">Made for sharing</p>
+    <div class="dl-grid">{"".join(dl_buttons)}</div>
+  </div>
+</article>""")
+
+    return (_PORTRAITS_PAGE_TEMPLATE
+            .replace("__HEADLINE__", headline)
+            .replace("__EXPIRES__", _html.escape(expires_str))
+            .replace("__PORTRAITS__", "".join(cards)))
+
+
+@app.route("/portraits/<token>")
+def portraits_page(token):
+    """Render the digital-gift page for a signed order token. The Klaviyo
+    post-purchase email links here. No Shopify account login required —
+    HMAC-signed token is the access control. 90-day TTL."""
+    ip = _client_ip()
+    allowed, _ = check_rate_limit(ip, "download")
+    if not allowed:
+        return "Too many requests", 429
+
+    order_id = verify_order_token(token)
+    if not order_id:
+        return ("This portrait link has expired. The digital gift was available for "
+                "90 days from when your order email was sent. Reply to that email and "
+                "we will send a fresh one."), 410
+
+    record = get_order_record(order_id)
+    if not record:
+        log.warning("[portraits/page] order=%s record not found in store", order_id)
+        return ("We could not find your portraits. If you just placed an order, "
+                "it may take a few minutes for the digital files to be ready — "
+                "try again in 5 minutes."), 404
+
+    log.info("[portraits/page] order=%s rendered (%d portrait(s))",
+             order_id, len(record.get("portraits") or []))
+    return _render_portraits_page(record)
+
+
 @app.route("/portrait/download/<token>")
 def portrait_download(token):
     """Resolve a signed token to an R2 key, then 302 to the public R2 URL
@@ -745,6 +1051,237 @@ def portrait_download(token):
     log.info("[download/token] %s → %s", token[:16] + "...", r2_key)
     from flask import redirect
     return redirect(target, code=302)
+
+
+# ---------------------------------------------------------------------------
+# Gallery submission — one-click "submit my portrait to the public gallery"
+# from the Klaviyo digital-gift email. The link is HMAC-signed at order time
+# (encoding r2_key + pet_name + order_id) so the customer doesn't see a form;
+# they just click and their portrait lands on petprintables.ca/pages/gallery.
+#
+# Idempotent: the metaobject handle is `gallery-{order_id}`, so repeat clicks
+# (multi-device, forwarded to themselves, etc.) update in place rather than
+# creating duplicates. Auto-publishes — every metaobject created here is
+# `active` immediately. Trust boundary: the token is unforgeable, and the only
+# image that can be submitted is the one we generated for that customer's
+# paid order, so there's no moderation queue.
+# ---------------------------------------------------------------------------
+
+def _gallery_secret() -> bytes:
+    """HMAC secret for signing/verifying gallery-submit tokens. Falls back to
+    the download-token secret (same trust boundary). Separated so a future
+    rotation of one doesn't invalidate the other."""
+    return (os.environ.get("GALLERY_TOKEN_SECRET")
+            or os.environ.get("DOWNLOAD_TOKEN_SECRET")
+            or os.environ.get("SHOPIFY_WEBHOOK_SECRET")
+            or "dev-secret-do-not-use-in-prod").encode("utf-8")
+
+
+def make_gallery_token(r2_key: str, pet_name: str, order_id: str,
+                       ttl_seconds: int = 30 * 86400) -> str:
+    """Sign (r2_key, pet_name, order_id) with HMAC + expiry. URL-quotes each
+    field so '|' can't appear inside any of them. 30-day default TTL matches
+    the social-variant tokens issued at the same time."""
+    import base64, hmac, hashlib, time
+    from urllib.parse import quote
+    expires = int(time.time()) + ttl_seconds
+    parts = [quote(s or "", safe="") for s in (r2_key, pet_name, order_id, str(expires))]
+    payload = "|".join(parts).encode("utf-8")
+    sig = hmac.new(_gallery_secret(), payload, hashlib.sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=") + "." + sig
+
+
+def verify_gallery_token(token: str) -> Optional[dict]:
+    """Verify a token returned by make_gallery_token. Returns
+    {r2_key, pet_name, order_id} on success, None on signature failure or
+    expiry."""
+    import base64, hmac, hashlib, time
+    from urllib.parse import unquote
+    try:
+        b64_payload, sig = token.rsplit(".", 1)
+        padding = 4 - (len(b64_payload) % 4)
+        if padding != 4:
+            b64_payload += "=" * padding
+        payload = base64.urlsafe_b64decode(b64_payload)
+        expected = hmac.new(_gallery_secret(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+        parts = payload.decode("utf-8").split("|")
+        if len(parts) != 4:
+            return None
+        r2_key, pet_name, order_id, expires_str = (unquote(p) for p in parts)
+        if int(expires_str) < int(time.time()):
+            return None
+        return {"r2_key": r2_key, "pet_name": pet_name, "order_id": order_id}
+    except Exception:
+        return None
+
+
+def _shopify_admin_graphql(query: str, variables: dict) -> dict:
+    """POST a GraphQL query to the Shopify Admin API. Raises on transport
+    error; returns the parsed JSON body otherwise (caller checks userErrors).
+    """
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    admin_token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not admin_token:
+        raise RuntimeError("SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set")
+    url = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}/graphql.json"
+    resp = _req.post(
+        url,
+        headers={
+            "X-Shopify-Access-Token": admin_token,
+            "Content-Type": "application/json",
+        },
+        json={"query": query, "variables": variables},
+        timeout=15,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _submit_to_gallery(r2_key: str, pet_name: str, order_id: str) -> tuple[bool, str]:
+    """Upload the R2 preview to Shopify Files and upsert a `gallery_submission`
+    metaobject keyed on order_id. Returns (ok, detail). The metaobject handle
+    is `gallery-{order_id}` so repeat clicks are idempotent."""
+    r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+    if not r2_public:
+        return False, "R2_PUBLIC_URL not configured"
+    image_url = f"{r2_public}/{r2_key}"
+    handle = f"gallery-{order_id}"
+
+    # 1. Idempotency — if a metaobject with this handle already exists, skip
+    #    file upload + creation entirely. Avoids stacking new file uploads
+    #    every time the customer re-clicks.
+    existing_q = """
+      query ExistingSubmission($handle: MetaobjectHandleInput!) {
+        metaobjectByHandle(handle: $handle) { id handle }
+      }
+    """
+    try:
+        existing = _shopify_admin_graphql(existing_q, {
+            "handle": {"type": "gallery_submission", "handle": handle},
+        })
+        if (existing.get("data") or {}).get("metaobjectByHandle"):
+            return True, "already-submitted"
+    except Exception as exc:
+        log.warning("[gallery] order=%s existing-check failed: %s", order_id, exc)
+
+    # 2. Upload the R2 image to Shopify Files. Shopify fetches by URL
+    #    server-side; the file appears in the shop's Files collection and
+    #    a permanent CDN URL is assigned.
+    file_create_q = """
+      mutation FileCreate($files: [FileCreateInput!]!) {
+        fileCreate(files: $files) {
+          files { id alt fileStatus }
+          userErrors { field message }
+        }
+      }
+    """
+    alt = (pet_name or "Pet portrait").strip()[:80]
+    try:
+        file_resp = _shopify_admin_graphql(file_create_q, {
+            "files": [{
+                "alt": alt,
+                "contentType": "IMAGE",
+                "originalSource": image_url,
+            }],
+        })
+    except Exception as exc:
+        log.warning("[gallery] order=%s fileCreate transport failed: %s", order_id, exc)
+        return False, f"fileCreate transport failed: {exc}"
+
+    file_data = ((file_resp.get("data") or {}).get("fileCreate") or {})
+    user_errors = file_data.get("userErrors") or []
+    if user_errors:
+        return False, f"fileCreate userErrors: {user_errors}"
+    files = file_data.get("files") or []
+    if not files:
+        return False, "fileCreate returned no files"
+    file_id = files[0].get("id")
+    if not file_id:
+        return False, "fileCreate returned no file id"
+
+    # 3. Upsert the metaobject. metaobjectUpsert handles the
+    #    create-or-update-by-handle in one call, which is what we want for
+    #    idempotency without a separate read-then-write.
+    upsert_q = """
+      mutation MetaobjectUpsert(
+        $handle: MetaobjectHandleInput!,
+        $metaobject: MetaobjectUpsertInput!
+      ) {
+        metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
+          metaobject { id handle type }
+          userErrors { field message }
+        }
+      }
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    submitted_at = _dt.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        upsert_resp = _shopify_admin_graphql(upsert_q, {
+            "handle": {"type": "gallery_submission", "handle": handle},
+            "metaobject": {
+                "capabilities": {"publishable": {"status": "ACTIVE"}},
+                "fields": [
+                    {"key": "image", "value": file_id},
+                    {"key": "pet_name", "value": (pet_name or "")[:60]},
+                    {"key": "category", "value": "dogs"},
+                    {"key": "order_id", "value": str(order_id)},
+                    {"key": "submitted_at", "value": submitted_at},
+                ],
+            },
+        })
+    except Exception as exc:
+        return False, f"metaobjectUpsert transport failed: {exc}"
+
+    upsert_data = ((upsert_resp.get("data") or {}).get("metaobjectUpsert") or {})
+    user_errors = upsert_data.get("userErrors") or []
+    if user_errors:
+        return False, f"metaobjectUpsert userErrors: {user_errors}"
+    if not upsert_data.get("metaobject"):
+        return False, "metaobjectUpsert returned no metaobject"
+    return True, "ok"
+
+
+@app.route("/gallery/submit/<token>")
+def gallery_submit(token):
+    """Land the customer in the public gallery in one click from the email.
+    Verifies the HMAC token, uploads the preview image to Shopify Files,
+    upserts a gallery_submission metaobject, then 302s to the thank-you page.
+
+    On any failure, still redirects to the thank-you page with ?status=error
+    so the customer doesn't hit a stack trace — and we log the detail. The
+    gallery section reads `shop.metaobjects.gallery_submission.values` and
+    renders new submissions automatically."""
+    from flask import redirect
+
+    storefront = os.environ.get("STOREFRONT_BASE_URL", "https://petprintables.ca").rstrip("/")
+    thanks_url = f"{storefront}/pages/gallery-thanks"
+
+    ip = _client_ip()
+    allowed, _ = check_rate_limit(ip, "gallery")
+    if not allowed:
+        return "Too many requests", 429
+
+    payload = verify_gallery_token(token)
+    if not payload:
+        log.info("[gallery] token rejected (expired or invalid) ip=%s", ip)
+        return redirect(f"{thanks_url}?status=expired", code=302)
+
+    ok, detail = _submit_to_gallery(
+        payload["r2_key"], payload["pet_name"], payload["order_id"],
+    )
+    if ok:
+        log.info(
+            "[gallery] order=%s pet=%s ✓ %s",
+            payload["order_id"], payload["pet_name"] or "(unknown)", detail,
+        )
+        return redirect(thanks_url, code=302)
+    log.warning(
+        "[gallery] order=%s pet=%s ✗ %s",
+        payload["order_id"], payload["pet_name"] or "(unknown)", detail,
+    )
+    return redirect(f"{thanks_url}?status=error", code=302)
 
 
 # ---------------------------------------------------------------------------
@@ -839,6 +1376,23 @@ def add_name():
     # Validate image_url — must be HTTPS, from allowed hosts (prevents SSRF)
     if not validate_url(image_url, allowed_hosts=_SAFE_IMAGE_HOSTS):
         return jsonify(error="Invalid image URL."), 400
+
+    # STRUCTURAL DOUBLE-NAME GUARD — every named file we save has
+    # `_named` in its filename (see generate_with_name_on_demand:
+    # f"{uid}_{style}_{safe_name}_named.png"). If a client sends a URL
+    # whose path contains _named, they're trying to use an already-
+    # composited file as the "no-name source", which would double the
+    # name and produce JEWILDER / ROOGEER ghosts. Refuse with a clear
+    # error rather than silently doubling.
+    if "_named" in image_url.lower():
+        log.warning(
+            "[/add-name] rejected request with already-named source URL: %s",
+            image_url[:120],
+        )
+        return jsonify(
+            error="Source image already contains a name. Please regenerate the portrait first.",
+            code="named_source_rejected",
+        ), 400
 
     try:
         import requests as _req
@@ -1085,6 +1639,19 @@ def webhook_order_created():
     return jsonify(status="accepted", items=len(items)), 200
 
 
+def _join_names(names: list[str]) -> str:
+    """Format a list of pet names as 'Luna', 'Luna and Milo', or
+    'Luna, Milo, and Buddy' for use in email copy."""
+    cleaned = [n for n in (s.strip() for s in names) if n]
+    if not cleaned:
+        return "your pets"
+    if len(cleaned) == 1:
+        return cleaned[0]
+    if len(cleaned) == 2:
+        return f"{cleaned[0]} and {cleaned[1]}"
+    return ", ".join(cleaned[:-1]) + f", and {cleaned[-1]}"
+
+
 def _push_klaviyo_order_event(
     customer_email: str,
     order_id: str,
@@ -1100,73 +1667,168 @@ def _push_klaviyo_order_event(
     not a blocker)."""
     api_key = os.environ.get("KLAVIYO_API_KEY", "").strip()
     if not api_key:
-        log.info("[klaviyo] no KLAVIYO_API_KEY set, skipping profile push for order %s", order_id)
+        # Bump to warning so it shows up clearly in Railway logs — this is
+        # the most common cause of the "gift email shows the placeholder
+        # image instead of the customer's pet" symptom, since no profile
+        # properties get pushed without the API key.
+        log.warning(
+            "[klaviyo] order=%s ✗ no KLAVIYO_API_KEY set — skipping profile push "
+            "(this is why preview emails will show the fallback image)",
+            order_id,
+        )
         return
     try:
         from datetime import datetime, timezone, timedelta
-        first_item = items[0] or {}
-        preview_url = first_item.get("preview_url") or ""
-        pet_name = (first_item.get("pet_name") or "").strip()
-        # Sign a download token from the R2 key (extracted from preview_url)
-        r2_key = _r2_key_from_url(preview_url) or preview_url.split("/")[-1]
-        token = make_download_token(r2_key, ttl_seconds=86400)
+        from social_variants import generate_social_variants
+        import hashlib as _hashlib
+
+        SOCIAL_TTL_S = 30 * 86400  # 30 days
         backend_base = os.environ.get("PUBLIC_BASE_URL", "https://api.petprintables.ca").rstrip("/")
-        download_url = f"{backend_base}/portrait/download/{token}"
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-        # Format expiry as "Saturday at 11pm" style — friendly for email body
-        expires_str = expires_at.strftime("%A at %-I%p").lower().replace("am", "am").replace("pm", "pm")
+        shop_base = os.environ.get(
+            "SHOPIFY_STOREFRONT_URL", "https://petprintables.ca",
+        ).rstrip("/")
+        order_token = (order.get("token") or "").strip()
+        order_number = str(order.get("order_number") or order.get("name") or order_id)
 
-        properties = {
-            "pet_name": pet_name or "your pet",
-            "pet_preview_url": preview_url,
-            "download_url": download_url,
-            "download_expires_at": expires_str,
-            "last_order_id": order_id,
-            "last_order_number": str(order.get("order_number") or order.get("name") or order_id),
-        }
-        # If this is a multi-portrait order, expose every preview URL too
-        if len(items) > 1:
-            properties["portrait_count"] = len(items)
-            properties["all_preview_urls"] = [it.get("preview_url") for it in items if it.get("preview_url")]
+        # Dedupe items into unique portraits keyed by (pet, style, preview_url,
+        # show_name). Same portrait on two products (canvas + magnet) collapses
+        # into one set of downloads.
+        unique: dict[tuple, dict] = {}
+        order_unique = []
+        for it in items:
+            preview_url = (it.get("preview_url") or "").strip()
+            if not preview_url:
+                continue
+            pet_name = (it.get("pet_name") or "").strip() or "your pet"
+            style = (it.get("style") or "").strip()
+            show_name_lc = ((it.get("show_name") or "Yes").strip().lower())
+            key = (pet_name.lower(), style.lower(), preview_url, show_name_lc)
+            if key in unique:
+                continue
+            portrait_id = _hashlib.sha1(
+                f"{pet_name}|{style}|{preview_url}|{show_name_lc}".encode()
+            ).hexdigest()[:12]
+            unique[key] = {
+                "id": portrait_id,
+                "pet_name": pet_name,
+                "style": style,
+                "show_name": "No" if show_name_lc == "no" else "Yes",
+                "preview_url": preview_url,
+                "_print_4x5": (
+                    it.get("no_name_url") if show_name_lc == "no" and it.get("no_name_url")
+                    else (it.get("print_file_url") or "")
+                ),
+                "_print_1x1": (
+                    it.get("no_name_url_1x1") if show_name_lc == "no" and it.get("no_name_url_1x1")
+                    else (it.get("print_file_url_1x1") or "")
+                ),
+            }
+            order_unique.append(unique[key])
 
-        # Phase 2 — social-optimised variants for the "A gift for you"
-        # Klaviyo email. Generated lazily here at order-completion time
-        # rather than at preview generation, so we only spend R2 storage
-        # on portraits that actually became orders. Each variant gets a
-        # 30-day signed token (vs the 24h preview token above) — long
-        # enough that customers who don't open the email until next week
-        # still have working links.
-        #
-        # Multi-portrait orders only get social variants for the FIRST
-        # item — keeping the email scannable, and most multi-pet orders
-        # are gifting one of the portraits anyway. If multi-pet support
-        # becomes a real ask, expand this to a per-pet variants array.
-        try:
-            from social_variants import generate_social_variants
-            print_file_4x5 = first_item.get("print_file_url") or ""
-            print_file_1x1 = first_item.get("print_file_url_1x1") or ""
-            if print_file_4x5 or print_file_1x1:
-                SOCIAL_TTL_S = 30 * 86400  # 30 days
+        if not order_unique:
+            log.warning("[klaviyo] order=%s no unique portraits to publish", order_id)
+            return
+
+        # For each unique portrait, sign download tokens and generate social
+        # variants under a per-portrait subdir so multi-portrait orders don't
+        # overwrite each other in R2.
+        portraits_payload = []
+        for p in order_unique:
+            preview_url = p["preview_url"]
+            preview_r2_key = _r2_key_from_url(preview_url) or preview_url.split("/")[-1]
+            preview_token = make_download_token(preview_r2_key, ttl_seconds=SOCIAL_TTL_S)
+            original_url = f"{backend_base}/portrait/download/{preview_token}"
+
+            gallery_token = make_gallery_token(
+                preview_r2_key, p["pet_name"], str(order_id),
+                ttl_seconds=SOCIAL_TTL_S,
+            )
+            gallery_submit_url = f"{backend_base}/gallery/submit/{gallery_token}"
+
+            downloads: dict[str, str] = {}
+            try:
                 social_keys = generate_social_variants(
-                    print_file_4x5, print_file_1x1, order_id,
+                    p["_print_4x5"], p["_print_1x1"], order_id,
+                    subdir=p["id"],
                 )
                 for variant_name, r2_key in social_keys.items():
-                    social_token = make_download_token(r2_key, ttl_seconds=SOCIAL_TTL_S)
-                    properties[f"download_url_{variant_name}"] = (
-                        f"{backend_base}/portrait/download/{social_token}"
-                    )
-                if social_keys:
-                    social_expires = datetime.now(timezone.utc) + timedelta(days=30)
-                    # "December 8" — used by the email body for the expiry callout
-                    properties["download_expires_social_at"] = social_expires.strftime("%B %-d")
-                    log.info(
-                        "[klaviyo] order=%s generated %d social variants (%s)",
-                        order_id, len(social_keys), ", ".join(sorted(social_keys.keys())),
-                    )
+                    tok = make_download_token(r2_key, ttl_seconds=SOCIAL_TTL_S)
+                    downloads[variant_name] = f"{backend_base}/portrait/download/{tok}"
+            except Exception as exc:
+                log.warning(
+                    "[klaviyo] order=%s portrait=%s social variant gen failed: %s",
+                    order_id, p["id"], exc,
+                )
+
+            portraits_payload.append({
+                "id": p["id"],
+                "pet_name": p["pet_name"],
+                "style": p["style"],
+                "show_name": p["show_name"],
+                "preview_url": preview_url,
+                "original_url": original_url,
+                "gallery_submit_url": gallery_submit_url,
+                "downloads": downloads,
+            })
+
+        social_expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        digital_files_record = {
+            "version": 1,
+            "order_id": str(order_id),
+            "order_number": order_number,
+            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "expires_at": social_expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "portraits": portraits_payload,
+        }
+
+        # Persist canonical record in TWO places:
+        # 1. Local Redis store (keyed by order_id) — read by the Flask
+        #    /portraits/<token> route to render the digital-gift page
+        #    without requiring Shopify customer-account login. This is
+        #    the PRIMARY surface customers hit from the email.
+        # 2. Shopify order metafield — for customers who DO log into
+        #    a (legacy) customer account and look at the order detail
+        #    page. Optional/redundant given the Flask page works for
+        #    everyone, but harmless to keep.
+        try:
+            set_order_record(str(order_id), digital_files_record)
         except Exception as exc:
             log.warning(
-                "[klaviyo] order=%s social variant generation failed: %s",
+                "[klaviyo] order=%s order-record write failed: %s",
                 order_id, exc,
+            )
+        try:
+            set_order_metafield(
+                str(order_id), "petprintables", "digital_files",
+                digital_files_record, value_type="json",
+            )
+        except Exception as exc:
+            log.warning(
+                "[klaviyo] order=%s metafield write failed: %s",
+                order_id, exc,
+            )
+
+        # Klaviyo payload — minimal. The email's single CTA points at the
+        # Flask /portraits/<token> page (NOT the Shopify customer account)
+        # because Shopify's New Customer Accounts UI doesn't load theme
+        # Liquid, and we can't render our digital files block there. The
+        # token is HMAC-signed with a 90-day TTL so the link works for the
+        # life of the social variants.
+        first_p = portraits_payload[0]
+        order_token_signed = make_order_token(str(order_id), ttl_seconds=SOCIAL_TTL_S)
+        order_url = f"{backend_base}/portraits/{order_token_signed}"
+        properties = {
+            "pet_name": first_p["pet_name"],
+            "pet_preview_url": first_p["preview_url"],
+            "portrait_count": len(portraits_payload),
+            "order_url": order_url,
+            "last_order_id": str(order_id),
+            "last_order_number": order_number,
+        }
+        if len(portraits_payload) > 1:
+            properties["all_preview_urls"] = [p["preview_url"] for p in portraits_payload]
+            properties["pet_names_text"] = _join_names(
+                [p["pet_name"] for p in portraits_payload]
             )
 
         body = {
@@ -1191,12 +1853,29 @@ def _push_klaviyo_order_event(
             timeout=8,
         )
         if resp.status_code >= 400:
-            log.warning("[klaviyo] profile push %s: %s", resp.status_code, resp.text[:300])
+            log.warning(
+                "[klaviyo] order=%s ✗ profile push FAILED status=%s body=%s",
+                order_id, resp.status_code, resp.text[:300],
+            )
         else:
-            log.info("[klaviyo] order=%s profile=%s download_url set, expires %s",
-                     order_id, customer_email, expires_str)
+            # Single-line success log with the full property set so you can
+            # grep "[klaviyo] order=12345 ✓" and verify pet_preview_url +
+            # the social variant tokens all made it onto the profile.
+            preview_short = (
+                preview_url[:64] + "…" if len(preview_url) > 64 else preview_url
+            )
+            log.info(
+                "[klaviyo] order=%s ✓ profile push OK email=%s pet=%s "
+                "preview=%s | %d properties: %s",
+                order_id, customer_email, pet_name or "(unknown)",
+                preview_short or "(none)",
+                len(properties), ", ".join(properties.keys()),
+            )
     except Exception as exc:
-        log.warning("[klaviyo] order=%s profile push failed: %s", order_id, exc)
+        log.warning(
+            "[klaviyo] order=%s ✗ profile push EXCEPTION: %s",
+            order_id, exc,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1812,7 +2491,7 @@ import time as _worker_time
 
 # How many jobs to process concurrently (matches the Gemini semaphore)
 _WORKER_THREADS = int(os.environ.get("MAX_CONCURRENT_GENERATIONS", 20))
-_worker_pool = ThreadPoolExecutor(max_workers=_WORKER_THREADS, thread_name_prefix="gen-worker")
+_worker_pool = _ResilientPool(max_workers=_WORKER_THREADS, thread_name_prefix="gen-worker")
 
 
 def _process_job(job: dict):
@@ -1831,7 +2510,11 @@ def _process_job(job: dict):
     file_owned = True
     try:
         worker_bg = job.get("background_mode") or "auto"
-        log.info("[worker] job=%s style=%s bg_mode=%s", job_id, job["style"], worker_bg)
+        worker_seed = job.get("variation_seed")
+        log.info(
+            "[worker] job=%s style=%s bg_mode=%s variation_seed=%s",
+            job_id, job["style"], worker_bg, worker_seed,
+        )
         (
             raw_path, comp_path, web_path, raw_web_path,
             raw_path_1x1, comp_path_1x1,
@@ -1841,6 +2524,7 @@ def _process_job(job: dict):
             job["pet_name"],
             job["style"],
             background_mode=worker_bg,
+            variation_seed=worker_seed,
         )
 
         # Mark the job complete with LOCAL /preview/ URLs the moment

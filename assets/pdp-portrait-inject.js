@@ -1,9 +1,11 @@
 /* ─────────────────────────────────────────────────────────────
    PDP Portrait Injection
-   Reads the saved portrait from localStorage and injects it
-   as the hero image on product pages. Generates instant
-   client-side canvas mockups per variant, with Printful
-   mockups replacing them when available.
+   Reads the saved portrait from localStorage and injects it as
+   the hero image on product pages. Renders one client-side
+   canvas-on-wall mockup per variant, sourced from the per-aspect
+   un-watermarked print PNG so the PDP shows pixel-for-pixel the
+   front face Printful prints. Watermark is applied as a CSS
+   overlay rather than baked into the source.
    ───────────────────────────────────────────────────────────── */
 (function () {
   console.log('[PetPrintables] PDP inject script loaded v4');
@@ -213,28 +215,21 @@
   var pathParts = window.location.pathname.split('/');
   var productHandle = pathParts[pathParts.indexOf('products') + 1] || '';
 
-  // CACHE INVALIDATION — when showName=Yes AND we have a named preview,
-  // the cached Printful mockups in session.mockups are likely from
-  // BEFORE /add-name returned (fetchMockup runs at generate-completion
-  // time using the no-name preview URL; /add-name runs LATER when the
-  // customer toggles name=Yes on ProductGallery). The cached mockups
-  // would be the no-name version and rendering them on the PDP shows
-  // the customer a no-name mockup despite their Yes toggle. Invalidate
-  // so the PDP's downstream /mockups fetch runs with the named source.
-  var _wantsNameAtLoad = data.wantsName !== false;
-  if (_wantsNameAtLoad && data.namedPreviewUrl && data.mockups && data.mockups[productHandle]) {
+  // session.mockups was used to cache Printful mockup-task URLs across
+  // PDP loads. The PDP no longer calls /mockups — every variant tile is
+  // rendered client-side from the un-watermarked print PNG — so any
+  // surviving cached entries are dead weight. Drop them on first load
+  // so old localStorage doesn't keep stale Printful URLs around.
+  if (data.mockups) {
     try {
       var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-      if (sess.mockups && sess.mockups[productHandle]) {
-        delete sess.mockups[productHandle];
+      if (sess.mockups) {
+        delete sess.mockups;
         localStorage.setItem(LS_KEY, JSON.stringify(sess));
       }
-      if (data.mockups) delete data.mockups[productHandle];
     } catch (_) {}
-    console.log('[PetPrintables] Invalidated stale no-name Printful mockups; re-fetching with named source');
+    delete data.mockups;
   }
-
-  var mockups = data.mockups && data.mockups[productHandle] ? data.mockups[productHandle] : [];
 
   // ── Canvas variant sizes (inches) — matches Shopify SKUs ──
   var VARIANT_SIZES = {
@@ -317,12 +312,25 @@
   // ── Client-side product mockup — CSS-composed canvas ─────
   // Strategy: linen surface + canvas product (sized per-variant) +
   // canvas weave texture, mirroring Printful's pre-photographed scenes
-  // so square mockups read as the same product family as the tall
-  // Printful mockups. The canvas-face has no fill colour; the portrait
-  // covers it edge to edge. That way any style's own background is
-  // what sells the canvas face — never a flat white rectangle that the
-  // portrait sits on top of.
-  function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1, styleId) {
+  // so all mockups read as the same product family. The canvas-face has
+  // no fill colour; the portrait covers it edge to edge. That way any
+  // style's own background is what sells the canvas face — never a flat
+  // white rectangle that the portrait sits on top of.
+  //
+  // opts:
+  //   srcMatchesFace  — source aspect already matches the canvas face
+  //                     (per-aspect un-watermarked PNG). Skips the
+  //                     crop/scale math entirely and renders the image
+  //                     flush. The customer sees pixel-for-pixel the
+  //                     front face that Printful prints.
+  //   applyCssWatermark — overlay the diagonal Pet Printables watermark
+  //                       in CSS rather than relying on a baked-in
+  //                       watermark in the source. Use this when the
+  //                       source is the un-watermarked print PNG.
+  function createClientMockup(portraitSrc, widthIn, heightIn, label, srcIs1x1, styleId, opts) {
+    opts = opts || {};
+    var srcMatchesFace = !!opts.srcMatchesFace;
+    var applyCssWatermark = !!opts.applyCssWatermark;
     // Outer container: square 1:1 slide. Linen backdrop matches the
     // pre-photographed Printful product mockup used for tall variants
     // so the square mockups read as the same product family. The
@@ -460,13 +468,22 @@
     // 1:1 derivatives are already composed for the square face (pet,
     // chest cut and name band in final positions), so they're rendered
     // as-is.
-    var isFlushBottomMaster = !srcIs1x1 && !isSquare;
+    var isFlushBottomMaster = !srcIs1x1 && !isSquare && !srcMatchesFace;
     var cropTopFrac, cropBotFrac, cropSideFrac;
     var coverPosition = 'center top';
     var hScale, vScale, leftPct, topPct;
     var hScaleOverride, vScaleOverride, leftPctOverride, topPctOverride;
     var sampleNeonBg = false;
-    if (isFlushBottomMaster) {
+    if (srcMatchesFace) {
+      // Source already matches the canvas face aspect (per-aspect
+      // un-watermarked print PNG). Render flush — what's on screen is
+      // exactly what Printful's printer receives, modulo resolution.
+      hScale = 100;
+      vScale = 100;
+      leftPct = 0;
+      topPct = 0;
+      coverPosition = 'center center';
+    } else if (isFlushBottomMaster) {
       var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
       var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
       hScale = 100 * (srcAspect / faceAspect);          // image_w as % of face_w
@@ -584,9 +601,31 @@
       + "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.55 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\");";
     canvasFace.appendChild(weave);
 
-    // Tiled CSS watermark overlay removed — server-side
-    // apply_preview_watermark already bakes a diagonal Pet Printables
-    // watermark into the WebP preview the PDP shows.
+    // Tiled CSS watermark overlay — applied when the source is the
+    // un-watermarked print PNG (i.e. the same file Printful prints from).
+    // Mirrors apply_preview_watermark in generate.py: ~28% logo width,
+    // -30° rotation, 1.5× spacing, opacity that's obvious in a
+    // screenshot but light enough to evaluate the artwork. Without this
+    // overlay the PDP would expose the un-watermarked print file to any
+    // right-click-save grab.
+    if (applyCssWatermark) {
+      var wm = document.createElement('div');
+      wm.style.cssText = 'position:absolute;'
+        // Oversized so the rotated tile fills the canvas face after
+        // -30° rotation without revealing un-tiled corners.
+        + 'top:-30%;left:-30%;width:160%;height:160%;'
+        + 'pointer-events:none;'
+        + 'background-image:url(' + _assetBase + 'watermark-logo.png);'
+        // 28% × 1.5 = 42% — controls effective spacing between stamps;
+        // background-size sets the logo width relative to the wm box.
+        + 'background-repeat:repeat;'
+        + 'background-size:28% auto;'
+        + 'opacity:0.18;'
+        + 'mix-blend-mode:multiply;'
+        + 'transform:rotate(-30deg);'
+        + 'transform-origin:center center;';
+      canvasFace.appendChild(wm);
+    }
 
     // Canvas edge highlight — only on the unframed canvas (the wood
     // frame already provides clear edge separation, and the 4-sided
@@ -676,19 +715,44 @@
     // Determine which sizes to use for this product
     var sizes = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
 
-    // Build mockup slides — always use consistent client-side mockups
-    // Printful mockups only replace ALL at once (via background fetch)
-    // to avoid a mix of styles looking inconsistent
-    var printfulByVariant = {};
-    mockups.forEach(function (m) {
-      if (m.placement !== 'default') return;
-      var nums = m.variant.match(/(\d+)\D+(\d+)/);
-      var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
-      if (!printfulByVariant[key]) printfulByVariant[key] = m;
-    });
-    var allSizeKeys = Object.keys(sizes);
-    var hasAllPrintful = allSizeKeys.length > 0 && allSizeKeys.every(function (k) { return !!printfulByVariant[k]; });
+    // Build mockup slides — every variant renders client-side from the
+    // un-watermarked print PNG that Printful actually prints (per-aspect
+    // PNG matched to the variant's front-face aspect). The CSS overlay
+    // watermark sits on top so the customer can't right-click-save the
+    // un-watermarked source. Goal: what the customer sees on PDP IS the
+    // front face Printful prints — no Printful mockup-template render in
+    // between, so no centre-extraction zoom, no 800-px lossy WebP source,
+    // no JPG round-trip.
+    //
+    // pickPrintSrcForFace: pick the un-watermarked PNG whose aspect
+    // matches the variant face. When available, returns that URL +
+    // srcMatchesFace=true so createClientMockup renders flush. Falls back
+    // to the watermarked 4:5 master + the legacy crop math when a
+    // per-aspect URL isn't in session yet (e.g. customer landed on PDP
+    // before /add-name finished).
+    function pickPrintSrcForFace(faceW, faceH) {
+      var isSq = faceW === faceH;
+      var isThreeByFour = (faceW === 3 && faceH === 4) || (faceW * 4 === faceH * 3);
+      var isFourByFive = (faceW === 4 && faceH === 5) || (faceW * 5 === faceH * 4);
+      // Per-aspect PNG (un-watermarked) — best, matches what's printed.
+      if (isSq && data.printFileUrl1x1) {
+        return { url: data.printFileUrl1x1, matches: true, watermark: true };
+      }
+      if (isThreeByFour && data.printFileUrl3x4) {
+        return { url: data.printFileUrl3x4, matches: true, watermark: true };
+      }
+      if (isFourByFive && data.printFileUrl) {
+        return { url: data.printFileUrl, matches: true, watermark: true };
+      }
+      // Fallback: 4:5 master with the existing crop math. Source is the
+      // already-watermarked WebP — no CSS overlay needed.
+      var has1x1Wm = !!data.namedPreviewUrl1x1;
+      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm;
+      var fallbackUrl = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
+      return { url: fallbackUrl, matches: false, watermark: false, srcIs1x1: useSquareSrc };
+    }
 
+    var allSizeKeys = Object.keys(sizes);
     allSizeKeys.forEach(function (sizeKey) {
       var dim = sizes[sizeKey];
       var mockupSlide = document.createElement('div');
@@ -696,114 +760,16 @@
       mockupSlide.setAttribute('role', 'listitem');
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
-      // Tall sizes prefer Printful's product photo when available.
-      // Square sizes use the client-side linen+canvas mockup. We feed
-      // it the 1:1 derivative (composed for a square face — pet, name
-      // and chest cut all sit at their final positions) when we have
-      // it, so the artwork doesn't read as floating with empty bg
-      // padding below the pet. The 1:1 derivative is un-watermarked,
-      // so createClientMockup tiles a CSS Pet Printables watermark on
-      // top when we pass srcIs1x1=true. Falls back to the 4:5 master
-      // when no 1:1 derivative exists yet (no name / unnamed style).
-      var isSquareVariant = dim.w === dim.h;
-      var has1x1 = !!data.namedPreviewUrl1x1;
-      var useSquareSrc = isSquareVariant && data.wantsName !== false && has1x1;
-      if (hasAllPrintful && !isSquareVariant) {
-        // Cache the Printful URL on the slide so renderActiveImage can
-        // restore it when the customer toggles name back ON. Printful
-        // mockups are baked with the named artwork — when name is OFF
-        // we rebuild as a client canvas mockup instead, but still need
-        // to remember the Printful URL for the YES state.
-        mockupSlide.setAttribute('data-printful-url', printfulByVariant[sizeKey].url);
-        var mockupImg = document.createElement('img');
-        mockupImg.src = printfulByVariant[sizeKey].url;
-        mockupImg.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
-        mockupImg.loading = 'lazy';
-        mockupImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
-        mockupSlide.appendChild(mockupImg);
-      } else {
-        var srcForVariant = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
-        var clientMockup = createClientMockup(srcForVariant, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
-        mockupSlide.appendChild(clientMockup);
-      }
+      var pick = pickPrintSrcForFace(dim.w, dim.h);
+      var clientMockup = createClientMockup(
+        pick.url, dim.w, dim.h, sizeKey,
+        !!pick.srcIs1x1, styleId,
+        { srcMatchesFace: pick.matches, applyCssWatermark: pick.watermark }
+      );
+      mockupSlide.appendChild(clientMockup);
 
       gallery.appendChild(mockupSlide);
     });
-
-    // Fire background Printful mockup generation if we don't have all of them yet
-    var hasPrintful = Object.keys(printfulByVariant).length;
-    var totalSizes = Object.keys(sizes).length;
-    if (hasPrintful < totalSizes && data.imageFilename) {
-      var API_BASE = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
-
-      // Per-aspect mockup sources. The mockup task receives one source
-      // per variant, matched to the variant's front-face aspect — so
-      // Printful never has to cover-crop a 4:5 master onto a 3:4 or 1:1
-      // canvas (which clipped the name band off the top of square slides
-      // and zoomed 12×16 mockups). Precedence per aspect:
-      //   1. namedPreviewUrl* (watermarked WebP after /add-name) — best
-      //      because it's both correct-aspect AND watermarked.
-      //   2. previewUrl* (watermarked WebP from initial no-name generate)
-      //      — covers customers who never added a name.
-      //   3. un-watermarked PNG — last-resort fallback if a deploy hasn't
-      //      backfilled the watermarked WebPs yet.
-      var perAspect = {};
-      var url4x5 = data.namedPreviewUrl
-        || ((data.previewCdnUrls || [])[0])
-        || data.printFileUrl
-        || '';
-      var url3x4 = data.namedPreviewUrl3x4 || data.previewUrl3x4 || data.printFileUrl3x4 || '';
-      var url1x1 = data.namedPreviewUrl1x1 || data.previewUrl1x1 || data.printFileUrl1x1 || '';
-      if (url4x5) perAspect['4:5'] = url4x5;
-      if (url3x4) perAspect['3:4'] = url3x4;
-      if (url1x1) perAspect['1:1'] = url1x1;
-
-      var mockupBody = { image_filename: data.imageFilename, product_type: productHandle };
-      if (Object.keys(perAspect).length) {
-        mockupBody.image_urls_by_aspect = perAspect;
-      }
-
-      fetch(API_BASE + '/mockups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mockupBody),
-      })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (resp) {
-        if (!resp || !resp.mockups || !resp.mockups.length) return;
-        try {
-          var session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-          if (!session.mockups) session.mockups = {};
-          session.mockups[productHandle] = resp.mockups;
-          localStorage.setItem(LS_KEY, JSON.stringify(session));
-          // Replace client mockups with Printful mockups (no full reload).
-          // 1:1 used to be skipped here because the backend sent a 4:5
-          // master to every variant and Printful cover-cropped the name
-          // off square canvases. Per-aspect sources eliminate that crop,
-          // so all variants are now safe to replace.
-          resp.mockups.forEach(function (m) {
-            if (m.placement !== 'default') return;
-            var nums = m.variant.match(/(\d+)\D+(\d+)/);
-            var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
-            var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
-            if (slideEl) {
-              // Stash the Printful URL so the name toggle can restore it
-              // when the customer flips back to YES — same idea as the
-              // initial-render branch above.
-              slideEl.setAttribute('data-printful-url', m.url);
-              slideEl.innerHTML = '';
-              var newImg = document.createElement('img');
-              newImg.src = m.url;
-              newImg.alt = (petName || 'Portrait') + ' ' + key + ' mockup';
-              newImg.loading = 'lazy';
-              newImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
-              slideEl.appendChild(newImg);
-            }
-          });
-        } catch (e) {}
-      })
-      .catch(function () {});
-    }
 
     // Watermark disclaimer — sits directly under the gallery so the
     // customer is reassured the Pet Printables marks they see in the
@@ -1140,40 +1106,47 @@
       if (thumb) thumb.src = heroUrl;
       // Source-aspect change means the slide's cropping math is wrong
       // for the new src, so always rebuild the slide rather than just
-      // swapping <img>.src.
-      //
-      // Toggle YES on a Printful-backed slide: restore the Printful
-      // mockup URL (cached as data-printful-url at render time). Printful
-      // mockups are baked with the named artwork — they're the polished
-      // canvas-on-wall scene customers should see by default.
-      //
-      // Toggle NO on a Printful-backed slide: rebuild as a client canvas
-      // mockup with the no-name art. The customer keeps a canvas frame +
-      // dimensions reference (instead of a raw zoomed preview) and the
-      // name visibly drops. We never have a Printful mockup of the
-      // un-named artwork to fall back to, so the client mockup is the
-      // canonical "no-name" view.
+      // swapping <img>.src. Every slide rebuilds as a client mockup
+      // sourced from the un-watermarked print PNG (per-aspect) when the
+      // toggle state has one available, or from the watermarked WebP
+      // fallback when it doesn't.
       var sizesMap = VARIANT_SIZES[productHandle] || VARIANT_SIZES['canvas'] || {};
       gallery.querySelectorAll('.product-gallery__slide--mockup').forEach(function (slide) {
         var sizeKey = slide.getAttribute('data-variant-size') || '';
         var dim = sizesMap[sizeKey];
         if (!dim) return;
         var isSq = dim.w === dim.h;
-        var useSquareSrc = isSq && !!url1x1;
-        var srcForSlide = useSquareSrc ? url1x1 : url;
-        var printfulUrl = slide.getAttribute('data-printful-url') || '';
+        var isThreeByFour = (dim.w === 3 && dim.h === 4) || (dim.w * 4 === dim.h * 3);
+        var isFourByFive = (dim.w === 4 && dim.h === 5) || (dim.w * 5 === dim.h * 4);
+
+        // Per-aspect un-watermarked PNG, picked to match the active
+        // toggle. printFileUrl* fields are overwritten by /add-name on
+        // YES; on NO we currently only have the 4:5 no-name PNG, so
+        // square / 3:4 NO falls back to the watermarked WebP path.
+        var matchedPrintUrl = null;
+        if (showName) {
+          if (isSq) matchedPrintUrl = data.printFileUrl1x1 || null;
+          else if (isThreeByFour) matchedPrintUrl = data.printFileUrl3x4 || null;
+          else if (isFourByFive) matchedPrintUrl = data.printFileUrl || null;
+        } else {
+          // NO state — only the 4:5 has an un-watermarked source today.
+          if (isFourByFive) matchedPrintUrl = data.noNamePrintFileUrl || null;
+        }
 
         slide.innerHTML = '';
-        if (showName && printfulUrl && !isSq) {
-          var img = document.createElement('img');
-          img.src = printfulUrl;
-          img.alt = (petName || 'Portrait') + ' ' + sizeKey + ' mockup';
-          img.loading = 'lazy';
-          img.style.cssText = 'width:100%;display:block;border-radius:16px;';
-          slide.appendChild(img);
-        } else {
-          var rebuilt = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
+        if (matchedPrintUrl) {
+          var rebuilt = createClientMockup(
+            matchedPrintUrl, dim.w, dim.h, sizeKey,
+            false, styleId,
+            { srcMatchesFace: true, applyCssWatermark: true }
+          );
           slide.appendChild(rebuilt);
+        } else {
+          // Fallback: watermarked WebP + legacy crop math.
+          var useSquareSrc = isSq && !!url1x1;
+          var srcForSlide = useSquareSrc ? url1x1 : url;
+          var rebuiltFallback = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
+          slide.appendChild(rebuiltFallback);
         }
       });
     }
@@ -1292,76 +1265,10 @@
         data.printFileUrl3x4 = newPrint3x4 || data.printFileUrl3x4;
         data.printFileUrl1x1 = newPrint1x1 || data.printFileUrl1x1;
 
-        // Invalidate any cached Printful mockup URLs on slides — they
-        // were generated from the NO-NAME source, so they're stale now
-        // that we have a named version. Without this, renderActiveImage
-        // would keep showing the no-name Printful mockup on non-square
-        // variants (12×16, 16×20) even after the customer toggled Yes.
-        // The slide will fall back to a client mockup with the named
-        // source until a fresh /mockups call returns Printful mockups
-        // generated from the named master.
-        if (showName) {
-          gallery.querySelectorAll('.product-gallery__slide--mockup').forEach(function (slide) {
-            slide.removeAttribute('data-printful-url');
-          });
-        }
-
         if (showName) renderActiveImage(newUrl);
         updateHiddenProps(showName, resp.composited_png_cdn || newUrl, newUrl);
         setLoading(false);
         setButtonsDisabled(false);
-
-        // Fire a fresh /mockups call with the new named source so the
-        // canvas-on-wall Printful mockups update for this customer's
-        // chosen name. Background — the client mockups already work
-        // fine if this fails or takes a while.
-        if (showName && data.imageFilename) {
-          var perAspect = {};
-          if (newUrl) perAspect['4:5'] = newUrl;
-          if (newUrl3x4) perAspect['3:4'] = newUrl3x4;
-          if (newUrl1x1) perAspect['1:1'] = newUrl1x1;
-          if (Object.keys(perAspect).length) {
-            fetch(API_BASE + '/mockups', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                image_filename: data.imageFilename,
-                product_type: productHandle,
-                image_urls_by_aspect: perAspect,
-              }),
-            })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (mockResp) {
-              if (!mockResp || !mockResp.mockups || !mockResp.mockups.length) return;
-              try {
-                var sessNow = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-                if (!sessNow.mockups) sessNow.mockups = {};
-                sessNow.mockups[productHandle] = mockResp.mockups;
-                localStorage.setItem(LS_KEY, JSON.stringify(sessNow));
-              } catch (_) {}
-              mockResp.mockups.forEach(function (m) {
-                if (m.placement !== 'default') return;
-                var nums = m.variant.match(/(\d+)\D+(\d+)/);
-                var key = nums ? nums[1] + 'x' + nums[2] : m.variant;
-                var slideEl = gallery.querySelector('[data-variant-size="' + key + '"]');
-                if (!slideEl) return;
-                // Don't overwrite if customer toggled back to No since
-                // we fired this fetch — that would put the named mockup
-                // back on a no-name slide.
-                if (!showName) return;
-                slideEl.setAttribute('data-printful-url', m.url);
-                slideEl.innerHTML = '';
-                var newImg = document.createElement('img');
-                newImg.src = m.url;
-                newImg.alt = (petName || 'Portrait') + ' ' + key + ' mockup';
-                newImg.loading = 'lazy';
-                newImg.style.cssText = 'width:100%;display:block;border-radius:16px;';
-                slideEl.appendChild(newImg);
-              });
-            })
-            .catch(function () { /* client mockups still work */ });
-          }
-        }
       })
       .catch(function (err) {
         setLoading(false);

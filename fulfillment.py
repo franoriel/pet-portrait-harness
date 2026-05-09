@@ -32,10 +32,7 @@ from PIL import Image
 
 from generate import (
     OUTPUT_DIR,
-    POST_PROCESS,
     PROMPTS,
-    call_gemini,
-    composite_name,
     crop_to_ratio,
 )
 
@@ -190,10 +187,10 @@ def verify_shopify_webhook(data: bytes, hmac_header: str) -> bool:
 
 
 def _sample_corner_color(img: Image.Image) -> tuple[int, int, int]:
-    """Average RGB of the four corner regions — used to fill the wrap-bleed
-    band around a canvas print. Stylised pet portraits sit on a calm,
-    relatively flat background, so the four-corner average is a faithful
-    extension of the painting beyond the front face.
+    """Average RGB of the four corner regions — used as a final fallback
+    fill colour. Prefer _edge_replicate_pad for actual wrap bleed since
+    it correctly handles split / multi-colour backgrounds (e.g. modern
+    shape art's half-yellow / half-orange canvas).
     """
     rgb = img.convert("RGB") if img.mode != "RGB" else img
     w, h = rgb.size
@@ -214,22 +211,70 @@ def _sample_corner_color(img: Image.Image) -> tuple[int, int, int]:
     return (r, g, b)
 
 
+def _edge_replicate_pad(
+    front: Image.Image,
+    target_w: int,
+    target_h: int,
+) -> Image.Image:
+    """Pad `front` to (target_w, target_h) by replicating its outermost
+    edge pixels into the surrounding bleed band. Each side extends the
+    adjacent column/row, so a horizontally-split background (e.g. yellow
+    left / orange right) cleanly extends both colours into the wrap
+    rather than being filled with a single averaged tone."""
+    rgb = front.convert("RGB") if front.mode != "RGB" else front
+    w, h = rgb.size
+    pad_l = (target_w - w) // 2
+    pad_t = (target_h - h) // 2
+    pad_r = target_w - w - pad_l
+    pad_b = target_h - h - pad_t
+
+    out = Image.new("RGB", (target_w, target_h))
+    out.paste(rgb, (pad_l, pad_t))
+
+    # Left / right bleed — replicate the 1px edge column out to the bleed width.
+    if pad_l > 0:
+        left_col = rgb.crop((0, 0, 1, h)).resize((pad_l, h), Image.NEAREST)
+        out.paste(left_col, (0, pad_t))
+    if pad_r > 0:
+        right_col = rgb.crop((w - 1, 0, w, h)).resize((pad_r, h), Image.NEAREST)
+        out.paste(right_col, (pad_l + w, pad_t))
+    # Top / bottom bleed — replicate the (now full-width) 1px row out vertically,
+    # so the corners inherit the colour from whichever side they sit on.
+    if pad_t > 0:
+        top_row = out.crop((0, pad_t, target_w, pad_t + 1)).resize((target_w, pad_t), Image.NEAREST)
+        out.paste(top_row, (0, 0))
+    if pad_b > 0:
+        bot_row = out.crop((0, pad_t + h - 1, target_w, pad_t + h)).resize((target_w, pad_b), Image.NEAREST)
+        out.paste(bot_row, (0, pad_t + h))
+    return out
+
+
 def wrap_print_file_with_bleed(
     front_face: Image.Image,
     product_key: str,
+    style: Optional[str] = None,
 ) -> Image.Image:
     """Place a front-face-correct composition into a Printful canvas
     print file with the required wrap bleed on every side: 3" for
     gallery-wrap (canvas-*), 1.5" for framed canvas (canvas-*-framed).
 
     The customer-visible art lives in the inner FRONT_FACE_SIZES rectangle.
-    The surrounding bleed band is filled with the sampled corner
-    background colour so the wrap (or frame-edge band) reads as a calm
-    continuation of the painting rather than a visible seam.
+    The surrounding bleed band continues the front face's bg outward.
 
-    Bleed depth is implicit in PRINT_SIZES vs FRONT_FACE_SIZES — the
-    helper just pads to whatever the file dims demand, so changing the
-    bleed for a future product class is a one-line edit in the constants.
+    Two strategies depending on style:
+
+    - **bold-graphic-poster** (and any future flat-bg style): SAMPLE the
+      median colour of the front face's left + right edge columns and
+      PAINT the bleed with that exact colour, split at 50% width.
+      Edge replication on these styles can propagate ~1-2 RGB shifts
+      from the LANCZOS resize / UnsharpMask path, which produces a
+      visible "darker frame" between the bleed and the front face.
+      Sampling a robust median + painting flat eliminates that artifact.
+
+    - **everything else** (watercolor, charcoal, aura, etc.): edge-
+      replicate the outermost column outward. Right call for organic
+      backgrounds where the bg has natural texture / wash variation
+      that should continue smoothly into the bleed.
 
     No-op for non-canvas products (magnets/etc.) — they ship at file
     dimensions with no wrap.
@@ -246,12 +291,59 @@ def wrap_print_file_with_bleed(
     if (front_face.width, front_face.height) != (front_w, front_h):
         front_face = front_face.resize((front_w, front_h), Image.LANCZOS)
 
-    bg = _sample_corner_color(front_face)
-    file_canvas = Image.new("RGB", (file_w, file_h), bg)
-    inset_x = (file_w - front_w) // 2
-    inset_y = (file_h - front_h) // 2
-    file_canvas.paste(front_face, (inset_x, inset_y))
-    return file_canvas
+    # Bold Graphic Poster: paint bleed with canonical split colours
+    # sampled from the front face's left + right edge medians.
+    if style == "bold-graphic-poster":
+        return _split_bg_pad(front_face, file_w, file_h)
+
+    return _edge_replicate_pad(front_face, file_w, file_h)
+
+
+def _split_bg_pad(
+    front: Image.Image,
+    target_w: int,
+    target_h: int,
+) -> Image.Image:
+    """Pad `front` to (target_w, target_h) by painting the bleed with
+    the median colour of `front`'s left + right edge columns. Used for
+    Bold Graphic Poster's 2-tone vertical split: left half of bleed
+    gets left-edge median, right half gets right-edge median.
+
+    This sidesteps edge-replication artifacts where 1-2 RGB shifts
+    introduced by the LANCZOS resize + UnsharpMask path produce a
+    visible "darker frame" between the bleed and the front face.
+    Sampling the median (not mean — robust to anti-aliased outliers)
+    and painting flat keeps the bleed exactly the canonical bg colour."""
+    rgb = front.convert("RGB") if front.mode != "RGB" else front
+    w, h = rgb.size
+
+    def _median_color(strip):
+        # Median per channel — robust to outliers (anti-aliased edge
+        # pixels at the seam between bg_left and bg_right halves).
+        pixels = list(strip.getdata())
+        if not pixels:
+            return (0, 0, 0)
+        n = len(pixels)
+        rs = sorted(p[0] for p in pixels)
+        gs = sorted(p[1] for p in pixels)
+        bs = sorted(p[2] for p in pixels)
+        return (rs[n // 2], gs[n // 2], bs[n // 2])
+
+    left_color = _median_color(rgb.crop((0, 0, 1, h)))
+    right_color = _median_color(rgb.crop((w - 1, 0, w, h)))
+
+    pad_l = (target_w - w) // 2
+    pad_t = (target_h - h) // 2
+
+    # Build target: left half = left_color, right half = right_color.
+    # The seam is at the centre of the TARGET canvas, which lines up
+    # with the seam in the front face when pasted centred.
+    out = Image.new("RGB", (target_w, target_h), left_color)
+    mid = target_w // 2
+    right_half = Image.new("RGB", (target_w - mid, target_h), right_color)
+    out.paste(right_half, (mid, 0))
+    out.paste(rgb, (pad_l, pad_t))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -271,24 +363,34 @@ def generate_print_file(
     """
     Generate a print-ready hi-res portrait sized for the target product.
 
-    Preferred path: download the composited PNG from R2 (already generated
-    during the initial portrait flow) and upscale it with LANCZOS + sharpening.
-    This avoids a second Gemini API call and halves the per-order cost.
+    Single path: download the composited PNG from R2 (the same source the
+    customer's preview was derived from), LANCZOS-upscale to FRONT_FACE_SIZES,
+    wrap with bleed, save at 300 DPI. Never re-runs Gemini and never
+    re-composites the name — the R2 PNG already has it baked in by /add-name.
 
-    Fallback: if R2 image is unavailable, re-generate via Gemini (old path).
+    Raises RuntimeError if the R2 source is missing. The previous Gemini-regen
+    fallback was removed: it fed the named composited PNG back to Gemini as a
+    "photo," which produced double-name ghosting on the print. There is no
+    clean fallback source today (the customer's original uploaded photo URL
+    is not persisted to a cart property), so a missing R2 file must surface
+    as a fulfillment error rather than a silently corrupted print.
 
     Args:
-        photo_path: Path to the customer's original photo (fallback source).
-        pet_name: Pet's name for compositing.
-        style: Style ID (e.g. 'soft-watercolour' from React → mapped to 'watercolor').
+        photo_path: Vestigial; not used. The R2 PNG is the only source.
+        pet_name: Pet's name — used only for the output filename.
+        style: Style ID (e.g. 'soft-watercolour' from React → mapped internally).
         product_key: Product-size key (e.g. 'canvas-12x24').
-        style_vars: Optional watercolor-specific variables.
+        style_vars: Vestigial; not used.
         composited_r2_key: R2 key of the composited PNG from initial generation.
+        font_size: Vestigial; not used (name was already composited at /add-name).
+        show_name: Vestigial; not used (R2 PNG already reflects the choice).
 
     Returns:
         Path to the saved print-ready PNG.
+
+    Raises:
+        RuntimeError: composited_r2_key is None or the file is unreachable.
     """
-    from PIL import ImageFilter
     from storage import download_from_r2
 
     file_w, file_h = PRINT_SIZES[product_key]
@@ -312,7 +414,15 @@ def generate_print_file(
 
         # Crop the source to the FRONT-FACE aspect (1:1 / 3:4 / 4:5).
         # The wrap padding is added later by wrap_print_file_with_bleed().
-        img = crop_to_ratio(img, ratio, gravity="center")
+        # Skip the crop entirely when the source already matches the target
+        # aspect (per-aspect URLs picked by _pick_source_url usually hit
+        # this path) — avoids a redundant pass that could subtly shift
+        # composition if the source dims are unexpected. "Already matches"
+        # = within 1% tolerance to allow for minor sub-pixel rounding.
+        target_ratio = ratio[0] / ratio[1]
+        source_ratio = img.width / img.height
+        if abs(source_ratio - target_ratio) > 0.01:
+            img = crop_to_ratio(img, ratio, gravity="center")
 
         # Resize to FRONT-FACE pixel dimensions. The wrap step below pads
         # this up to file dimensions; the name is composited at front-face
@@ -321,60 +431,67 @@ def generate_print_file(
         if (img.width, img.height) != (front_w, front_h):
             img = img.resize((front_w, front_h), Image.LANCZOS)
 
-        # Sharpen ONLY when upscaling — LANCZOS downscale + UnsharpMask
-        # produces halos.
-        if needs_upscale:
-            img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        # UnsharpMask removed. On hard-edged styles (Bold Graphic Poster,
+        # Modern Shape Art), the ~5x linear upscale from Gemini's ~1024px
+        # output to FRONT_FACE_SIZES (4800-6000px) produces visible
+        # aliasing on cubist polygon boundaries. UnsharpMask AMPLIFIES
+        # those edge artifacts — it was making the jaggies worse, not
+        # better. Without it, edges are slightly softer but the print
+        # reads as a clean vector illustration rather than a pixel-y
+        # upscale.
+        # The needs_upscale variable is preserved so future code can
+        # re-introduce a smarter resampling strategy (2x supersampling
+        # + Gaussian blur) without restructuring the surrounding code.
+        _ = needs_upscale  # noqa: F841 — kept for future use
 
-        # Composite pet name on the front-face image (zone_top is a
-        # fraction of the front face, not the file). Skip for mugs, and
-        # honor the customer's _Show Name=No selection from the cart.
+        # The R2 source is already-composited from preview generation —
+        # it has the customer's name baked in (or is the no-name variant
+        # when show_name=No). We never re-composite here — that would
+        # burn the name on top of itself, and any cart-side rename would
+        # produce a double-name overlap (JEWEL + WILDER → JEWILDER, or
+        # the JJ ÇK Modern Shape Art ghost we hit when the old Gemini
+        # fallback fed the named PNG back to Gemini).
         style_key = _map_style_id(style)
-        skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
-        if not skip_name:
-            img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
 
         # Clean up downloaded file
         r2_path.unlink(missing_ok=True)
 
     else:
-        # ── Fallback: re-generate via Gemini ─────────────────────
-        log.warning("R2 composited image not available, falling back to Gemini re-generation")
-        style_key = _map_style_id(style)
-
-        raw_bytes = call_gemini(photo_path, style_key, style_vars)
-        img = Image.open(BytesIO(raw_bytes))
-        img.load()
-
-        # Add background padding to give the pet breathing room — Gemini
-        # routinely fills the canvas edge-to-edge regardless of prompt
-        # instructions. Mirrors the preview-side padding in generate.py
-        # so customer-facing previews and print files match.
-        from generate import add_background_padding as _pad
-        img = _pad(img, padding_ratio=0.12)
-
-        # Crop to FRONT-FACE aspect ratio with center gravity. Wrap is
-        # padded around this in wrap_print_file_with_bleed() below.
-        img = crop_to_ratio(img, ratio, gravity="center")
-
-        # Apply style-specific post-processing
-        if style_key != "watercolor":
-            img = POST_PROCESS.get(style_key, lambda x: x)(img)
-
-        # Resize to FRONT-FACE dimensions (the customer-visible area).
-        if (img.width, img.height) != (front_w, front_h):
-            img = img.resize((front_w, front_h), Image.LANCZOS)
-
-        # Composite pet name on the front-face image. Skip for mugs and
-        # honor the customer's _Show Name=No selection from the cart.
-        skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
-        if not skip_name:
-            img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
+        # NO FALLBACK. The composited PNG that was the source of truth
+        # for the customer's preview is the ONLY clean source for the
+        # print. Without it we cannot produce a print that matches what
+        # the customer saw, and the watermarked WebP preview is unfit
+        # for print use directly (baked-in watermark, ≤800 px lossy
+        # source, no DPI metadata, no wrap bleed).
+        #
+        # The previous fallback re-ran Gemini against `photo_path`, but
+        # `photo_path` is the named composited PNG (parse_order_items
+        # writes `_Print File URL` into preview_url). Feeding that to
+        # Gemini left the existing pet-name text visible in the
+        # regenerated image; composite_name then added a second name
+        # on top, producing visibly ghost-doubled letters on the
+        # printed canvas — the bug surfaced on a Modern Shape Art
+        # canvas where "JACK" rendered as "JJ ÇK". The customer's
+        # original uploaded photo URL is not persisted to a cart
+        # property, so there is no clean source to fall back to.
+        #
+        # Fail loudly instead. The order surfaces in
+        # `_process_fulfillment`'s exception handler (logged as
+        # "fulfillment failed"); the order is NOT submitted to
+        # Printful; ops investigates the missing R2 file and retries.
+        # Better a paused order than a corrupted print shipped silently.
+        raise RuntimeError(
+            f"Print file generation failed for {product_key}: composited "
+            f"R2 key {composited_r2_key!r} is missing or unreachable. "
+            f"Refusing to regenerate via Gemini — that path produces "
+            f"double-name ghosting when fed the named composited PNG. "
+            f"Investigate R2 (key/bucket/prefix) and retry the order."
+        )
 
     # For canvas variants, expand the front-face composition to the full
     # file dimensions by padding sampled-bg-coloured wrap around it. For
     # magnets (no wrap), wrap_print_file_with_bleed is a no-op.
-    img = wrap_print_file_with_bleed(img, product_key)
+    img = wrap_print_file_with_bleed(img, product_key, style=_map_style_id(style))
 
     # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -518,6 +635,109 @@ def tag_shopify_order(order_id: str, tags_to_add: list[str]) -> bool:
 
     except Exception:
         log.exception("Order %s: tagging failed unexpectedly", order_id)
+        return False
+
+
+def set_order_metafield(
+    order_id: str,
+    namespace: str,
+    key: str,
+    value,
+    value_type: str = "json",
+) -> bool:
+    """Upsert a metafield on a Shopify order via the Admin REST API.
+
+    Tries POST first (creates new). If Shopify returns 422 (already
+    exists), GETs the order's metafields, finds the matching
+    namespace/key, and PUTs to its id. Both paths are idempotent — safe
+    to call repeatedly with the same value.
+
+    For value_type='json', a non-string value is JSON-encoded
+    automatically. Strings are passed through unchanged.
+
+    Returns True on success, False on any failure (logged — never raises).
+    """
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not token:
+        log.warning(
+            "Order %s: skipping metafield write — SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set",
+            order_id,
+        )
+        return False
+
+    if value_type == "json" and not isinstance(value, str):
+        value_str = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    else:
+        value_str = str(value)
+
+    headers = {
+        "X-Shopify-Access-Token": token,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    base = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}"
+    create_url = f"{base}/orders/{order_id}/metafields.json"
+    payload = {
+        "metafield": {
+            "namespace": namespace,
+            "key": key,
+            "value": value_str,
+            "type": value_type,
+        }
+    }
+
+    try:
+        r = requests.post(create_url, headers=headers, json=payload, timeout=15)
+        if r.status_code in (200, 201):
+            log.info("Order %s: metafield %s.%s created", order_id, namespace, key)
+            return True
+
+        if r.status_code != 422:
+            log.error(
+                "Order %s: metafield create failed (HTTP %s): %s",
+                order_id, r.status_code, r.text[:300],
+            )
+            return False
+
+        # 422 — likely a duplicate. Find existing metafield id and PUT.
+        list_url = f"{base}/orders/{order_id}/metafields.json"
+        rl = requests.get(
+            list_url, headers=headers,
+            params={"namespace": namespace, "key": key},
+            timeout=15,
+        )
+        if rl.status_code != 200:
+            log.error(
+                "Order %s: metafield lookup failed (HTTP %s): %s",
+                order_id, rl.status_code, rl.text[:300],
+            )
+            return False
+        existing = (rl.json().get("metafields") or [])
+        match = next(
+            (m for m in existing if m.get("namespace") == namespace and m.get("key") == key),
+            None,
+        )
+        if not match:
+            log.error("Order %s: 422 on create but no existing metafield found", order_id)
+            return False
+        mf_id = match["id"]
+        update_url = f"{base}/metafields/{mf_id}.json"
+        ru = requests.put(
+            update_url, headers=headers,
+            json={"metafield": {"id": mf_id, "value": value_str, "type": value_type}},
+            timeout=15,
+        )
+        if ru.status_code in (200, 201):
+            log.info("Order %s: metafield %s.%s updated (id=%s)", order_id, namespace, key, mf_id)
+            return True
+        log.error(
+            "Order %s: metafield update failed (HTTP %s): %s",
+            order_id, ru.status_code, ru.text[:300],
+        )
+        return False
+    except Exception:
+        log.exception("Order %s: metafield write failed unexpectedly", order_id)
         return False
 
 

@@ -28,6 +28,13 @@ QUEUE_KEY = "pp:job_queue"
 JOB_PREFIX = "pp:job:"
 JOB_TTL = 86400  # 24 hours
 
+# Order records — the digital_files payload (portraits + signed download
+# URLs + gallery submit links + expiry) keyed by Shopify order_id. Used
+# by the /portraits/<token> Flask route to render the digital gift page
+# without requiring the customer to log into Shopify's hosted account UI.
+ORDER_PREFIX = "pp:order:"
+ORDER_TTL = 90 * 86400  # 90 days — matches social variant token expiry
+
 # ── Redis or in-memory backend ────────────────────────────────────────────────
 
 _redis = None
@@ -61,6 +68,7 @@ def create_job(
     terms_accepted_at: str = "",
     client_ip: str = "",
     background_mode: str = "auto",
+    variation_seed: Optional[int] = None,
 ) -> dict:
     """Create a job, enqueue it, and return the job dict."""
     job_id = uuid.uuid4().hex[:12]
@@ -71,6 +79,7 @@ def create_job(
         "pet_name": pet_name,
         "style": style,
         "background_mode": background_mode or "auto",
+        "variation_seed": variation_seed if variation_seed is not None else "",
         "upload_path": upload_path,
         "created_at": now,
         "updated_at": now,
@@ -171,6 +180,51 @@ def queue_depth() -> int:
     if r:
         return r.llen(QUEUE_KEY)
     return len(_memory_queue)
+
+
+# ── Order records ─────────────────────────────────────────────────────────────
+
+_order_memory: dict[str, str] = {}
+
+
+def set_order_record(order_id: str, record: dict) -> bool:
+    """Persist a digital_files record for an order. Used by the Flask
+    /portraits/<token> route to render the digital gift page without
+    Shopify customer-account access. Stored as JSON. Returns True on
+    success."""
+    import json as _json
+    payload = _json.dumps(record, separators=(",", ":"), ensure_ascii=False)
+    r = _get_redis()
+    if r:
+        try:
+            r.set(f"{ORDER_PREFIX}{order_id}", payload, ex=ORDER_TTL)
+            return True
+        except Exception:
+            log.exception("Failed to write order record %s to Redis", order_id)
+            return False
+    _order_memory[str(order_id)] = payload
+    return True
+
+
+def get_order_record(order_id: str) -> Optional[dict]:
+    """Fetch a previously-saved order record. Returns None if not found
+    or expired."""
+    import json as _json
+    r = _get_redis()
+    if r:
+        try:
+            raw = r.get(f"{ORDER_PREFIX}{order_id}")
+        except Exception:
+            log.exception("Failed to read order record %s from Redis", order_id)
+            return None
+    else:
+        raw = _order_memory.get(str(order_id))
+    if not raw:
+        return None
+    try:
+        return _json.loads(raw)
+    except Exception:
+        return None
 
 
 # ── Serialization helpers (Redis stores strings) ──────────────────────────────
