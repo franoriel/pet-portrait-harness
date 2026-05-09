@@ -1653,8 +1653,37 @@
       var cdnUrls = freshData.previewCdnUrls || [];
       var defaultPreview = cdnUrls[freshData.selectedPreviewIndex || 0]
         || cdnUrls[0] || '';
+      // RACE CONDITION GUARD — if the customer has Yes toggled but
+      // namedPreviewUrl hasn't arrived yet (they clicked ATC while
+      // /add-name was still in-flight), the fallback would silently
+      // commit the no-name URL with _Show Name=Yes. The cart line then
+      // shows Yes but renders the no-name image, AND fulfillment ships
+      // the no-name print despite the customer's name choice.
+      //
+      // Block the submit with a clear message and force the customer
+      // to wait for the named version to complete.
+      if (withName && !freshData.namedPreviewUrl) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+        console.warn(
+          '[PetPrintables] BLOCKED ATC — Yes toggled but namedPreviewUrl not yet ready. /add-name still in flight?',
+        );
+        alert(
+          'Please wait — we are still adding the name to your portrait. ' +
+          'Try clicking Add to Cart again in 5-10 seconds.'
+        );
+        // If /add-name isn't already running, kick it off so the
+        // customer's next click succeeds.
+        try {
+          if (typeof fetchNamedPreview === 'function' && !withTextUrl) {
+            fetchNamedPreview().catch(function () { /* handled inline */ });
+          }
+        } catch (_) {}
+        return;
+      }
+
       var primaryPreviewUrl = withName
-        ? (freshData.namedPreviewUrl || defaultPreview)
+        ? freshData.namedPreviewUrl
         : defaultPreview;
       var primaryPrintFile = withName
         ? (freshData.printFileUrl || primaryPreviewUrl)
