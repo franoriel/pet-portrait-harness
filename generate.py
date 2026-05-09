@@ -689,7 +689,12 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "label":         "Rose",
         "bg_left_hex":   "#F2BAC2", "bg_left_name":  "soft dusty pink",
         "bg_right_hex":  "#9F4A6F", "bg_right_name": "deep magenta plum",
-        "accents":       "ivory (#F4EFE7), deep aubergine (#3B1F36), peachy blush (#F2C9A4), and dusty mauve (#C9A4A4)",
+        # Dropped peachy-blush + dusty-mauve — both sat too close in
+        # lightness to the soft-pink left bg, collapsing the pet into a
+        # near-silhouette. Replaced with two saturated medium tones
+        # (terracotta + ochre) that contrast strongly with both bg halves
+        # so the model has lightness/chroma headroom to facet with.
+        "accents":       "ivory (#F4EFE7), deep aubergine (#3B1F36), warm terracotta (#C77B58), and warm ochre (#E8C547)",
         "name_ink":      "deep aubergine #3B1F36",
     },
     "citrus": {
