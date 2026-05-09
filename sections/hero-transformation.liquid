@@ -40,18 +40,6 @@
            loading="eager"
            width="1920" height="1072">
     </picture>
-    <span class="hero-frame__stage" aria-live="polite" data-stage>
-      <span class="hero-frame__stage-labels">
-        <span class="hero-frame__stage-label" data-label-1>1. Upload your photo</span>
-        <span class="hero-frame__stage-label" data-label-2>2. We paint it in your style</span>
-        <span class="hero-frame__stage-label" data-label-3>3. Hangs on your wall</span>
-      </span>
-      <span class="hero-frame__stage-dots" aria-hidden="true">
-        <span class="hero-frame__stage-dot" data-dot-1></span>
-        <span class="hero-frame__stage-dot" data-dot-2></span>
-        <span class="hero-frame__stage-dot" data-dot-3></span>
-      </span>
-    </span>
   </div>
 
   <div class="hero__layout container">
@@ -176,71 +164,6 @@
   .hero--transform .hero-frame--1 { animation: hero-frame-1 7.5s ease-in-out infinite; }
   .hero--transform .hero-frame--2 { animation: hero-frame-2 7.5s ease-in-out infinite; }
   .hero--transform .hero-frame--3 { animation: hero-frame-3 7.5s ease-in-out infinite; }
-
-  /* Stage indicator — captioned step strip that sits over the visual,
-     tells the customer what's happening on the current frame, and
-     reinforces the three-step product story. Text + dots in one
-     glassmorphism pill. Positioned high enough above the bottom edge
-     to clear the trust bar's 52px negative-margin overlap (plus the
-     trust bar's own ~48px height + breathing room). */
-  .hero-frame__stage {
-    position: absolute; bottom: 110px; right: 24px;
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 6px 12px; border-radius: 999px;
-    background: rgba(28, 28, 28, 0.32);
-    backdrop-filter: blur(8px) saturate(130%);
-    -webkit-backdrop-filter: blur(8px) saturate(130%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    z-index: 3;
-    font-family: var(--font-body, sans-serif);
-    color: rgba(255, 255, 255, 0.78);
-  }
-  /* Label stack — three labels are layered in the same row, only the
-     active one is visible at any moment. The container sizes to the
-     widest label so the pill width stays stable across frames. */
-  .hero-frame__stage-labels {
-    position: relative;
-    display: inline-grid;
-    align-items: center;
-  }
-  .hero-frame__stage-label {
-    grid-column: 1; grid-row: 1;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    white-space: nowrap;
-    opacity: 0;
-  }
-  .hero-frame__stage-dots {
-    display: inline-flex; gap: 5px;
-    padding-left: 10px;
-    border-left: 1px solid rgba(255, 255, 255, 0.14);
-  }
-  .hero-frame__stage-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.28);
-  }
-  /* Label fades — match the same windows as the frames so each caption
-     reads while its frame is on screen. */
-  @keyframes hero-stage-label-1 {
-    0%, 18% { opacity: 1; } 22%, 100% { opacity: 0; }
-  }
-  @keyframes hero-stage-label-2 {
-    0%, 22% { opacity: 0; } 25%, 43% { opacity: 1; } 47%, 100% { opacity: 0; }
-  }
-  @keyframes hero-stage-label-3 {
-    0%, 47% { opacity: 0; } 50%, 92% { opacity: 1; } 96%, 100% { opacity: 0; }
-  }
-  .hero--transform [data-label-1] { animation: hero-stage-label-1 7.5s ease-in-out infinite; }
-  .hero--transform [data-label-2] { animation: hero-stage-label-2 7.5s ease-in-out infinite; }
-  .hero--transform [data-label-3] { animation: hero-stage-label-3 7.5s ease-in-out infinite; }
-  /* Dots — same sync, just background colour swaps. */
-  @keyframes hero-stage-dot-1 { 0%, 22% { background: #fff; } 25%, 100% { background: rgba(255,255,255,0.35); } }
-  @keyframes hero-stage-dot-2 { 0%, 22% { background: rgba(255,255,255,0.35); } 25%, 47% { background: #fff; } 50%, 100% { background: rgba(255,255,255,0.35); } }
-  @keyframes hero-stage-dot-3 { 0%, 47% { background: rgba(255,255,255,0.35); } 50%, 100% { background: #fff; } }
-  .hero--transform [data-dot-1] { animation: hero-stage-dot-1 7.5s ease-in-out infinite; }
-  .hero--transform [data-dot-2] { animation: hero-stage-dot-2 7.5s ease-in-out infinite; }
-  .hero--transform [data-dot-3] { animation: hero-stage-dot-3 7.5s ease-in-out infinite; }
 
   /* Layout wrapper — keeps content respecting the 1280px container while
      the visual stays full-bleed underneath. Desktop uses a two-column
