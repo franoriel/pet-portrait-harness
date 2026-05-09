@@ -424,10 +424,18 @@ def generate_print_file(
         if (img.width, img.height) != (front_w, front_h):
             img = img.resize((front_w, front_h), Image.LANCZOS)
 
-        # Sharpen ONLY when upscaling — LANCZOS downscale + UnsharpMask
-        # produces halos.
-        if needs_upscale:
-            img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        # UnsharpMask removed. On hard-edged styles (Bold Graphic Poster,
+        # Modern Shape Art), the ~5x linear upscale from Gemini's ~1024px
+        # output to FRONT_FACE_SIZES (4800-6000px) produces visible
+        # aliasing on cubist polygon boundaries. UnsharpMask AMPLIFIES
+        # those edge artifacts — it was making the jaggies worse, not
+        # better. Without it, edges are slightly softer but the print
+        # reads as a clean vector illustration rather than a pixel-y
+        # upscale.
+        # The needs_upscale variable is preserved so future code can
+        # re-introduce a smarter resampling strategy (2x supersampling
+        # + Gaussian blur) without restructuring the surrounding code.
+        _ = needs_upscale  # noqa: F841 — kept for future use
 
         # The R2 source is already-composited from preview generation —
         # it has the customer's name baked in (or is the no-name variant

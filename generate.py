@@ -4050,7 +4050,13 @@ def _save_with_pp_named(img: Image.Image, path: Path, **save_kwargs) -> None:
 # 70 is the conventional "very likely real text" threshold; lower values
 # pick up too many false positives from pet anatomy (eyes ≈ "O", nose
 # triangle ≈ "v", etc.) on stylised illustrations.
-_OCR_MIN_CONFIDENCE = 70
+# Lowered from 70 → 50 to catch cubist hallucinations on Bold Graphic
+# Poster / Modern Shape Art outputs. Gemini regularly slips stylized
+# letterforms ("MUS", "TRA", etc.) into the forehead/ear region; at
+# 70 confidence Tesseract often missed them on bold-poster fonts. 50
+# triggers more retries (slightly slower generation) but eliminates
+# the visible-glyph failure mode customers were seeing repeatedly.
+_OCR_MIN_CONFIDENCE = 50
 
 # Words shorter than this are ignored — single stray glyphs are almost
 # always anatomy mis-read by Tesseract, not actual hallucinated text.
