@@ -3864,11 +3864,25 @@ def composite_name(
         )
         return img
 
-    # IDEMPOTENCY GUARD #2 (OCR) — if the input already contains composited
-    # text ANYWHERE in the upper half of the canvas, DO NOT add another
-    # layer. Backup for the metadata check above when an external pipeline
-    # (Gemini's no-name source that hallucinated text, or a re-encoded
-    # JPEG that stripped PNG metadata) didn't carry pp_named.
+    # OCR-based idempotency check was REMOVED. It was causing more harm
+    # than good — false positives on cubist Modern Shape Art faces (eye
+    # shapes, ear tips, nose triangles read as letterforms by Tesseract)
+    # made composite_name skip the composite on legitimate fresh
+    # generations, producing "Yes toggled but no name visible" bugs.
+    #
+    # The structural guards above + at /add-name's URL filter cover the
+    # actual bug class (named files reused as no-name source) without
+    # needing OCR. Keeping the metadata check (pp_named) as the single
+    # idempotency layer:
+    #   - Reliable: deterministic boolean from PNG text chunks, not a
+    #     fuzzy text-detection model
+    #   - No false positives on stylized art
+    #   - Falls back to allowing the composite if metadata is absent,
+    #     which is the right default for fresh files
+    #
+    # Below the OCR-based skip is preserved as a no-op so the variable
+    # bindings and surrounding code don't error — but the threshold check
+    # is bypassed entirely.
     # A second composite at slightly different scale / position produces
     # ghost-doubled letters ("EDUARDO RAMIREZ" overlapping itself, JEWEL
     # + WILDER → JEWILDER).
@@ -3884,31 +3898,26 @@ def composite_name(
     # Falls open silently if Tesseract isn't installed (returns None) —
     # behavior is unchanged from before in that case.
     try:
+        # OCR-based idempotency removed (see comment above). Run the
+        # detector for diagnostic logging only — the result NEVER causes
+        # composite_name to skip. This way ops can still grep the logs
+        # for unexpected text in inputs to investigate manually, without
+        # the false-positive UX bug of skipping legitimate composites.
         name_band_h = max(1, int(h * 0.50))
         name_band = img.crop((0, 0, w, name_band_h))
         existing_text = _detect_hallucinated_text(name_band)
-        # Conservative thresholds — Tesseract reliably mis-reads cubist
-        # angular shapes (Bold Graphic Poster ear tips, Modern Shape Art
-        # facets) as 3-character "words" like "MAA" / "VVV" / "ILI".
-        # Only skip the composite when the detection is BOTH long enough
-        # AND looks like real text — must contain alphabetic characters
-        # and be at least 4 chars after stripping noise. Real composited
-        # names are virtually always ≥ 4 letters; 3-letter false positives
-        # were causing the "no name visible despite Yes toggle" regression.
         normalized = (existing_text or "").strip()
-        looks_like_real_text = (
-            len(normalized) >= 4
-            and sum(1 for c in normalized if c.isalpha()) >= 4
-        )
-        if existing_text and looks_like_real_text:
-            log.warning(
-                "[composite_name] input's name-safe zone already contains "
-                "text '%s' — skipping composite for pet_name='%s' to avoid "
-                "double-name ghosting. Source state likely had a stale "
-                "namedPreviewUrl.",
+        if existing_text and len(normalized) >= 4 and sum(1 for c in normalized if c.isalpha()) >= 4:
+            # Logged at info level — composite_name proceeds anyway since
+            # the metadata check is the only guard that actually skips.
+            log.info(
+                "[composite_name] OCR detected text '%s' in input top 50%% "
+                "(pet_name='%s'). NOT skipping — pp_named metadata is the "
+                "authoritative idempotency check. If you see double-name "
+                "ghosting, the source URL is bypassing the /add-name "
+                "_named filter.",
                 existing_text, pet_name,
             )
-            return img
         elif existing_text:
             log.debug(
                 "[composite_name] OCR found short/noisy text '%s' (len=%d, "
