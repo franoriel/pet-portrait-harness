@@ -604,10 +604,10 @@
     // Tiled CSS watermark overlay — applied when the source is the
     // un-watermarked print PNG (i.e. the same file Printful prints from).
     // Mirrors apply_preview_watermark in generate.py: ~28% logo width,
-    // -30° rotation, 1.5× spacing, opacity that's obvious in a
-    // screenshot but light enough to evaluate the artwork. Without this
-    // overlay the PDP would expose the un-watermarked print file to any
-    // right-click-save grab.
+    // -30° rotation, 1.5× spacing, opacity matched to the server-side
+    // 1% bake. At 1% the mark is barely perceptible — present enough
+    // to discourage casual right-click-save without distracting from
+    // the artwork while the customer is deciding to buy.
     if (applyCssWatermark) {
       var wm = document.createElement('div');
       wm.style.cssText = 'position:absolute;'
@@ -620,7 +620,7 @@
         // background-size sets the logo width relative to the wm box.
         + 'background-repeat:repeat;'
         + 'background-size:28% auto;'
-        + 'opacity:0.18;'
+        + 'opacity:0.01;'
         + 'mix-blend-mode:multiply;'
         + 'transform:rotate(-30deg);'
         + 'transform-origin:center center;';
