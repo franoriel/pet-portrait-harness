@@ -212,6 +212,28 @@
   // ── Detect product type from URL ────────────────────────
   var pathParts = window.location.pathname.split('/');
   var productHandle = pathParts[pathParts.indexOf('products') + 1] || '';
+
+  // CACHE INVALIDATION — when showName=Yes AND we have a named preview,
+  // the cached Printful mockups in session.mockups are likely from
+  // BEFORE /add-name returned (fetchMockup runs at generate-completion
+  // time using the no-name preview URL; /add-name runs LATER when the
+  // customer toggles name=Yes on ProductGallery). The cached mockups
+  // would be the no-name version and rendering them on the PDP shows
+  // the customer a no-name mockup despite their Yes toggle. Invalidate
+  // so the PDP's downstream /mockups fetch runs with the named source.
+  var _wantsNameAtLoad = data.wantsName !== false;
+  if (_wantsNameAtLoad && data.namedPreviewUrl && data.mockups && data.mockups[productHandle]) {
+    try {
+      var sess = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      if (sess.mockups && sess.mockups[productHandle]) {
+        delete sess.mockups[productHandle];
+        localStorage.setItem(LS_KEY, JSON.stringify(sess));
+      }
+      if (data.mockups) delete data.mockups[productHandle];
+    } catch (_) {}
+    console.log('[PetPrintables] Invalidated stale no-name Printful mockups; re-fetching with named source');
+  }
+
   var mockups = data.mockups && data.mockups[productHandle] ? data.mockups[productHandle] : [];
 
   // ── Canvas variant sizes (inches) — matches Shopify SKUs ──
