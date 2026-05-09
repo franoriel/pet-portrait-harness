@@ -4021,9 +4021,10 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 /* ── TrustBar ──────────────────────────────────────────────── */
 
 function PageHero({ stage }) {
-  // Marquee is hidden on the upload step — the full style grid lives on
-  // step 2, so the marquee on step 1 is redundant scroll-noise.
-  const showMarquee = stage !== STAGES.UPLOAD;
+  // Marquee is hidden on the STYLE step — the full style grid lives there,
+  // so the marquee duplicates it. On UPLOAD the marquee gives a quick
+  // teaser of what the customer is about to choose from.
+  const showMarquee = stage !== STAGES.STYLE;
   return React.createElement('div', {
     style: { textAlign: 'center', marginBottom: '20px' },
   },
