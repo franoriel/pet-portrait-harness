@@ -390,8 +390,9 @@ function saveSession(state) {
       // previewCdnUrls (which are watermarked) so neither side leaks.
       noNamePrintFileUrl: state.noNamePrintFileUrl || '',
       // Per-aspect no-name PNGs + watermarked previews. Persisted so
-      // the PDP can read them from session and pass them to /mockups +
-      // the cart writer when the customer never adds a name.
+      // the PDP can read them from session and feed them to the
+      // client-side canvas mockup + the cart writer when the customer
+      // never adds a name.
       printFileUrl3x4: state.printFileUrl3x4 || '',
       printFileUrl1x1: state.printFileUrl1x1 || '',
       previewUrl3x4: state.previewUrl3x4 || '',
@@ -582,13 +583,13 @@ async function generatePortrait({ imageFile, styleId, petName, termsAcceptedAt, 
       // watermarked preview so fulfillment never receives a watermarked
       // file, and the customer never sees an un-watermarked one.
       const noNamePrintFileUrl = absolutize(status.raw) || '';
-      // Per-aspect no-name PNGs — used by the cart writer + /mockups
-      // call when the customer never adds a name, so canvas-12x12 /
-      // 16x16 (1:1) and canvas-12x16 (3:4) variants ship a source that
-      // matches their front-face aspect instead of cover-cropping the
-      // 4:5 master. Watermarked WebPs are the same per-aspect content
-      // for storefront PDP display. /add-name overrides these later if
-      // the customer toggles a name on.
+      // Per-aspect no-name PNGs — used by the cart writer + the PDP's
+      // client-side canvas mockup when the customer never adds a name,
+      // so canvas-12x12 / 16x16 (1:1) and canvas-12x16 (3:4) variants
+      // ship a source that matches their front-face aspect instead of
+      // cover-cropping the 4:5 master. Watermarked WebPs are the same
+      // per-aspect content for storefront PDP display. /add-name
+      // overrides these later if the customer toggles a name on.
       const printFileUrl3x4 = absolutize(status.composited_png_3x4_cdn) || '';
       const printFileUrl1x1 = absolutize(status.composited_png_1x1_cdn) || '';
       const previewUrl3x4 = absolutize(status.composited_3x4_preview) || '';
@@ -1297,44 +1298,12 @@ function usePortraitFlow() {
         })();
       }
 
-      // Fire background mockup generation (non-blocking, with retry)
-      if (result.filename) {
-        ['canvas'].forEach(productType => {
-          const fetchMockup = (retries = 1) => {
-            // Prefer the R2 CDN URL so Printful fetches a durable URL rather
-            // than the ephemeral Railway /preview/ host. Falls back to filename
-            // if previews didn't make it into result for some reason.
-            const cdnUrl = (result.previews && result.previews[0]) || '';
-            fetch(`${API_BASE}/mockups`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                image_filename: result.filename,
-                image_url: cdnUrl,
-                product_type: productType,
-              }),
-            })
-            .then(r => {
-              if ((r.status === 503 || r.status === 429) && retries > 0) {
-                setTimeout(() => fetchMockup(retries - 1), 5000);
-                return null;
-              }
-              return r.ok ? r.json() : null;
-            })
-            .then(data => {
-              if (!data || !data.mockups) return;
-              try {
-                const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-                if (!session.mockups) session.mockups = {};
-                session.mockups[productType] = data.mockups;
-                localStorage.setItem(LS_KEY, JSON.stringify(session));
-              } catch (e) { /* ignore storage errors */ }
-            })
-            .catch(() => { if (retries > 0) setTimeout(() => fetchMockup(retries - 1), 5000); });
-          };
-          fetchMockup();
-        });
-      }
+      // Background Printful mockup-task fetch removed: the PDP now
+      // renders every variant tile client-side from the per-aspect
+      // un-watermarked print PNG (see pdp-portrait-inject.js
+      // createClientMockup + pickPrintSrcForFace). Pre-fetching
+      // Printful mockups here just produced the JPG-from-800px-WebP
+      // tiles that diverged from the actual print file.
     } catch (err) {
       const msg = err.message || '';
       const code = err.code || '';

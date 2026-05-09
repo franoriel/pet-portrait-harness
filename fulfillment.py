@@ -32,10 +32,7 @@ from PIL import Image
 
 from generate import (
     OUTPUT_DIR,
-    POST_PROCESS,
     PROMPTS,
-    call_gemini,
-    composite_name,
     crop_to_ratio,
 )
 
@@ -366,24 +363,34 @@ def generate_print_file(
     """
     Generate a print-ready hi-res portrait sized for the target product.
 
-    Preferred path: download the composited PNG from R2 (already generated
-    during the initial portrait flow) and upscale it with LANCZOS + sharpening.
-    This avoids a second Gemini API call and halves the per-order cost.
+    Single path: download the composited PNG from R2 (the same source the
+    customer's preview was derived from), LANCZOS-upscale to FRONT_FACE_SIZES,
+    wrap with bleed, save at 300 DPI. Never re-runs Gemini and never
+    re-composites the name — the R2 PNG already has it baked in by /add-name.
 
-    Fallback: if R2 image is unavailable, re-generate via Gemini (old path).
+    Raises RuntimeError if the R2 source is missing. The previous Gemini-regen
+    fallback was removed: it fed the named composited PNG back to Gemini as a
+    "photo," which produced double-name ghosting on the print. There is no
+    clean fallback source today (the customer's original uploaded photo URL
+    is not persisted to a cart property), so a missing R2 file must surface
+    as a fulfillment error rather than a silently corrupted print.
 
     Args:
-        photo_path: Path to the customer's original photo (fallback source).
-        pet_name: Pet's name for compositing.
-        style: Style ID (e.g. 'soft-watercolour' from React → mapped to 'watercolor').
+        photo_path: Vestigial; not used. The R2 PNG is the only source.
+        pet_name: Pet's name — used only for the output filename.
+        style: Style ID (e.g. 'soft-watercolour' from React → mapped internally).
         product_key: Product-size key (e.g. 'canvas-12x24').
-        style_vars: Optional watercolor-specific variables.
+        style_vars: Vestigial; not used.
         composited_r2_key: R2 key of the composited PNG from initial generation.
+        font_size: Vestigial; not used (name was already composited at /add-name).
+        show_name: Vestigial; not used (R2 PNG already reflects the choice).
 
     Returns:
         Path to the saved print-ready PNG.
+
+    Raises:
+        RuntimeError: composited_r2_key is None or the file is unreachable.
     """
-    from PIL import ImageFilter
     from storage import download_from_r2
 
     file_w, file_h = PRINT_SIZES[product_key]
@@ -439,49 +446,47 @@ def generate_print_file(
 
         # The R2 source is already-composited from preview generation —
         # it has the customer's name baked in (or is the no-name variant
-        # when show_name=No). Re-compositing here would burn the name on
-        # top of itself, and any cart-side rename produces a double-name
-        # overlap (e.g. JEWEL + WILDER → JEWILDER on the print file).
-        # The Gemini fallback below DOES composite because it starts from
-        # a raw, unnamed Gemini output.
+        # when show_name=No). We never re-composite here — that would
+        # burn the name on top of itself, and any cart-side rename would
+        # produce a double-name overlap (JEWEL + WILDER → JEWILDER, or
+        # the JJ ÇK Modern Shape Art ghost we hit when the old Gemini
+        # fallback fed the named PNG back to Gemini).
         style_key = _map_style_id(style)
 
         # Clean up downloaded file
         r2_path.unlink(missing_ok=True)
 
     else:
-        # ── Fallback: re-generate via Gemini ─────────────────────
-        log.warning("R2 composited image not available, falling back to Gemini re-generation")
-        style_key = _map_style_id(style)
-
-        raw_bytes = call_gemini(photo_path, style_key, style_vars)
-        img = Image.open(BytesIO(raw_bytes))
-        img.load()
-
-        # Add background padding to give the pet breathing room — Gemini
-        # routinely fills the canvas edge-to-edge regardless of prompt
-        # instructions. Mirrors the preview-side padding in generate.py
-        # so customer-facing previews and print files match.
-        from generate import add_background_padding as _pad
-        img = _pad(img, padding_ratio=0.12)
-
-        # Crop to FRONT-FACE aspect ratio with center gravity. Wrap is
-        # padded around this in wrap_print_file_with_bleed() below.
-        img = crop_to_ratio(img, ratio, gravity="center")
-
-        # Apply style-specific post-processing
-        if style_key != "watercolor":
-            img = POST_PROCESS.get(style_key, lambda x: x)(img)
-
-        # Resize to FRONT-FACE dimensions (the customer-visible area).
-        if (img.width, img.height) != (front_w, front_h):
-            img = img.resize((front_w, front_h), Image.LANCZOS)
-
-        # Composite pet name on the front-face image. Skip for mugs and
-        # honor the customer's _Show Name=No selection from the cart.
-        skip_name = product_key.startswith("mug") or str(show_name).strip().lower() == "no"
-        if not skip_name:
-            img = composite_name(img, pet_name, style=style_key, font_size_key=font_size)
+        # NO FALLBACK. The composited PNG that was the source of truth
+        # for the customer's preview is the ONLY clean source for the
+        # print. Without it we cannot produce a print that matches what
+        # the customer saw, and the watermarked WebP preview is unfit
+        # for print use directly (baked-in watermark, ≤800 px lossy
+        # source, no DPI metadata, no wrap bleed).
+        #
+        # The previous fallback re-ran Gemini against `photo_path`, but
+        # `photo_path` is the named composited PNG (parse_order_items
+        # writes `_Print File URL` into preview_url). Feeding that to
+        # Gemini left the existing pet-name text visible in the
+        # regenerated image; composite_name then added a second name
+        # on top, producing visibly ghost-doubled letters on the
+        # printed canvas — the bug surfaced on a Modern Shape Art
+        # canvas where "JACK" rendered as "JJ ÇK". The customer's
+        # original uploaded photo URL is not persisted to a cart
+        # property, so there is no clean source to fall back to.
+        #
+        # Fail loudly instead. The order surfaces in
+        # `_process_fulfillment`'s exception handler (logged as
+        # "fulfillment failed"); the order is NOT submitted to
+        # Printful; ops investigates the missing R2 file and retries.
+        # Better a paused order than a corrupted print shipped silently.
+        raise RuntimeError(
+            f"Print file generation failed for {product_key}: composited "
+            f"R2 key {composited_r2_key!r} is missing or unreachable. "
+            f"Refusing to regenerate via Gemini — that path produces "
+            f"double-name ghosting when fed the named composited PNG. "
+            f"Investigate R2 (key/bucket/prefix) and retry the order."
+        )
 
     # For canvas variants, expand the front-face composition to the full
     # file dimensions by padding sampled-bg-coloured wrap around it. For
