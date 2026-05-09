@@ -1660,42 +1660,23 @@
         ? (freshData.printFileUrl || primaryPreviewUrl)
         : (freshData.noNamePrintFileUrl || freshData.printFileUrl || primaryPreviewUrl);
 
-      // SAFEGUARD: every URL committed to the cart must share the same
-      // 10-char R2 prefix (= imageFilename hash). A mismatch means the
-      // session has URLs from two different photo uploads spliced
-      // together — almost always a stale field that didn't get reset
-      // on Restart or between regenerations. Block the submit if a
-      // mismatch is detected — better to fail loud and force a refresh
-      // than to ship a print of the wrong photo.
-      var R2_PREFIX_RE = /\/portraits\/([0-9a-f]{10})_/;
-      function _r2Prefix(u) {
-        if (!u) return null;
-        var m = R2_PREFIX_RE.exec(String(u));
-        return m ? m[1] : null;
-      }
-      var prefixes = [
-        _r2Prefix(primaryPreviewUrl),
-        _r2Prefix(primaryPrintFile),
-        _r2Prefix(freshData.noNamePrintFileUrl),
-        _r2Prefix(freshData.printFileUrl3x4),
-        _r2Prefix(freshData.printFileUrl1x1),
-      ].filter(Boolean);
-      var distinct = {};
-      prefixes.forEach(function (p) { distinct[p] = true; });
-      if (Object.keys(distinct).length > 1) {
-        if (e && e.preventDefault) e.preventDefault();
-        if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
-        console.error(
-          '[PetPrintables] BLOCKED ATC — session has mixed R2 prefixes:',
-          prefixes,
-          'Refusing to commit a cart line whose print file would be from a different upload than the preview. Reload the page and re-add.',
-        );
-        try { localStorage.removeItem(LS_KEY); } catch (_) {}
-        alert(
-          'Something went wrong with your portrait data. Please refresh the page and try again.',
-        );
-        return;
-      }
+      // R2 prefix guard removed — it was over-eager. Different uuid
+      // prefixes between noNamePrintFileUrl (from initial generation)
+      // and printFileUrl* (from /add-name) are LEGITIMATE and expected:
+      // /add-name creates new files with a fresh uuid every time, so
+      // the named files always have a different prefix from the no-name
+      // source. The guard fired on every legitimate name-toggle flow
+      // and produced false-positive "Something went wrong" alerts.
+      //
+      // The actual class of bugs the prefix guard was trying to catch
+      // (sending a named file as a no-name source to /add-name) is now
+      // covered by:
+      //   - client-side: only no-name URLs in the addNameSource fallback
+      //     chain (see fetchNamedPreview above)
+      //   - server-side: /add-name rejects URLs containing '_named'
+      //     in their path with a 400 error
+      // Both checks are stricter than the prefix heuristic and don't
+      // false-positive on legitimate flows.
 
       setProp('Pet Name', freshData.petName || '');
       setProp('_Style', freshData.styleId || '');
