@@ -689,7 +689,12 @@ POSTER_PALETTES: dict[str, dict[str, str]] = {
         "label":         "Rose",
         "bg_left_hex":   "#F2BAC2", "bg_left_name":  "soft dusty pink",
         "bg_right_hex":  "#9F4A6F", "bg_right_name": "deep magenta plum",
-        "accents":       "ivory (#F4EFE7), deep aubergine (#3B1F36), peachy blush (#F2C9A4), and dusty mauve (#C9A4A4)",
+        # Dropped peachy-blush + dusty-mauve — both sat too close in
+        # lightness to the soft-pink left bg, collapsing the pet into a
+        # near-silhouette. Replaced with two saturated medium tones
+        # (terracotta + ochre) that contrast strongly with both bg halves
+        # so the model has lightness/chroma headroom to facet with.
+        "accents":       "ivory (#F4EFE7), deep aubergine (#3B1F36), warm terracotta (#C77B58), and warm ochre (#E8C547)",
         "name_ink":      "deep aubergine #3B1F36",
     },
     "citrus": {
@@ -947,9 +952,42 @@ paths — not like a photo of an eye, not like a Pixar character's eye.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
-Transform this photo into a CUBIST WPAP-style flat-graphic pet portrait — \
-the pet rendered as a mosaic of bold angular polygonal colour blocks meeting \
-at sharp clean edges, set against a vertical TWO-TONE BACKGROUND SPLIT.
+You are given TWO images:
+- IMAGE 1 = STYLE REFERENCE. The visual aesthetic to match exactly: a \
+WPAP-cubist pet portrait composed of irregular flat-color POLYGONS \
+(triangles, parallelograms, kites) meeting at razor-sharp straight \
+edges. Treat IMAGE 1's structural language — polygonal faceting, \
+flat color blocks, no outlines, no fur strokes, no smooth tonal \
+gradations — as a hard requirement.
+- IMAGE 2 = SOURCE PHOTO. The specific pet whose identity, breed, head \
+angle, and distinctive markings must be preserved.
+
+Render the pet from IMAGE 2 in the polygonal-facet visual language of \
+IMAGE 1, applying the customer-chosen palette below (do NOT copy IMAGE 1's \
+colours — colours come from {{POSTER_ACCENTS}}). The output is a CUBIST \
+WPAP-style flat-graphic pet portrait — the pet rendered as a mosaic of \
+bold angular polygonal colour blocks meeting at sharp clean edges, set \
+against a vertical TWO-TONE BACKGROUND SPLIT.
+
+ABSOLUTELY NOT — wrong aesthetic, common drift modes (this prompt is \
+RECURRING-FAILURE territory): \
+- NO Shepard-Fairey "Hope" poster style (smooth illustrated regions, \
+black ink outlines around fur tufts, continuous tonal shading inside \
+colour zones) — that is the WRONG aesthetic. \
+- NO illustrated cartoon / Disney poster / vector-art-cute style with \
+soft curved fur clusters and inked silhouette outlines. \
+- NO rendered pet that has a single black outline running around its \
+silhouette — the pet's edge is defined by colour change between facet \
+and bg, not by an ink stroke. \
+- NO smooth continuous fur shading — every region of fur must read as \
+DISTINCT FLAT POLYGONS, not as a tonal gradient. If you can identify a \
+fur tuft with a smooth curved boundary in the rendered output, the \
+result is WRONG; replace it with a JAGGED ZIGZAG of triangular facets. \
+The right reference points are: WPAP (Wedha Abdul Rasyid), Tsevis \
+mosaic portraits, stained-glass-window portraits, faceted gemstone \
+portraits, Picasso analytic-cubism applied to a pet. NOT Shepard \
+Fairey, NOT Adobe Illustrator cartoon stickers, NOT Disney character \
+poster art.
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Use the animal's actual fur/coat PATTERN from the photo as the \
@@ -2605,6 +2643,22 @@ PROMPTS: dict[str, Callable[[Optional[dict]], str]] = {
     "bold-graphic-poster": _bold_graphic_poster_prompt,
     "aura-gradient":      _static(_AURA_GRADIENT_TEMPLATE),
     "charcoal":           _static(_CHARCOAL_TEMPLATE),
+}
+
+
+# Per-style visual style anchors. When a style is in this map, call_gemini
+# prepends the reference image as Part 1 (style anchor) and the source photo
+# as Part 2 (pet identity). The prompt body's STYLE-REFERENCE preamble
+# explains the two-image framing to the model.
+#
+# Why: Gemini's text-only interpretation of "WPAP cubist" drifts toward the
+# more common Shepard-Fairey poster aesthetic (smooth illustrated regions
+# with black ink outlines). A visual reference anchors the polygonal-facet
+# look so the model has something concrete to match instead of pattern-
+# matching to its dominant pet-portrait prior.
+HERE = Path(__file__).parent
+STYLE_REFERENCE_IMAGES: dict[str, Path] = {
+    "bold-graphic-poster": HERE / "assets" / "example-bold-graphic-poster.webp",
 }
 
 
@@ -4940,19 +4994,25 @@ def call_gemini(
             variation_seed, hint[:60],
         )
 
+    # Optional style-reference image: a known good example of the target
+    # aesthetic. When present, it goes in as Part 1 (style anchor) and the
+    # pet photo follows as Part 2 (subject identity). The per-style prompt
+    # body adds a STYLE-REFERENCE preamble explaining the framing.
+    parts: list = []
+    ref_path = STYLE_REFERENCE_IMAGES.get(style)
+    if ref_path and ref_path.exists():
+        ref_mime = MIME_MAP.get(ref_path.suffix.lower(), "image/webp")
+        parts.append(types.Part.from_bytes(data=ref_path.read_bytes(), mime_type=ref_mime))
+    parts.append(types.Part.from_bytes(data=image_bytes, mime_type=mime_type))
+    parts.append(types.Part.from_text(text=prompt))
+
     last_exc: Optional[Exception] = None
     for attempt in range(max_retries + 1):
         try:
             response = client.models.generate_content(
                 model="gemini-3.1-flash-image-preview",
                 contents=[
-                    types.Content(
-                        role="user",
-                        parts=[
-                            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                            types.Part.from_text(text=prompt),
-                        ],
-                    )
+                    types.Content(role="user", parts=parts)
                 ],
                 config=types.GenerateContentConfig(
                     response_modalities=["IMAGE", "TEXT"],
