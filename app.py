@@ -832,8 +832,13 @@ _PORTRAITS_PAGE_TEMPLATE = """<!doctype html>
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 'Inter', -apple-system, sans-serif; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
-.header { text-align: center; padding: 16px 0 32px; }
-.brand { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 24px; color: #1C1C1C; }
+.header { display: flex; justify-content: center; padding: 16px 0 32px; }
+.brand-link { display: inline-block; line-height: 0; }
+.brand-link:focus-visible { outline: 2px solid #1C1C1C; outline-offset: 4px; border-radius: 2px; }
+.brand-logo { width: 180px; height: auto; display: block; transform: translateX(8px); }
+.hero { text-align: center; max-width: 560px; margin: 0 auto 8px; }
+.hero .h1 { margin-left: auto; margin-right: auto; }
+.hero .h1-sub { margin-left: auto; margin-right: auto; max-width: 460px; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 8px; }
 .h1 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 38px; line-height: 1.1; margin: 0 0 12px; color: #1C1C1C; }
 .h1-sub { font-size: 14px; color: #6B6B63; line-height: 1.55; margin: 0 0 32px; }
@@ -842,7 +847,8 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
 .portrait-card__head { display: grid; grid-template-columns: 140px 1fr; gap: 20px; align-items: start; margin-bottom: 16px; }
 .portrait-card__img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; background: #F3EDE6; }
 .portrait-card__name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 22px; color: #1C1C1C; margin: 0 0 4px; }
-.portrait-card__style { font-size: 12px; color: #8B7D6B; margin: 0 0 14px; }
+.portrait-card__style { font-size: 12px; color: #8B7D6B; margin: 0 0 14px; letter-spacing: 0.02em; }
+.portrait-card__style strong { color: #1C1C1C; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
 .dl-section { margin-top: 14px; }
 .dl-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 10px; }
 .dl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
@@ -875,8 +881,12 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
 .tracking__copy { flex: 1; min-width: 200px; }
 .tracking__status { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 4px; }
 .tracking__line { font-size: 14px; color: #1C1C1C; margin: 0; line-height: 1.45; }
-.tracking__cta { font-size: 13px; font-weight: 600; color: #1C1C1C; text-decoration: none; padding: 10px 18px; border: 1px solid #1C1C1C; border-radius: 4px; letter-spacing: 0.04em; background: #FFFFFF; }
+.tracking__cta { font-size: 13px; font-weight: 600; color: #1C1C1C; text-decoration: none; padding: 10px 18px; border: 1px solid #1C1C1C; border-radius: 4px; letter-spacing: 0.04em; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; }
 .tracking__cta:hover { background: #1C1C1C; color: #FFFFFF; }
+.btn-primary, .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary svg, .btn-secondary svg, .tracking__cta svg { width: 14px; height: 14px; flex-shrink: 0; }
+.dl-btn--solid, .dl-btn--ghost { position: relative; }
+.dl-btn--solid svg, .dl-btn--ghost svg { width: 14px; height: 14px; flex-shrink: 0; margin-right: 6px; vertical-align: -2px; }
 .footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid #E4DDD4; }
 .footer p { font-size: 11px; color: #8B7D6B; letter-spacing: 0.04em; margin: 4px 0; }
 .footer a { color: #8B7D6B; text-decoration: underline; }
@@ -892,11 +902,15 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
 <body>
 <div class="wrap">
   <header class="header">
-    <span class="brand">Pet Printables</span>
+    <a href="https://petprintables.ca" class="brand-link" aria-label="Pet Printables home">
+      <img src="https://petprintables.ca/cdn/shop/t/3/assets/wordmark_black.svg?v=2026-05-09" alt="Pet Printables" class="brand-logo"/>
+    </a>
   </header>
-  __EYEBROW__
-  __HEADLINE__
-  <p class="expiry">Links are good until __EXPIRES__. Save the originals — they expire.</p>
+  <section class="hero">
+    __EYEBROW__
+    __HEADLINE__
+    <p class="expiry">Links are good until __EXPIRES__. Save the originals — they expire.</p>
+  </section>
   __TRACKING__
   __PORTRAITS__
 
@@ -964,6 +978,44 @@ document.querySelectorAll('[data-share-url]').forEach(function (btn) {
 </html>"""
 
 
+# Display labels for the canonical style ids. Mirrors the mapping in
+# sections/cart-items.liquid so the gift page and cart show identical copy.
+# Anything not in this dict falls through to a default of "Hyphen-Cased
+# → Title Cased" so a brand-new style id renders cleanly without a code
+# change here, just less polished than a hand-tuned label.
+_STYLE_LABELS = {
+    "soft-watercolour":    "Soft Watercolour",
+    "minimal-line-art":    "Minimal Line Art",
+    "modern-shape-art":    "Modern Shape Art",
+    "neon-pop-art":        "Neon Pop Art",
+    "renaissance-royalty": "Renaissance Royalty",
+    "bold-graphic-poster": "Bold Graphic Poster",
+    "aura-gradient":       "Aura Gradient",
+    "charcoal":            "Charcoal",
+}
+
+
+def _style_label(style_id: str) -> str:
+    """Resolve a style id to a display label. Falls back to title-casing
+    the hyphen-separated id so a new style ships looking reasonable until
+    it gets a hand-tuned entry in _STYLE_LABELS."""
+    if not style_id:
+        return ""
+    sid = style_id.strip().lower()
+    return _STYLE_LABELS.get(sid) or sid.replace("-", " ").title()
+
+
+# Generic placeholders the backend writes when the customer didn't supply
+# a pet name. The render fn matches against this set so the headline and
+# card title swap to a warmer fallback ("Your furry pal") instead of
+# repeating the bare placeholder verbatim.
+_GENERIC_PET_NAMES = {"", "pet", "your pet", "your furry pal"}
+
+
+def _is_generic_pet_name(name: str) -> bool:
+    return (name or "").strip().lower() in _GENERIC_PET_NAMES
+
+
 def _render_portraits_page(record: dict) -> str:
     """Render the /portraits/<token> page from a digital_files record.
 
@@ -978,6 +1030,48 @@ def _render_portraits_page(record: dict) -> str:
     ctx = record.get("context") or {}
     is_repeat = (ctx.get("customer_orders_count") or 0) > 1
     first_name = (ctx.get("customer_first_name") or "").strip()
+
+    # Inline SVG icons (Lucide-style, currentColor, 24x24 viewBox so CSS
+    # sizing works). Defined once and reused across CTAs and per-portrait
+    # card buttons.
+    icon_truck = (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>'
+        '<path d="M15 18H9"/>'
+        '<path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/>'
+        '<circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>'
+    )
+    icon_plus = (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<path d="M5 12h14"/><path d="M12 5v14"/></svg>'
+    )
+    icon_star = (
+        '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" '
+        'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 '
+        '5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>'
+    )
+    icon_download = (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>'
+        '<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+    )
+    icon_share = (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>'
+        '<polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>'
+    )
+    icon_gallery = (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<rect x="3" y="3" width="18" height="18" rx="2"/>'
+        '<circle cx="9" cy="9" r="2"/>'
+        '<path d="M21 15l-5-5L5 21"/></svg>'
+    )
     # Format expiry as "May 8, 2026" if it's an ISO timestamp
     try:
         from datetime import datetime as _dt
@@ -988,14 +1082,23 @@ def _render_portraits_page(record: dict) -> str:
 
     # Eyebrow + headline. Repeat-buyer welcome wins over first-time copy
     # when the customer has placed more than one order.
+    # Headline name. When the customer didn't supply a pet name (or the
+    # backend wrote a generic placeholder like "your pet"), warm the copy
+    # to "your furry pal" instead of dropping the placeholder into the
+    # italic <em> verbatim — matches the brand voice and reads naturally.
+    raw_first_name = (portraits[0].get("pet_name") if portraits else "") or ""
+    headline_name = (
+        "your furry pal" if _is_generic_pet_name(raw_first_name) else raw_first_name
+    )
+    name_em = f"<em>{_html.escape(headline_name)}</em>"
+
     if is_repeat:
         eyebrow = (
             f'<p class="eyebrow">Welcome back{", " + _html.escape(first_name) if first_name else ""}</p>'
         )
         if len(portraits) == 1:
-            name = _html.escape(portraits[0].get("pet_name") or "your pet")
             headline = (
-                f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
+                f'<h1 class="h1">A digital copy of {name_em}, on us.</h1>'
                 '<p class="h1-sub">Thanks for coming back. Your canvas is in production. '
                 'Until it lands at your door, here is a digital copy in every format you '
                 'would want to share &mdash; feed, story, profile pic, even a phone wallpaper.</p>'
@@ -1011,9 +1114,8 @@ def _render_portraits_page(record: dict) -> str:
     else:
         eyebrow = '<p class="eyebrow">Your digital gift</p>'
         if len(portraits) == 1:
-            name = _html.escape(portraits[0].get("pet_name") or "your pet")
             headline = (
-                f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
+                f'<h1 class="h1">A digital copy of {name_em}, on us.</h1>'
                 '<p class="h1-sub">Your order is in production. Until it lands at your door, '
                 'here is a digital copy in every format you would want to share &mdash; feed, '
                 'story, profile pic, even a phone wallpaper.</p>'
@@ -1028,8 +1130,13 @@ def _render_portraits_page(record: dict) -> str:
 
     cards = []
     for p in portraits:
-        pet_name = _html.escape(p.get("pet_name") or "Pet")
-        style = _html.escape(p.get("style") or "")
+        raw_name = p.get("pet_name") or ""
+        # Card title: when no real name was provided, show "Your furry pal"
+        # capitalized so it reads like a name, not a placeholder.
+        pet_name = _html.escape(
+            "Your furry pal" if _is_generic_pet_name(raw_name) else raw_name
+        )
+        style_label = _style_label(p.get("style") or "")
         preview = _html.escape(p.get("preview_url") or "")
         original = _html.escape(p.get("original_url") or preview)
         gallery = _html.escape(p.get("gallery_submit_url") or "")
@@ -1051,21 +1158,25 @@ def _render_portraits_page(record: dict) -> str:
                 )
 
         actions = [
-            f'<a href="{original}" class="dl-btn dl-btn--solid" download>Download original</a>',
-            f'<button type="button" class="dl-btn dl-btn--ghost" data-share-url="{original}" data-share-name="{pet_name}">Share</button>',
+            f'<a href="{original}" class="dl-btn dl-btn--solid" download>{icon_download}Download original</a>',
+            f'<button type="button" class="dl-btn dl-btn--ghost" data-share-url="{original}" data-share-name="{pet_name}">{icon_share}Share</button>',
         ]
         if gallery:
             actions.append(
-                f'<a href="{gallery}" class="dl-btn dl-btn--ghost">Submit to gallery</a>'
+                f'<a href="{gallery}" class="dl-btn dl-btn--ghost">{icon_gallery}Submit to gallery</a>'
             )
 
+        style_html = (
+            f'<p class="portrait-card__style"><strong>Style:</strong> {_html.escape(style_label)}</p>'
+            if style_label else ""
+        )
         cards.append(f"""
 <article class="portrait-card">
   <div class="portrait-card__head">
     <a href="{original}" download><img class="portrait-card__img" src="{preview}" alt="{pet_name} portrait"/></a>
     <div>
       <p class="portrait-card__name">{pet_name}</p>
-      <p class="portrait-card__style">{style}</p>
+      {style_html}
       <div class="actions-row">{"".join(actions)}</div>
     </div>
   </div>
@@ -1109,7 +1220,7 @@ def _render_portraits_page(record: dict) -> str:
             f'<p class="tracking__status">{status_label}</p>'
             f'<p class="tracking__line">{status_line}</p>'
             '</div>'
-            f'<a class="tracking__cta" href="{_html.escape(tracking_url)}" target="_blank" rel="noopener noreferrer">TRACK ORDER</a>'
+            f'<a class="tracking__cta" href="{_html.escape(tracking_url)}" target="_blank" rel="noopener noreferrer">{icon_truck}<span>TRACK ORDER</span></a>'
             '</section>'
         )
     elif ctx:
@@ -1134,7 +1245,7 @@ def _render_portraits_page(record: dict) -> str:
             '<div class="reorder-cta">'
             '<h2>Another pet you want to celebrate?</h2>'
             '<p>You know the drill. Upload a photo, pick a style, send the canvas.</p>'
-            '<a href="https://petprintables.ca/pages/create" class="btn-secondary">MAKE ANOTHER PORTRAIT</a>'
+            f'<a href="https://petprintables.ca/pages/create" class="btn-secondary">{icon_plus}<span>MAKE ANOTHER PORTRAIT</span></a>'
             '</div>'
         )
     else:
@@ -1142,7 +1253,7 @@ def _render_portraits_page(record: dict) -> str:
             '<div class="reorder-cta">'
             '<h2>Have another one to celebrate?</h2>'
             '<p>Make a portrait for a second pet or a friend&rsquo;s dog.</p>'
-            '<a href="https://petprintables.ca/pages/create" class="btn-secondary">MAKE ANOTHER PORTRAIT</a>'
+            f'<a href="https://petprintables.ca/pages/create" class="btn-secondary">{icon_plus}<span>MAKE ANOTHER PORTRAIT</span></a>'
             '</div>'
         )
 
@@ -1150,7 +1261,7 @@ def _render_portraits_page(record: dict) -> str:
         '<div class="review-cta">'
         '<h2>How was your order?</h2>'
         '<p>Your canvas is on its way. Once it lands, we&rsquo;d love to hear what you think.</p>'
-        '<a href="https://petprintables.ca/pages/reviews" class="btn-primary">LEAVE A REVIEW</a>'
+        f'<a href="https://petprintables.ca/pages/reviews" class="btn-primary">{icon_star}<span>LEAVE A REVIEW</span></a>'
         '</div>'
     )
 
@@ -1170,7 +1281,7 @@ def _fetch_order_context(order_id: str) -> dict:
     headline for repeat customers. Fails open — returns an empty dict on
     any error so the page still renders without the enrichments."""
     domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
-    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    token = _get_shopify_admin_token()
     if not domain or not token:
         return {}
 
@@ -1349,12 +1460,34 @@ def verify_gallery_token(token: str) -> Optional[dict]:
         return None
 
 
+def _get_shopify_admin_token() -> str:
+    """Single source of truth for the Shopify Admin API access token.
+
+    Reads the Redis-stored OAuth offline token first (captured by the
+    /auth/shopify/callback flow), then falls back to the
+    SHOPIFY_ADMIN_API_TOKEN env var (legacy custom-app path).
+
+    Redis wins because it always reflects the most recent successful
+    OAuth handshake. The env var is treated as a last-resort fallback —
+    it's easy to leave a stale value sitting on Railway after re-installs,
+    and a stale env var was masking a valid OAuth token in production.
+    """
+    try:
+        from jobs import get_shopify_admin_token
+        redis_token = get_shopify_admin_token()
+        if redis_token:
+            return redis_token
+    except Exception:
+        pass
+    return os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+
+
 def _shopify_admin_graphql(query: str, variables: dict) -> dict:
     """POST a GraphQL query to the Shopify Admin API. Raises on transport
     error; returns the parsed JSON body otherwise (caller checks userErrors).
     """
     domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
-    admin_token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    admin_token = _get_shopify_admin_token()
     if not domain or not admin_token:
         raise RuntimeError("SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set")
     url = f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}/graphql.json"
@@ -1372,35 +1505,213 @@ def _shopify_admin_graphql(query: str, variables: dict) -> dict:
 
 
 def _submit_to_gallery(r2_key: str, pet_name: str, order_id: str) -> tuple[bool, str]:
-    """Upload the R2 preview to Shopify Files and upsert a `gallery_submission`
-    metaobject keyed on order_id. Returns (ok, detail). The metaobject handle
-    is `gallery-{order_id}` so repeat clicks are idempotent."""
+    """Stage a gallery submission for later admin review. Stores
+    (r2_key, pet_name, order_id, submitted_at) in Redis under
+    `pp:gallery:submission:{order_id}` and indexes it in the
+    `pp:gallery:pending` sorted set.
+
+    The previous implementation auto-published into a Shopify
+    `gallery_submission` metaobject, but Shopify deprecated legacy custom
+    apps and the new Dev Dashboard apps don't yield static admin tokens —
+    so server-side metaobject writes are no longer reachable. Admin
+    reviews `list_gallery_submissions()` and manually publishes the
+    chosen ones via Shopify Admin → Custom data → Metaobjects when ready.
+
+    Returns (ok, detail). Idempotent: re-submission with the same order_id
+    overwrites the staged entry rather than queuing duplicates.
+    """
+    from jobs import add_gallery_submission
+
     r2_public = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
     if not r2_public:
         return False, "R2_PUBLIC_URL not configured"
     image_url = f"{r2_public}/{r2_key}"
-    handle = f"gallery-{order_id}"
 
-    # 1. Idempotency — if a metaobject with this handle already exists, skip
-    #    file upload + creation entirely. Avoids stacking new file uploads
-    #    every time the customer re-clicks.
-    existing_q = """
-      query ExistingSubmission($handle: MetaobjectHandleInput!) {
-        metaobjectByHandle(handle: $handle) { id handle }
-      }
-    """
+    existed, status = add_gallery_submission(
+        order_id=order_id,
+        r2_key=r2_key,
+        pet_name=pet_name,
+        image_url=image_url,
+    )
+    if status not in ("ok", "ok-memory"):
+        return False, f"redis-write {status}"
+    return True, "already-staged" if existed else "staged"
+
+
+# ── Shopify Admin OAuth (one-time install to capture an offline token) ──────
+# Shopify deprecated legacy custom-app static tokens, so the only way to get
+# Admin API access on new stores is via OAuth through a Dev Dashboard app.
+# These two routes complete that handshake once and stash the resulting
+# offline access token in Redis. Future Admin API calls read it through
+# _get_shopify_admin_token() automatically.
+
+# Scopes the backend needs end-to-end. Keep this in sync with the scopes
+# configured on the Dev Dashboard app — Shopify's consent screen will only
+# grant the intersection of (requested here, configured there).
+SHOPIFY_OAUTH_SCOPES = ",".join([
+    "read_orders", "write_orders",
+    "read_files", "write_files",
+    "read_metaobjects", "write_metaobjects",
+    "read_metaobject_definitions", "write_metaobject_definitions",
+    "read_customers", "write_customers",
+])
+
+
+@app.route("/auth/shopify/install")
+def shopify_oauth_install():
+    """Kick off the Shopify OAuth flow. Admin-gated to prevent randoms from
+    triggering a re-install. Generates a CSRF nonce, stashes it in Redis,
+    and 302s the operator to Shopify's consent screen."""
+    if not _require_debug_token():
+        return jsonify(error="Forbidden"), 403
+
+    from flask import redirect
+    import secrets, urllib.parse
+
+    client_id = os.environ.get("SHOPIFY_OAUTH_CLIENT_ID", "").strip()
+    if not client_id:
+        return ("SHOPIFY_OAUTH_CLIENT_ID not set on the service. Configure "
+                "the Dev Dashboard app first, then set this env var on Railway."), 500
+
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    if not domain:
+        return "SHOPIFY_SHOP_DOMAIN not set", 500
+
+    backend_base = os.environ.get("PUBLIC_BASE_URL", "https://api.petprintables.ca").rstrip("/")
+    redirect_uri = f"{backend_base}/auth/shopify/callback"
+
+    state = secrets.token_urlsafe(32)
     try:
-        existing = _shopify_admin_graphql(existing_q, {
-            "handle": {"type": "gallery_submission", "handle": handle},
-        })
-        if (existing.get("data") or {}).get("metaobjectByHandle"):
-            return True, "already-submitted"
-    except Exception as exc:
-        log.warning("[gallery] order=%s existing-check failed: %s", order_id, exc)
+        from jobs import set_oauth_state
+        set_oauth_state(state)
+    except Exception:
+        log.exception("[oauth/install] failed to stash state")
+        return "OAuth state storage unavailable", 500
 
-    # 2. Upload the R2 image to Shopify Files. Shopify fetches by URL
-    #    server-side; the file appears in the shop's Files collection and
-    #    a permanent CDN URL is assigned.
+    auth_url = (
+        f"https://{domain}/admin/oauth/authorize?"
+        + urllib.parse.urlencode({
+            "client_id": client_id,
+            "scope": SHOPIFY_OAUTH_SCOPES,
+            "redirect_uri": redirect_uri,
+            "state": state,
+        })
+    )
+    log.info("[oauth/install] redirecting to consent screen for shop=%s", domain)
+    return redirect(auth_url, code=302)
+
+
+@app.route("/auth/shopify/callback")
+def shopify_oauth_callback():
+    """Receive Shopify's OAuth callback, verify HMAC + state, exchange the
+    short-lived `code` for an offline access token, persist to Redis. On
+    success returns a small confirmation page so the operator knows it
+    worked. Failures return clear error strings (logged) without ever
+    leaking the access token."""
+    import hmac as _hmac, hashlib as _hashlib
+
+    code = (request.args.get("code") or "").strip()
+    shop = (request.args.get("shop") or "").strip()
+    state = (request.args.get("state") or "").strip()
+    sig = (request.args.get("hmac") or "").strip()
+
+    if not all([code, shop, state, sig]):
+        return "Missing OAuth callback params (code/shop/state/hmac)", 400
+
+    # 1. CSRF — the state nonce must have been created by /auth/shopify/install
+    try:
+        from jobs import pop_oauth_state, set_shopify_admin_token
+    except Exception:
+        return "OAuth helpers unavailable", 500
+    if not pop_oauth_state(state):
+        return "Invalid or expired OAuth state", 400
+
+    client_id = os.environ.get("SHOPIFY_OAUTH_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("SHOPIFY_OAUTH_CLIENT_SECRET", "").strip()
+    if not client_id or not client_secret:
+        return "SHOPIFY_OAUTH_CLIENT_ID / CLIENT_SECRET not set", 500
+
+    # 2. HMAC — verify Shopify actually signed this callback. Reconstruct
+    #    the signed payload by alpha-sorting all query args except `hmac`
+    #    and joining as querystring.
+    pairs = sorted(
+        (k, v) for k, v in request.args.items() if k != "hmac"
+    )
+    msg = "&".join(f"{k}={v}" for k, v in pairs).encode("utf-8")
+    expected = _hmac.new(client_secret.encode("utf-8"), msg, _hashlib.sha256).hexdigest()
+    if not _hmac.compare_digest(expected, sig):
+        log.warning("[oauth/callback] HMAC mismatch for shop=%s", shop)
+        return "OAuth HMAC mismatch — request not signed by Shopify", 400
+
+    # 3. Exchange the code for an offline access token.
+    try:
+        token_resp = _req.post(
+            f"https://{shop}/admin/oauth/access_token",
+            json={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": code,
+            },
+            timeout=10,
+        )
+    except Exception as exc:
+        log.exception("[oauth/callback] token exchange transport failed")
+        return f"Token exchange transport failed: {exc}", 502
+    if token_resp.status_code != 200:
+        log.warning(
+            "[oauth/callback] token exchange %s: %s",
+            token_resp.status_code, token_resp.text[:200],
+        )
+        return f"Token exchange failed: HTTP {token_resp.status_code}", 502
+
+    body = token_resp.json() or {}
+    access_token = (body.get("access_token") or "").strip()
+    scope = (body.get("scope") or "").strip()
+    if not access_token:
+        return "Token exchange returned no access_token", 502
+
+    # 4. Persist. Offline tokens for first-party apps don't expire — store
+    #    without a TTL. Future _get_shopify_admin_token() calls pick this up.
+    if not set_shopify_admin_token(access_token, scope):
+        return "Failed to persist Shopify admin token", 500
+
+    log.info("[oauth/callback] ✓ stored Shopify admin offline token (scope=%s)", scope or "<none>")
+    return (
+        "<html><body style='font-family:sans-serif;max-width:560px;margin:60px auto;'>"
+        "<h1 style='font-family:Georgia,serif;font-style:italic;font-weight:500;'>"
+        "Pet Printables — Admin token captured.</h1>"
+        f"<p>Shop: <code>{_html_escape(shop)}</code></p>"
+        f"<p>Scopes granted: <code>{_html_escape(scope) or '(none reported)'}</code></p>"
+        "<p>You can close this tab. Future Shopify Admin API calls from the backend "
+        "will use this token automatically.</p>"
+        "</body></html>"
+    )
+
+
+def _html_escape(s: str) -> str:
+    """Tiny wrapper to escape user-controlled strings rendered into the
+    OAuth confirmation page above. Avoids reaching for jinja just for this."""
+    import html as _h
+    return _h.escape(s or "")
+
+
+def _publish_gallery_submission(submission: dict) -> tuple[bool, str]:
+    """Publish a staged submission into the Shopify `gallery_submission`
+    metaobject so it shows up at /pages/gallery. Uploads the R2 image to
+    Shopify Files first (Shopify pulls by URL), then upserts the metaobject
+    keyed by `gallery-{order_id}` so re-runs are idempotent.
+
+    Requires a working Shopify Admin API token — relies on
+    _get_shopify_admin_token() finding the OAuth offline token in Redis."""
+    r2_key = (submission.get("r2_key") or "").strip()
+    pet_name = (submission.get("pet_name") or "").strip()
+    order_id = str(submission.get("order_id") or "").strip()
+    image_url = (submission.get("image_url") or "").strip()
+    if not (r2_key and order_id and image_url):
+        return False, "submission missing r2_key/order_id/image_url"
+
+    # Upload R2 image to Shopify Files. Shopify fetches it server-side and
+    # assigns a permanent CDN URL accessible from the storefront.
     file_create_q = """
       mutation FileCreate($files: [FileCreateInput!]!) {
         fileCreate(files: $files) {
@@ -1419,23 +1730,16 @@ def _submit_to_gallery(r2_key: str, pet_name: str, order_id: str) -> tuple[bool,
             }],
         })
     except Exception as exc:
-        log.warning("[gallery] order=%s fileCreate transport failed: %s", order_id, exc)
         return False, f"fileCreate transport failed: {exc}"
-
     file_data = ((file_resp.get("data") or {}).get("fileCreate") or {})
-    user_errors = file_data.get("userErrors") or []
-    if user_errors:
-        return False, f"fileCreate userErrors: {user_errors}"
+    if file_data.get("userErrors"):
+        return False, f"fileCreate userErrors: {file_data['userErrors']}"
     files = file_data.get("files") or []
-    if not files:
-        return False, "fileCreate returned no files"
-    file_id = files[0].get("id")
+    file_id = (files[0].get("id") if files else None)
     if not file_id:
         return False, "fileCreate returned no file id"
 
-    # 3. Upsert the metaobject. metaobjectUpsert handles the
-    #    create-or-update-by-handle in one call, which is what we want for
-    #    idempotency without a separate read-then-write.
+    # Upsert the metaobject keyed by gallery-{order_id} for idempotency.
     upsert_q = """
       mutation MetaobjectUpsert(
         $handle: MetaobjectHandleInput!,
@@ -1447,44 +1751,293 @@ def _submit_to_gallery(r2_key: str, pet_name: str, order_id: str) -> tuple[bool,
         }
       }
     """
-    from datetime import datetime as _dt, timezone as _tz
-    submitted_at = _dt.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    submitted_at = submission.get("submitted_at") or ""
     try:
         upsert_resp = _shopify_admin_graphql(upsert_q, {
-            "handle": {"type": "gallery_submission", "handle": handle},
+            "handle": {"type": "gallery_submission", "handle": f"gallery-{order_id}"},
             "metaobject": {
                 "capabilities": {"publishable": {"status": "ACTIVE"}},
                 "fields": [
                     {"key": "image", "value": file_id},
-                    {"key": "pet_name", "value": (pet_name or "")[:60]},
+                    {"key": "pet_name", "value": pet_name[:60]},
                     {"key": "category", "value": "dogs"},
-                    {"key": "order_id", "value": str(order_id)},
+                    {"key": "order_id", "value": order_id},
                     {"key": "submitted_at", "value": submitted_at},
                 ],
             },
         })
     except Exception as exc:
         return False, f"metaobjectUpsert transport failed: {exc}"
-
     upsert_data = ((upsert_resp.get("data") or {}).get("metaobjectUpsert") or {})
-    user_errors = upsert_data.get("userErrors") or []
-    if user_errors:
-        return False, f"metaobjectUpsert userErrors: {user_errors}"
-    if not upsert_data.get("metaobject"):
-        return False, "metaobjectUpsert returned no metaobject"
-    return True, "ok"
+    if upsert_data.get("userErrors"):
+        return False, f"metaobjectUpsert userErrors: {upsert_data['userErrors']}"
+    mo = upsert_data.get("metaobject") or {}
+    return True, mo.get("id") or "ok"
+
+
+# Self-contained admin review UI. Brand-aligned (cream bg, charcoal ink,
+# Cormorant italic for headings, Inter for body) so it doesn't feel like
+# a half-finished tool. All actions are POSTs gated by the admin token.
+_ADMIN_GALLERY_REVIEW_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>Gallery review — Pet Printables admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body { margin:0; padding:0; background:#FAF8F5; color:#1C1C1C; font-family:'Inter',-apple-system,sans-serif; }
+.wrap { max-width:1080px; margin:0 auto; padding:32px 24px 80px; }
+.header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.brand { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:24px; color:#1C1C1C; }
+.eyebrow { font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:#8B7D6B; }
+h1 { font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:32px; line-height:1.1; margin:0 0 8px; }
+.sub { font-size:14px; color:#6B6B63; margin:0 0 24px; }
+.flash { padding:14px 18px; border-radius:8px; margin-bottom:24px; font-size:14px; }
+.flash--ok { background:#E8F1E8; color:#2F4A35; border:1px solid #B8D5BB; }
+.flash--err { background:#F4E8E5; color:#8A3D2C; border:1px solid #E0BFB8; }
+.empty { background:#FFFFFF; border:1px dashed #E4DDD4; border-radius:12px; padding:48px 24px; text-align:center; color:#8B7D6B; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
+.card { background:#FFFFFF; border:1px solid #E4DDD4; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+.card__img { width:100%; aspect-ratio:1; object-fit:cover; background:#F3EDE6; display:block; }
+.card__body { padding:18px; flex:1; display:flex; flex-direction:column; gap:6px; }
+.card__pet { font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:20px; margin:0; color:#1C1C1C; }
+.card__meta { font-size:12px; color:#8B7D6B; margin:0; line-height:1.5; }
+.card__actions { display:flex; gap:8px; padding:0 18px 18px; }
+.btn { flex:1; padding:10px 14px; border-radius:6px; border:1px solid #1C1C1C; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.04em; cursor:pointer; transition:all 0.15s; }
+.btn--approve { background:#2F2F2A; color:#fff; border-color:#2F2F2A; }
+.btn--approve:hover { background:#1C1C1C; }
+.btn--reject { background:#fff; color:#1C1C1C; }
+.btn--reject:hover { background:#F3EDE6; }
+form { margin:0; }
+@media (max-width:640px) { .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <span class="brand">Pet Printables &middot; admin</span>
+    <span class="eyebrow">Gallery review queue</span>
+  </header>
+  <h1>__HEADING__</h1>
+  <p class="sub">__SUBHEAD__</p>
+  __FLASH__
+  __CONTENT__
+</div>
+</body>
+</html>"""
+
+
+@app.route("/admin/gallery/pending")
+def admin_gallery_pending():
+    """Return the queue of staged gallery submissions awaiting manual
+    publish. Gated by the same X-Admin-Token header / ?admin_token query
+    param as the other /admin/* routes."""
+    if not _require_debug_token():
+        return jsonify(error="Forbidden"), 403
+    from jobs import list_gallery_submissions
+    return jsonify(submissions=list_gallery_submissions(status="pending", limit=200))
+
+
+@app.route("/admin/gallery/bootstrap", methods=["POST", "GET"])
+def admin_gallery_bootstrap():
+    """One-time setup: create the `gallery_submission` metaobject
+    definition on Shopify if it doesn't exist yet. Uses the OAuth-captured
+    admin token from Redis. Idempotent — if the definition is already
+    there, returns the existing record. Lives behind admin gate."""
+    if not _require_debug_token():
+        return jsonify(error="Forbidden"), 403
+    import json as _json
+
+    existing_q = """
+      query DefByType($type: String!) {
+        metaobjectDefinitionByType(type: $type) {
+          id type name
+        }
+      }
+    """
+    try:
+        existing = _shopify_admin_graphql(existing_q, {"type": "gallery_submission"})
+    except Exception as exc:
+        return jsonify(ok=False, step="exists-check", error=str(exc)), 502
+    found = ((existing.get("data") or {}).get("metaobjectDefinitionByType"))
+    if found:
+        return jsonify(ok=True, step="already-exists", definition=found)
+
+    create_q = """
+      mutation MetaobjectDefinitionCreate($definition: MetaobjectDefinitionCreateInput!) {
+        metaobjectDefinitionCreate(definition: $definition) {
+          metaobjectDefinition { id type name }
+          userErrors { field message code }
+        }
+      }
+    """
+    definition = {
+        "name": "Gallery Submission",
+        "type": "gallery_submission",
+        "description": "Customer-submitted portraits surfaced on /pages/gallery. Created when admin approves a Submit-to-Gallery request.",
+        "access": {"storefront": "PUBLIC_READ"},
+        "capabilities": {"publishable": {"enabled": True}},
+        "fieldDefinitions": [
+            {"key": "image", "name": "Portrait image", "type": "file_reference",
+             "validations": [{"name": "file_type_options", "value": _json.dumps(["Image"])}],
+             "required": True},
+            {"key": "pet_name", "name": "Pet name", "type": "single_line_text_field"},
+            {"key": "category", "name": "Category", "type": "single_line_text_field",
+             "description": "dogs | cats | other — drives the gallery filter buttons."},
+            {"key": "order_id", "name": "Order ID", "type": "single_line_text_field",
+             "description": "Shopify order id this submission came from."},
+            {"key": "submitted_at", "name": "Submitted at", "type": "date_time"},
+        ],
+    }
+    try:
+        resp = _shopify_admin_graphql(create_q, {"definition": definition})
+    except Exception as exc:
+        return jsonify(ok=False, step="create", error=str(exc)), 502
+    block = (resp.get("data") or {}).get("metaobjectDefinitionCreate") or {}
+    if block.get("userErrors"):
+        return jsonify(ok=False, step="create", userErrors=block["userErrors"]), 502
+    return jsonify(ok=True, step="created", definition=block.get("metaobjectDefinition"))
+
+
+@app.route("/admin/gallery/review")
+def admin_gallery_review():
+    """HTML review queue. Shows pending submissions as thumbnails with
+    Approve / Reject buttons. Gated by admin token."""
+    if not _require_debug_token():
+        return "Forbidden", 403
+    from jobs import list_gallery_submissions
+    import html as _html
+
+    admin_token = request.args.get("admin_token", "")
+    flash_status = request.args.get("flash") or ""  # ok|err
+    flash_msg = request.args.get("msg") or ""
+
+    pending = list_gallery_submissions(status="pending", limit=200)
+
+    if flash_status == "ok":
+        flash_html = f'<div class="flash flash--ok">{_html.escape(flash_msg) or "Done."}</div>'
+    elif flash_status == "err":
+        flash_html = f'<div class="flash flash--err">{_html.escape(flash_msg) or "Something went wrong."}</div>'
+    else:
+        flash_html = ""
+
+    if not pending:
+        content = (
+            '<div class="empty">'
+            '<p style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:22px;color:#1C1C1C;margin:0 0 6px;">Nothing in the queue.</p>'
+            '<p style="font-size:13px;margin:0;">When a customer submits a portrait from their gift email it lands here for you to approve.</p>'
+            '</div>'
+        )
+        heading = "All clear."
+        sub = "No submissions waiting for review."
+    else:
+        heading = f"{len(pending)} submission{'s' if len(pending) != 1 else ''} waiting"
+        sub = "Approve to publish to the Shopify gallery (auto-creates the metaobject). Reject to drop from the queue."
+        cards = []
+        for s in pending:
+            order_id = _html.escape(str(s.get("order_id") or ""))
+            pet_name = _html.escape((s.get("pet_name") or "Untitled").strip())
+            image_url = _html.escape(s.get("image_url") or "")
+            submitted_at = _html.escape(s.get("submitted_at") or "")
+            cards.append(f'''
+<article class="card">
+  <a href="{image_url}" target="_blank" rel="noopener noreferrer">
+    <img class="card__img" src="{image_url}" alt="{pet_name} portrait" loading="lazy"/>
+  </a>
+  <div class="card__body">
+    <p class="card__pet">{pet_name}</p>
+    <p class="card__meta">Order #{order_id}</p>
+    <p class="card__meta">Submitted {submitted_at}</p>
+  </div>
+  <div class="card__actions">
+    <form method="post" action="/admin/gallery/approve/{order_id}?admin_token={_html.escape(admin_token)}">
+      <button type="submit" class="btn btn--approve">Approve</button>
+    </form>
+    <form method="post" action="/admin/gallery/reject/{order_id}?admin_token={_html.escape(admin_token)}">
+      <button type="submit" class="btn btn--reject">Reject</button>
+    </form>
+  </div>
+</article>''')
+        content = '<div class="grid">' + "".join(cards) + '</div>'
+
+    return (_ADMIN_GALLERY_REVIEW_TEMPLATE
+            .replace("__HEADING__", _html.escape(heading))
+            .replace("__SUBHEAD__", _html.escape(sub))
+            .replace("__FLASH__", flash_html)
+            .replace("__CONTENT__", content))
+
+
+def _admin_gallery_redirect(status: str, msg: str):
+    """302 back to the review queue with a flash message. Preserves the
+    admin token so the redirected page is still authenticated."""
+    from flask import redirect
+    import urllib.parse
+    admin_token = request.args.get("admin_token", "")
+    qs = urllib.parse.urlencode({
+        "admin_token": admin_token,
+        "flash": status,
+        "msg": msg,
+    })
+    return redirect(f"/admin/gallery/review?{qs}", code=302)
+
+
+@app.route("/admin/gallery/approve/<order_id>", methods=["POST"])
+def admin_gallery_approve(order_id):
+    """Publish a pending submission to Shopify metaobject + mark as
+    published in the queue. Idempotent: re-clicking with the same order
+    id upserts the same metaobject."""
+    if not _require_debug_token():
+        return "Forbidden", 403
+    from jobs import get_gallery_submission, mark_gallery_submission
+
+    submission = get_gallery_submission(order_id)
+    if not submission:
+        return _admin_gallery_redirect("err", f"Submission {order_id} not found in queue.")
+
+    ok, detail = _publish_gallery_submission(submission)
+    if not ok:
+        log.warning("[admin/gallery/approve] order=%s ✗ %s", order_id, detail)
+        return _admin_gallery_redirect("err", f"Publish failed: {detail}")
+
+    mark_gallery_submission(
+        order_id, status="published", published_metaobject_id=detail,
+    )
+    log.info("[admin/gallery/approve] order=%s ✓ published as %s", order_id, detail)
+    pet_name = submission.get("pet_name") or "submission"
+    return _admin_gallery_redirect("ok", f"Published {pet_name} (order #{order_id}).")
+
+
+@app.route("/admin/gallery/reject/<order_id>", methods=["POST"])
+def admin_gallery_reject(order_id):
+    """Drop a pending submission from the queue without publishing. The
+    record itself is kept (status='rejected') so we have an audit trail."""
+    if not _require_debug_token():
+        return "Forbidden", 403
+    from jobs import get_gallery_submission, mark_gallery_submission
+
+    submission = get_gallery_submission(order_id)
+    if not submission:
+        return _admin_gallery_redirect("err", f"Submission {order_id} not found in queue.")
+
+    mark_gallery_submission(order_id, status="rejected")
+    log.info("[admin/gallery/reject] order=%s rejected", order_id)
+    pet_name = submission.get("pet_name") or "submission"
+    return _admin_gallery_redirect("ok", f"Rejected {pet_name} (order #{order_id}).")
 
 
 @app.route("/gallery/submit/<token>")
 def gallery_submit(token):
     """Land the customer in the public gallery in one click from the email.
-    Verifies the HMAC token, uploads the preview image to Shopify Files,
-    upserts a gallery_submission metaobject, then 302s to the thank-you page.
+    Verifies the HMAC token, stages the submission in Redis for admin
+    review, then 302s to the thank-you page.
 
     On any failure, still redirects to the thank-you page with ?status=error
-    so the customer doesn't hit a stack trace — and we log the detail. The
-    gallery section reads `shop.metaobjects.gallery_submission.values` and
-    renders new submissions automatically."""
+    so the customer doesn't hit a stack trace — and we log the detail.
+    Submissions are not auto-published (Shopify deprecated static admin
+    tokens); see _submit_to_gallery and /admin/gallery/pending."""
     from flask import redirect
 
     storefront = os.environ.get("STOREFRONT_BASE_URL", "https://petprintables.ca").rstrip("/")
@@ -1931,7 +2484,11 @@ def _push_klaviyo_order_event(
             preview_url = (it.get("preview_url") or "").strip()
             if not preview_url:
                 continue
-            pet_name = (it.get("pet_name") or "").strip() or "your pet"
+            # Empty pet name → write the brand-voice fallback the gift page
+            # later renders verbatim. _is_generic_pet_name() in the render
+            # path also matches this string so older orders that still hold
+            # "your pet" or "Pet" get the same warm display.
+            pet_name = (it.get("pet_name") or "").strip() or "your furry pal"
             style = (it.get("style") or "").strip()
             show_name_lc = ((it.get("show_name") or "Yes").strip().lower())
             key = (pet_name.lower(), style.lower(), preview_url, show_name_lc)
@@ -2153,7 +2710,7 @@ def admin_verify_order(shopify_id):
 
     # ── 1. Pull the Shopify order so we can re-parse line items ──────────
     domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
-    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    token = _get_shopify_admin_token()
     if not domain or not token:
         return jsonify(error="SHOPIFY_SHOP_DOMAIN or SHOPIFY_ADMIN_API_TOKEN not set"), 500
 

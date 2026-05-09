@@ -4455,10 +4455,12 @@ def _build_watermark_logo(color: tuple) -> Image.Image:
     src = Image.open(logo_path).convert("L")
     # Ink density: dark source pixels → high ink, white background → 0
     ink = src.point(lambda p: 255 - p)
-    # 8% — subtle on calm backgrounds (watercolour paper) but still
-    # readable on saturated mid-brightness fills (neon hot pink, vivid
-    # blue) where 5% disappeared into the colour.
-    OPACITY = 0.08
+    # 1% — barely-perceptible decorative stamp. Anti-piracy was the
+    # original justification for a heavier watermark (8%), but customer
+    # readability of the preview won out. At 1% the mark is visible in
+    # a clean screenshot but doesn't distract from the artwork while
+    # the customer is deciding to buy.
+    OPACITY = 0.01
     alpha = ink.point(lambda p: int(p * OPACITY))
     rgba = Image.new("RGBA", src.size, color + (0,))
     rgba.putalpha(alpha)
