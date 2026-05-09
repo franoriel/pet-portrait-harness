@@ -858,6 +858,25 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
 .review-cta h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 24px; margin: 0 0 8px; color: #1C1C1C; }
 .review-cta p { font-size: 14px; color: #6B6B63; margin: 0 0 16px; line-height: 1.55; }
 .btn-primary { display: inline-block; background: #2F2F2A; color: #FFFFFF; padding: 14px 28px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; }
+.btn-secondary { display: inline-block; background: #FFFFFF; color: #1C1C1C; padding: 13px 26px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; border: 1px solid #1C1C1C; }
+.howto { background: #FFFFFF; border: 1px solid #E4DDD4; border-radius: 12px; padding: 28px; margin-top: 32px; }
+.howto h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 24px; margin: 0 0 8px; color: #1C1C1C; }
+.howto > p.howto-sub { font-size: 14px; color: #6B6B63; margin: 0 0 20px; line-height: 1.55; }
+.howto-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 24px; margin: 0; }
+.howto-step { display: flex; gap: 12px; align-items: flex-start; }
+.howto-step__num { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: #2F2F2A; color: #fff; font-size: 11px; font-weight: 600; }
+.howto-step h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px; color: #1C1C1C; }
+.howto-step p { font-size: 12px; color: #6B6B63; margin: 0; line-height: 1.5; }
+.reorder-cta { background: #FFFFFF; border: 1px solid #E4DDD4; border-radius: 12px; padding: 28px; text-align: center; margin-top: 24px; }
+.reorder-cta h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 22px; margin: 0 0 6px; color: #1C1C1C; }
+.reorder-cta p { font-size: 13px; color: #6B6B63; margin: 0 0 16px; line-height: 1.55; }
+.tracking { background: #FFFFFF; border: 1px solid #E4DDD4; border-radius: 12px; padding: 20px 24px; margin: 0 0 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.tracking__icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #F3EDE6; flex-shrink: 0; font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; color: #1C1C1C; font-size: 18px; }
+.tracking__copy { flex: 1; min-width: 200px; }
+.tracking__status { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 4px; }
+.tracking__line { font-size: 14px; color: #1C1C1C; margin: 0; line-height: 1.45; }
+.tracking__cta { font-size: 13px; font-weight: 600; color: #1C1C1C; text-decoration: none; padding: 10px 18px; border: 1px solid #1C1C1C; border-radius: 4px; letter-spacing: 0.04em; background: #FFFFFF; }
+.tracking__cta:hover { background: #1C1C1C; color: #FFFFFF; }
 .footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid #E4DDD4; }
 .footer p { font-size: 11px; color: #8B7D6B; letter-spacing: 0.04em; margin: 4px 0; }
 .footer a { color: #8B7D6B; text-decoration: underline; }
@@ -866,6 +885,7 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
   .portrait-card__head { grid-template-columns: 1fr; }
   .portrait-card__img { max-width: 220px; margin: 0 auto; }
   .dl-grid { grid-template-columns: 1fr; }
+  .howto-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -874,15 +894,50 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
   <header class="header">
     <span class="brand">Pet Printables</span>
   </header>
-  <p class="eyebrow">Your digital gift</p>
+  __EYEBROW__
   __HEADLINE__
   <p class="expiry">Links are good until __EXPIRES__. Save the originals — they expire.</p>
+  __TRACKING__
   __PORTRAITS__
-  <div class="review-cta">
-    <h2>How was your order?</h2>
-    <p>Your canvas is on its way. Once it lands, we'd love to hear what you think.</p>
-    <a href="https://petprintables.ca/account" class="btn-primary">LEAVE A REVIEW</a>
-  </div>
+
+  <section class="howto">
+    <h2>How to use them</h2>
+    <p class="howto-sub">Each format is sized for one specific surface. Tap the buttons above to download, then:</p>
+    <div class="howto-grid">
+      <div class="howto-step">
+        <span class="howto-step__num">1</span>
+        <div>
+          <h3>Set as wallpaper</h3>
+          <p>Open the Wallpaper file in Photos. Share &rarr; Use as Wallpaper.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-step__num">2</span>
+        <div>
+          <h3>Share to your Story</h3>
+          <p>Open the Story file in Instagram. Tap the photo on the Story camera to add as background.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-step__num">3</span>
+        <div>
+          <h3>Post to your feed</h3>
+          <p>Use the Square file for a feed post or the Portrait file for a 4:5 crop &mdash; both fit Instagram's preferred sizes.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-step__num">4</span>
+        <div>
+          <h3>Tag us</h3>
+          <p>If you share, tag <a href="https://instagram.com/mypetprintables" style="color:#1C1C1C;text-decoration:underline;">@mypetprintables</a> &mdash; we love seeing them out in the world.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  __REORDER_CTA__
+
+  __REVIEW_CTA__
   <footer class="footer">
     <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:#1C1C1C;">Pet Printables</p>
     <p>A modern tribute to unconditional love. Vancouver, BC.</p>
@@ -910,10 +965,21 @@ document.querySelectorAll('[data-share-url]').forEach(function (btn) {
 
 
 def _render_portraits_page(record: dict) -> str:
-    """Render the /portraits/<token> page from a digital_files record."""
+    """Render the /portraits/<token> page from a digital_files record.
+
+    Branches the headline, eyebrow, tracking strip, reorder CTA, and review
+    CTA based on the live order context the route attaches at render time:
+    - is_memorial → softer copy, no upsell
+    - customer_orders_count > 1 → repeat-buyer welcome
+    - fulfillment_status / tracking_url → live tracking strip
+    """
     import html as _html
     portraits = record.get("portraits") or []
     expires_at = record.get("expires_at") or ""
+    ctx = record.get("context") or {}
+    is_memorial = bool(ctx.get("is_memorial"))
+    is_repeat = (ctx.get("customer_orders_count") or 0) > 1
+    first_name = (ctx.get("customer_first_name") or "").strip()
     # Format expiry as "May 8, 2026" if it's an ISO timestamp
     try:
         from datetime import datetime as _dt
@@ -922,22 +988,63 @@ def _render_portraits_page(record: dict) -> str:
     except Exception:
         expires_str = "soon"
 
-    # Headline branches on count
-    if len(portraits) == 1:
-        name = _html.escape(portraits[0].get("pet_name") or "your pet")
-        headline = (
-            f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
-            '<p class="h1-sub">Your order is in production. Until it lands at your door, '
-            'here is a digital copy in every format you would want to share — feed, '
-            'story, profile pic, even a phone wallpaper.</p>'
+    # Eyebrow + headline. Memorial wins over repeat-buyer (memorial tone is
+    # the more sensitive branch and shouldn't get overridden by a "welcome
+    # back!" greeting). Repeat-buyer wins over first-time when not memorial.
+    if is_memorial:
+        eyebrow = '<p class="eyebrow">A keepsake</p>'
+        if len(portraits) == 1:
+            name = _html.escape(portraits[0].get("pet_name") or "your pet")
+            headline = (
+                f'<h1 class="h1">A digital copy of <em>{name}</em>, to keep close.</h1>'
+                '<p class="h1-sub">Your canvas is being made. While you wait, here is a '
+                'high-resolution copy in every format &mdash; for your phone, your feed, or '
+                'wherever you want to keep them with you.</p>'
+            )
+        else:
+            headline = (
+                f'<h1 class="h1">Your {len(portraits)} portraits, to keep close.</h1>'
+                '<p class="h1-sub">Your canvas is being made. While you wait, here is a '
+                'high-resolution copy of each portrait in every format &mdash; for your '
+                'phone, your feed, or wherever you want to keep them with you.</p>'
+            )
+    elif is_repeat:
+        eyebrow = (
+            f'<p class="eyebrow">Welcome back{", " + _html.escape(first_name) if first_name else ""}</p>'
         )
+        if len(portraits) == 1:
+            name = _html.escape(portraits[0].get("pet_name") or "your pet")
+            headline = (
+                f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
+                '<p class="h1-sub">Thanks for coming back. Your canvas is in production. '
+                'Until it lands at your door, here is a digital copy in every format you '
+                'would want to share &mdash; feed, story, profile pic, even a phone wallpaper.</p>'
+            )
+        else:
+            headline = (
+                f'<h1 class="h1">Your {len(portraits)} new portraits, ready to share.</h1>'
+                '<p class="h1-sub">Thanks for coming back. Your order is in production. '
+                'Until it lands at your door, here is a digital copy of each portrait in '
+                'every format you would want to share &mdash; feed, story, profile pic, '
+                'even a phone wallpaper.</p>'
+            )
     else:
-        headline = (
-            f'<h1 class="h1">Your {len(portraits)} portraits, ready to share.</h1>'
-            '<p class="h1-sub">Your order is in production. Until it lands at your door, '
-            'here is a digital copy of each portrait in every format you would want '
-            'to share — feed, story, profile pic, even a phone wallpaper.</p>'
-        )
+        eyebrow = '<p class="eyebrow">Your digital gift</p>'
+        if len(portraits) == 1:
+            name = _html.escape(portraits[0].get("pet_name") or "your pet")
+            headline = (
+                f'<h1 class="h1">A digital copy of <em>{name}</em>, on us.</h1>'
+                '<p class="h1-sub">Your order is in production. Until it lands at your door, '
+                'here is a digital copy in every format you would want to share &mdash; feed, '
+                'story, profile pic, even a phone wallpaper.</p>'
+            )
+        else:
+            headline = (
+                f'<h1 class="h1">Your {len(portraits)} portraits, ready to share.</h1>'
+                '<p class="h1-sub">Your order is in production. Until it lands at your door, '
+                'here is a digital copy of each portrait in every format you would want '
+                'to share &mdash; feed, story, profile pic, even a phone wallpaper.</p>'
+            )
 
     cards = []
     for p in portraits:
@@ -988,10 +1095,182 @@ def _render_portraits_page(record: dict) -> str:
   </div>
 </article>""")
 
+    # Tracking strip — render only when we have something useful to say.
+    # Status normalisation keeps the copy readable regardless of which
+    # Shopify enum value the order is currently sitting at.
+    fulfillment_status = (ctx.get("fulfillment_status") or "").lower()
+    tracking_url = ctx.get("tracking_url") or ""
+    tracking_company = ctx.get("tracking_company") or ""
+    tracking_number = ctx.get("tracking_number") or ""
+
+    if fulfillment_status in ("fulfilled", "success", "shipped"):
+        status_label = "On the way"
+        status_line = (
+            f'Your canvas shipped'
+            + (f' with {_html.escape(tracking_company)}' if tracking_company else '')
+            + (f' &middot; {_html.escape(tracking_number)}' if tracking_number else '')
+            + '.'
+        )
+    elif fulfillment_status in ("partial",):
+        status_label = "Partially shipped"
+        status_line = "Part of your order is on the way; the rest is still being made."
+    elif fulfillment_status in ("delivered",):
+        status_label = "Delivered"
+        status_line = "Your canvas should be at your door."
+    else:
+        status_label = "In production"
+        status_line = "Your canvas is being made. We&rsquo;ll email you the moment it ships."
+
+    if tracking_url:
+        tracking_html = (
+            '<section class="tracking">'
+            '<span class="tracking__icon" aria-hidden="true">→</span>'
+            '<div class="tracking__copy">'
+            f'<p class="tracking__status">{status_label}</p>'
+            f'<p class="tracking__line">{status_line}</p>'
+            '</div>'
+            f'<a class="tracking__cta" href="{_html.escape(tracking_url)}" target="_blank" rel="noopener noreferrer">TRACK ORDER</a>'
+            '</section>'
+        )
+    elif ctx:
+        # We have order context but no tracking URL yet — still surface the
+        # status so the customer knows what state their canvas is in.
+        tracking_html = (
+            '<section class="tracking">'
+            '<span class="tracking__icon" aria-hidden="true">✦</span>'
+            '<div class="tracking__copy">'
+            f'<p class="tracking__status">{status_label}</p>'
+            f'<p class="tracking__line">{status_line}</p>'
+            '</div>'
+            '</section>'
+        )
+    else:
+        tracking_html = ""
+
+    # Reorder CTA: hide on memorial orders, soften copy on repeat. Otherwise
+    # default to the "make another" prompt.
+    if is_memorial:
+        reorder_html = ""
+    elif is_repeat:
+        reorder_html = (
+            '<div class="reorder-cta">'
+            '<h2>Another pet you want to celebrate?</h2>'
+            '<p>You know the drill. Upload a photo, pick a style, send the canvas.</p>'
+            '<a href="https://petprintables.ca/pages/create" class="btn-secondary">MAKE ANOTHER PORTRAIT</a>'
+            '</div>'
+        )
+    else:
+        reorder_html = (
+            '<div class="reorder-cta">'
+            '<h2>Have another one to celebrate?</h2>'
+            '<p>Make a portrait for a second pet, a friend&rsquo;s dog, or a memorial gift.</p>'
+            '<a href="https://petprintables.ca/pages/create" class="btn-secondary">MAKE ANOTHER PORTRAIT</a>'
+            '</div>'
+        )
+
+    # Review CTA: softer copy on memorial orders.
+    if is_memorial:
+        review_html = (
+            '<div class="review-cta">'
+            '<h2>When the canvas arrives</h2>'
+            '<p>If it brings you any of what we hoped for, we would be honoured to hear about it. No pressure, no rush.</p>'
+            '<a href="https://petprintables.ca/pages/reviews" class="btn-primary">SHARE YOUR REVIEW</a>'
+            '</div>'
+        )
+    else:
+        review_html = (
+            '<div class="review-cta">'
+            '<h2>How was your order?</h2>'
+            '<p>Your canvas is on its way. Once it lands, we&rsquo;d love to hear what you think.</p>'
+            '<a href="https://petprintables.ca/pages/reviews" class="btn-primary">LEAVE A REVIEW</a>'
+            '</div>'
+        )
+
     return (_PORTRAITS_PAGE_TEMPLATE
+            .replace("__EYEBROW__", eyebrow)
             .replace("__HEADLINE__", headline)
             .replace("__EXPIRES__", _html.escape(expires_str))
-            .replace("__PORTRAITS__", "".join(cards)))
+            .replace("__TRACKING__", tracking_html)
+            .replace("__PORTRAITS__", "".join(cards))
+            .replace("__REORDER_CTA__", reorder_html)
+            .replace("__REVIEW_CTA__", review_html))
+
+
+def _fetch_order_context(order_id: str) -> dict:
+    """Pull live fulfillment + customer data from Shopify Admin API for the
+    Flask gift page. Used to render the tracking strip and branch the
+    headline for repeat customers. Fails open — returns an empty dict on
+    any error so the page still renders without the enrichments."""
+    domain = os.environ.get("SHOPIFY_SHOP_DOMAIN", "").strip().replace("https://", "").rstrip("/")
+    token = os.environ.get("SHOPIFY_ADMIN_API_TOKEN", "").strip()
+    if not domain or not token:
+        return {}
+
+    headers = {"X-Shopify-Access-Token": token, "Accept": "application/json"}
+    out: dict = {}
+
+    try:
+        r = _req.get(
+            f"https://{domain}/admin/api/{SHOPIFY_ADMIN_API_VERSION}/orders/{order_id}.json",
+            headers=headers,
+            params={"fields": "id,fulfillment_status,fulfillments,customer,note_attributes,line_items"},
+            timeout=8,
+        )
+        if r.status_code != 200:
+            return {}
+        order = (r.json() or {}).get("order") or {}
+    except Exception:
+        log.warning("[portraits/page] order=%s context fetch failed", order_id, exc_info=True)
+        return {}
+
+    # Fulfillment + tracking from the most recent fulfillment record.
+    fulfillments = order.get("fulfillments") or []
+    if fulfillments:
+        latest = fulfillments[-1]
+        out["fulfillment_status"] = latest.get("status") or order.get("fulfillment_status")
+        out["tracking_url"] = (
+            (latest.get("tracking_urls") or [None])[0]
+            or latest.get("tracking_url")
+        )
+        out["tracking_company"] = latest.get("tracking_company")
+        out["tracking_number"] = (
+            (latest.get("tracking_numbers") or [None])[0]
+            or latest.get("tracking_number")
+        )
+        out["shipped_at"] = latest.get("created_at")
+    else:
+        out["fulfillment_status"] = order.get("fulfillment_status") or "unfulfilled"
+
+    # Memorial flag from line-item properties or order note attributes.
+    # Captured at PDP/cart as `Memorial: Yes` (line item property) or as a
+    # note attribute. Either source flips the page into a quieter variant.
+    is_memorial = False
+    for li in order.get("line_items") or []:
+        for prop in li.get("properties") or []:
+            name = (prop.get("name") or "").strip().lower()
+            value = str(prop.get("value") or "").strip().lower()
+            if name in ("memorial", "_memorial") and value in ("yes", "true", "1"):
+                is_memorial = True
+                break
+        if is_memorial:
+            break
+    if not is_memorial:
+        for attr in order.get("note_attributes") or []:
+            if (attr.get("name") or "").strip().lower() == "memorial" and \
+               str(attr.get("value") or "").strip().lower() in ("yes", "true", "1"):
+                is_memorial = True
+                break
+    out["is_memorial"] = is_memorial
+
+    # Customer order count — drives the repeat-buyer welcome.
+    customer = order.get("customer") or {}
+    out["customer_first_name"] = (customer.get("first_name") or "").strip()
+    try:
+        out["customer_orders_count"] = int(customer.get("orders_count") or 0)
+    except (TypeError, ValueError):
+        out["customer_orders_count"] = 0
+
+    return out
 
 
 @app.route("/portraits/<token>")
@@ -1016,6 +1295,12 @@ def portraits_page(token):
         return ("We could not find your portraits. If you just placed an order, "
                 "it may take a few minutes for the digital files to be ready — "
                 "try again in 5 minutes."), 404
+
+    # Enrich the cached record with live order/customer context (tracking,
+    # memorial flag, repeat-buyer count). Fails open — page still renders if
+    # the Shopify call returns nothing.
+    record = dict(record)
+    record["context"] = _fetch_order_context(order_id)
 
     log.info("[portraits/page] order=%s rendered (%d portrait(s))",
              order_id, len(record.get("portraits") or []))
