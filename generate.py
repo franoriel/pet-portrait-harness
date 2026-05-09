@@ -1054,17 +1054,35 @@ the pet is a confident filled colour block, not a line drawing.
 - Eyes are stylised as bold OPEN graphic shapes — vector-icon eyes \
 that lock with the viewer (or follow whatever gaze direction the \
 source photo shows). Each eye is exactly TWO flat polygonal colour \
-blocks: an IRIS (a single uniform palette accent — typically a \
-warmer mid-accent like ochre / mustard / peach / blush, OR ivory / \
-cream for darker pets where ivory contrasts the face blocks) and a \
-PUPIL (a single solid polygon in the palette's DARKEST accent — \
-charcoal / aubergine / deep navy / etc.). The pupil sits inside \
-the iris, positioned to match the gaze direction in the source \
-photo (forward = pupil centred; slight off-camera tilt = pupil \
-shifted to that side). Eye SHAPE follows the source: round eyes \
-get round-ish polygons, almond eyes get almond polygons, alert \
-eyes are wide, relaxed eyes are softer — but the eyes are always \
-clearly OPEN.
+blocks: an IRIS (a single uniform palette accent) and a PUPIL (a \
+single solid polygon in the palette's DARKEST accent — charcoal / \
+aubergine / deep navy / etc.). \
+- IRIS COLOUR — HARD RULE (anti-headlight, anti-glow): the iris is \
+NEVER the most saturated / brightest palette accent. Pick from \
+this priority order: \
+(1) IVORY / CREAM (#F4EFE7-ish), \
+(2) a WARM MID-TONE NEUTRAL (peachy blush, dusty mauve, soft brick, \
+warm ochre at its more muted reading), \
+(3) DEEP TEAL or DEEP NAVY when the bg is a warm-tone palette and \
+the dark accent contrasts well against the face. \
+The brightest saturated palette accent (warm orange, hot red, hot \
+pink, vivid yellow, vivid mustard) is FORBIDDEN as an iris fill — \
+those colours reserved for fur faceting, never the eye. A saturated \
+iris on a saturated 2-tone bg reads as glowing headlights / \
+taxidermy / uncanny-valley and ruins the portrait, even when every \
+other rule is met. When in doubt, ivory is always safe. \
+- BETWEEN-EYE COHERENCE — HARD RULE: both pupils point in the SAME \
+direction. If the source photo shows the pet looking forward, both \
+pupils sit centred in their respective irises. If the source shows \
+an off-camera tilt, both pupils shift to the same side by the same \
+amount. NEVER render one eye centred and the other off-axis, NEVER \
+render diverging gaze (one pupil left, one pupil right), NEVER \
+render different gaze depths (one pupil up, one pupil down). \
+Diverging or asymmetric gaze breaks the portrait into "wall-eyed" \
+or "googly" territory and customers read the result as creepy. \
+- Eye SHAPE follows the source: round eyes get round-ish polygons, \
+almond eyes get almond polygons, alert eyes are wide, relaxed eyes \
+are softer — but the eyes are always clearly OPEN.
 - EYE FLATNESS — HARD RULE (preserve the WPAP vector aesthetic): \
 NO catchlights, NO white glints, NO sparkle dots, NO sclera (no \
 "whites of the eye" visible — the iris fills the entire visible \
@@ -1089,6 +1107,14 @@ to-width ratio sits in the 0.7–1.1 range (round-ish to softly \
 almond). Iris height less than 5% of head height = WRONG. Iris \
 height-to-width ratio under 0.4 (a thin horizontal sliver) = WRONG. \
 Both eyes are clearly OPEN, visibly engaging the viewer.
+- PUPIL SIZE RELATIVE TO IRIS — HARD RULE (anti-headlight): the \
+pupil polygon occupies AT LEAST 35% of the iris's visible area — \
+NOT a small dot in the middle of a large saturated disc. A small \
+pupil inside a large bright iris reads as "headlight eyes" / \
+"glowing-eye monster" and is the single biggest contributor to the \
+creepy / uncanny look. Sweet spot: pupil = 35–50% of iris area. \
+Small-pupil / pinprick-pupil = WRONG. The pupil should feel like a \
+substantial central feature of the eye, not a stray dark speck.
 - FLUFFY-FACED BREED OVERRIDE — CRITICAL: for breeds with long fur \
 covering the face (Goldendoodle, Maltipoo, Shih Tzu, Yorkie, Lhasa \
 Apso, Old English Sheepdog, Bichon, Cocker Spaniel, Cavoodle, any \
@@ -1290,6 +1316,28 @@ background colours, horizontal background splits, diagonal background \
 splits, curved background seams, gradient backgrounds, off-centre \
 seam, background patterns, drop shadows, text, watermark, border, \
 solid color bars or panels at image edges.
+
+FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS (CRITICAL):
+- Look at each eye. Is the iris one of the most-saturated palette \
+accents (warm orange, hot red, hot pink, vivid yellow, vivid \
+mustard)? If yes, REDRAW the iris in IVORY / CREAM, or in a muted \
+mid-tone (peachy blush, dusty mauve, soft brick, deep teal, deep \
+navy). The brightest saturated accent inside an eye on top of the \
+saturated 2-tone bg makes the pet look uncanny / glowing-eyed / \
+taxidermy.
+- Look at the pupil polygon inside each iris. Does the pupil \
+occupy at least 35% of the iris area? If the pupil is a tiny dot \
+or pinprick inside a much larger iris disc, ENLARGE the pupil \
+until it fills 35–50% of the iris.
+- Look at both pupils together. Do they point in the SAME direction \
+relative to their respective irises? If one pupil is centred and \
+the other is off-axis, OR if the pupils diverge (one left, one \
+right), OR if they sit at different vertical heights inside their \
+irises, REDRAW so both pupils sit in the same relative position \
+inside their irises. Diverging gaze = creepy.
+- Eye is still exactly TWO flat solid colour blocks: iris (one \
+uniform colour) + pupil (one uniform dark shape). NO catchlight, \
+NO white glint, NO inner ring, NO gradient.
 
 FINAL CHECK BEFORE OUTPUT — TEXT-FREE GUARANTEE (CRITICAL — read this LAST):
 - Scan the WHOLE canvas, especially the empty bg band above the pet's \
