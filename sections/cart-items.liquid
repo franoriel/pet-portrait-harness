@@ -1358,38 +1358,6 @@
     }
   })();
 
-  /* Replace cart thumbnails with the actual generated portrait from localStorage */
-  (function () {
-    try {
-      var raw = localStorage.getItem('petPrintables_session');
-      if (!raw) return;
-      var data = JSON.parse(raw);
-      if (!data) return;
-
-      // Prefer CDN URLs, then data URLs (base64)
-      var cdnUrls = data.previewCdnUrls || [];
-      var dataUrls = data.previewDataUrls || [];
-      var idx = data.selectedPreviewIndex || 0;
-      var portraitSrc = cdnUrls[idx] || cdnUrls[0] || dataUrls[idx] || dataUrls[0];
-      if (!portraitSrc) return;
-
-      document.querySelectorAll('.cart-page__item-img img').forEach(function (img) {
-        img.src = portraitSrc;
-        img.srcset = '';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '8px';
-
-        // If CDN URL fails to load, fall back to base64 data URL
-        img.onerror = function () {
-          var fallback = dataUrls[idx] || dataUrls[0];
-          if (fallback && img.src !== fallback) {
-            img.src = fallback;
-          }
-        };
-      });
-    } catch (e) {}
-  })();
-
   /* ── Name-on-portrait toggle (cart page) ────────────────────
    * Lets user flip between with-name and no-name versions.
    * Updates line item properties via Shopify Ajax API + live
