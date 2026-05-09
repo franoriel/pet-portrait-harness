@@ -122,13 +122,6 @@ const STYLES = [
     backgrounds: ['auto'],
   },
   {
-    id: 'minimal-line-art',
-    name: 'Minimal Line Art',
-    available: true,
-    exampleImage: 'example-minimal-line-art.webp',
-    backgrounds: ['auto', 'light', 'dark'],
-  },
-  {
     id: 'modern-shape-art',
     name: 'Modern',
     available: true,
@@ -137,20 +130,6 @@ const STYLES = [
     // MODERN_COLORS. Default is 'clay' (the warm tone the example
     // mockup is generated against).
     backgrounds: MODERN_COLOR_IDS,
-  },
-  {
-    id: 'neon-pop-art',
-    name: 'Neon Pop Art',
-    available: true,
-    exampleImage: 'example-neon-pop-art.webp',
-    backgrounds: ['auto'],
-  },
-  {
-    id: 'renaissance-royalty',
-    name: 'Renaissance Royalty',
-    available: true,
-    exampleImage: 'example-renaissance-royalty.webp',
-    backgrounds: ['auto'],
   },
   {
     id: 'bold-graphic-poster',
@@ -162,11 +141,32 @@ const STYLES = [
     backgrounds: POSTER_PALETTE_IDS,
   },
   {
+    id: 'minimal-line-art',
+    name: 'Minimal Line Art',
+    available: true,
+    exampleImage: 'example-minimal-line-art.webp',
+    backgrounds: ['auto', 'light', 'dark'],
+  },
+  {
+    id: 'neon-pop-art',
+    name: 'Neon Pop Art',
+    available: true,
+    exampleImage: 'example-neon-pop-art.webp',
+    backgrounds: ['auto'],
+  },
+  {
     id: 'charcoal',
     name: 'Charcoal',
     available: true,
     exampleImage: 'example-charcoal.webp',
     backgrounds: ['auto', 'light'],
+  },
+  {
+    id: 'renaissance-royalty',
+    name: 'Renaissance Royalty',
+    available: true,
+    exampleImage: 'example-renaissance-royalty.webp',
+    backgrounds: ['auto'],
   },
   {
     id: 'aura-gradient',
