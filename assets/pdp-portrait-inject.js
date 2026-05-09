@@ -1426,62 +1426,6 @@
     }
   }
 
-  // ── "This is a memorial gift" toggle ──────────────────────
-  // Captured as a visible line-item property (no underscore prefix) so
-  // staff see it in the Shopify order detail and treat it with care.
-  // The Flask /portraits/<token> page reads this and switches into a
-  // quieter tone (softer copy, no upsell) — see _render_portraits_page
-  // in app.py. Independent of name/style choice, always shown.
-  var isMemorial = false;
-  var memorialWrap = document.createElement('div');
-  memorialWrap.style.cssText = 'display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:14px 16px;'
-    + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;background:var(--color-surface, #faf9f7);'
-    + 'cursor:pointer;user-select:none;';
-  memorialWrap.setAttribute('role', 'checkbox');
-  memorialWrap.setAttribute('aria-checked', 'false');
-  memorialWrap.setAttribute('tabindex', '0');
-
-  var memorialBox = document.createElement('span');
-  memorialBox.setAttribute('aria-hidden', 'true');
-  memorialBox.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;'
-    + 'flex-shrink:0;width:20px;height:20px;border:1.5px solid var(--color-ink, #1C1C1C);'
-    + 'border-radius:4px;background:#fff;transition:all 0.15s;margin-top:2px;';
-  var memorialCheck = document.createElement('span');
-  memorialCheck.style.cssText = 'display:none;font-size:13px;color:#fff;line-height:1;font-weight:700;';
-  memorialCheck.textContent = '✓';
-  memorialBox.appendChild(memorialCheck);
-
-  var memorialLabel = document.createElement('span');
-  memorialLabel.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--color-ink, #1C1C1C);line-height:1.4;flex:1;";
-  memorialLabel.innerHTML = '<strong style="font-weight:600;">This is a memorial gift</strong>'
-    + '<br><span style="color:var(--color-muted, #8a8580);font-size:var(--text-xs);">We will treat your order with extra care and skip any follow-up upsells.</span>';
-
-  memorialWrap.appendChild(memorialBox);
-  memorialWrap.appendChild(memorialLabel);
-
-  function updateMemorial() {
-    memorialWrap.setAttribute('aria-checked', isMemorial ? 'true' : 'false');
-    memorialBox.style.background = isMemorial ? 'var(--color-ink, #1C1C1C)' : '#fff';
-    memorialCheck.style.display = isMemorial ? 'block' : 'none';
-    var hidden = document.querySelector('input[name="properties[Memorial]"]');
-    if (hidden) hidden.value = isMemorial ? 'Yes' : 'No';
-  }
-  memorialWrap.addEventListener('click', function () {
-    isMemorial = !isMemorial;
-    updateMemorial();
-  });
-  memorialWrap.addEventListener('keydown', function (e) {
-    if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      isMemorial = !isMemorial;
-      updateMemorial();
-    }
-  });
-
-  if (insertTarget && insertTarget.parentNode) {
-    insertTarget.parentNode.insertBefore(memorialWrap, insertTarget);
-  }
-
   // ── Inject hidden line item properties into the product form ──
   var form = document.querySelector('.product-form, form[action*="/cart/add"]');
   if (form) {
@@ -1516,7 +1460,6 @@
 
     var props = {
       'Pet Name': petName,
-      'Memorial': isMemorial ? 'Yes' : 'No',                  // visible to staff — staff see it in admin and treat with care; Flask /portraits/<token> uses it to soften copy
       '_Style': data.styleId || '',
       '_Font Size': fontSize,
       '_Show Name': wantsName ? 'Yes' : 'No',
@@ -1679,9 +1622,6 @@
       // false-positive on legitimate flows.
 
       setProp('Pet Name', freshData.petName || '');
-      // Memorial is a UI-only state, not in LS — read closure var so the
-      // toggle the customer just clicked is what gets written to the cart.
-      setProp('Memorial', isMemorial ? 'Yes' : 'No');
       setProp('_Style', freshData.styleId || '');
       setProp('_Font Size', freshData.fontSize || 'medium');
       setProp('_Show Name', withName ? 'Yes' : 'No');
