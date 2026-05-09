@@ -835,7 +835,7 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
 .header { display: flex; justify-content: center; padding: 16px 0 32px; }
 .brand-link { display: inline-block; line-height: 0; }
 .brand-link:focus-visible { outline: 2px solid #1C1C1C; outline-offset: 4px; border-radius: 2px; }
-.brand-logo { width: 180px; height: auto; display: block; }
+.brand-logo { width: 180px; height: auto; display: block; transform: translateX(8px); }
 .hero { text-align: center; max-width: 560px; margin: 0 auto 8px; }
 .hero .h1 { margin-left: auto; margin-right: auto; }
 .hero .h1-sub { margin-left: auto; margin-right: auto; max-width: 460px; }
