@@ -1939,6 +1939,69 @@ def _remove_poster_halos(
     return out
 
 
+def _snap_poster_to_palette(
+    img: Image.Image,
+    palette: dict[str, str],
+) -> Image.Image:
+    """Snap every pixel in the image to the NEAREST canonical palette
+    colour (bg_left, bg_right, or one of the accent hexes). Eliminates
+    Gemini's recurring failure mode of adding ink-grain / halftone /
+    distressed texture inside the polygon shapes despite the prompt's
+    "ABSOLUTELY NO TEXTURE" rule.
+
+    Result: every polygon shape is a single uniform palette colour, no
+    gradient, no noise, no texture. Reads as a clean vector
+    illustration rather than a photographed silk-screen poster.
+
+    Implementation: vectorised numpy distance computation. ~150ms on a
+    1024×1024 image with 9 palette colours.
+    """
+    import re as _re
+    rgb = img.convert("RGB") if img.mode != "RGB" else img
+
+    # Parse accent hexes from the palette's "accents" string.
+    accents_str = palette.get("accents", "")
+    accent_hexes = _re.findall(r'#[0-9A-Fa-f]{6}', accents_str)
+
+    # Build the target palette: bg_left, bg_right, accents, plus the
+    # tongue exception (warm coral pink #E07A6B for visible tongues —
+    # see the prompt's TONGUE EXCEPTION block).
+    palette_colors: list[tuple[int, int, int]] = [
+        _hex_to_rgb(palette["bg_left_hex"]),
+        _hex_to_rgb(palette["bg_right_hex"]),
+    ]
+    for hex_str in accent_hexes:
+        palette_colors.append(_hex_to_rgb(hex_str))
+    palette_colors.append((224, 122, 107))  # tongue coral
+
+    try:
+        import numpy as np
+        arr = np.asarray(rgb, dtype=np.int32)               # (H, W, 3)
+        palette_arr = np.array(palette_colors, dtype=np.int32)  # (N, 3)
+        # Compute distance from each pixel to each palette colour.
+        # Reshape so we can broadcast: arr (H,W,1,3), palette (1,1,N,3).
+        diff = arr[:, :, None, :] - palette_arr[None, None, :, :]
+        dist = (diff * diff).sum(axis=-1)                   # (H, W, N)
+        nearest = dist.argmin(axis=-1)                      # (H, W)
+        snapped = palette_arr[nearest].astype(np.uint8)     # (H, W, 3)
+        log.info(
+            "bold-graphic-poster: snapped pixels to %d-colour palette",
+            len(palette_colors),
+        )
+        return Image.fromarray(snapped, "RGB")
+    except ImportError:
+        log.warning(
+            "bold-graphic-poster: numpy not available — skipping palette snap"
+        )
+        return img
+    except Exception as exc:
+        log.warning(
+            "bold-graphic-poster: palette snap failed (%s) — returning original",
+            exc,
+        )
+        return img
+
+
 def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
     return _WATERCOLOR_TEMPLATE
 
@@ -4735,6 +4798,12 @@ def _generate_inner(
                     padded, _palette, interior_tol=_interior_tol,
                 )
                 padded = _remove_poster_halos(padded, _palette)
+                # Snap every pixel to the canonical palette to eliminate
+                # any ink-grain / halftone / distressed texture Gemini
+                # adds inside the polygon shapes despite the prompt's
+                # ABSOLUTELY NO TEXTURE rule. Reads as a clean vector
+                # illustration after this pass.
+                padded = _snap_poster_to_palette(padded, _palette)
             else:
                 padded = add_background_padding(
                     ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
