@@ -2510,7 +2510,17 @@ def _process_job(job: dict):
     file_owned = True
     try:
         worker_bg = job.get("background_mode") or "auto"
-        worker_seed = job.get("variation_seed")
+        # variation_seed is stored as "" in the job record when absent
+        # (Redis HSET coerces None → ""). Coerce back to None here so
+        # generate()'s `if variation_seed is not None` check behaves
+        # correctly — passing "" through caused "" % 8 inside generate
+        # and surfaced "not all arguments converted during string
+        # formatting" to the customer on every first-attempt generate.
+        _seed_raw = job.get("variation_seed")
+        try:
+            worker_seed = int(_seed_raw) if _seed_raw not in (None, "") else None
+        except (TypeError, ValueError):
+            worker_seed = None
         log.info(
             "[worker] job=%s style=%s bg_mode=%s variation_seed=%s",
             job_id, job["style"], worker_bg, worker_seed,
