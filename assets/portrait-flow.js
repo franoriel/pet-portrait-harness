@@ -4020,7 +4020,10 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
 
 /* ── TrustBar ──────────────────────────────────────────────── */
 
-function PageHero() {
+function PageHero({ stage }) {
+  // Marquee is hidden on the upload step — the full style grid lives on
+  // step 2, so the marquee on step 1 is redundant scroll-noise.
+  const showMarquee = stage !== STAGES.UPLOAD;
   return React.createElement('div', {
     style: { textAlign: 'center', marginBottom: '20px' },
   },
@@ -4041,8 +4044,8 @@ function PageHero() {
       },
     }, '8 styles \u00B7 You only pay if you love it \u00B7 On your wall in 7\u201310 days'),
 
-    // Marquee — all 8 styles scrolling continuously
-    React.createElement('div', {
+    // Marquee — all 8 styles scrolling continuously (hidden on UPLOAD step)
+    showMarquee && React.createElement('div', {
       style: {
         overflow: 'hidden', margin: '0 -20px',
         maskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
@@ -4152,7 +4155,7 @@ function PortraitFlow() {
     style: { fontFamily: fontSans, maxWidth: '600px', margin: '0 auto', padding: '24px 20px 40px', background: tokens.colorSurface },
   },
     // Show hero on upload + style steps, hide on later steps (portrait is the hero)
-    (state.stage === STAGES.UPLOAD || state.stage === STAGES.STYLE) && React.createElement(PageHero),
+    (state.stage === STAGES.UPLOAD || state.stage === STAGES.STYLE) && React.createElement(PageHero, { stage: state.stage }),
     content,
     // Newsletter modal + dismissed-state floating pill. Both opt out
     // automatically once newsletterStatus === 'signed_up'.
