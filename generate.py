@@ -3745,14 +3745,16 @@ def _modern_open_name_band(image: Image.Image) -> Image.Image:
             pad_bottom_ratio=0,
             target_aspect=PRINT_ASPECT_1_1,
         )
-    # pad_top_ratio dropped from 0.22 → 0.18: 0.22 leaves a visibly empty
-    # cream band above the name on 4:5 canvases (the cat sits noticeably
-    # lower than the canvas centre). 0.18 lands the head at y≈18-19% with
-    # the name centred at y≈11% (cfg.zone_top), keeping clear breathing
-    # room above the ears without the floating-in-empty-space look.
+    # pad_top_ratio dialed in over a few iterations:
+    #   0.22 → too much cream above; pet looks small / floats in empty space
+    #   0.18 → too tight; pet head close to the top edge, name pressed up
+    #   0.20 → goldilocks: head at y≈18%, name centred at y≈11% with a
+    #           clear cream band above it but no excess empty area.
+    # The original code comment ("0.20 lands head at y≈17%") matches this,
+    # so we're back to the documented target.
     return _modern_shape_art_reframe(
         image,
-        pad_top_ratio=0.18,
+        pad_top_ratio=0.20,
         pad_side_ratio=0.02,
         target_aspect=PORTRAIT_RATIO,
     )
