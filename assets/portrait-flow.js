@@ -3615,8 +3615,16 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       // Hi-res un-watermarked print files for cart properties + per-
       // variant Printful mockup tasks. Stored in localStorage so the
       // PDP/cart writers can read them without another /add-name call.
+      // CRITICAL: write the MASTER named URLs (namedPreviewUrl +
+      // printFileUrl) here, not just the per-aspect derivatives. The
+      // PDP form-submit handler reads session.namedPreviewUrl when
+      // committing the cart's _Portrait URL — if it's missing, the
+      // submit falls back to the no-name URL and the customer gets
+      // _Show Name=Yes with a no-name image (see prior bug class).
       try {
         const session = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        if (url) session.namedPreviewUrl = url;
+        if (resp.composited_png_cdn) session.printFileUrl = resp.composited_png_cdn;
         if (resp.composited_png_3x4_cdn) session.printFileUrl3x4 = resp.composited_png_3x4_cdn;
         if (resp.composited_png_1x1_cdn) session.printFileUrl1x1 = resp.composited_png_1x1_cdn;
         if (url3x4) session.namedPreviewUrl3x4 = url3x4;
