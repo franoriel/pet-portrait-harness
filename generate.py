@@ -824,6 +824,34 @@ shading is one or two flat blocks following the leg axis, never curved \
 bands that snake across the body. If a shape would read as suggestive or \
 phallic in isolation, redraw it as an angular plane or merge it into the \
 adjacent block.
+- BODY RESOLUTION — CRITICAL: the pet's lower body must read as a clear, \
+readable sitting posture with FRONT PAWS visible at the bottom. The chest \
+blaze and the front legs are DISTINCT shapes that meet at the chest's \
+bottom edge, not a single fused heart-shaped or shield-shaped blob. The \
+silhouette from neck to floor must show: (1) a defined chest area in the \
+middle, (2) two front legs/forepaws as broad parallel masses on either \
+side of the chest, (3) two visible front paws at the very bottom edge \
+sitting flush at the canvas floor. NEVER let the legs disappear into a \
+fluffy chest mass; NEVER end the body in a single pointy V-shape; NEVER \
+merge the chest blaze with the front legs into one shield-like silhouette. \
+The pet should read as anatomically articulated — a viewer should be \
+able to trace a finger along the silhouette and identify where chest ends \
+and legs begin. RECURRING FAILURE MODE TO AVOID: a fluffy long-coated dog \
+(Goldendoodle, Maltipoo, Bichon, Cavoodle) rendered with all the lower-\
+body fur fused into a single drooping heart/shield blob with no visible \
+legs or paws — this reads as a children's book illustration, not the \
+editorial vector portrait we ship.
+- AESTHETIC PUSH — CRITICAL: bias the entire rendering toward EDITORIAL \
+SOPHISTICATION. The reference is a magazine illustration, a Spotify \
+Wrapped portrait, an Apple TV+ character key art card. NOT a Disney \
+mascot, NOT a children's storybook page, NOT a pet birthday card, NOT a \
+greeting-card-aisle "fur baby" sticker. Specific tells that this rule \
+is being violated: oversized doe-eyes, exaggerated cute proportions, \
+soft pastel-rainbow palettes, smiling mouth-opening animation, "kawaii" \
+roundness. If the result feels like it could go on a child's bedroom \
+wall to make them smile, you have over-cartooned it; pull back toward \
+"this is a refined art print someone in their 30s would hang in a calm \
+adult living room."
 - THE PET IS THE ONLY SUBJECT. Do NOT add decorative elements, abstract \
 shapes, arcs, circles, dots, foliage, halos, frames, or any other graphic \
 ornaments around the pet. The composition is just the pet on a single \
