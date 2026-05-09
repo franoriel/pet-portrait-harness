@@ -4798,12 +4798,15 @@ def _generate_inner(
                     padded, _palette, interior_tol=_interior_tol,
                 )
                 padded = _remove_poster_halos(padded, _palette)
-                # Snap every pixel to the canonical palette to eliminate
-                # any ink-grain / halftone / distressed texture Gemini
-                # adds inside the polygon shapes despite the prompt's
-                # ABSOLUTELY NO TEXTURE rule. Reads as a clean vector
-                # illustration after this pass.
-                padded = _snap_poster_to_palette(padded, _palette)
+                # _snap_poster_to_palette was tried here — it eliminated
+                # texture but was catastrophic on warm-coat pets in
+                # cool/warm palette mismatches: a golden dog on the rose
+                # palette has warm-brown fur pixels that are CLOSER to
+                # bg_left (#F2BAC2 dusty pink) than to any accent, so
+                # snapping collapsed the dog into bg. Disabled until we
+                # have a smarter "snap only pixels already near a
+                # palette colour" implementation that preserves pet
+                # pixels falling outside the palette.
             else:
                 padded = add_background_padding(
                     ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
