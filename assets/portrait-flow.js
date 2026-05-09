@@ -206,9 +206,15 @@ const STYLE_AFFIRMATIONS = {
   'aura-gradient':       { tag: 'Halo treatment',       line: 'getting the soft-gradient halo treatment.' },
 };
 
-// Resolve asset base path for style example images
+// Resolve asset base path for style example images. Capture the script's
+// own ?v= cache-buster so example-*.webp swaps don't get stuck behind a
+// year-long browser cache (asset URLs built in JS bypass Liquid's
+// asset_url cache-busting otherwise).
 const _pfScript = document.querySelector('script[src*="portrait-flow"]');
-const _pfAssetBase = _pfScript ? _pfScript.src.replace(/portrait-flow[^/]*$/, '') : '';
+const _pfScriptSrc = _pfScript ? _pfScript.src : '';
+const _pfAssetBase = _pfScriptSrc ? _pfScriptSrc.replace(/portrait-flow[^/?]*([?][^/]*)?$/, '') : '';
+const _pfCacheBust = (_pfScriptSrc.match(/[?&]v=([^&]+)/) || [])[1] || '';
+const _pfQS = _pfCacheBust ? `?v=${_pfCacheBust}` : '';
 
 /* ── Prices & variant map ──────────────────────────────────── */
 
@@ -2249,7 +2255,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
             style: { width: '100%', aspectRatio: '4/5', position: 'relative', overflow: 'hidden' },
           },
             style.exampleImage && React.createElement('img', {
-              src: _pfAssetBase + style.exampleImage, alt: style.name + ' example',
+              src: _pfAssetBase + style.exampleImage + _pfQS, alt: style.name + ' example',
               loading: 'lazy',
               style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
             }),
@@ -4059,7 +4065,7 @@ function PageHero() {
               ...(setIdx === 1 ? { 'aria-hidden': true } : {}),
             },
               React.createElement('img', {
-                src: _pfAssetBase + style.exampleImage, alt: style.name,
+                src: _pfAssetBase + style.exampleImage + _pfQS, alt: style.name,
                 loading: 'eager',
                 style: {
                   width: '100px', height: '125px', objectFit: 'cover',
