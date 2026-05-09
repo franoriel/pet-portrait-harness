@@ -79,7 +79,8 @@ def create_job(
         "pet_name": pet_name,
         "style": style,
         "background_mode": background_mode or "auto",
-        "variation_seed": variation_seed if variation_seed is not None else "",
+        # _serialize handles None → "" centrally; no need to pre-coerce.
+        "variation_seed": variation_seed,
         "upload_path": upload_path,
         "created_at": now,
         "updated_at": now,
@@ -230,12 +231,31 @@ def get_order_record(order_id: str) -> Optional[dict]:
 # ── Serialization helpers (Redis stores strings) ──────────────────────────────
 
 def _serialize(v) -> str:
+    """Coerce arbitrary Python values to strings for Redis HSET storage.
+
+    None is serialised as "" (NOT the literal string "None"). Without this
+    explicit None-handling, str(None) = "None", which a downstream consumer
+    that does `if x is not None: ...` would interpret as a present non-None
+    value and could try to operate on as if it were a real type. The
+    variation_seed=None bug (TypeError "not all arguments converted during
+    string formatting" from `"None" % len(_VARIATION_HINTS)`) was the first
+    incarnation of this trap — generalising the fix here so future Optional
+    fields don't repeat it.
+    """
+    if v is None:
+        return ""
     if isinstance(v, bool):
         return "1" if v else "0"
     return str(v)
 
 
 def _deserialize(key: str, v: str):
+    """Coerce stored strings back to typed values where possible.
+
+    Default is to return the raw string unchanged. Empty strings come back
+    as "" — consumers reading Optional fields must coerce "" → None on
+    their side (see app.py:_process_job for the variation_seed example).
+    """
     if key in ("created_at", "updated_at", "position"):
         try:
             return float(v)
