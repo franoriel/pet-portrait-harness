@@ -451,6 +451,29 @@ tapering nor varying. Smooth controlled pen pressure throughout.
 NO color anywhere, NO grey shading, NO fills, NO crosshatching, NO \
 stippling, NO sketchy multi-pass strokes.
 
+STROKE BUDGET — LESS IS THE ENTIRE AESTHETIC:
+- The finished portrait reads as a SUGGESTION, not a rendering. The pet \
+should be IDENTIFIABLE in 5–10 distinct curve segments total, NO MORE \
+than 12. If you find yourself adding a 9th or 10th detail stroke \
+beyond silhouette + basic features (eyes, snout, ear contour), STOP — \
+the design is already done.
+- ZERO individual fur strands. The body silhouette is ONE smooth \
+contour line. Do NOT draw fluffy fur as multiple wisps, tufts, hair \
+strands, or scribbled curls. Long-coated breeds (Goldendoodle, \
+Maltipoo, Shih Tzu, Yorkie, Bichon, Cocker Spaniel, Old English \
+Sheepdog, any "doodle" or "teddy-bear" mix) are rendered with the \
+SAME smooth silhouette as a short-haired breed — the line describes \
+the OUTLINE of the fur mass, not the individual hairs. A single \
+gentle wave along the chest is allowed; a thicket of fur strokes is \
+NOT. This is the #1 way the style fails: Gemini reading "fluffy" and \
+producing dozens of fur-strand strokes that turn the result into a \
+busy contour drawing instead of a minimal one-line sketch.
+- Negative space (empty warm off-white paper) covers ≥85% of the \
+canvas. If the ink coverage exceeds ~12% of the image, the result is \
+too busy. The whole point of this style is the BREATHING ROOM around \
+the line — the pet should look almost EMPTY, a delicate gestural \
+mark on a generous warm field of paper.
+
 DETAIL ECONOMY — line activity must be UNIFORM across the figure:
 - Do NOT pack one region (e.g. a single paw) with dense busy curls while \
 leaving another region (e.g. the opposite limb, the back, or the chest) \
@@ -502,12 +525,28 @@ line's widest point (ear-to-ear or shoulder-to-shoulder) reaches \
 bars, color blocks, or empty bands.
 - Do NOT include any text, words, letters, watermarks, or signatures.
 
+FINAL CHECK BEFORE OUTPUT — SIMPLICITY (read this LAST):
+- Count the distinct curve segments. More than 12? ERASE detail \
+strokes and recount. The minimal-line aesthetic dies above 12 strokes.
+- Look at every fur region (ears, chest, tail, paws). Are there \
+individual hair strands, fluff tufts, or scribbled curls drawn? If \
+yes, ERASE them — replace with the smooth outer contour only.
+- Estimate the ink coverage. Above ~12% of the canvas? Too busy. \
+ERASE non-essential detail strokes until you're back to 5–10%.
+- The image should look almost EMPTY — a delicate gestural mark on \
+a generous warm field of paper. Not a detailed botanical study, not \
+a contour drawing, not an etching. If the result looks "complete" \
+and "rendered," it is wrong. Minimal-line-art looks UNDERDONE on \
+purpose; the empty space is the design.
+
 Avoid: multiple separate strokes, broken or interrupted lines, sketchy \
 hatched marks, detached features (floating eyes, separate whisker dots), \
 phantom vertical or horizontal stray lines hanging below the figure, \
 line endings that trail off into empty background, asymmetric detail \
 (one paw busy with toes, opposite limb left bare), open contours that \
 never close back to the silhouette, filled shapes, varying line weight, \
+fur strands, fur tufts, individual hair scribbles, fluff curls, \
+scribbled chest fur, busy ear ruffles, detailed contour rendering, \
 ANY color, sepia, tinted, duotone, gray shading, crosshatching, \
 stippling, photography, photorealism, cartoon, anime, 3D render, text, \
 watermark, border, solid color bars or panels at image edges, pet \
@@ -2096,6 +2135,27 @@ field — pick ONE and hold it across the whole image: deep charcoal \
 NO grey shading, NO fills, NO crosshatching, NO stippling, NO sketchy \
 multi-pass strokes.
 
+STROKE BUDGET — LESS IS THE ENTIRE AESTHETIC:
+- The finished portrait reads as a SUGGESTION, not a rendering. The pet \
+should be IDENTIFIABLE in 5–10 distinct curve segments total, NO MORE \
+than 12. If you find yourself adding a 9th or 10th detail stroke \
+beyond silhouette + basic features (eyes, snout, ear contour), STOP — \
+the design is already done.
+- ZERO individual fur strands. The body silhouette is ONE smooth \
+contour line. Do NOT draw fluffy fur as multiple wisps, tufts, hair \
+strands, or scribbled curls. Long-coated breeds (Goldendoodle, \
+Maltipoo, Shih Tzu, Yorkie, Bichon, Cocker Spaniel, Old English \
+Sheepdog, any "doodle" or "teddy-bear" mix) are rendered with the \
+SAME smooth silhouette as a short-haired breed — the line describes \
+the OUTLINE of the fur mass, not the individual hairs. A single \
+gentle wave along the chest is allowed; a thicket of fur strokes is \
+NOT.
+- Negative dark field covers ≥85% of the canvas. If the ivory ink \
+coverage exceeds ~12% of the image, the result is too busy. The \
+whole point of this style is the BREATHING ROOM around the line — \
+the pet should look almost EMPTY, a delicate gestural mark on a \
+generous deep dark field.
+
 DETAIL ECONOMY — line activity must be UNIFORM across the figure:
 - Do NOT pack one region (e.g. a single paw) with dense busy curls while \
 leaving another region (e.g. the opposite limb, the back, or the chest) \
@@ -2144,6 +2204,19 @@ point of the figure (ear-to-ear or shoulder-to-shoulder) reaches \
 bars, color blocks, or empty bands.
 - Do NOT include any text, words, letters, watermarks, or signatures.
 
+FINAL CHECK BEFORE OUTPUT — SIMPLICITY (read this LAST):
+- Count the distinct curve segments. More than 12? ERASE detail \
+strokes and recount. The minimal-line aesthetic dies above 12 strokes.
+- Look at every fur region (ears, chest, tail, paws). Are there \
+individual ivory hair strands, fluff tufts, or scribbled curls? If \
+yes, ERASE them — replace with the smooth outer contour only.
+- Estimate the ivory ink coverage. Above ~12% of the canvas? Too \
+busy. ERASE non-essential detail strokes until you're back to 5–10%.
+- The image should look almost EMPTY — a delicate gestural ivory \
+mark on a generous deep dark field. Not a detailed botanical study, \
+not a contour drawing, not an etching. Minimal-line-art looks \
+UNDERDONE on purpose; the empty dark space is the design.
+
 Avoid: white or off-white backgrounds, black ink on light paper, multiple \
 separate strokes, broken or interrupted lines, sketchy hatched marks, \
 detached features (floating eyes, separate whisker dots), phantom \
@@ -2151,6 +2224,8 @@ vertical or horizontal stray lines hanging below the figure, line \
 endings that trail off into empty dark field, asymmetric detail (one paw \
 busy with toes, opposite limb left bare), open contours that never close \
 back to the silhouette, filled shapes, varying line weight, color fills, \
+fur strands, fur tufts, individual hair scribbles, fluff curls, \
+scribbled chest fur, busy ear ruffles, detailed contour rendering, \
 chalkboard / blackboard texture (this is ink on paper, not chalk on a \
 board), photography, photorealism, cartoon, anime, 3D render, gray \
 shading, crosshatching, stippling, text, watermark, border, solid color \
