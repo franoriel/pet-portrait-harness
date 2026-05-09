@@ -4174,6 +4174,138 @@ _OCR_MIN_CONFIDENCE = 50
 _OCR_MIN_WORD_LENGTH = 3
 
 
+# ---------------------------------------------------------------------------
+# Dark-stencil failure-mode detector
+# ---------------------------------------------------------------------------
+#
+# Recurring Bold Graphic Poster failure: Gemini renders the pet as sparse
+# dark cubist fragments with the bg colour visible through gaps between
+# fragments — instead of a fully-painted mosaic where every interior pixel
+# is a palette accent. The prompt forbids it (RECURRING FAILURE MODE TO
+# AVOID) but the model ignores the rule maybe 5–15% of the time, especially
+# on dark-coated dogs.
+#
+# Detection algorithm:
+#   1. Downscale to 64×80 for speed (2 ms vs 200 ms full-res).
+#   2. Build a binary silhouette mask: each pixel is "silhouette" if it is
+#      NOT close to any of the bg colours within a tolerance.
+#   3. Morphologically close the silhouette mask (dilate then erode). This
+#      fills the gaps between fragments — a normal portrait closes to its
+#      own silhouette, a dark-stencil portrait closes to a much larger
+#      filled-in pet-shape with all the gaps now inside the closed region.
+#   4. Count "leak" pixels: closed-mask=1 but original-mask=0 (i.e. bg
+#      colour visible inside what should be the pet body).
+#   5. Compare leak_ratio = leaks / closed_silhouette_pixels against a
+#      threshold. Above the threshold = dark-stencil failure.
+#
+# Threshold calibration (subject to tuning from prod telemetry):
+#   ratio < 0.05  → clean fully-painted portrait
+#   ratio 0.05–0.15 → small acceptable gaps (e.g. spaces between ears + body)
+#   ratio > 0.20 → dark-stencil failure (bg leaking through pet body)
+
+_BG_BLEED_DOWNSCALE = (64, 80)
+_BG_BLEED_TOLERANCE = 28        # max RGB-component delta to call a pixel "bg"
+_BG_BLEED_CLOSE_KERNEL = 7      # odd; covers ~10% of the downscaled width
+_BG_BLEED_THRESHOLD = 0.20      # leak ratio that flips the failure flag
+_BG_BLEED_MIN_PET_PX = 200      # if silhouette < this, image is mostly bg
+
+
+def _hex_to_rgb_tuple(hex_str: str) -> tuple[int, int, int]:
+    """'#RRGGBB' or 'RRGGBB' → (r, g, b). Defensive against odd inputs."""
+    s = hex_str.strip().lstrip("#")
+    if len(s) != 6:
+        return (255, 255, 255)
+    try:
+        return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16))
+    except ValueError:
+        return (255, 255, 255)
+
+
+def _bg_colors_for_detection(style: str, style_vars: Optional[dict]) -> list[tuple[int, int, int]]:
+    """Return the list of (r, g, b) bg colours to test for the given
+    style+vars, used by the dark-stencil detector. Empty list disables
+    detection — for styles where the bg isn't a known canonical colour.
+    """
+    sv = style_vars or {}
+    if style == "bold-graphic-poster":
+        palette_id = sv.get("poster_palette") or "teal"
+        if palette_id not in POSTER_PALETTES:
+            return []
+        p = POSTER_PALETTES[palette_id]
+        return [_hex_to_rgb_tuple(p["bg_left_hex"]), _hex_to_rgb_tuple(p["bg_right_hex"])]
+    if style == "modern-shape-art":
+        bg_id = sv.get("modern_bg_color")
+        if bg_id and bg_id in MODERN_BG_COLORS:
+            return [_hex_to_rgb_tuple(MODERN_BG_COLORS[bg_id])]
+    return []
+
+
+def _detect_bg_bleed_through(
+    image: Image.Image,
+    bg_colors: list[tuple[int, int, int]],
+) -> Optional[float]:
+    """Return the leak ratio if the image shows the dark-stencil failure
+    (bg colour visible inside the pet silhouette), or None when the image
+    passes. Pure-PIL — no numpy dependency. ~5 ms per call at the 64×80
+    downscale.
+
+    None is also returned when bg_colors is empty (detector disabled),
+    when the silhouette is too small to evaluate (mostly bg image), or
+    when the leak ratio is below the threshold.
+    """
+    if not bg_colors:
+        return None
+    try:
+        from PIL import ImageFilter
+    except ImportError:
+        return None
+
+    rgb = image.convert("RGB").resize(_BG_BLEED_DOWNSCALE, Image.LANCZOS)
+    pixels = list(rgb.getdata())
+    w, h = rgb.size
+
+    tol = _BG_BLEED_TOLERANCE
+
+    def _is_bg(p: tuple) -> bool:
+        r, g, b = p[0], p[1], p[2]
+        for br, bgg, bb in bg_colors:
+            if abs(r - br) <= tol and abs(g - bgg) <= tol and abs(b - bb) <= tol:
+                return True
+        return False
+
+    # Silhouette mask as L-mode image: 255 = pet, 0 = bg.
+    sil_data = bytes(0 if _is_bg(p) else 255 for p in pixels)
+    sil_mask = Image.frombytes("L", (w, h), sil_data)
+
+    sil_count_raw = sum(1 for b in sil_data if b == 255)
+    if sil_count_raw < _BG_BLEED_MIN_PET_PX:
+        return None
+
+    # Morphological closing: dilate (MaxFilter) then erode (MinFilter).
+    # Fills the gaps a fragmented dark-stencil silhouette has between
+    # its disconnected fragments, so we can count "interior bg" pixels.
+    closed = sil_mask.filter(ImageFilter.MaxFilter(_BG_BLEED_CLOSE_KERNEL))
+    closed = closed.filter(ImageFilter.MinFilter(_BG_BLEED_CLOSE_KERNEL))
+    closed_data = closed.tobytes()
+
+    # Count: pixels inside the closed region (closed=255) and "leaks"
+    # (closed=255 but original silhouette=0 → bg colour leaking through
+    # the pet body).
+    closed_count = 0
+    leak_count = 0
+    for orig_b, closed_b in zip(sil_data, closed_data):
+        if closed_b == 255:
+            closed_count += 1
+            if orig_b == 0:
+                leak_count += 1
+
+    if closed_count < _BG_BLEED_MIN_PET_PX:
+        return None
+
+    leak_ratio = leak_count / closed_count
+    return leak_ratio if leak_ratio > _BG_BLEED_THRESHOLD else None
+
+
 def _detect_hallucinated_text(image: Image.Image) -> Optional[str]:
     """Return the first text fragment Tesseract reads from the image with
     confidence above _OCR_MIN_CONFIDENCE, or None if the image looks clean.
@@ -4745,6 +4877,10 @@ def _generate_inner(
     _OCR_MAX_REGEN = 2
     raw_bytes: Optional[bytes] = None
     ai_image_no_name: Optional[Image.Image] = None
+    # Bg colours used to detect the "dark stencil" failure mode (bg leaking
+    # through pet silhouette). Empty list disables detection — only BGP and
+    # modern-shape-art currently have canonical bg hexes we can test.
+    _bg_bleed_palette = _bg_colors_for_detection(style, style_vars)
     for ocr_attempt in range(_OCR_MAX_REGEN + 1):
         candidate_bytes = call_gemini(
             photo, style, style_vars, pet_name="",
@@ -4753,17 +4889,41 @@ def _generate_inner(
         )
         candidate_img = Image.open(BytesIO(candidate_bytes))
         candidate_img.load()
+
+        # Failure-mode check #1: hallucinated text. Triggers retry.
         leaked = _detect_hallucinated_text(candidate_img)
-        if leaked is None:
-            raw_bytes = candidate_bytes
-            ai_image_no_name = candidate_img
-            break
-        log.warning(
-            "[generate] OCR detected hallucinated text '%s' on attempt %d/%d "
-            "— regenerating no-name source",
-            leaked, ocr_attempt + 1, _OCR_MAX_REGEN + 1,
-        )
-        candidate_img.close()
+        if leaked is not None:
+            log.warning(
+                "[generate] OCR detected hallucinated text '%s' on attempt %d/%d "
+                "— regenerating no-name source",
+                leaked, ocr_attempt + 1, _OCR_MAX_REGEN + 1,
+            )
+            candidate_img.close()
+            continue
+
+        # Failure-mode check #2: dark-stencil bg-bleed. LOG ONLY for now —
+        # this is a new detector and we want to see the false-positive rate
+        # in production before triggering retries. Once telemetry confirms
+        # the threshold catches real failures without false-positiving on
+        # legit gappy silhouettes, swap the warning for a `continue` to
+        # enable retry. The ratio is logged so ops can grep
+        # "[generate] dark-stencil ratio=" and tune the threshold.
+        if _bg_bleed_palette:
+            leak_ratio = _detect_bg_bleed_through(candidate_img, _bg_bleed_palette)
+            if leak_ratio is not None:
+                log.warning(
+                    "[generate] dark-stencil ratio=%.3f detected on attempt %d/%d "
+                    "(style=%s) — NOT retrying yet (logging-only mode); "
+                    "shipping this candidate",
+                    leak_ratio, ocr_attempt + 1, _OCR_MAX_REGEN + 1, style,
+                )
+            else:
+                log.debug("[generate] dark-stencil check passed (style=%s)", style)
+
+        # All blocking checks passed — accept this candidate.
+        raw_bytes = candidate_bytes
+        ai_image_no_name = candidate_img
+        break
     else:
         # Exhausted retries — ship the last attempt rather than failing the
         # whole job. Composite_name will still ghost, but at least the
