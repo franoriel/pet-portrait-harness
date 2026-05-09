@@ -1377,6 +1377,23 @@ def add_name():
     if not validate_url(image_url, allowed_hosts=_SAFE_IMAGE_HOSTS):
         return jsonify(error="Invalid image URL."), 400
 
+    # STRUCTURAL DOUBLE-NAME GUARD — every named file we save has
+    # `_named` in its filename (see generate_with_name_on_demand:
+    # f"{uid}_{style}_{safe_name}_named.png"). If a client sends a URL
+    # whose path contains _named, they're trying to use an already-
+    # composited file as the "no-name source", which would double the
+    # name and produce JEWILDER / ROOGEER ghosts. Refuse with a clear
+    # error rather than silently doubling.
+    if "_named" in image_url.lower():
+        log.warning(
+            "[/add-name] rejected request with already-named source URL: %s",
+            image_url[:120],
+        )
+        return jsonify(
+            error="Source image already contains a name. Please regenerate the portrait first.",
+            code="named_source_rejected",
+        ), 400
+
     try:
         import requests as _req
         # Stream + size cap (prevent memory exhaustion from huge remote files)
