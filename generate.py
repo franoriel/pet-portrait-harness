@@ -773,12 +773,20 @@ recognisable pattern of the specific animal — chest blaze, tan points, \
 calico patches, tabby markings — rendered as bold simple flat shapes, not \
 realistic detail.
 - EYES — FLAT GRAPHIC ICONS, NOT REALISTIC ANATOMY (CRITICAL): \
-Match the animal's actual eye shape and gaze direction from the photo, \
-but render the eye itself as a stylised vector ICON: TWO flat solid \
-colour blocks total — one for the iris (a single uniform shade, no \
-inner gradient, no outer ring of a second colour, no rim lighting, no \
-shading toward the pupil) and one for the pupil (a single solid dark \
-shape, no highlight inside it, no reflective sheen). NO catchlights, \
+Match the animal's actual eye SHAPE from the photo (round, almond, \
+etc.) but render gaze as ALERT and ENGAGED — both eyes looking \
+forward toward the viewer (or to the same off-camera direction by \
+the same amount). NEVER downcast, NEVER looking down at the floor, \
+NEVER half-closed, NEVER drooped. If the source photo catches the \
+pet looking down, away, sleepy, or with a tired/melancholy gaze, \
+REINTERPRET the eyes as wide-open and alert — the customer wants \
+their pet to look ALIVE in the portrait, not match a low-energy \
+source. Render the eye itself as a stylised vector ICON: TWO flat \
+solid colour blocks total — one for the iris (a single uniform \
+shade, no inner gradient, no outer ring of a second colour, no \
+rim lighting, no shading toward the pupil) and one for the pupil \
+(a single solid dark shape, no highlight inside it, no reflective \
+sheen). NO catchlights, \
 NO white glints, NO sparkles, NO reflective dots, NO crescent \
 highlights anywhere on or around the eyes. NO secondary iris ring \
 of a different colour. NO gradient WITHIN the iris from light to dark. \
@@ -794,6 +802,32 @@ flat-vector aesthetic into uncanny-valley realism. If you find \
 yourself adding ANY second tone, glint, or shading inside the eye \
 shape, stop and render it as one flat iris colour + one flat pupil \
 shape only.
+- EXPRESSION — RENDER THE PET ALIVE AND ENGAGED, NEVER SAD (CRITICAL): \
+the pet's facial expression in the rendered portrait must read as \
+CONFIDENT, ALERT, and PRESENT — alive, looking out at the viewer, \
+present in the moment. NEVER sad, droopy, melancholy, sleepy, \
+forlorn, mournful, or low-energy. Mouth should be neutral or \
+gently relaxed (closed/soft for cats and most dogs at rest, gentle \
+open smile for dogs caught panting in the source) — NEVER turned \
+DOWN at the corners, NEVER frowning, NEVER pinched. Brow should \
+be relaxed and open (no furrowed/worried brow). If the source \
+photo catches the pet at a tired/sad/dejected moment (head low, \
+eyes downcast, mouth pulled down), do NOT replicate that mood — \
+REINTERPRET the expression as the pet at their alert/happy best. \
+The customer's portrait should be a celebration of their pet, not \
+a screenshot of one bad-mood second from a phone roll.
+- EAR POSTURE — CRITICAL: render ears in the breed's natural \
+ALERT position. Erect-eared breeds (French Bulldog / Boston \
+Terrier with bat ears, German Shepherd / Husky / Corgi with \
+pricked ears, all cats unless they're folded breeds) get ears \
+pointing UP and forward. Floppy-eared breeds (Beagle, Basset, \
+Cocker, Goldendoodle, Cavalier, Spaniels) get ears in their \
+natural relaxed-but-alert hang — never pulled all the way back \
+flat against the head (which reads as fearful or aggressive). \
+Even if the source photo catches the pet with ears slightly back \
+or relaxed, render the ears in the breed's typical alert position. \
+A Frenchie with drooped ears reads as "tired/sick" — keep the \
+bat-ear silhouette upright.
 - COLOR HARMONY — CRITICAL: the pet's coat palette and the \
 {{MODERN_BG_NAME}} background must read as ONE intentional, harmonious \
 palette. Pick coat shades that contrast comfortably with \
@@ -955,7 +989,23 @@ aesthetic does not survive the addition of a single highlight dot.
 colour, or transition from light to dark, FLATTEN it to one solid \
 hue.
 - The eye should read like an icon a designer drew with two filled \
-paths — not like a photo of an eye, not like a Pixar character's eye.\
+paths — not like a photo of an eye, not like a Pixar character's eye.
+
+FINAL CHECK BEFORE OUTPUT — PET LOOKS HAPPY AND ALIVE, NOT SAD:
+- Look at the overall expression. Does the pet read as alert, \
+present, looking at the viewer with engaged eyes and a relaxed or \
+gently-smiling mouth? If yes, output. If no — if the pet looks \
+sad, droopy, sleepy, melancholy, dejected, mournful, or low-\
+energy — REDRAW with: eyes wide-open and forward-engaged, mouth \
+neutral/relaxed (NOT pulled down at corners), ears in the breed's \
+alert position (UP for bat-eared / pricked-ear / cat breeds), brow \
+relaxed not furrowed.
+- Specifically check: are the eyes looking DOWN at the floor? Are \
+the mouth corners turned DOWN? Are the ears drooped FLAT against \
+the head when they shouldn't be? Any of these = sad-pet failure \
+mode = REDRAW.
+- The customer's portrait is a celebration of their pet — render \
+the pet at their best, not at their tiredest.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
