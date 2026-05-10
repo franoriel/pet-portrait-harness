@@ -4523,7 +4523,13 @@ def _bg_colors_for_detection(style: str, style_vars: Optional[dict]) -> list[tup
     if style == "modern-shape-art":
         bg_id = sv.get("modern_bg_color")
         if bg_id and bg_id in MODERN_BG_COLORS:
-            return [_hex_to_rgb_tuple(MODERN_BG_COLORS[bg_id])]
+            # MODERN_BG_COLORS values are (hex, name) tuples — index [0]
+            # for the hex. Passing the whole tuple to _hex_to_rgb_tuple
+            # raises 'tuple has no attribute strip' and crashes the
+            # entire Modern-style render flow before the candidate is
+            # even generated.
+            hex_code, _name = MODERN_BG_COLORS[bg_id]
+            return [_hex_to_rgb_tuple(hex_code)]
     return []
 
 
