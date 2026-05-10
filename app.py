@@ -833,7 +833,8 @@ _PORTRAITS_PAGE_TEMPLATE = """<!doctype html>
 body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 'Inter', -apple-system, sans-serif; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
 .header { text-align: center; padding: 16px 0 32px; }
-.brand { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 24px; color: #1C1C1C; }
+.brand-logo { display: block; height: 48px; width: auto; max-width: 240px; margin: 0 auto; }
+@media (max-width: 600px) { .brand-logo { height: 40px; max-width: 200px; } }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; margin: 0 0 8px; }
 .h1 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: 38px; line-height: 1.1; margin: 0 0 12px; color: #1C1C1C; }
 .h1-sub { font-size: 14px; color: #6B6B63; line-height: 1.55; margin: 0 0 32px; }
@@ -892,7 +893,7 @@ body { margin: 0; padding: 0; background: #FAF8F5; color: #1C1C1C; font-family: 
 <body>
 <div class="wrap">
   <header class="header">
-    <span class="brand">Pet Printables</span>
+    <img class="brand-logo" src="/static/pet-printables-wordmark.svg" alt="Pet Printables">
   </header>
   __EYEBROW__
   __HEADLINE__
