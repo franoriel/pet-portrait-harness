@@ -12,12 +12,12 @@
     </div>
     <div class="page-404__search">
       <p class="text-muted" style="margin-bottom:12px;font-size:0.9rem;">Or search for what you need:</p>
-      {%- form 'search' -%}
+      <form action="{{ routes.search_url }}" method="get" role="search">
         <div class="search-bar">
           <input type="search" name="q" placeholder="Search…" class="search-bar__input" autocomplete="off">
           <button type="submit" class="search-bar__btn btn btn--primary" aria-label="Search">Search</button>
         </div>
-      {%- endform -%}
+      </form>
     </div>
   </div>
 </div>

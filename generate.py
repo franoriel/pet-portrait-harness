@@ -4455,10 +4455,14 @@ def _build_watermark_logo(color: tuple) -> Image.Image:
     src = Image.open(logo_path).convert("L")
     # Ink density: dark source pixels → high ink, white background → 0
     ink = src.point(lambda p: 255 - p)
-    # 8% — subtle on calm backgrounds (watercolour paper) but still
-    # readable on saturated mid-brightness fills (neon hot pink, vivid
-    # blue) where 5% disappeared into the colour.
-    OPACITY = 0.08
+    # 1% — the mockup should read as the finished piece, not as a
+    # preview sample. The watermark is still present (last-mile
+    # screenshot deterrent) but visible only on close inspection.
+    # Note: at 1% the mark effectively disappears on saturated
+    # mid-brightness fills (neon hot pink, vivid blue) — IP
+    # protection here leans on the un-watermarked print PNG never
+    # being served, not on this overlay.
+    OPACITY = 0.01
     alpha = ink.point(lambda p: int(p * OPACITY))
     rgba = Image.new("RGBA", src.size, color + (0,))
     rgba.putalpha(alpha)

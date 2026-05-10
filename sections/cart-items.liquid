@@ -188,13 +188,19 @@
                       <p class="cart-page__item-variant text-muted">{{ item.variant.title }}</p>
                     {%- endunless -%}
                     {%- comment -%}
-                      Style is stored as the hidden `_Style` slug on every line item
-                      (see pdp-portrait-inject.js). Translate to a friendly label so
-                      the customer sees which style they picked while reviewing
-                      their cart. Falls back to the slug if a future style isn't
-                      mapped yet so we never show a blank row.
+                      Surface the bespoke part of the order — pet name + art
+                      style — at the top of the line item so the cart reads
+                      as "Jill's portrait, Neon Pop Art on a 12×12 canvas",
+                      not "Canvas (No Frame), 12×12". Style is stored as
+                      the hidden `_Style` slug on every line item (see
+                      pdp-portrait-inject.js); we translate the slug to a
+                      friendly label here. Pet Name comes through the
+                      visible `Pet Name` property (no underscore) but we
+                      pull it out into this block so it sits next to the
+                      style instead of appearing twice (once styled here
+                      and once via the generic property loop below).
                     {%- endcomment -%}
-                    {%- if style_val != blank -%}
+                    {%- if pet_name_val != blank or style_val != blank -%}
                       {%- assign style_label = style_val -%}
                       {%- case style_val -%}
                         {%- when 'soft-watercolour'    -%}{%- assign style_label = 'Soft Watercolour' -%}
@@ -206,14 +212,31 @@
                         {%- when 'aura-gradient'       -%}{%- assign style_label = 'Aura Gradient' -%}
                         {%- when 'charcoal'            -%}{%- assign style_label = 'Charcoal' -%}
                       {%- endcase -%}
-                      <p class="cart-page__item-prop text-muted" style="font-size:var(--text-sm);margin-top:4px;">
-                        Style: <span style="color:var(--color-ink);font-weight:600;">{{ style_label }}</span>
-                      </p>
+                      <div class="cart-page__item-portrait-meta" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;">
+                        {%- if pet_name_val != blank -%}
+                          <p class="cart-page__item-pet-name" style="margin:0;font-family:var(--font-heading,serif);font-style:italic;font-size:var(--text-lg);color:var(--color-ink);line-height:1.2;">
+                            {{ pet_name_val }}{% if pet_name_val contains "'" or pet_name_val contains "’" %}{% else %}'s{% endif %} portrait
+                          </p>
+                        {%- endif -%}
+                        {%- if style_val != blank -%}
+                          <p class="cart-page__item-prop text-muted" style="margin:0;font-size:var(--text-sm);">
+                            Style: <span style="color:var(--color-ink);font-weight:600;">{{ style_label }}</span>
+                          </p>
+                        {%- endif -%}
+                      </div>
                     {%- endif -%}
+                    {%- comment -%}
+                      Render any other visible properties (anything not
+                      prefixed with `_`). Pet Name is filtered here because
+                      we already surfaced it as the line's lead label
+                      above — keeping the loop generic for future properties
+                      means we don't need to revisit this template every
+                      time a new visible property is added.
+                    {%- endcomment -%}
                     {%- for property in item.properties -%}
                       {%- unless property.last == blank -%}
                         {%- assign prop_first_char = property.first | slice: 0 -%}
-                        {%- unless prop_first_char == '_' -%}
+                        {%- unless prop_first_char == '_' or property.first == 'Pet Name' -%}
                           <p class="cart-page__item-prop text-muted" style="font-size:var(--text-sm);">
                             {{ property.first }}: {{ property.last }}
                           </p>
@@ -240,11 +263,41 @@
                   <span class="cart-name-status" style="color:var(--color-muted);font-size:var(--text-xs);display:none;"></span>
                 </div>
                 {%- endif -%}
+                {%- comment -%}
+                  Quantity stepper variant.
+                  - Portrait line items (anything carrying a portrait URL
+                    or a style slug) are bespoke 1-of-1s. Letting the
+                    customer click `+` to bump quantity to 2 of the *same*
+                    portrait is almost never what they want — they want a
+                    second portrait of a different pet, or the same pet in
+                    a different style. So `+` becomes a link to start a
+                    fresh upload step instead.
+                  - Non-portrait line items (magnet, priority order,
+                    digital files) keep the normal `+` because buying 2
+                    of the same magnet is a real, common purchase.
+                  We still show the quantity number on portraits in case
+                  someone *did* increment via another path (URL param,
+                  bulk add) — they can decrement with `−` to fix it.
+                {%- endcomment -%}
+                {%- assign is_portrait_item = false -%}
+                {%- if portrait_url != nil and portrait_url != '' -%}
+                  {%- assign is_portrait_item = true -%}
+                {%- elsif style_val != blank -%}
+                  {%- assign is_portrait_item = true -%}
+                {%- endif -%}
                 <div class="cart-page__item-footer">
                   <div class="cart-qty">
                     <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity={{ item.quantity | minus: 1 }}" class="cart-qty__btn" aria-label="Decrease quantity">−</a>
                     <span class="cart-qty__num">{{ item.quantity }}</span>
-                    <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity={{ item.quantity | plus: 1 }}" class="cart-qty__btn" aria-label="Increase quantity">+</a>
+                    {%- if is_portrait_item -%}
+                      <a href="/pages/create?new=1"
+                         class="cart-qty__btn cart-qty__btn--new-portrait"
+                         aria-label="Add another portrait — starts a fresh upload"
+                         title="Add another portrait — starts a fresh upload"
+                         style="text-decoration:none;">+</a>
+                    {%- else -%}
+                      <a href="{{ routes.cart_change_url }}?id={{ item.key }}&quantity={{ item.quantity | plus: 1 }}" class="cart-qty__btn" aria-label="Increase quantity">+</a>
+                    {%- endif -%}
                   </div>
                   <span class="cart-page__item-price">{{ item.final_line_price | money }} CAD</span>
                 </div>
@@ -267,11 +320,57 @@
         <aside class="cart-page__summary">
           <div class="cart-summary">
             <h2 class="cart-summary__title">Order Summary</h2>
+            {%- comment -%}
+              Subtotal is gross (pre-discount). cart.total_price is the
+              net (post-discount) total Shopify uses for "what you owe
+              right now," but pairing it with a separate `Discounts`
+              line that's already baked in reads as if the discount
+              applied twice. cart.items_subtotal_price is the sum of
+              line totals before any cart-level discount, which is
+              what the customer expects "Subtotal" to mean.
+            {%- endcomment -%}
             <div class="cart-summary__row">
               <span>Subtotal ({{ cart.item_count }} item{% if cart.item_count != 1 %}s{% endif %})</span>
-              <span>{{ cart.total_price | money }} CAD</span>
+              <span>{{ cart.items_subtotal_price | money }} CAD</span>
             </div>
-            {%- if cart.total_discounts > 0 -%}
+            {%- comment -%}
+              Discount surfacing — three goals:
+                1. Show the customer something is applied (green ✓ chip
+                   next to the title), not just a quiet negative number
+                   that looks like a math error.
+                2. Communicate that the discount carries to checkout,
+                   so the customer doesn't worry about it disappearing
+                   in the next step.
+                3. Give a clear path to enter additional codes (e.g.
+                   the customer received one in an email). The form
+                   posts to /discount/CODE which sets the discount
+                   cookie and redirects back here; Shopify then applies
+                   the code at checkout.
+              Loops cart_level_discount_applications so the title shown
+              is whatever Shopify recorded (typically the automatic-
+              discount name set in admin). Falls back to a single
+              "Discounts" row if applications aren't surfaced.
+            {%- endcomment -%}
+            {%- if cart.cart_level_discount_applications.size > 0 -%}
+              {%- for discount in cart.cart_level_discount_applications -%}
+                <div class="cart-summary__row cart-summary__row--discount">
+                  <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span>{{ discount.title }}</span>
+                    <span class="cart-summary__discount-chip"
+                          style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:#E8F5E9;color:#1B5E20;font-size:var(--text-xs);font-weight:600;letter-spacing:0.02em;line-height:1.2;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Applied
+                    </span>
+                  </span>
+                  <span>−{{ discount.total_allocated_amount | money }}</span>
+                </div>
+              {%- endfor -%}
+              <p class="cart-summary__discount-note" style="margin:2px 0 10px;font-size:var(--text-xs);color:var(--color-muted);line-height:1.4;">
+                Automatic at this subtotal · Carries to checkout
+              </p>
+            {%- elsif cart.total_discounts > 0 -%}
               <div class="cart-summary__row cart-summary__row--discount">
                 <span>Discounts</span>
                 <span>−{{ cart.total_discounts | money }}</span>
@@ -279,11 +378,87 @@
             {%- endif -%}
 
             {%- comment -%}
-              Free shipping threshold tracker
-              cart.total_price is in cents — $95 CAD = 9500 cents
+              Discount-code input. Submits as GET /discount/CODE,
+              which sets the Shopify discount cookie and 302s back
+              to the cart. The cookie carries to checkout so the
+              code applies there. Lives below the discount summary
+              so customers who already have an auto-discount applied
+              can still stack a code on top.
+            {%- endcomment -%}
+            <details class="cart-summary__code-toggle" style="margin:0 0 12px;">
+              <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:var(--text-xs);color:var(--color-muted);font-weight:500;letter-spacing:0.02em;padding:4px 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0;">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Have a code?
+              </summary>
+              <form id="CartDiscountForm" data-cart-discount-form
+                    style="margin-top:8px;display:flex;gap:8px;align-items:stretch;">
+                <label for="CartDiscountCode" class="visually-hidden">Discount code</label>
+                <input id="CartDiscountCode"
+                       type="text"
+                       name="code"
+                       autocomplete="off"
+                       autocapitalize="characters"
+                       placeholder="Enter code"
+                       style="flex:1;min-width:0;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-family:var(--font-body);font-size:var(--text-sm);background:var(--color-surface);color:var(--color-ink);text-transform:uppercase;letter-spacing:0.04em;">
+                <button type="submit"
+                        style="padding:8px 14px;border:1px solid var(--color-ink);border-radius:6px;background:var(--color-ink);color:#fff;font-family:var(--font-body);font-size:var(--text-sm);font-weight:600;letter-spacing:0.04em;cursor:pointer;">Apply</button>
+              </form>
+              <p data-cart-discount-status
+                 role="status"
+                 aria-live="polite"
+                 style="margin:6px 0 0;font-size:var(--text-xs);color:var(--color-muted);min-height:1em;"></p>
+            </details>
+
+            {%- comment -%}
+              Free-shipping threshold tracker.
+
+              cart.total_price is in cents — $95 CAD = 9500 cents.
+
+              When a magnet upsell is going to render below (the existing
+              [data-magnet-upsell] card, gated on exactly-one-portrait-in-
+              cart), we make the bar actionable by surfacing a "Pin a
+              Fridge Magnet" jump-to-action link directly in the bar. The
+              link scrolls + focuses the magnet upsell card so the
+              customer sees it, and the existing card handles the actual
+              add — including copying the portrait's print-file properties
+              into the magnet line item so Printful can fulfil it. Without
+              that property copy a magnet add is unfulfillable, so we
+              never duplicate the bare /cart/add path here.
+
+              When the magnet upsell isn't going to render (no portraits
+              yet, or 2+ portraits where which-design-to-magnet is
+              ambiguous), the bar stays informational — no broken CTA.
             {%- endcomment -%}
             {%- assign free_ship_cents = 9500 -%}
             {%- assign remaining_cents = free_ship_cents | minus: cart.total_price -%}
+
+            {%- comment -%}
+              Mirror the gating used by the magnet upsell card (~L626):
+              show the action only when exactly one portrait line item is
+              in the cart, and only when a magnet isn't already there.
+            {%- endcomment -%}
+            {%- assign fst_magnet_in_cart = false -%}
+            {%- assign fst_portrait_count = 0 -%}
+            {%- for line_item in cart.items -%}
+              {%- if line_item.product.handle == 'magnet' -%}
+                {%- assign fst_magnet_in_cart = true -%}
+              {%- else -%}
+                {%- for property in line_item.properties -%}
+                  {%- if property.first == '_Portrait URL' and property.last != blank -%}
+                    {%- assign fst_portrait_count = fst_portrait_count | plus: 1 -%}
+                  {%- endif -%}
+                {%- endfor -%}
+              {%- endif -%}
+            {%- endfor -%}
+            {%- assign fst_magnet_product = all_products['magnet'] -%}
+            {%- assign fst_show_magnet_link = false -%}
+            {%- if fst_magnet_in_cart == false and fst_portrait_count == 1 and fst_magnet_product != blank and fst_magnet_product.available -%}
+              {%- assign fst_show_magnet_link = true -%}
+            {%- endif -%}
+
             {%- if remaining_cents > 0 -%}
               {%- assign progress_pct = cart.total_price | times: 100.0 | divided_by: free_ship_cents -%}
               <div class="free-ship-tracker" style="margin:14px 0;padding:14px;background:var(--color-surface);border-radius:var(--radius-card);border:1px solid var(--color-border);">
@@ -293,6 +468,22 @@
                 <div style="height:6px;background:var(--color-border);border-radius:99px;overflow:hidden;">
                   <div style="height:100%;width:{{ progress_pct }}%;background:linear-gradient(90deg,var(--color-primary),var(--color-accent));border-radius:99px;transition:width 0.5s ease;"></div>
                 </div>
+                {%- if fst_show_magnet_link -%}
+                  {%- assign fst_magnet_price = fst_magnet_product.price_min -%}
+                  {%- assign fst_gap_after = remaining_cents | minus: fst_magnet_price -%}
+                  <a href="#magnet-upsell"
+                     data-jump-to-magnet
+                     style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-family:var(--font-body);font-size:var(--text-sm);font-weight:600;color:var(--color-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">
+                    {%- if fst_gap_after <= 0 -%}
+                      Add a Fridge Magnet ({{ fst_magnet_price | money }}) to unlock free shipping
+                    {%- else -%}
+                      Add a Fridge Magnet ({{ fst_magnet_price | money }}) to get closer
+                    {%- endif -%}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                  </a>
+                {%- endif -%}
               </div>
             {%- else -%}
               <div class="free-ship-tracker free-ship-tracker--achieved" style="margin:14px 0;padding:14px;background:#E8F5E9;border-radius:var(--radius-card);border:1px solid #81C784;">
@@ -429,6 +620,7 @@
 
             {%- if source_portrait_url != '' and portrait_line_count == 1 -%}
             <div
+              id="magnet-upsell"
               class="magnet-upsell"
               data-magnet-upsell
               data-in-cart="{{ magnet_in_cart }}"
@@ -1780,6 +1972,39 @@
         closeModal();
         window.location.href = pendingHref || '/checkout';
       }
+    });
+  })();
+
+  /* ── Discount-code form ───────────────────────────────────────
+     Navigates to /discount/CODE which Shopify resolves: valid codes
+     set the discount cookie and 302 back to /cart (so the auto-
+     applied automatic discount + the manually entered code stack as
+     they should). Invalid codes still 302 back, but Shopify won't
+     attach the cookie — the customer just sees the cart unchanged.
+     We don't try to validate client-side because Shopify is the
+     source of truth for code validity (active dates, usage caps,
+     customer eligibility). The status line gives lightweight UX
+     feedback for the empty-input case so we're not silent on it.
+  ───────────────────────────────────────────────────────────── */
+  (function () {
+    var form   = document.getElementById('CartDiscountForm');
+    var input  = document.getElementById('CartDiscountCode');
+    var status = document.querySelector('[data-cart-discount-status]');
+    if (!form || !input) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var code = (input.value || '').trim().toUpperCase();
+      if (!code) {
+        if (status) status.textContent = 'Enter a code first.';
+        input.focus();
+        return;
+      }
+      if (status) status.textContent = 'Applying…';
+      // /discount/CODE accepts a return_to query so the redirect lands
+      // back here cleanly rather than going to the homepage.
+      window.location.href = '/discount/' + encodeURIComponent(code)
+        + '?return_to=' + encodeURIComponent('/cart');
     });
   })();
 </script>
