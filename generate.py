@@ -78,8 +78,8 @@ def _name_integration(
     inversion (minimal-line-art, watercolor) — when dark is picked we swap
     the hardcoded dark name colour for a light ivory/cream so it stays
     legible.
-    `style_vars` carries the palette id for bold-graphic-poster — its 2-tone
-    bg means the right name ink depends on which paired-tone palette the
+    `style_vars` carries the palette id for bold-graphic-poster — its asymmetric
+    2-tone bg means the right name ink depends on which paired-tone palette the
     customer picked (cream-on-saturated for most, deep aubergine for the
     light/dark Rose pair, etc.).
     """
@@ -213,8 +213,8 @@ def _name_integration(
         else "Solid black (#000000)"
     )
     # Bold Graphic Poster ink follows the chosen palette — each POSTER_PALETTES
-    # entry hand-picks an ink colour that reads cleanly across BOTH halves of
-    # its vertical 2-tone bg split. Falls back to the 'teal' pair's cream ink
+    # entry hand-picks an ink colour that reads cleanly across BOTH panels of
+    # its asymmetric 2-tone bg split. Falls back to the 'teal' pair's cream ink
     # if no palette has been selected yet.
     if style_id == "bold-graphic-poster":
         _palette_id = (style_vars or {}).get("poster_palette") or "teal"
@@ -653,18 +653,30 @@ MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
     "charcoal":   ("#2E2A26", "warm charcoal"),
 }
 
+# Bold Graphic Poster background seam position, expressed as a fraction of
+# canvas width measured from the left edge. 0.38 (golden-ratio adjacent)
+# puts the seam off-centre — narrow LEFT panel + wide RIGHT panel — so a
+# centred face-forward subject no longer sits axis-on-axis with the seam.
+# The seam falls ~12% inside the pet's left silhouette and disappears
+# behind the pet for most of the canvas height, killing the prior
+# bisects-the-subject failure mode without altering the 2-colour palette
+# logic. Used by the prompt template AND the post-processing pipeline
+# (_flatten_poster_bg / _pad_split_bg / _remove_poster_halos) so prompt
+# geometry and snap geometry stay in lockstep.
+_BGP_SEAM_RATIO = 0.38
+
 # 8 paired-colour palettes offered to customers via the Bold Graphic Poster
-# style background picker. Each palette drives a vertical 2-tone background
-# split (left half / right half) AND seeds the saturated accent colours used
-# for the pet's cubist faceting. All values sit inside CMYK gamut so screen
-# preview matches the printed canvas.
+# style background picker. Each palette drives an asymmetric 2-tone background
+# split (narrow LEFT panel + wide RIGHT panel, seam at _BGP_SEAM_RATIO) AND
+# seeds the saturated accent colours used for the pet's cubist faceting. All
+# values sit inside CMYK gamut so screen preview matches the printed canvas.
 #
 # Schema for each palette:
-#   bg_left_hex / bg_right_hex  → exact hex codes for the left + right bg halves
+#   bg_left_hex / bg_right_hex  → exact hex codes for the left + right bg panels
 #   bg_left_name / bg_right_name → descriptive labels Gemini can latch onto
 #   accents              → human-readable list of accent colours for the pet
 #   name_ink             → ink colour for the composited pet name (chosen so
-#                          it reads cleanly against BOTH bg halves at once)
+#                          it reads cleanly against BOTH bg panels at once)
 POSTER_PALETTES: dict[str, dict[str, str]] = {
     "teal": {
         "label":         "Teal",
@@ -949,7 +961,9 @@ paths — not like a photo of an eye, not like a Pixar character's eye.\
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
 Transform this photo into a CUBIST WPAP-style flat-graphic pet portrait — \
 the pet rendered as a mosaic of bold angular polygonal colour blocks meeting \
-at sharp clean edges, set against a vertical TWO-TONE BACKGROUND SPLIT.
+at sharp clean edges, centred on the canvas, set against an ASYMMETRIC \
+TWO-PANEL BACKGROUND with a vertical seam at 38% from the left edge \
+(narrow LEFT panel + wide RIGHT panel — NEVER a centred 50/50 split).
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Use the animal's actual fur/coat PATTERN from the photo as the \
@@ -1180,110 +1194,117 @@ print produces texture from the canvas weave; the artwork file is a \
 clean flat-colour vector composition.
 - Fine art illustration style, high resolution 300dpi, print-ready.
 
-BACKGROUND — VERTICAL TWO-TONE SPLIT (CRITICAL):
-- The background is divided VERTICALLY into TWO equal halves with a \
-RAZOR-SHARP straight seam at exactly 50% of the canvas width. The seam \
-runs from the very top of the canvas to the very bottom in one \
-unbroken vertical line.
-- LEFT half (0-50% width) = PERFECTLY FLAT {{POSTER_BG_LEFT_NAME}} \
-({{POSTER_BG_LEFT_HEX}}) — every pixel within the left half is the \
+BACKGROUND — ASYMMETRIC TWO-PANEL VERTICAL SPLIT (CRITICAL):
+- The background is divided VERTICALLY into TWO UNEQUAL panels by a \
+RAZOR-SHARP straight seam running floor-to-ceiling at exactly 38% of \
+the canvas width measured from the LEFT edge. The seam is OFF-CENTRE — \
+NOT at 50%, NOT centred, NOT through the middle. The narrower LEFT \
+panel takes the first 38% of canvas width; the wider RIGHT panel takes \
+the remaining 62%. This off-centre seam is a deliberate commercial-\
+poster choice (golden-ratio composition) and is REQUIRED — a centred \
+50/50 seam is FORBIDDEN.
+- LEFT panel (0-38% width) = PERFECTLY FLAT {{POSTER_BG_LEFT_NAME}} \
+({{POSTER_BG_LEFT_HEX}}) — every pixel within the left panel is the \
 exact same hex value, corner to corner, top to bottom.
-- RIGHT half (50-100% width) = PERFECTLY FLAT {{POSTER_BG_RIGHT_NAME}} \
-({{POSTER_BG_RIGHT_HEX}}) — every pixel within the right half is the \
+- RIGHT panel (38-100% width) = PERFECTLY FLAT {{POSTER_BG_RIGHT_NAME}} \
+({{POSTER_BG_RIGHT_HEX}}) — every pixel within the right panel is the \
 exact same hex value, corner to corner, top to bottom.
-- ABSOLUTELY NO BG VARIATION OF ANY KIND inside either half: NO \
+- ABSOLUTELY NO BG VARIATION OF ANY KIND inside either panel: NO \
 gradient, NO subtle vignette, NO corner darkening, NO ambient \
 occlusion, NO darker patch, NO lighter patch, NO faint shadow, NO \
 suggestion of light source, NO suggestion of room corners or wall \
 joints, NO atmospheric haze, NO depth cue, NO painterly variation, \
-NO posterised banding, NO halftone dot pattern. The colour at the \
-top-left corner of the left half is EXACTLY the same as the colour \
-2px from the seam on the left side, which is EXACTLY the same as \
-the colour at the bottom-left corner. Same uniformity rule for the \
-right half. RECURRING FAILURE MODE TO AVOID: a slightly darker \
-rectangular patch in the upper portion of one half (looks like a \
-faint room-corner shadow). DO NOT add this patch — both halves are \
+NO posterised banding, NO halftone dot pattern. Both panels are \
 treated as pure flat colour fields, like a screen-print pull, not a \
-photograph of a wall.
-- NO CORNER PATCHES, EVER: do NOT add a darker rectangular block \
-in the TOP-LEFT corner. Do NOT add one in the TOP-RIGHT corner. Do \
-NOT add one in the BOTTOM-LEFT corner. Do NOT add one in the \
-BOTTOM-RIGHT corner. NO L-shaped corner shadows, NO triangular \
-corner gradients, NO darker rectangle hugging any corner of the \
-canvas at any size (5%, 10%, 30%, 50% — all forbidden). The pet is \
-NOT in a room, the pet is NOT against a wall, the pet is NOT in a \
-photo studio with a corner shadow. This is a flat 2D screen-print, \
-NOT a 3D scene with depth. RECURRING FAILURE MODE TO AVOID: a \
-darker rectangular block roughly 25-50% of canvas width and 10-20% \
-of canvas height, hugging the upper-left or upper-right corner — \
-the model imagining a window frame, picture-rail moulding, or \
-cropped wall panel. This is FORBIDDEN. The pet floats in a flat \
-two-region poster, not in a photographed corner of a room.
+photograph of a wall. RECURRING FAILURE MODE TO AVOID: a slightly \
+darker rectangular patch in the upper portion of one panel (looks \
+like a faint room-corner shadow). DO NOT add this patch.
+- NO CORNER PATCHES, EVER: do NOT add a darker rectangular block in \
+ANY corner (TOP-LEFT, TOP-RIGHT, BOTTOM-LEFT, BOTTOM-RIGHT). NO \
+L-shaped corner shadows, NO triangular corner gradients, NO darker \
+rectangle hugging any corner of the canvas at any size (5%, 10%, \
+30%, 50% — all forbidden). The pet is NOT in a room, NOT against a \
+wall, NOT in a photo studio with a corner shadow. This is a flat 2D \
+screen-print, NOT a 3D scene with depth. RECURRING FAILURE MODE TO \
+AVOID: a darker rectangular block roughly 25-50% of canvas width and \
+10-20% of canvas height, hugging an upper corner — the model \
+imagining a window frame, picture-rail moulding, or cropped wall \
+panel. FORBIDDEN.
 - CRITICAL — NO INSET / NESTED RECTANGLE BEHIND THE PET: do NOT \
 render the background as an outer lighter border with a darker \
 rectangular block behind the pet (a "poster pinned to a wall" or \
-"framed art" look). The two-tone split is the WHOLE canvas — left \
-half goes edge-to-edge top to bottom, right half goes edge-to-edge \
-top to bottom. There is NO secondary rectangle, NO inner panel, NO \
-darker zone surrounding the pet, NO card-on-a-wall layering. The \
-exact pixel at the canvas's outer corner is the SAME colour as the \
-pixel one inch inward — only the single central vertical seam ever \
-changes background colour. RECURRING FAILURE MODE TO AVOID: \
-generating four background regions (lighter outer border + darker \
-inner rectangle around the pet, sometimes split into quadrants). \
-This is FORBIDDEN. There are exactly TWO background regions, period: \
-left half and right half, each one flat colour, each one running \
-fully from canvas edge to canvas edge.
+"framed art" look). The two-panel split is the WHOLE canvas — left \
+panel goes edge-to-edge top to bottom, right panel goes edge-to-edge \
+top to bottom. NO secondary rectangle, NO inner panel, NO darker \
+zone surrounding the pet, NO card-on-a-wall layering. The exact \
+pixel at the canvas's outer corner is the SAME colour as the pixel \
+one inch inward — only the single 38% vertical seam ever changes \
+background colour. RECURRING FAILURE MODE TO AVOID: generating four \
+background regions (lighter outer border + darker inner rectangle \
+around the pet). FORBIDDEN.
 - ZERO TOLERANCE FOR SOFT / SUBTLE INSET RECTANGLES: the inset \
 rectangle is forbidden at FULL contrast AND at 1% contrast. Even a \
 2-pixel-wide ring of slightly lighter colour around the canvas \
 perimeter is forbidden. Even a ~5% lightness shift between the area \
 immediately behind the pet and the canvas corners is forbidden. If \
-when rendering you find yourself imagining ANY darker zone, ANY \
-softer halo, ANY breathing-room patch, ANY vignette inversion, ANY \
-rectangular bias of any kind around the pet — at ANY opacity, in \
-ANY shade — REMOVE IT. The four corners of the canvas (top-left, \
-top-right, bottom-left, bottom-right) are EXACTLY the same hex \
-value as the pixels directly behind the pet's silhouette in the \
-same half. Imagine using a single paint-bucket fill of \
-{{POSTER_BG_LEFT_HEX}} for the entire left half (every pixel from \
-x=0 to x=49.9% width, every pixel from y=0 to y=100% height) and a \
+when rendering you imagine ANY darker zone, ANY softer halo, ANY \
+breathing-room patch, ANY vignette inversion, ANY rectangular bias \
+of any kind around the pet — at ANY opacity, in ANY shade — REMOVE \
+IT. The four corners of the canvas are EXACTLY the same hex value \
+as the pixels directly behind the pet's silhouette within the same \
+panel. Imagine using a single paint-bucket fill of \
+{{POSTER_BG_LEFT_HEX}} for the entire left panel (every pixel from \
+x=0 to x=37.9% width, every pixel from y=0 to y=100% height) and a \
 single paint-bucket fill of {{POSTER_BG_RIGHT_HEX}} for the entire \
-right half. Not a brush. Not a wash. Not an airbrush. A flat \
-paint-bucket fill, like Photoshop's bucket tool with anti-alias and \
-tolerance both off. ANY pixel-to-pixel variation within a half is a \
-PROMPT VIOLATION.
-- The seam is PURELY VERTICAL — never horizontal, never diagonal, never \
-curved, never offset. It runs floor-to-ceiling exactly down the centre.
-- EXACTLY ONE SEAM, AT 50%: there is precisely ONE colour change in the \
-entire background, and it sits at the dead-centre vertical line. NO \
-additional vertical seams anywhere. NO secondary lighter or darker \
-vertical strip along the LEFT edge of the canvas. NO secondary vertical \
-strip along the RIGHT edge of the canvas. NO three-band vertical \
-layout. NO vertical pillar, sidebar, gutter, margin strip, or border \
-column of any colour. The leftmost pixel column of the canvas is the \
-SAME hex as the pixel column 5%, 10%, 25%, and 49.9% inward — they all \
-read as one continuous flat field of {{POSTER_BG_LEFT_NAME}}. Same \
-rule for the right half. RECURRING FAILURE MODE TO AVOID: a vertical \
-strip of slightly different green / rust / cobalt / etc. running down \
-the LEFT edge of the canvas, ~10-15% of canvas width, creating a \
-3-region background (edge strip + main left half + right half). This \
-is FORBIDDEN.
-- The pet sits IN FRONT OF the seam: the pet's body crosses the seam \
-without altering its faceted block colours (the pet's blocks stay the \
-SAME colour whether they're over the left or right bg half — the seam \
-is pure background, behind the pet).
+right panel (every pixel from x=38.1% to x=100% width). Not a brush. \
+Not a wash. Not an airbrush. A flat paint-bucket fill, like \
+Photoshop's bucket tool with anti-alias and tolerance both off. ANY \
+pixel-to-pixel variation within a panel is a PROMPT VIOLATION.
+- The seam is PURELY VERTICAL — never horizontal, never diagonal, \
+never curved. It runs floor-to-ceiling at the 38% mark.
+- EXACTLY ONE SEAM, AT 38% FROM THE LEFT: there is precisely ONE \
+colour change in the entire background, and it sits at the 38% \
+vertical line — NOT at 50%, NOT centred. NO additional vertical \
+seams anywhere. NO secondary lighter or darker vertical strip along \
+the LEFT edge of the canvas. NO secondary vertical strip along the \
+RIGHT edge of the canvas. NO three-band vertical layout. NO vertical \
+pillar, sidebar, gutter, margin strip, or border column of any \
+colour. The leftmost pixel column of the canvas is the SAME hex as \
+the pixel column at 5%, 10%, 25%, and 37.9% inward — they all read \
+as one continuous flat field of {{POSTER_BG_LEFT_NAME}}. Same rule \
+for the right panel from 38.1% to 100%. RECURRING FAILURE MODE TO \
+AVOID: a vertical strip of slightly different green / rust / cobalt \
+/ etc. running down either edge of the canvas, creating a 3-region \
+background. FORBIDDEN.
+- THE PET STAYS CENTRED ON THE CANVAS, NOT ON THE SEAM — CRITICAL: \
+the pet's vertical axis of symmetry sits at 50% of canvas width (the \
+canvas centre). The bg seam at 38% sits ~12% to the LEFT of the \
+pet's centre, which means the seam crosses behind the pet's LEFT \
+shoulder / cheek / ear and is HIDDEN BEHIND the pet's silhouette \
+for most of the canvas height. The seam is visible only in the \
+strip ABOVE the pet's head (the upper ~15-22% of canvas) and \
+possibly a sliver beside the pet's left flank near the bottom. The \
+pet's body crosses the seam without altering its faceted block \
+colours (the pet's blocks stay the SAME colour whether they sit \
+over the left or right bg panel — the seam is pure background, \
+behind the pet). RECURRING FAILURE MODE TO AVOID: centring the \
+pet on the seam (pet axis at 38% to match the seam) — FORBIDDEN. \
+The pet always sits at canvas centre, and the seam falls inside the \
+pet's left silhouette where it becomes invisible.
 - NO other background detail anywhere: no foliage, no props, no \
-shadows, no reflections, no decorative shapes, no halos, no gradients, \
-no extra colour blocks. Just the two flat halves.
+shadows, no reflections, no decorative shapes, no halos, no \
+gradients, no extra colour blocks. Just the two flat panels.
 
 COMPOSITION:
 - Centered portrait, 4:5 aspect ratio (portrait orientation).
 - FRONT-FACING / FACE-FORWARD POSE — CRITICAL: the pet faces directly \
 toward the viewer (camera-on, head straight). Both ears equally \
 visible, both shoulders showing in mirror-image symmetry across the \
-vertical centre line. The pet's vertical axis of symmetry sits exactly \
-on the bg seam. NEVER profile / 3⁄4 / head-tilt poses.
+pet's own vertical centre line. The pet's vertical axis of symmetry \
+sits at the CANVAS CENTRE (50% width), NOT on the bg seam (which is \
+at 38%) — the seam falls behind the pet's left shoulder / cheek and \
+disappears under the pet's silhouette. NEVER profile / 3⁄4 / head- \
+tilt poses.
 - Head and chest, strong forward-facing pose, graphic impact.
 - The PET itself occupies 78-83% of image height — top of ears at \
 ~15-18% from top, chest at ~96-99% from top, centred horizontally. \
@@ -1307,15 +1328,16 @@ inset rectangle behind the pet, nested background rectangles, darker \
 rectangular block surrounding the pet, four-quadrant background, \
 vertical edge strip, vertical pillar or sidebar at left or right edge, \
 three-region vertical background, additional vertical seams beyond \
-the central one, darker corner patch, top-left corner rectangle, \
+the single 38% one, darker corner patch, top-left corner rectangle, \
 top-right corner rectangle, bottom-left corner rectangle, \
 bottom-right corner rectangle, L-shaped corner shadows, triangular \
 corner gradients, window-frame look, picture-rail moulding, cropped \
 wall panel, photographed-corner-of-room look, more than two \
 background colours, horizontal background splits, diagonal background \
-splits, curved background seams, gradient backgrounds, off-centre \
-seam, background patterns, drop shadows, text, watermark, border, \
-solid color bars or panels at image edges.
+splits, curved background seams, gradient backgrounds, centred 50/50 \
+seam, pet axis aligned with the seam, background patterns, drop \
+shadows, text, watermark, border, solid color bars or panels at image \
+edges.
 
 FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS (CRITICAL):
 - Look at each eye. Is the iris one of the most-saturated palette \
@@ -1365,8 +1387,9 @@ non-letter polygonal shape or remove it entirely.\
 
 def _bold_graphic_poster_prompt(style_vars: Optional[dict] = None) -> str:
     """Build the bold-graphic-poster prompt with the customer-chosen palette
-    interpolated: vertical 2-tone bg split colours + saturated accent palette
-    for the pet's cubist faceting. Falls back to 'teal' if nothing is supplied
+    interpolated: asymmetric 2-tone bg split colours (seam at _BGP_SEAM_RATIO)
+    + saturated accent palette for the pet's cubist faceting. Falls back to
+    'teal' if nothing is supplied
     or the id is unknown."""
     palette_id = (style_vars or {}).get("poster_palette") or "teal"
     if palette_id not in POSTER_PALETTES:
@@ -1394,9 +1417,10 @@ def _flatten_poster_bg(
     perimeter_tol: int = 90,
     interior_tol: int = 90,
 ) -> Image.Image:
-    """Snap near-bg pixels to the exact palette hex on each half of the
-    bold-graphic-poster image, killing Gemini's recurring "soft room-shadow
-    / inset rectangle / corner patch / letterbox bands" hallucinations.
+    """Snap near-bg pixels to the exact palette hex on each panel of the
+    bold-graphic-poster image (split at _BGP_SEAM_RATIO), killing Gemini's
+    recurring "soft room-shadow / inset rectangle / corner patch /
+    letterbox bands" hallucinations.
 
     FULL-CANVAS SNAP — perimeter and interior both default to tol=90:
 
@@ -1416,8 +1440,9 @@ def _flatten_poster_bg(
       Pet-side edge pixels (50/50 mix or less bg) sit at ~95+ RGB
       distance from bg, safely outside tol=90.
 
-      Both halves are gated by x position (left half snaps to bg_left
-      only, right half to bg_right only).
+      Both panels are gated by x position (pixels left of the
+      _BGP_SEAM_RATIO mark snap to bg_left only, pixels right of it
+      snap to bg_right only).
 
       perimeter_tol / interior_tol kept as separate kwargs so a future
       palette with a softer bg/accent contrast can dial the interior
@@ -1430,7 +1455,7 @@ def _flatten_poster_bg(
     w, h = img.size
     bg_left  = _hex_to_rgb(palette["bg_left_hex"])
     bg_right = _hex_to_rgb(palette["bg_right_hex"])
-    mid = w // 2
+    mid = int(w * _BGP_SEAM_RATIO)
     perimeter_tol_sq = perimeter_tol * perimeter_tol
     interior_tol_sq  = interior_tol  * interior_tol
 
@@ -1857,8 +1882,8 @@ def _pad_split_bg(
     pad_bottom_ratio: float = 0.0,
 ) -> Image.Image:
     """Pad a bold-graphic-poster front face onto a larger canvas whose
-    bleed band is filled with the canonical 2-tone split — left half
-    bg_left, right half bg_right — extending the seam vertically.
+    bleed band is filled with the canonical 2-panel split — left panel
+    bg_left, right panel bg_right — extending the seam vertically.
 
     Replaces edge-replication padding for bold-graphic-poster: when
     Gemini leaves a sliver of cream/white outside the colored split
@@ -1868,9 +1893,11 @@ def _pad_split_bg(
     the canonical split first and pasting the AI image centered on
     top eliminates that whole class of error.
 
-    The AI image is pasted centered, so its internal seam (which the
-    prompt anchors at 50% of the rendered width) lines up with the new
-    canvas seam at 50% of the padded width.
+    The AI image is pasted centered, and the bleed-band seam is placed
+    at the embedded image's seam x-position (pad_w + w*_BGP_SEAM_RATIO),
+    NOT at the new canvas's _BGP_SEAM_RATIO mark — those differ once
+    horizontal padding is added, and any mismatch would show as a
+    visible vertical step at the bleed boundary.
     """
     rgb = img.convert("RGB") if img.mode != "RGB" else img
     w, h = rgb.size
@@ -1885,7 +1912,7 @@ def _pad_split_bg(
     target_h = h + pad_h + pad_b
 
     out = Image.new("RGB", (target_w, target_h), bg_left)
-    mid = target_w // 2
+    mid = pad_w + int(w * _BGP_SEAM_RATIO)
     right_half = Image.new("RGB", (target_w - mid, target_h), bg_right)
     out.paste(right_half, (mid, 0))
     out.paste(rgb, (pad_w, pad_h))
@@ -1905,7 +1932,8 @@ def _remove_poster_halos(
     are thin (1–3 px) strips at dark/bg boundaries; fur is a wider
     connected region. Erodes the near-white mask by `halo_thickness_px`
     to keep only "fat" white (fur), then recolors the eroded-off thin
-    strips to the local bg hex (left half → bg_left, right half → bg_right).
+    strips to the local bg hex (left panel → bg_left, right panel →
+    bg_right; seam at _BGP_SEAM_RATIO).
 
     `white_tol=20` keeps the threshold (235 per channel) above palette
     ivory accents like #F4EFE7 (b=231), so genuine ivory stays untouched.
@@ -1918,7 +1946,7 @@ def _remove_poster_halos(
     w, h = img.size
     bg_left = _hex_to_rgb(palette["bg_left_hex"])
     bg_right = _hex_to_rgb(palette["bg_right_hex"])
-    mid = w // 2
+    mid = int(w * _BGP_SEAM_RATIO)
 
     # Per-channel threshold mask: pixel is "near-white" only if r,g,b all
     # exceed (255 - white_tol).
