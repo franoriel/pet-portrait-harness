@@ -28,7 +28,7 @@
       <source media="(max-width: 760px)" srcset="{{ 'hero-transform-2-watercolour-mobile.webp' | asset_url }}">
       <img class="hero-frame hero-frame--2"
            src="{{ 'hero-transform-2-watercolour.webp' | asset_url }}"
-           alt="Soft watercolour portrait of your pet"
+           alt="Soft watercolour keepsake of your pet"
            loading="eager"
            width="1920" height="1072">
     </picture>
@@ -36,7 +36,7 @@
       <source media="(max-width: 760px)" srcset="{{ 'hero-transform-3-canvas-mobile.webp' | asset_url }}">
       <img class="hero-frame hero-frame--3"
            src="{{ 'hero-transform-3-canvas.webp' | asset_url }}"
-           alt="Pet portrait canvas hanging on a wall at home"
+           alt="Pet keepsake canvas hanging on a wall at home"
            loading="eager"
            width="1920" height="1072">
     </picture>
@@ -53,12 +53,12 @@
     {%- endcomment -%}
     <p class="hero__eyebrow">{{ section.settings.eyebrow | default: 'From your phone to your wall' }}</p>
     <h1 class="hero__title">{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
-    <p class="hero__sub">{{ section.settings.subheading | default: 'Museum-grade canvas, gallery-wrapped and built to outlast the wall it hangs on.' }}</p>
+    <p class="hero__sub">{{ section.settings.subheading | default: 'A wrapped canvas keepsake, museum-grade and built to outlast the wall it hangs on.' }}</p>
 
     <div class="hero__cta-group">
       <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--canvas-frame btn--large">
         <span class="btn__canvas-inner">
-          {{ section.settings.cta_label | default: 'Create My Portrait' }}
+          {{ section.settings.cta_label | default: 'Create their keepsake' }}
           <svg class="btn__arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12h14M13 5l7 7-7 7"/>
           </svg>
@@ -398,12 +398,12 @@
     { "type": "paragraph", "content": "Animated three-frame hero. The frames live in assets/ — replace `hero-transform-1-photo.webp`, `hero-transform-2-watercolour.webp`, and `hero-transform-3-canvas.webp` to swap the visual." },
     { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "From your phone to your wall" },
     { "type": "text", "id": "heading", "label": "Heading", "default": "They deserve a spot on the wall." },
-    { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "Museum-grade canvas, gallery-wrapped and built to outlast the wall it hangs on." },
-    { "type": "text", "id": "cta_label", "label": "Primary CTA label", "default": "Create My Portrait" },
+    { "type": "textarea", "id": "subheading", "label": "Subheading", "default": "A wrapped canvas keepsake, museum-grade and built to outlast the wall it hangs on." },
+    { "type": "text", "id": "cta_label", "label": "Primary CTA label", "default": "Create their keepsake" },
     { "type": "url", "id": "cta_url", "label": "Primary CTA URL" },
     { "type": "text", "id": "secondary_cta_label", "label": "Secondary CTA label (optional)" },
     { "type": "url", "id": "secondary_cta_url", "label": "Secondary CTA URL" },
-    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Upload → Create custom portrait → Hang" }
+    { "type": "text", "id": "reassurance", "label": "Reassurance text below CTAs", "default": "Upload → Preview → Hang" }
   ],
   "presets": [{ "name": "Hero Transformation" }]
 }

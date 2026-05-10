@@ -3,10 +3,10 @@
     <span class="eyebrow">{{ section.settings.eyebrow | default: 'The Transformation' }}</span>
     <h2 id="BeforeAfterHeading">{{ section.settings.heading | default: 'Photo to Portrait' }}</h2>
     <p class="text-muted" style="margin-top:8px;max-width:440px;margin-left:auto;margin-right:auto;">
-      {{ section.settings.subheading | default: 'Drag the slider to see the before & after. Every portrait is unique to your pet.' }}
+      {{ section.settings.subheading | default: 'Drag the slider to see the before & after. Every keepsake is unique to your pet.' }}
     </p>
 
-    <div class="before-after__slider" role="img" aria-label="Before and after comparison of a pet photo transformed into a custom portrait">
+    <div class="before-after__slider" role="img" aria-label="Before and after comparison of a pet photo transformed into a custom keepsake">
       {%- if section.settings.before_image != blank -%}
         {{- section.settings.before_image | image_url: width: 800 | image_tag:
           class: 'before-after__img before-after__before',
@@ -21,7 +21,7 @@
         {{- section.settings.after_image | image_url: width: 800 | image_tag:
           class: 'before-after__img before-after__after',
           loading: 'lazy',
-          alt: 'Custom portrait of pet'
+          alt: 'Custom keepsake of pet'
         -}}
       {%- else -%}
         {{ 'image' | placeholder_svg_tag: 'before-after__img before-after__after' }}
@@ -30,7 +30,7 @@
       <div class="before-after__divider" aria-hidden="true"></div>
       <div class="before-after__handle" aria-hidden="true">⟺</div>
       <span class="before-after__label before-after__label--before">Photo</span>
-      <span class="before-after__label before-after__label--after">Portrait</span>
+      <span class="before-after__label before-after__label--after">Keepsake</span>
     </div>
 
     {%- comment -%}

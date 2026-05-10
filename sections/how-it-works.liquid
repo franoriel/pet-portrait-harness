@@ -19,7 +19,7 @@
     <span class="eyebrow">{{ section.settings.eyebrow | default: 'Simple Process' }}</span>
     <h2 id="HiwHeading">{{ section.settings.heading | default: 'The Transformation' }}</h2>
     <p class="text-muted" style="margin-top:10px;max-width:480px;margin-left:auto;margin-right:auto;">
-      {{ section.settings.subheading | default: 'From photo to art.' }}
+      {{ section.settings.subheading | default: 'From photo to keepsake.' }}
     </p>
 
     {%- comment -%}
@@ -30,7 +30,7 @@
       so the trio feels animated without three competing motions.
     {%- endcomment -%}
     {%- assign hiw_step_media = 'hiw-step-1-upload.webp,hiw-step-2-preview.webp,hiw-step-3-ship.webp' | split: ',' -%}
-    {%- assign hiw_step_alt = 'A phone displaying a pet photo, fingertip about to tap to upload,A tablet showing a finished watercolour pet portrait at home,Hands lifting a finished pet portrait canvas out of its shipping box' | split: ',' -%}
+    {%- assign hiw_step_alt = 'A phone displaying a pet photo, fingertip about to tap to upload,A tablet showing a finished watercolour pet keepsake at home,Hands lifting a finished pet keepsake canvas out of its shipping box' | split: ',' -%}
 
     <div class="hiw__steps" role="list">
       {%- for block in section.blocks -%}
@@ -61,22 +61,22 @@
         </div>
         <div class="hiw__step hiw__step--media" role="listitem">
           <div class="hiw__step-media" aria-hidden="true">
-            <img src="{{ 'hiw-step-2-preview.webp' | asset_url }}" alt="A tablet showing a watercolour pet portrait" loading="lazy" width="1280" height="956">
+            <img src="{{ 'hiw-step-2-preview.webp' | asset_url }}" alt="A tablet showing a watercolour pet keepsake" loading="lazy" width="1280" height="956">
           </div>
           <div class="hiw__step-num">2</div>
           <div class="hiw__step-body">
-            <h3>Preview your portrait</h3>
-            <p>Watch your pet transform into a custom portrait in quickly. See it before you commit to anything.</p>
+            <h3>Preview their keepsake</h3>
+            <p>See your pet styled into a custom keepsake in seconds. Preview it before you commit to anything.</p>
           </div>
         </div>
         <div class="hiw__step hiw__step--media" role="listitem">
           <div class="hiw__step-media" aria-hidden="true">
-            <img src="{{ 'hiw-step-3-ship.webp' | asset_url }}" alt="A pet portrait canvas being unboxed" loading="lazy" width="1280" height="956">
+            <img src="{{ 'hiw-step-3-ship.webp' | asset_url }}" alt="A pet keepsake canvas being unboxed" loading="lazy" width="1280" height="956">
           </div>
           <div class="hiw__step-num">3</div>
           <div class="hiw__step-body">
             <h3>We print and ship</h3>
-            <p>Choose your canvas size, check out, and your portrait ships in 1–2 business days, ready to hang.</p>
+            <p>Choose your canvas size, check out, and your keepsake ships in 1 to 2 business days, ready to hang.</p>
           </div>
         </div>
       {%- endfor -%}

@@ -14,8 +14,8 @@
       "settings": {
         "eyebrow": "From your phone to your wall",
         "heading": "A modern tribute to unconditional love.",
-        "subheading": "Museum-grade canvas, gallery-wrapped and built to outlast the wall it hangs on.",
-        "cta_label": "Create My Portrait",
+        "subheading": "A wrapped canvas keepsake, museum-grade and built to outlast the wall it hangs on.",
+        "cta_label": "Create their keepsake",
         "cta_url": "/pages/create",
         "secondary_cta_label": "",
         "secondary_cta_url": "",
@@ -81,8 +81,8 @@
           "type": "step",
           "settings": {
             "icon": "2",
-            "title": "Preview your portrait",
-            "description": "Pick a style and see your pet's portrait faster than they can finish their zoomies. You only pay if you love it."
+            "title": "Preview their keepsake",
+            "description": "Pick a style and see your pet's keepsake faster than they can finish their zoomies. You only pay if you love it."
           }
         },
         "s3": {
@@ -104,7 +104,7 @@
         "heading": "Three steps. One keepsake.",
         "subheading": "No apps to download, no design skills needed.",
         "layout": "horizontal",
-        "cta_label": "Start My Portrait",
+        "cta_label": "Start their keepsake",
         "cta_url": "/pages/create"
       }
     },
@@ -135,9 +135,9 @@
       "type": "final-cta",
       "settings": {
         "eyebrow": "Ready?",
-        "heading": "The portrait they'll never take down.",
+        "heading": "The keepsake they'll never take down.",
         "subheading": "Upload one photo. The preview is free. Pay only if you love it.",
-        "cta_label": "Create My Portrait",
+        "cta_label": "Create their keepsake",
         "cta_url": "/pages/create"
       }
     }
