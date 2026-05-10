@@ -1342,8 +1342,29 @@ pet's left silhouette where it becomes invisible.
 shadows, no reflections, no decorative shapes, no halos, no \
 gradients, no extra colour blocks. Just the two flat panels.
 
-COMPOSITION:
-- Centered portrait, 4:5 aspect ratio (portrait orientation).
+COMPOSITION — SHOULDERS-UP PORTRAIT WITH HEADROOM (CRITICAL):
+- 4:5 portrait aspect ratio (portrait orientation).
+- FRAMING IS A SHOULDERS-UP PORTRAIT, NOT A TIGHT FACE CROP. The \
+visible body parts are: FULL head (entire top of skull, both ears \
+COMPLETE from base to tip with no clipping at the canvas edge), neck, \
+both shoulders, and upper chest. NEVER a tight face closeup where \
+the ears are clipped, NEVER a "muzzle + eyes only" render, NEVER a \
+head-fills-the-frame composition.
+- HEADROOM — HARD RULE: the top of the highest ear / topmost head \
+fur sits at y = 22-26% of canvas height measured from the TOP edge. \
+The TOP 22-26% of the canvas (from the top edge down to the ear tips) \
+is empty flat bg colour — NO fur, NO ears, NO head silhouette enters \
+that upper band. This headroom is also where the typography pipeline \
+composites the pet's name later, so it MUST stay clean.
+- CHEST FRAMING: the bottom of the visible chest sits at y = 93-97% \
+from the top. The pet is grounded near the bottom so a square (1:1) \
+centre-crop still ships the chest intact, with a small 3-7% flat bg \
+sliver below the chest for visual grounding.
+- PET TOTAL HEIGHT (top of ears to bottom of chest): 67-75% of canvas \
+height. Smaller = pet floating in too much empty space. LARGER than \
+75% = face crop / no headroom = FORBIDDEN.
+- HORIZONTAL: pet centred horizontally — pet's vertical axis of \
+symmetry at 50% of canvas width.
 - FRONT-FACING / FACE-FORWARD POSE — CRITICAL: the pet faces directly \
 toward the viewer (camera-on, head straight). Both ears equally \
 visible, both shoulders showing in mirror-image symmetry across the \
@@ -1352,11 +1373,27 @@ sits at the CANVAS CENTRE (50% width), NOT on the bg seam (which is \
 at 38%) — the seam falls behind the pet's left shoulder / cheek and \
 disappears under the pet's silhouette. NEVER profile / 3⁄4 / head- \
 tilt poses.
-- Head and chest, strong forward-facing pose, graphic impact.
-- The PET itself occupies 78-83% of image height — top of ears at \
-~15-18% from top, chest at ~96-99% from top, centred horizontally. \
-The pet is grounded at the bottom edge so a square (1:1) centre-crop \
-still ships the chest intact.
+- IGNORE SOURCE-PHOTO FRAMING — CRITICAL: customers often upload a \
+tight face-zoom phone photo where the dog's face fills the frame and \
+the neck/body is cropped off. The RENDERED OUTPUT must NOT mirror \
+the source's tight framing — ZOOM OUT. If the source photo shows \
+only the head (no shoulders, no chest), RECONSTRUCT the neck, \
+shoulders, and chest from breed knowledge: a golden retriever / \
+Goldendoodle has a thick golden / cream-coloured shoulder and chest, \
+a Maltipoo has a fluffier white-cream shoulder and chest, a husky \
+has a white-blazed chest, a black lab has a sleek black chest, a \
+tabby cat has its breed's chest pattern continuing down from the \
+neck. The output is ALWAYS a designed shoulders-up portrait, never \
+a stylised re-render of whatever tight crop the customer's phone \
+happened to capture.
+- RECURRING FAILURE MODE TO AVOID: a face-zoom render where the \
+dog's eyes and muzzle dominate the frame, ears CLIPPED at the top \
+canvas edge (only the lower half of the ear visible, tip cut off), \
+no shoulders or chest visible, jaw / chin at the bottom edge, often \
+with a sliver of tongue or collar at the canvas bottom. FORBIDDEN. \
+The output is ALWAYS a shoulders-up portrait with FULL head + \
+COMPLETE ears + neck + both shoulders + upper chest all visible \
+inside the canvas, with 22-26% clean headroom above.
 
 Avoid: photography, photorealism, soft or curved edges WITHIN the pet, \
 gradients, watercolor, painterly strokes, 3D render, blurry, detailed \
@@ -1385,6 +1422,23 @@ splits, curved background seams, gradient backgrounds, centred 50/50 \
 seam, pet axis aligned with the seam, background patterns, drop \
 shadows, text, watermark, border, solid color bars or panels at image \
 edges.
+
+FINAL CHECK BEFORE OUTPUT — FRAMING IS SHOULDERS-UP, NOT FACE-ZOOM \
+(CRITICAL):
+- HEADROOM CHECK: measure from the top of the canvas down to the tip \
+of the highest ear / topmost head fur. Is that distance 22-26% of \
+canvas height? If the head touches the top edge, if the ears are \
+clipped, if you can't see the COMPLETE ear including the very tip, \
+ZOOM OUT and re-render with the head pushed down so the top 22-26% \
+of the canvas is clean flat bg colour.
+- TORSO CHECK: are the pet's NECK, both SHOULDERS, and UPPER CHEST \
+visible inside the canvas? If the render shows only the face / muzzle \
+/ eyes and the bottom edge cuts off at the jaw or collar, ZOOM OUT \
+and re-render to include the shoulders and chest. The output is a \
+shoulders-up portrait, never a face crop.
+- IF UNSURE: zoom OUT, not in. A pet rendered slightly smaller with \
+generous headroom and a visible chest is ALWAYS better than a pet \
+zoomed in tight with clipped ears.
 
 FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS, NOT POSSESSED \
 (CRITICAL — this is the #1 source of creepy renders):
