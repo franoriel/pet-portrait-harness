@@ -1043,14 +1043,52 @@ FAILURE MODE TO AVOID: tongue rendered in teal / blue / charcoal / \
 ivory / ochre / any non-pink colour — FORBIDDEN. The tongue is \
 always a clean flat coral-pink polygon, regardless of which palette \
 the customer picked.
-- Use AT LEAST 4 distinct palette colours across the pet's body — \
-never collapse to a single dark stamp. Light-coat areas (cheeks, brow, \
-chest blaze, muzzle highlights) use the palette's LIGHTER accents; \
-shadow-coat areas (ear interiors, eye sockets, jaw underside, chest \
-shadow) use the palette's DARKER accents; mid-tones use the medium \
-accents. The pet should read like image 2 in our reference set: a \
-FULLY-COLOURED cubist mosaic with visible peach/cream/mustard/etc. \
-facets across the body, not a dark silhouette on coloured paper.
+- Use AT LEAST 4 distinct palette colours across the pet's body, \
+distributed by BODY ZONE — never collapse to a single dark stamp. \
+The pet should read like a FULLY-COLOURED cubist mosaic with visible \
+light/mid/dark facets across the body, not a dark silhouette on \
+coloured paper. Each of the palette's accent colours occupies a \
+specific zone: \
+\
+  LIGHTEST ACCENT (ivory / cream / lightest neutral in the palette) \
+  → cheeks (the round of fur outside the muzzle), brow ridge above \
+  the eyes, chest blaze (the lighter chest fur), muzzle bridge \
+  highlight, top of head highlight. These zones MUST be visibly \
+  rendered in the lightest accent — not in the deepest accent, not \
+  in the bg-family accent. \
+\
+  MID-TONE ACCENTS (peachy blush / dusty mauve / warm ochre / soft \
+  brick / etc. — the palette's middle-value warm or cool neutrals) \
+  → main body fur, neck, shoulder mass, lower jaw, ear front (the \
+  side facing the viewer). \
+\
+  DARKEST ACCENT (charcoal / deep aubergine / deep navy / etc.) \
+  → ear interiors only, eye-socket shadow only, nostril shadow, jaw \
+  underside, deep chest shadow. The darkest accent is for SHADOW \
+  ZONES ONLY — never the dominant colour of the pet's body. \
+\
+- COLOUR-DISTRIBUTION RULE — HARD: NO single palette accent occupies \
+more than ~50% of the pet's silhouette area. The lightest accent \
+must take at least 12% of the silhouette (cheeks + brow + chest \
+blaze together). The mid-tone accents take 35-50% combined. The \
+darkest accent takes only 10-25% (shadow zones only). If you find \
+yourself rendering 70%+ of the pet in one dark accent with thin \
+slivers of other colours at the edges, you have collapsed the pet \
+into a dark stamp — REDRAW with the lightest accent enlarged across \
+cheeks/brow/chest. \
+\
+- BG-FAMILY-ACCENT RULE — HARD (anti-merge): if the palette includes \
+an accent colour that sits in the SAME hue family as either bg \
+panel (e.g. the Rose palette's deep aubergine accent vs the deep \
+magenta plum bg, or the Citrus palette's brick red accent vs the \
+burnt orange bg), that bg-family accent is RESERVED for the smallest \
+shadow zones (ear interiors, eye sockets, deep jaw shadow) and MUST \
+NOT be used as the dominant body colour. Use the palette's NEUTRAL \
+accents (ivory, cream, peachy blush, dusty mauve, warm ochre) as \
+the dominant body colours instead. RECURRING FAILURE MODE TO AVOID: \
+rendering the pet's main body in the palette's bg-adjacent accent, \
+making the pet's silhouette merge into the deeper bg panel. \
+FORBIDDEN.
 - Each colour block has VISUAL MASS — it's a confident polygonal area, \
 not a hairline sliver, not a thin angular stroke. Blocks are SHAPES, \
 not LINES. If a "block" is so narrow it reads as a stroke or pen mark, \
@@ -1422,6 +1460,34 @@ splits, curved background seams, gradient backgrounds, centred 50/50 \
 seam, pet axis aligned with the seam, background patterns, drop \
 shadows, text, watermark, border, solid color bars or panels at image \
 edges.
+
+FINAL CHECK BEFORE OUTPUT — PET IS A FULL-COLOUR MOSAIC, NOT A DARK \
+STAMP (CRITICAL):
+- DOMINANT-COLOUR CHECK: scan the pet's silhouette and ask "is one \
+single accent colour covering more than ~50% of the pet's body?" If \
+yes, the pet has collapsed to a near-monochrome silhouette. REDRAW \
+with: cheeks + brow + chest blaze in the LIGHTEST palette accent \
+(ivory / cream / lightest neutral); main body fur in MID-TONE \
+accents (peachy blush / dusty mauve / warm ochre / etc.); darkest \
+accent confined to SHADOW ZONES ONLY (ear interiors, eye sockets, \
+nostril shadow, deep jaw shadow). The pet should show at least \
+THREE clearly different accent colours occupying meaningful area, \
+not one dark colour with thin edge slivers of others.
+- LIGHT-ACCENT CHECK: can you see the lightest palette accent \
+(ivory / cream / lightest neutral) clearly on the pet's cheeks, \
+brow, and chest blaze? If those zones are rendered in a darker \
+mid-tone or in the deepest accent, the pet has lost its 3D form \
+and reads flat. REDRAW with the lightest accent placed on those \
+specific zones.
+- BG-MERGE CHECK: cover the lighter bg panel with your hand and \
+look only at the pet against the deeper bg panel. Does the pet's \
+silhouette read DISTINCTLY against the deeper panel, with clear \
+contrast at every edge? If the pet blends into the deeper panel \
+because its body colour is too close to the bg colour, the pet's \
+dominant body colour is wrong. REDRAW the body in a NEUTRAL accent \
+(ivory / cream / peachy blush / mid-tone) that contrasts BOTH bg \
+panels, and confine the bg-family accent to small shadow zones \
+only.
 
 FINAL CHECK BEFORE OUTPUT — FRAMING IS SHOULDERS-UP, NOT FACE-ZOOM \
 (CRITICAL):
