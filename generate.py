@@ -1135,16 +1135,20 @@ the fur immediately around the eyes: \
   IVORY / CREAM IRIS IS FORBIDDEN — it merges with the surrounding \
   white fur into one giant fake-sclera blob with a pinprick pupil, \
   and the result is the single creepiest possible failure mode \
-  (possessed-doll / googly-eye look). Iris MUST be one of: \
-  (1) DEEP TEAL (#234A4A or palette-equivalent), \
-  (2) DEEP NAVY (#1B2E58 or palette-equivalent), \
-  (3) DEEP AUBERGINE (#3B1F36 or palette-equivalent), \
-  (4) CHARCOAL (#1B1B1B or palette-equivalent), \
-  (5) WARM BRICK / DEEP TERRACOTTA — only if no deep cool option \
-  exists in the palette. \
-  Pick whichever deep accent the palette offers; the goal is a \
-  visually heavy iris that reads as a SOLID DARK EYE against the \
-  surrounding white fur. \
+  (possessed-doll / googly-eye look). Iris MUST be the customer's \
+  CHOSEN PALETTE'S DEEPEST COOL OR NEUTRAL ACCENT — exactly one of \
+  the hex codes listed in {{POSTER_ACCENTS}}, never a colour \
+  invented outside that palette. Pick the deepest dark in the \
+  palette: charcoal black if present, otherwise the palette's deep \
+  aubergine / deep navy / deep teal / deep maroon as listed in \
+  the accents. NEVER use a hex code that isn't in the customer's \
+  palette accents — Gemini rendering off-palette colours like \
+  "deep teal" on a palette without teal produces visible palette \
+  violations the post-processing can't snap back. The iris colour \
+  must be a literal copy of one of the {{POSTER_ACCENTS}} hexes. \
+  Goal: a visually heavy iris that reads as a SOLID DARK EYE \
+  against the surrounding white fur, using ONLY palette-native \
+  colours. \
 \
 The brightest saturated palette accent (warm orange, hot red, hot \
 pink, vivid yellow, vivid mustard) is FORBIDDEN as an iris fill in \
@@ -1548,13 +1552,17 @@ FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS, NOT POSSESSED \
 immediately surrounding each eye opening, within ~15px of the iris. \
 Is that fur WHITE / CREAM / IVORY (typical for Goldendoodles, \
 Maltipoos, Bichons, white-faced Cavoodles, white-masked Shih Tzus, \
-white-masked huskies, white-faced cats)? If YES, then the iris \
-itself MUST be a DEEP DARK colour — deep teal, deep navy, deep \
-aubergine, or charcoal — NEVER ivory or cream. An ivory iris \
-inside a ring of white face fur creates one giant fake-sclera blob \
-with a tiny pupil floating in it, which looks possessed. If the \
-iris currently is ivory/cream and the surrounding fur is white, \
-REDRAW the iris in the deepest cool accent the palette offers.
+white-masked huskies, white-faced cats)? If YES, the iris MUST be \
+the DEEPEST DARK accent in the customer's chosen palette — \
+exactly one of the hex codes listed in {{POSTER_ACCENTS}}, NEVER \
+a hex code invented outside the palette. NEVER ivory or cream — \
+an ivory iris inside a ring of white face fur creates one giant \
+fake-sclera blob with a tiny pupil floating in it, which looks \
+possessed. NEVER an off-palette colour like "deep teal" rendered \
+when the palette doesn't include teal — that produces visible \
+palette violations. If the iris is currently ivory/cream OR an \
+off-palette colour, REDRAW it as a literal copy of the deepest \
+dark hex listed in {{POSTER_ACCENTS}}.
 
 - HEADLIGHT CHECK: Is the iris one of the most-saturated palette \
 accents (warm orange, hot red, hot pink, vivid yellow, vivid \
