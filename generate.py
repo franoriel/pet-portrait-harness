@@ -1071,20 +1071,50 @@ source photo shows). Each eye is exactly TWO flat polygonal colour \
 blocks: an IRIS (a single uniform palette accent) and a PUPIL (a \
 single solid polygon in the palette's DARKEST accent — charcoal / \
 aubergine / deep navy / etc.). \
-- IRIS COLOUR — HARD RULE (anti-headlight, anti-glow): the iris is \
-NEVER the most saturated / brightest palette accent. Pick from \
-this priority order: \
-(1) IVORY / CREAM (#F4EFE7-ish), \
-(2) a WARM MID-TONE NEUTRAL (peachy blush, dusty mauve, soft brick, \
-warm ochre at its more muted reading), \
-(3) DEEP TEAL or DEEP NAVY when the bg is a warm-tone palette and \
-the dark accent contrasts well against the face. \
+- IRIS COLOUR — HARD RULE (anti-headlight, anti-glow, anti-googly): \
+the iris is NEVER the most saturated / brightest palette accent, \
+AND the iris is NEVER the same colour as the fur immediately \
+surrounding the eye opening. The iris colour MUST visibly contrast \
+the cheek/brow/eye-socket fur within ~15px of the iris, so the eye \
+reads as a discrete shape — not as one big merged white/light blob \
+with a tiny pupil floating in it. Iris-colour priority depends on \
+the fur immediately around the eyes: \
+\
+  CASE A — DARK or COLOURED fur surrounding the eyes (black, brown, \
+  ginger, grey, brindle, tabby, etc.): \
+  (1) IVORY / CREAM (#F4EFE7-ish), \
+  (2) a WARM MID-TONE NEUTRAL (peachy blush, dusty mauve, soft \
+  brick, warm ochre at its more muted reading), \
+  (3) DEEP TEAL / DEEP NAVY when the bg is a warm-tone palette. \
+\
+  CASE B — WHITE / CREAM / IVORY fur surrounding the eyes \
+  (Maltipoo, Goldendoodle, Bichon, white Cavoodle, white-masked \
+  Shih Tzu, white-faced cat, husky with white mask, any pet whose \
+  source photo shows white/cream fur immediately framing the eye): \
+  IVORY / CREAM IRIS IS FORBIDDEN — it merges with the surrounding \
+  white fur into one giant fake-sclera blob with a pinprick pupil, \
+  and the result is the single creepiest possible failure mode \
+  (possessed-doll / googly-eye look). Iris MUST be one of: \
+  (1) DEEP TEAL (#234A4A or palette-equivalent), \
+  (2) DEEP NAVY (#1B2E58 or palette-equivalent), \
+  (3) DEEP AUBERGINE (#3B1F36 or palette-equivalent), \
+  (4) CHARCOAL (#1B1B1B or palette-equivalent), \
+  (5) WARM BRICK / DEEP TERRACOTTA — only if no deep cool option \
+  exists in the palette. \
+  Pick whichever deep accent the palette offers; the goal is a \
+  visually heavy iris that reads as a SOLID DARK EYE against the \
+  surrounding white fur. \
+\
 The brightest saturated palette accent (warm orange, hot red, hot \
-pink, vivid yellow, vivid mustard) is FORBIDDEN as an iris fill — \
-those colours reserved for fur faceting, never the eye. A saturated \
-iris on a saturated 2-tone bg reads as glowing headlights / \
-taxidermy / uncanny-valley and ruins the portrait, even when every \
-other rule is met. When in doubt, ivory is always safe. \
+pink, vivid yellow, vivid mustard) is FORBIDDEN as an iris fill in \
+BOTH cases — those colours reserved for fur faceting, never the \
+eye. A saturated iris reads as glowing headlights / taxidermy and \
+ruins the portrait. RECURRING FAILURE MODE TO AVOID: a Goldendoodle \
+or Maltipoo rendered with ivory irises sitting inside a ring of \
+white face fur — the eye opening collapses into one giant white \
+blob with a tiny black dot floating in it (looks possessed). \
+FORBIDDEN: any white/cream iris on any pet with white fur framing \
+the eyes.\
 - BETWEEN-EYE COHERENCE — HARD RULE: both pupils point in the SAME \
 direction. If the source photo shows the pet looking forward, both \
 pupils sit centred in their respective irises. If the source shows \
@@ -1121,14 +1151,31 @@ to-width ratio sits in the 0.7–1.1 range (round-ish to softly \
 almond). Iris height less than 5% of head height = WRONG. Iris \
 height-to-width ratio under 0.4 (a thin horizontal sliver) = WRONG. \
 Both eyes are clearly OPEN, visibly engaging the viewer.
-- PUPIL SIZE RELATIVE TO IRIS — HARD RULE (anti-headlight): the \
-pupil polygon occupies AT LEAST 35% of the iris's visible area — \
-NOT a small dot in the middle of a large saturated disc. A small \
-pupil inside a large bright iris reads as "headlight eyes" / \
-"glowing-eye monster" and is the single biggest contributor to the \
-creepy / uncanny look. Sweet spot: pupil = 35–50% of iris area. \
-Small-pupil / pinprick-pupil = WRONG. The pupil should feel like a \
-substantial central feature of the eye, not a stray dark speck.
+- PUPIL SIZE RELATIVE TO IRIS — HARD RULE (anti-headlight, anti-\
+googly, anti-possessed): the pupil polygon occupies AT LEAST 45% \
+of the iris's visible area, with 50–60% being the sweet spot. NOT \
+a small dot in the middle of a large light disc. A small pupil \
+inside a large light/ivory iris is the SINGLE BIGGEST CONTRIBUTOR \
+to the creepy / possessed-doll / googly-eye look — bigger than \
+diverging gaze, bigger than asymmetric pupils, bigger than any \
+other failure mode. \
+\
+Concrete sizing test: imagine the iris as a clock face. The pupil \
+is so large that it would touch the clock's "centre dot" zone AND \
+extend visibly outward — its diameter spans roughly 2/3 of the \
+iris's diameter, leaving only a thin ring of iris colour visible \
+around it (top, bottom, left, right). If you can see MORE iris \
+colour than pupil colour in the eye opening, the pupil is TOO \
+SMALL — enlarge it. \
+\
+Pinprick-pupil / small-dot-pupil / stray-dark-speck-pupil = WRONG. \
+A "centre dot" inside an otherwise empty iris disc = WRONG. The \
+pupil should feel HEAVY and CENTRAL — like a black olive sitting \
+inside a thin coloured ring, not like a poppyseed in the middle of \
+a fried egg. RECURRING FAILURE MODE TO AVOID: irises rendered as \
+large light discs with a tiny dark dot floating in the centre — \
+classic possessed-cartoon-character look. FORBIDDEN. Pupil ≥ 45% \
+of iris area, no exceptions, every render.
 - FLUFFY-FACED BREED OVERRIDE — CRITICAL: for breeds with long fur \
 covering the face (Goldendoodle, Maltipoo, Shih Tzu, Yorkie, Lhasa \
 Apso, Old English Sheepdog, Bichon, Cocker Spaniel, Cavoodle, any \
@@ -1339,27 +1386,49 @@ seam, pet axis aligned with the seam, background patterns, drop \
 shadows, text, watermark, border, solid color bars or panels at image \
 edges.
 
-FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS (CRITICAL):
-- Look at each eye. Is the iris one of the most-saturated palette \
+FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS, NOT POSSESSED \
+(CRITICAL — this is the #1 source of creepy renders):
+
+- WHITE-FUR-AROUND-EYES CHECK (RUN THIS FIRST): Look at the fur \
+immediately surrounding each eye opening, within ~15px of the iris. \
+Is that fur WHITE / CREAM / IVORY (typical for Goldendoodles, \
+Maltipoos, Bichons, white-faced Cavoodles, white-masked Shih Tzus, \
+white-masked huskies, white-faced cats)? If YES, then the iris \
+itself MUST be a DEEP DARK colour — deep teal, deep navy, deep \
+aubergine, or charcoal — NEVER ivory or cream. An ivory iris \
+inside a ring of white face fur creates one giant fake-sclera blob \
+with a tiny pupil floating in it, which looks possessed. If the \
+iris currently is ivory/cream and the surrounding fur is white, \
+REDRAW the iris in the deepest cool accent the palette offers.
+
+- HEADLIGHT CHECK: Is the iris one of the most-saturated palette \
 accents (warm orange, hot red, hot pink, vivid yellow, vivid \
-mustard)? If yes, REDRAW the iris in IVORY / CREAM, or in a muted \
-mid-tone (peachy blush, dusty mauve, soft brick, deep teal, deep \
-navy). The brightest saturated accent inside an eye on top of the \
-saturated 2-tone bg makes the pet look uncanny / glowing-eyed / \
-taxidermy.
-- Look at the pupil polygon inside each iris. Does the pupil \
-occupy at least 35% of the iris area? If the pupil is a tiny dot \
-or pinprick inside a much larger iris disc, ENLARGE the pupil \
-until it fills 35–50% of the iris.
-- Look at both pupils together. Do they point in the SAME direction \
+mustard)? If yes, REDRAW in a muted neutral (deep teal, deep navy, \
+deep aubergine, charcoal, or — only if the surrounding fur is dark \
+— ivory).
+
+- PUPIL SIZE CHECK (HARDEST RULE — DO NOT SKIP): Look at the pupil \
+inside each iris. Measure: does the pupil's diameter span at least \
+2/3 of the iris's diameter? Does the pupil cover at least 45% of \
+the iris area? If the pupil looks like a small dot, a centre dot, \
+a poppyseed, or a pinprick inside a much larger iris disc, the \
+pupil is TOO SMALL — ENLARGE it until it fills 50–60% of the iris \
+area. The eye should read as "mostly dark pupil with a thin ring \
+of iris colour around it," not "mostly iris colour with a dark \
+speck in the middle." A small pupil inside a large light iris is \
+the #1 cause of creepy/possessed renders — fix it before output.
+
+- GAZE COHERENCE CHECK: Do both pupils point in the SAME direction \
 relative to their respective irises? If one pupil is centred and \
-the other is off-axis, OR if the pupils diverge (one left, one \
-right), OR if they sit at different vertical heights inside their \
-irises, REDRAW so both pupils sit in the same relative position \
-inside their irises. Diverging gaze = creepy.
-- Eye is still exactly TWO flat solid colour blocks: iris (one \
-uniform colour) + pupil (one uniform dark shape). NO catchlight, \
-NO white glint, NO inner ring, NO gradient.
+the other is off-axis, OR if the pupils diverge, OR if they sit at \
+different vertical heights inside their irises, REDRAW so both \
+pupils sit in the same relative position. Diverging gaze = creepy.
+
+- FLATNESS CHECK: Eye is still exactly TWO flat solid colour blocks: \
+iris (one uniform colour) + pupil (one uniform dark shape). NO \
+catchlight, NO white glint, NO inner ring, NO gradient, NO sclera, \
+NO white whites of the eye visible around the iris (the iris fills \
+the entire eye opening).
 
 FINAL CHECK BEFORE OUTPUT — TEXT-FREE GUARANTEE (CRITICAL — read this LAST):
 - Scan the WHOLE canvas, especially the empty bg band above the pet's \
