@@ -2239,6 +2239,205 @@ def _remove_poster_halos(
     return out
 
 
+def _bgp_reframe_anchor_bottom(
+    img: Image.Image,
+    palette: dict[str, str],
+    top_room_ratio: float = 0.16,
+    bottom_pad_ratio: float = 0.02,
+    side_pad_ratio: float = 0.06,
+    target_aspect: tuple = (4, 5),
+    pet_tol: int = 30,
+) -> Image.Image:
+    """Reframe a bold-graphic-poster portrait so the pet is anchored at the
+    bottom of the canvas, sized to fill confidently, with symmetric L/R
+    padding and configurable top room for breathing space (or for a name
+    composited later). Mirror of _line_art_reframe_anchor_bottom but for
+    the 2-panel poster bg.
+
+    REQUIRES the input to have already been palette-snapped via
+    _snap_poster_to_palette (max_distance≈45) so bg pixels are EXACT
+    bg_left or bg_right hex. Pet detection is then a pure-equality
+    test ("pixel is bg if it matches either canonical bg hex within
+    pet_tol RGB, otherwise it's pet"), which is robust against Gemini's
+    anti-aliased intermediates that the snap pass already collapsed.
+
+    Builds a fresh canvas at target_aspect filled with the canonical
+    2-panel split (seam at _BGP_SEAM_RATIO from the left), then
+    composites ONLY the pet silhouette onto it via a mask. Bbox bg
+    pixels do NOT get pasted — the new canvas's panel bg fills those
+    regions. This keeps the seam pixel-perfect across the full canvas
+    and prevents the "old bbox bg colour bleeding into the new wrong
+    panel" failure mode that a naive paste would produce.
+
+    `top_room_ratio` is the only knob you turn between no-name (0.16:
+    pet dominates with breathing room) and with-name (0.24: dedicated
+    band for the name above the pet's head).
+    """
+    # Defensive palette snap so bbox detection is robust to anti-aliased
+    # intermediates left by any upstream LANCZOS resize at the seam.
+    # Idempotent if the caller already snapped (the snap function is a
+    # no-op when every pixel is already at exact palette).
+    rgb = _snap_poster_to_palette(img, palette, max_distance=45).convert('RGB')
+    src_w, src_h = rgb.size
+
+    bg_left  = _hex_to_rgb(palette["bg_left_hex"])
+    bg_right = _hex_to_rgb(palette["bg_right_hex"])
+
+    try:
+        import numpy as np
+        arr = np.asarray(rgb, dtype=np.int32)
+        bg_l = np.array(bg_left,  dtype=np.int32)
+        bg_r = np.array(bg_right, dtype=np.int32)
+        d2_l = ((arr - bg_l) ** 2).sum(axis=2)
+        d2_r = ((arr - bg_r) ** 2).sum(axis=2)
+        tol_sq = pet_tol * pet_tol
+        # pet = neither bg_left nor bg_right (within tolerance)
+        is_pet = (d2_l > tol_sq) & (d2_r > tol_sq)
+        if not is_pet.any():
+            return img
+        ys, xs = np.where(is_pet)
+        fg_min_x = int(xs.min())
+        fg_max_x = int(xs.max())
+        fg_min_y = int(ys.min())
+        fg_max_y = int(ys.max())
+    except ImportError:
+        # Pure-PIL fallback — slower but correct.
+        px = rgb.load()
+        fg_min_x, fg_max_x = src_w, 0
+        fg_min_y, fg_max_y = src_h, 0
+        found = False
+        tol_sq = pet_tol * pet_tol
+        step = max(1, min(src_w, src_h) // 600)
+        for y in range(0, src_h, step):
+            for x in range(0, src_w, step):
+                p = px[x, y]
+                d2_l = (p[0] - bg_left[0]) ** 2 + (p[1] - bg_left[1]) ** 2 + (p[2] - bg_left[2]) ** 2
+                d2_r = (p[0] - bg_right[0]) ** 2 + (p[1] - bg_right[1]) ** 2 + (p[2] - bg_right[2]) ** 2
+                if d2_l > tol_sq and d2_r > tol_sq:
+                    if x < fg_min_x: fg_min_x = x
+                    if x > fg_max_x: fg_max_x = x
+                    if y < fg_min_y: fg_min_y = y
+                    if y > fg_max_y: fg_max_y = y
+                    found = True
+        if not found:
+            return img
+
+    # Inset slightly so anti-aliased pet edges don't get chipped.
+    inset = max(int(min(src_w, src_h) // 200), 4)
+    fg_min_x = max(0, fg_min_x - inset)
+    fg_min_y = max(0, fg_min_y - inset)
+    fg_max_x = min(src_w, fg_max_x + inset)
+    fg_max_y = min(src_h, fg_max_y + inset)
+
+    pet_w = fg_max_x - fg_min_x
+    pet_h = fg_max_y - fg_min_y
+
+    # Compute target canvas size from pet height + top/bottom budget.
+    # If the resulting pet_w would exceed the side-pad budget, scale
+    # the canvas up so side padding is preserved (top room grows as
+    # a side effect — acceptable, beats cropping the pet).
+    target_w_ratio, target_h_ratio = target_aspect
+    target_aspect_ratio = target_w_ratio / target_h_ratio
+    available_pet_h_frac = 1.0 - top_room_ratio - bottom_pad_ratio
+    if available_pet_h_frac <= 0.1:
+        available_pet_h_frac = 0.5
+    canvas_h = int(round(pet_h / available_pet_h_frac))
+    canvas_w = int(round(canvas_h * target_aspect_ratio))
+    available_pet_w_frac = 1.0 - 2 * side_pad_ratio
+    max_pet_w = int(round(canvas_w * available_pet_w_frac))
+    if pet_w > max_pet_w:
+        canvas_w = int(round(pet_w / available_pet_w_frac))
+        canvas_h = int(round(canvas_w / target_aspect_ratio))
+
+    # Crop pet bbox + build a mask of "is pet" pixels inside the crop
+    # so we composite ONLY the pet onto the new bg (bbox bg pixels
+    # don't get pasted across the new seam).
+    cropped = rgb.crop((fg_min_x, fg_min_y, fg_max_x, fg_max_y))
+    try:
+        import numpy as np
+        cropped_arr = np.asarray(cropped, dtype=np.int32)
+        d2_l_crop = ((cropped_arr - np.array(bg_left,  dtype=np.int32)) ** 2).sum(axis=2)
+        d2_r_crop = ((cropped_arr - np.array(bg_right, dtype=np.int32)) ** 2).sum(axis=2)
+        is_pet_crop = (d2_l_crop > tol_sq) & (d2_r_crop > tol_sq)
+        mask_arr = (is_pet_crop * 255).astype('uint8')
+        mask = Image.fromarray(mask_arr, 'L')
+    except ImportError:
+        # Pure-PIL fallback for the mask.
+        mask = Image.new('L', cropped.size, 0)
+        mp = mask.load()
+        cp = cropped.load()
+        for y in range(cropped.height):
+            for x in range(cropped.width):
+                p = cp[x, y]
+                d2_l = (p[0] - bg_left[0]) ** 2 + (p[1] - bg_left[1]) ** 2 + (p[2] - bg_left[2]) ** 2
+                d2_r = (p[0] - bg_right[0]) ** 2 + (p[1] - bg_right[1]) ** 2 + (p[2] - bg_right[2]) ** 2
+                if d2_l > tol_sq and d2_r > tol_sq:
+                    mp[x, y] = 255
+
+    # Bump the canvas to print resolution BEFORE building the bg, so the
+    # 2-panel split is laid down at full resolution with a pixel-perfect
+    # seam — never interpolated. The pet crop is scaled separately
+    # (with its mask) and composited on top, so seam pixels stay exact.
+    min_w, min_h = PORTRAIT_MIN_SIZE
+    if canvas_w < min_w or canvas_h < min_h:
+        scale = max(min_w / canvas_w, min_h / canvas_h)
+        canvas_w_final = int(round(canvas_w * scale))
+        canvas_h_final = int(round(canvas_h * scale))
+        new_pet_w = int(round(pet_w * scale))
+        new_pet_h = int(round(pet_h * scale))
+        cropped = cropped.resize((new_pet_w, new_pet_h), Image.LANCZOS)
+        mask = mask.resize((new_pet_w, new_pet_h), Image.LANCZOS)
+        pet_w, pet_h = new_pet_w, new_pet_h
+        canvas_w, canvas_h = canvas_w_final, canvas_h_final
+
+    # Build the fresh 2-panel canvas with the canonical seam at the
+    # FINAL resolution — no later resize, so the seam is pixel-sharp.
+    out = Image.new('RGB', (canvas_w, canvas_h), bg_left)
+    seam_x = int(round(canvas_w * _BGP_SEAM_RATIO))
+    right_panel = Image.new(
+        'RGB', (canvas_w - seam_x, canvas_h), bg_right,
+    )
+    out.paste(right_panel, (seam_x, 0))
+
+    # Place the pet centred horizontally, anchored at canvas bottom.
+    bottom_pad_px = int(round(canvas_h * bottom_pad_ratio))
+    paste_y = canvas_h - bottom_pad_px - pet_h
+    paste_x = (canvas_w - pet_w) // 2
+    out.paste(cropped, (paste_x, paste_y), mask)
+    return out
+
+
+def _bgp_open_name_band(image: Image.Image, palette: dict[str, str]) -> Image.Image:
+    """Re-canvas a bold-graphic-poster post-processed master to open extra
+    top room for a composited name. Mirror of _modern_open_name_band /
+    _line_art_open_name_band but for the 2-panel poster bg.
+
+    Different ratios for 4:5 (24% top — gives the name a clear band
+    above the pet's head while keeping the pet sized to dominate) vs
+    1:1 (28% top — square has less vertical room to amortise name +
+    pet over).
+    """
+    is_square = (
+        image.height > 0
+        and abs((image.width / image.height) - 1.0) < 0.05
+    )
+    if is_square:
+        return _bgp_reframe_anchor_bottom(
+            image, palette,
+            top_room_ratio=0.28,
+            bottom_pad_ratio=0.02,
+            side_pad_ratio=0.06,
+            target_aspect=(1, 1),
+        )
+    return _bgp_reframe_anchor_bottom(
+        image, palette,
+        top_room_ratio=0.24,
+        bottom_pad_ratio=0.02,
+        side_pad_ratio=0.06,
+        target_aspect=(4, 5),
+    )
+
+
 def _snap_poster_to_palette(
     img: Image.Image,
     palette: dict[str, str],
@@ -5754,6 +5953,24 @@ def _generate_inner(
                 padded = _snap_poster_to_palette(
                     padded, _palette, max_distance=45,
                 )
+                # FRAMING RESCUE — programmatic safety net for when
+                # Gemini ignores the prompt's shoulders-up framing rules
+                # and renders a face-zoom or floating pet. Detects the
+                # pet bbox via palette knowledge (pet = anything that
+                # isn't bg_left or bg_right within tol), rebuilds the
+                # canvas at 4:5 with the canonical 38% seam, and
+                # composites the pet via mask anchored at the canvas
+                # bottom with symmetric L/R padding and 16% top room.
+                # The with-name flow re-canvases through
+                # _bgp_open_name_band afterward to open a 24% band for
+                # the name.
+                padded = _bgp_reframe_anchor_bottom(
+                    padded, _palette,
+                    top_room_ratio=0.16,
+                    bottom_pad_ratio=0.02,
+                    side_pad_ratio=0.06,
+                    target_aspect=(4, 5),
+                )
             else:
                 padded = add_background_padding(
                     ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
@@ -5921,6 +6138,10 @@ def generate_with_name_on_demand(
             laid_out = _modern_open_name_band(processed)
         elif style == "minimal-line-art":
             laid_out = _line_art_open_name_band(processed)
+        elif style == "bold-graphic-poster":
+            _palette_id = (style_vars or {}).get("poster_palette") or "teal"
+            _palette = POSTER_PALETTES.get(_palette_id, POSTER_PALETTES["teal"])
+            laid_out = _bgp_open_name_band(processed, _palette)
         else:
             laid_out = processed
         composited = composite_name(laid_out, pet_name, style=style)
@@ -5967,6 +6188,10 @@ def generate_with_name_on_demand(
             laid_out_1x1 = _modern_open_name_band(derived_1x1)
         elif style == "minimal-line-art":
             laid_out_1x1 = _line_art_open_name_band(derived_1x1)
+        elif style == "bold-graphic-poster":
+            _palette_id = (style_vars or {}).get("poster_palette") or "teal"
+            _palette = POSTER_PALETTES.get(_palette_id, POSTER_PALETTES["teal"])
+            laid_out_1x1 = _bgp_open_name_band(derived_1x1, _palette)
         else:
             laid_out_1x1 = derived_1x1
         composited_1x1 = composite_name(laid_out_1x1, pet_name, style=style)
