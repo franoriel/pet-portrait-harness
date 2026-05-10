@@ -962,11 +962,14 @@ _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
 Transform this photo into a CUBIST flat-graphic pet portrait in the style \
 of a vintage screen-print poster — the pet rendered as a mosaic of bold \
 angular polygonal colour blocks meeting at sharp clean edges, framed as a \
-SHOULDERS-UP PORTRAIT (full head + neck + both shoulders + upper chest \
-all visible inside the canvas — NOT a face-only / head-only WPAP closeup), \
-centred on the canvas, set against an ASYMMETRIC TWO-PANEL BACKGROUND with \
-a vertical seam at 38% from the left edge (narrow LEFT panel + wide RIGHT \
-panel — NEVER a centred 50/50 split).
+BUST PORTRAIT (head + neck + full shoulders + visible chest extending \
+down to the canvas bottom edge — the lower THIRD of the canvas is occupied \
+by NECK and SHOULDER and CHEST faceting, NOT by background. NEVER a face- \
+only / head-only WPAP closeup — the head alone occupies AT MOST the upper \
+two-thirds; the lower third is ALWAYS body), centred on the canvas, set \
+against an ASYMMETRIC TWO-PANEL BACKGROUND with a vertical seam at 38% \
+from the left edge (narrow LEFT panel + wide RIGHT panel — NEVER a \
+centred 50/50 split).
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Use the animal's actual fur/coat PATTERN from the photo as the \
@@ -1398,26 +1401,33 @@ head-fills-the-frame composition.
 - BODY-PART Y-POSITIONS — HARD RULE (this is the most important \
 framing constraint, every Y-position must be inside the visible \
 canvas): \
-  - Top of highest ear / topmost head fur: y = 22-26% from top. \
-  - Eye line (centre of irises): y = 38-44% from top. \
-  - Tip of nose: y = 55-62% from top. \
-  - Bottom of jaw / chin: y = 65-72% from top. \
+  - Top of highest ear / topmost head fur: y = 18-24% from top. \
+  - Eye line (centre of irises): y = 32-40% from top. \
+  - Tip of nose: y = 50-58% from top. \
+  - Bottom of jaw / chin: y = 60-67% from top. \
   - Top of shoulders (where the neck meets the shoulder mass): y = \
-  72-78% from top. \
-  - Bottom of visible chest: y = 92-96% from top. \
+  65-72% from top. \
+  - Bottom of visible chest: y = 98-100% from top (CHEST RUNS TO \
+  THE CANVAS BOTTOM EDGE — the chest is the lowest visible body \
+  element and it sits flush against the bottom of the canvas, with \
+  NO bg sliver below it). \
   All of these Y-positions MUST sit inside the canvas (between 0% \
-  and 100%). If the bottom-of-chest is below 100% (i.e. the chest \
-  is cropped off the bottom edge), the framing is WRONG — REDRAW. \
-  If the top-of-ears is above 0% (i.e. ears clipped at the top \
-  edge), the framing is WRONG — REDRAW.
-- THE HEAD ALONE IS NOT THE WHOLE PET — HARD RULE: the head + ears \
-together occupy roughly the upper 22% to 72% of the canvas (a 50% \
-band). The remaining LOWER 28% (y = 72-100%) is reserved for NECK \
-+ SHOULDERS + CHEST, with a 4-8% bg sliver at the very bottom for \
-grounding. If the dog's head fills 80%+ of the canvas height with \
-no shoulders below, the framing has collapsed to a head-only \
-closeup — FORBIDDEN. The head occupies the upper half, the body \
-occupies the lower portion.
+  and 100%). If the chin is below 70% from top (i.e. the head fills \
+  most of the canvas with only a thin band of body below), the \
+  framing has collapsed to a face-zoom — REDRAW with the head \
+  smaller and the chest larger. If the top-of-ears is above 0% \
+  (i.e. ears clipped at the top edge), the framing is WRONG — REDRAW.
+- THE LOWER THIRD IS ALWAYS BODY, NEVER BG — HARD RULE: the lower \
+33% of the canvas (y = 67-100%) is filled with NECK + SHOULDERS + \
+CHEST faceting. The chest extends to the canvas bottom edge — flush, \
+no bg below the chest. The head + ears together occupy AT MOST the \
+upper 67% of the canvas (y = 0-67%, with the empty bg headroom \
+above the ears). If the dog's head fills 75%+ of the canvas height \
+with shoulders/chest as a thin sliver at the bottom, the framing \
+has collapsed to a face-zoom — FORBIDDEN. The head occupies the \
+upper two-thirds, the body occupies the lower third in substantive \
+faceting (multiple visible polygons of fur, not a thin compressed \
+band).
 - HEADROOM — HARD RULE: the TOP 22-26% of the canvas (from the top \
 edge down to the ear tips) is empty flat bg colour — NO fur, NO \
 ears, NO head silhouette in that upper band. This headroom is also \
@@ -2251,7 +2261,7 @@ def _bgp_reframe_anchor_bottom(
     img: Image.Image,
     palette: dict[str, str],
     top_room_ratio: float = 0.16,
-    bottom_pad_ratio: float = 0.02,
+    bottom_pad_ratio: float = 0.0,
     side_pad_ratio: float = 0.06,
     target_aspect: tuple = (4, 5),
     pet_tol: int = 30,
@@ -2433,14 +2443,14 @@ def _bgp_open_name_band(image: Image.Image, palette: dict[str, str]) -> Image.Im
         return _bgp_reframe_anchor_bottom(
             image, palette,
             top_room_ratio=0.28,
-            bottom_pad_ratio=0.02,
+            bottom_pad_ratio=0.0,
             side_pad_ratio=0.06,
             target_aspect=(1, 1),
         )
     return _bgp_reframe_anchor_bottom(
         image, palette,
         top_room_ratio=0.24,
-        bottom_pad_ratio=0.02,
+        bottom_pad_ratio=0.0,
         side_pad_ratio=0.06,
         target_aspect=(4, 5),
     )
@@ -5975,7 +5985,7 @@ def _generate_inner(
                 padded = _bgp_reframe_anchor_bottom(
                     padded, _palette,
                     top_room_ratio=0.16,
-                    bottom_pad_ratio=0.02,
+                    bottom_pad_ratio=0.0,
                     side_pad_ratio=0.06,
                     target_aspect=(4, 5),
                 )
