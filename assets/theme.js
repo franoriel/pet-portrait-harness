@@ -421,6 +421,14 @@
         0%   { transform: translate(-50%, 0);     opacity: 1; }
         100% { transform: translate(-50%, -24px); opacity: 0; }
       }
+      @keyframes pf-toast-in-bottom {
+        0%   { transform: translate(-50%, 24px); opacity: 0; }
+        100% { transform: translate(-50%, 0);    opacity: 1; }
+      }
+      @keyframes pf-toast-out-bottom {
+        0%   { transform: translate(-50%, 0);    opacity: 1; }
+        100% { transform: translate(-50%, 24px); opacity: 0; }
+      }
       @keyframes pf-confetti-fall {
         0%   { transform: translate(var(--pf-x, 0), -10vh) rotate(0deg); opacity: 1; }
         100% { transform: translate(var(--pf-x, 0), 110vh) rotate(720deg); opacity: 0.2; }
@@ -442,6 +450,14 @@
         animation: pf-toast-in 0.4s cubic-bezier(0.2,0.9,0.3,1.2);
       }
       .pf-freeship-toast.is-leaving { animation: pf-toast-out 0.35s ease-in forwards; }
+      @media (max-width: 600px) {
+        .pf-freeship-toast {
+          top: auto;
+          bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+          animation-name: pf-toast-in-bottom;
+        }
+        .pf-freeship-toast.is-leaving { animation-name: pf-toast-out-bottom; }
+      }
       .pf-freeship-toast__emoji { font-size: 1.35rem; line-height: 1; flex-shrink: 0; }
       .pf-freeship-toast__text strong { font-weight: 700; }
       .pf-freeship-toast__sub { display: block; font-weight: 400; opacity: 0.85; font-size: 0.82rem; margin-top: 2px; }
