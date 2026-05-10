@@ -200,9 +200,9 @@ const STYLE_AFFIRMATIONS = {
   'minimal-line-art':    { tag: 'Quiet confidence',     line: 'going to look effortless in clean line art.' },
   'modern-shape-art':    { tag: 'Designer pick',        line: 'about to anchor a room with modern shapes.' },
   'neon-pop-art':        { tag: 'Loud and lovable',     line: 'going to glow — saturated and electric.' },
-  'renaissance-royalty': { tag: 'Hall of portraits',    line: 'about to be ennobled, oil-painted in flattering light.' },
+  'renaissance-royalty': { tag: 'Royal treatment',      line: 'about to be ennobled in regal, gilded light.' },
   'bold-graphic-poster': { tag: 'Poster-shop energy',   line: 'getting the bold-colour, sharp-lines treatment.' },
-  'charcoal':            { tag: 'Studio classic',       line: 'about to look like a hand-drawn portrait studio piece.' },
+  'charcoal':            { tag: 'Studio classic',       line: 'about to look like a hand-drawn studio piece.' },
   'aura-gradient':       { tag: 'Halo treatment',       line: 'getting the soft-gradient halo treatment.' },
 };
 
@@ -1371,7 +1371,7 @@ function usePortraitFlow() {
             'Avoid photos of objects, landscapes, or food.',
           ];
         } else if (/wild|lion|tiger|bear|dolphin|elephant|giraffe|zoo/.test(d)) {
-          userError = 'We only create portraits of domesticated pets.';
+          userError = 'We only create keepsakes of domesticated pets.';
           userTips = ['Try a photo of your dog, cat, rabbit, bird, or other household pet.'];
         } else if (/blank|solid|color|black|white|empty|unidentifiable|unclear/.test(d)) {
           userError = 'We couldn\u2019t identify anything in this image.';
@@ -2678,7 +2678,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
         type: 'button',
         style: primaryBtnStyle(canGenerate),
         disabled: !canGenerate, onClick: onGenerate,
-        'aria-label': 'Create my portrait',
+        'aria-label': 'Create my keepsake',
       },
         canGenerate
           ? 'CREATE MY PORTRAIT'
@@ -2705,7 +2705,7 @@ const LOADING_PHRASES = [
   'Loading the treat jar\u2026',
   'Fluffing the fur\u2026',
   'Adjusting the bowtie\u2026',
-  'Consulting the art director (a cat)\u2026',
+  'Consulting the studio cat\u2026',
   'Fetching the fine brushes\u2026',
   'Perfecting the toe beans\u2026',
   'Almost there\u2026',
@@ -2823,7 +2823,7 @@ function GeneratingState() {
       ...s.sectionWrap, display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', minHeight: '360px', textAlign: 'center', gap: '20px', padding: '40px 16px',
     },
-    role: 'status', 'aria-live': 'polite', 'aria-label': 'Generating your portrait',
+    role: 'status', 'aria-live': 'polite', 'aria-label': 'Generating your keepsake',
   },
     // Calm loading indicator — puppy and kitten side by side, gentle bounce
     React.createElement('div', {
@@ -3259,7 +3259,7 @@ function UrgencyBanner({ generatedAt }) {
       }, 'Your hold expired'),
       React.createElement('p', {
         style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', color: '#7F1D1D', margin: 0, lineHeight: 1.5 },
-      }, 'Don\u2019t worry \u2014 your portrait is still saved for 24 hours. Start a new session to pick it back up.'),
+      }, 'Don\u2019t worry, your keepsake is still saved for 24 hours. Start a new session to pick it back up.'),
     );
   }
 
@@ -3290,7 +3290,7 @@ function UrgencyBanner({ generatedAt }) {
       },
     }, isUrgent
       ? 'Almost time \u2014 your hold is about to drop'
-      : '\u23F1\uFE0F This portrait is held just for you'),
+      : '\u23F1\uFE0F This keepsake is held just for you'),
 
     // Large countdown display
     React.createElement('div', {
@@ -3307,7 +3307,7 @@ function UrgencyBanner({ generatedAt }) {
         fontFamily: fontSans, fontSize: 'var(--text-xs)', color: tokens.colorBrand,
         margin: 0, lineHeight: 1.4, fontWeight: 500,
       },
-    }, 'This exact portrait is ',
+    }, 'This exact keepsake is ',
       React.createElement('strong', { style: { fontWeight: 700 } }, 'one-of-a-kind'),
       ' and can ',
       React.createElement('strong', { style: { fontWeight: 700 } }, 'never be recreated'),
@@ -3344,12 +3344,12 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
       ),
       React.createElement('button', {
         type: 'button', style: { ...s.primaryBtn, marginBottom: '14px' },
-        onClick: generate, 'aria-label': 'Try generating the portrait again',
+        onClick: generate, 'aria-label': 'Try generating the keepsake again',
       }, iconLabel(React.createElement(RefreshIcon), 'TRY AGAIN')),
       React.createElement('button', {
         type: 'button', style: { ...s.secondaryLink, width: '100%', textAlign: 'center' },
         onClick: startFresh,
-        'aria-label': 'Start over — clear this portrait and begin a new one',
+        'aria-label': 'Start over, clear this keepsake and begin a new one',
       }, iconLabel(React.createElement(RefreshIcon, { size: 14 }), 'Start Over')),
     );
   }
@@ -3386,7 +3386,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         // Printables watermark into the WebP preview, and stacking a
         // second tiled mark on top read as duplicates.
         React.createElement('img', {
-          src: mainImage, alt: state.petName ? `Portrait of ${state.petName}` : 'Your pet portrait preview',
+          src: mainImage, alt: state.petName ? `Keepsake of ${state.petName}` : 'Your pet keepsake preview',
           style: {
             // No client-side zoom. Earlier zooms (140% then 110%) cut
             // into the subject for styles whose AI source already
@@ -3473,7 +3473,7 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
           React.createElement('button', {
             type: 'button', style: s.secondaryLinkUnderline,
             onClick: retryFromStyle,
-            'aria-label': 'Go back to change the art style',
+            'aria-label': 'Go back to change the style',
           }, iconLabel(React.createElement(ArrowLeftIcon, { size: 14 }), 'Change style')),
           // Restart wipes the in-progress portrait and returns to the
           // upload step so the customer can re-upload, re-pick style,
@@ -3531,7 +3531,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
   const LOADING_PHRASES = [
     'Painting the letters\u2026',
     'Finding the right spot\u2026',
-    'Blending into the artwork\u2026',
+    'Blending it into the keepsake\u2026',
     'Just a few more seconds\u2026',
   ];
   useEffect(() => {
@@ -3596,7 +3596,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       || '';
 
     if (!imageUrl) {
-      setNameError('No portrait image available to add name to.');
+      setNameError('No keepsake image available to add name to.');
       setGeneratingNamedPreview(false);
       return;
     }
@@ -3793,7 +3793,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         },
           React.createElement('img', {
             src: displayImage,
-            alt: localName ? `Portrait of ${localName}` : 'Your portrait',
+            alt: localName ? `Keepsake of ${localName}` : 'Your keepsake',
             style: (() => {
               // Conditional zoom-crop.
               //
@@ -3969,7 +3969,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
         ),
       ),
       styleAllowsName && React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
-        localName.trim() ? `Add "${localName}" to the portrait?` : 'Add your pet\'s name to the portrait?'
+        localName.trim() ? `Add "${localName}" to the keepsake?` : 'Add your pet\'s name to the keepsake?'
       ),
       styleAllowsName && !localName.trim() && React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '10px' } },
         React.createElement('input', {
@@ -4009,7 +4009,7 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
             : null,
           generatingNamedPreview,
         ),
-        optionCard('No, just the portrait', wantsName === false, () => handleNameToggle(false)),
+        optionCard('No, just the keepsake', wantsName === false, () => handleNameToggle(false)),
       ),
       styleAllowsName && nameError && React.createElement('p', {
         style: {
@@ -4087,7 +4087,7 @@ function PageHero({ stage }) {
         fontSize: 'clamp(var(--text-xl), 7vw, var(--text-2xl))', color: tokens.colorBrand,
         margin: '0 0 6px', lineHeight: 1.15,
       },
-    }, 'Turn your pet into art'),
+    }, 'Turn your photo into a keepsake'),
 
     // Subtitle
     React.createElement('p', {
@@ -4104,7 +4104,7 @@ function PageHero({ stage }) {
         maskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
         WebkitMaskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
       },
-      'aria-label': 'Example pet portraits in all 8 styles',
+      'aria-label': 'Example pet keepsakes in all 8 styles',
     },
       React.createElement('div', {
         style: {
