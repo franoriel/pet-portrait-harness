@@ -6207,8 +6207,8 @@ def generate_with_name_on_demand(
         elif style == "minimal-line-art":
             laid_out = _line_art_open_name_band(processed)
         elif style == "bold-graphic-poster":
-            _palette_id = (style_vars or {}).get("poster_palette") or "teal"
-            _palette = POSTER_PALETTES.get(_palette_id, POSTER_PALETTES["teal"])
+            _palette_id = background_mode if background_mode in POSTER_PALETTES else "teal"
+            _palette = POSTER_PALETTES[_palette_id]
             laid_out = _bgp_open_name_band(processed, _palette)
         else:
             laid_out = processed
@@ -6257,8 +6257,8 @@ def generate_with_name_on_demand(
         elif style == "minimal-line-art":
             laid_out_1x1 = _line_art_open_name_band(derived_1x1)
         elif style == "bold-graphic-poster":
-            _palette_id = (style_vars or {}).get("poster_palette") or "teal"
-            _palette = POSTER_PALETTES.get(_palette_id, POSTER_PALETTES["teal"])
+            _palette_id = background_mode if background_mode in POSTER_PALETTES else "teal"
+            _palette = POSTER_PALETTES[_palette_id]
             laid_out_1x1 = _bgp_open_name_band(derived_1x1, _palette)
         else:
             laid_out_1x1 = derived_1x1
