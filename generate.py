@@ -3772,15 +3772,189 @@ def _remove_orphan_strokes(img: Image.Image) -> Image.Image:
     return rgb
 
 
+def _line_art_reframe_anchor_bottom(
+    img: Image.Image,
+    top_room_ratio: float = 0.12,
+    bottom_pad_ratio: float = 0.02,
+    side_pad_ratio: float = 0.06,
+    target_aspect: tuple = PORTRAIT_RATIO,
+) -> Image.Image:
+    """Reframe a minimal-line-art portrait so the pet is anchored at the
+    bottom of the canvas, sized to fill confidently, with symmetric L/R
+    padding and configurable top room for breathing space (or for a name
+    composited later).
+
+    Anchors the pet's bbox bottom to canvas_height * (1 - bottom_pad_ratio)
+    so the bottom of the line work sits just above the canvas edge with
+    a small grounding sliver. The pet height is scaled to fill
+    (1 - top_room_ratio - bottom_pad_ratio) of canvas height. If that
+    would push the pet wider than (1 - 2 * side_pad_ratio) of canvas
+    width, the pet is scaled down further so the side padding is
+    preserved. Pet centred horizontally — left padding equals right
+    padding by construction.
+
+    `top_room_ratio` is the only knob you turn between no-name (0.10-
+    0.14: pet dominates) and with-name (0.20-0.24: name has a clear band
+    above the pet's head). The same function services both paths.
+
+    Returns a fresh image at a target_aspect canvas filled with the bg
+    colour sampled from the input's corners.
+    """
+    rgb = img.convert('RGB')
+    src_w, src_h = rgb.size
+
+    # Sample bg colour from the four corners — same approach as
+    # _center_line_art so light + dark variants both work.
+    corner_size = max(8, min(src_w, src_h) // 50)
+    cp = []
+    for x0, y0 in [(0, 0), (src_w - corner_size, 0),
+                   (0, src_h - corner_size), (src_w - corner_size, src_h - corner_size)]:
+        for px in rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata():
+            cp.append(px)
+    if not cp:
+        return img
+    bg_lum = sum(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in cp) / len(cp)
+    bg_color = (
+        sum(p[0] for p in cp) // len(cp),
+        sum(p[1] for p in cp) // len(cp),
+        sum(p[2] for p in cp) // len(cp),
+    )
+    light_bg = bg_lum > 128
+
+    # Detect pet bbox via luminance threshold (60 from corner luminance,
+    # same threshold _center_line_art uses).
+    grey = rgb.convert('L')
+    px = grey.load()
+    fg_min_x, fg_max_x = src_w, 0
+    fg_min_y, fg_max_y = src_h, 0
+    found = False
+    step = max(1, min(src_w, src_h) // 600)
+    for y in range(0, src_h, step):
+        for x in range(0, src_w, step):
+            v = px[x, y]
+            is_fg = (v < bg_lum - 60) if light_bg else (v > bg_lum + 60)
+            if is_fg:
+                if x < fg_min_x: fg_min_x = x
+                if x > fg_max_x: fg_max_x = x
+                if y < fg_min_y: fg_min_y = y
+                if y > fg_max_y: fg_max_y = y
+                found = True
+    if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
+        # Degenerate input — return centered crop unchanged.
+        return _portrait_post_process(img)
+
+    # Inset the bbox slightly so anti-aliased edge pixels don't get
+    # clipped off when we crop.
+    inset = max(step * 2, 4)
+    fg_min_x = max(0, fg_min_x - inset)
+    fg_min_y = max(0, fg_min_y - inset)
+    fg_max_x = min(src_w, fg_max_x + inset)
+    fg_max_y = min(src_h, fg_max_y + inset)
+
+    pet_w = fg_max_x - fg_min_x
+    pet_h = fg_max_y - fg_min_y
+    pet_aspect = pet_w / pet_h if pet_h > 0 else 1.0
+
+    # Target canvas size: keep the source's larger dimension as a
+    # baseline, computed for the requested target_aspect. Use the
+    # pet's natural size as the floor so we never upscale-blur.
+    target_w_ratio, target_h_ratio = target_aspect
+    target_aspect_ratio = target_w_ratio / target_h_ratio
+    # Choose a canvas size large enough that the pet at its target
+    # height fits comfortably. Anchor on the pet height.
+    available_pet_h_frac = 1.0 - top_room_ratio - bottom_pad_ratio
+    if available_pet_h_frac <= 0.1:
+        # Sanity: leave at least 10% for the pet.
+        available_pet_h_frac = 0.5
+    canvas_h = int(round(pet_h / available_pet_h_frac))
+    canvas_w = int(round(canvas_h * target_aspect_ratio))
+
+    # Width check: would the pet exceed the side-pad budget?
+    available_pet_w_frac = 1.0 - 2 * side_pad_ratio
+    max_pet_w = int(round(canvas_w * available_pet_w_frac))
+    if pet_w > max_pet_w:
+        # Pet is too wide — scale the canvas up so side padding is
+        # preserved, accepting more top room as a result.
+        canvas_w = int(round(pet_w / available_pet_w_frac))
+        canvas_h = int(round(canvas_w / target_aspect_ratio))
+
+    cropped = rgb.crop((fg_min_x, fg_min_y, fg_max_x, fg_max_y))
+
+    # Place pet: centred horizontally, anchored at canvas bottom with
+    # the bottom_pad_ratio sliver below.
+    bottom_pad_px = int(round(canvas_h * bottom_pad_ratio))
+    paste_y = canvas_h - bottom_pad_px - pet_h
+    paste_x = (canvas_w - pet_w) // 2
+
+    out = Image.new('RGB', (canvas_w, canvas_h), bg_color)
+    out.paste(cropped, (paste_x, paste_y))
+
+    # Ensure min print resolution — same floor _portrait_post_process applies.
+    min_w, min_h = PORTRAIT_MIN_SIZE
+    if out.width < min_w or out.height < min_h:
+        scale = max(min_w / out.width, min_h / out.height)
+        out = out.resize(
+            (int(out.width * scale), int(out.height * scale)), Image.LANCZOS,
+        )
+    return out
+
+
+def _line_art_open_name_band(image: Image.Image) -> Image.Image:
+    """Re-canvas a minimal-line-art post-processed master to open extra
+    top room for a composited name. Mirror of _modern_open_name_band.
+
+    The base post-process anchors the pet at the bottom with ~12% top
+    room (pet dominates, no-name preview reads as designed). When a
+    name is added we re-canvas with 22% top room so the name has a
+    clear band above the pet's head — name composite_name's zone_top
+    of 0.11 lands the name centred in the upper portion of that band.
+    """
+    is_square = (
+        image.height > 0
+        and abs((image.width / image.height) - 1.0) < 0.05
+    )
+    if is_square:
+        # Square needs a slightly more generous top so the name and
+        # the line-art figure don't crowd each other on the smaller
+        # vertical axis.
+        return _line_art_reframe_anchor_bottom(
+            image,
+            top_room_ratio=0.26,
+            bottom_pad_ratio=0.02,
+            side_pad_ratio=0.06,
+            target_aspect=PRINT_ASPECT_1_1,
+        )
+    return _line_art_reframe_anchor_bottom(
+        image,
+        top_room_ratio=0.22,
+        bottom_pad_ratio=0.02,
+        side_pad_ratio=0.06,
+        target_aspect=PORTRAIT_RATIO,
+    )
+
+
 def _line_art_post_process(img: Image.Image) -> Image.Image:
     """Post-process for the minimal-line-art style (light + dark variants).
-    Removes disconnected stray fragments (phantom vertical lines, detached
-    paws, floating eye dots) and centers the line work on both axes before
-    the standard crop pipeline.
+
+    Removes disconnected stray fragments (phantom vertical lines,
+    detached paws, floating eye dots), then reframes to anchor the pet
+    at the bottom of the canvas with symmetric L/R padding and ~12%
+    top breathing room. The pet dominates the canvas (no more
+    floating-in-empty-space look) and nothing gets cropped on the
+    sides or top because the canvas size is computed FROM the pet
+    bbox rather than cropping the source.
+
+    With-name renders re-canvas through _line_art_open_name_band
+    afterward to open additional top room for the name.
     """
     img = _remove_orphan_strokes(img)
-    img = _center_line_art(img)
-    return _portrait_post_process(img)
+    return _line_art_reframe_anchor_bottom(
+        img,
+        top_room_ratio=0.12,
+        bottom_pad_ratio=0.02,
+        side_pad_ratio=0.06,
+        target_aspect=PORTRAIT_RATIO,
+    )
 
 
 # All colour/painterly styles share the same 4:5 crop + min-size pipeline.
@@ -5739,11 +5913,14 @@ def generate_with_name_on_demand(
         if processed is not base_image:
             base_image.close()
 
-        # 4:5 with name — open the name band on modern (the no-name
-        # master is packed tight, so we re-canvas to make room) and
-        # composite the text on the post-processed master.
+        # 4:5 with name — open the name band on modern AND minimal-
+        # line-art (the no-name masters for both are packed tight, so
+        # we re-canvas to make room) and composite the text on the
+        # post-processed master.
         if style == "modern-shape-art":
             laid_out = _modern_open_name_band(processed)
+        elif style == "minimal-line-art":
+            laid_out = _line_art_open_name_band(processed)
         else:
             laid_out = processed
         composited = composite_name(laid_out, pet_name, style=style)
@@ -5788,6 +5965,8 @@ def generate_with_name_on_demand(
             )
         if style == "modern-shape-art":
             laid_out_1x1 = _modern_open_name_band(derived_1x1)
+        elif style == "minimal-line-art":
+            laid_out_1x1 = _line_art_open_name_band(derived_1x1)
         else:
             laid_out_1x1 = derived_1x1
         composited_1x1 = composite_name(laid_out_1x1, pet_name, style=style)
