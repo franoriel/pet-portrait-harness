@@ -959,11 +959,14 @@ paths — not like a photo of an eye, not like a Pixar character's eye.\
 """
 
 _BOLD_GRAPHIC_POSTER_TEMPLATE = """\
-Transform this photo into a CUBIST WPAP-style flat-graphic pet portrait — \
-the pet rendered as a mosaic of bold angular polygonal colour blocks meeting \
-at sharp clean edges, centred on the canvas, set against an ASYMMETRIC \
-TWO-PANEL BACKGROUND with a vertical seam at 38% from the left edge \
-(narrow LEFT panel + wide RIGHT panel — NEVER a centred 50/50 split).
+Transform this photo into a CUBIST flat-graphic pet portrait in the style \
+of a vintage screen-print poster — the pet rendered as a mosaic of bold \
+angular polygonal colour blocks meeting at sharp clean edges, framed as a \
+SHOULDERS-UP PORTRAIT (full head + neck + both shoulders + upper chest \
+all visible inside the canvas — NOT a face-only / head-only WPAP closeup), \
+centred on the canvas, set against an ASYMMETRIC TWO-PANEL BACKGROUND with \
+a vertical seam at 38% from the left edge (narrow LEFT panel + wide RIGHT \
+panel — NEVER a centred 50/50 split).
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Use the animal's actual fur/coat PATTERN from the photo as the \
@@ -1388,19 +1391,34 @@ COMPLETE from base to tip with no clipping at the canvas edge), neck, \
 both shoulders, and upper chest. NEVER a tight face closeup where \
 the ears are clipped, NEVER a "muzzle + eyes only" render, NEVER a \
 head-fills-the-frame composition.
-- HEADROOM — HARD RULE: the top of the highest ear / topmost head \
-fur sits at y = 22-26% of canvas height measured from the TOP edge. \
-The TOP 22-26% of the canvas (from the top edge down to the ear tips) \
-is empty flat bg colour — NO fur, NO ears, NO head silhouette enters \
-that upper band. This headroom is also where the typography pipeline \
-composites the pet's name later, so it MUST stay clean.
-- CHEST FRAMING: the bottom of the visible chest sits at y = 93-97% \
-from the top. The pet is grounded near the bottom so a square (1:1) \
-centre-crop still ships the chest intact, with a small 3-7% flat bg \
-sliver below the chest for visual grounding.
-- PET TOTAL HEIGHT (top of ears to bottom of chest): 67-75% of canvas \
-height. Smaller = pet floating in too much empty space. LARGER than \
-75% = face crop / no headroom = FORBIDDEN.
+- BODY-PART Y-POSITIONS — HARD RULE (this is the most important \
+framing constraint, every Y-position must be inside the visible \
+canvas): \
+  - Top of highest ear / topmost head fur: y = 22-26% from top. \
+  - Eye line (centre of irises): y = 38-44% from top. \
+  - Tip of nose: y = 55-62% from top. \
+  - Bottom of jaw / chin: y = 65-72% from top. \
+  - Top of shoulders (where the neck meets the shoulder mass): y = \
+  72-78% from top. \
+  - Bottom of visible chest: y = 92-96% from top. \
+  All of these Y-positions MUST sit inside the canvas (between 0% \
+  and 100%). If the bottom-of-chest is below 100% (i.e. the chest \
+  is cropped off the bottom edge), the framing is WRONG — REDRAW. \
+  If the top-of-ears is above 0% (i.e. ears clipped at the top \
+  edge), the framing is WRONG — REDRAW.
+- THE HEAD ALONE IS NOT THE WHOLE PET — HARD RULE: the head + ears \
+together occupy roughly the upper 22% to 72% of the canvas (a 50% \
+band). The remaining LOWER 28% (y = 72-100%) is reserved for NECK \
++ SHOULDERS + CHEST, with a 4-8% bg sliver at the very bottom for \
+grounding. If the dog's head fills 80%+ of the canvas height with \
+no shoulders below, the framing has collapsed to a head-only \
+closeup — FORBIDDEN. The head occupies the upper half, the body \
+occupies the lower portion.
+- HEADROOM — HARD RULE: the TOP 22-26% of the canvas (from the top \
+edge down to the ear tips) is empty flat bg colour — NO fur, NO \
+ears, NO head silhouette in that upper band. This headroom is also \
+where the typography pipeline composites the pet's name later, so \
+it MUST stay clean.
 - HORIZONTAL: pet centred horizontally — pet's vertical axis of \
 symmetry at 50% of canvas width.
 - FRONT-FACING / FACE-FORWARD POSE — CRITICAL: the pet faces directly \
@@ -1497,14 +1515,31 @@ canvas height? If the head touches the top edge, if the ears are \
 clipped, if you can't see the COMPLETE ear including the very tip, \
 ZOOM OUT and re-render with the head pushed down so the top 22-26% \
 of the canvas is clean flat bg colour.
-- TORSO CHECK: are the pet's NECK, both SHOULDERS, and UPPER CHEST \
-visible inside the canvas? If the render shows only the face / muzzle \
-/ eyes and the bottom edge cuts off at the jaw or collar, ZOOM OUT \
-and re-render to include the shoulders and chest. The output is a \
-shoulders-up portrait, never a face crop.
+- TORSO CHECK — MEASURABLE: imagine a horizontal line at y = 75% \
+from the top of the canvas (so the bottom 25% of the canvas). What \
+do you see in that bottom band? \
+  - If you see SHOULDERS and CHEST → framing is CORRECT, output. \
+  - If you see only the lower jaw / chin / collar / neck-thin and \
+  the bottom edge cuts off there → framing is WRONG. The pet is a \
+  head-only closeup. ZOOM OUT and re-render so the bottom 25% of \
+  the canvas contains visible SHOULDER MASS + CHEST FUR (not just \
+  jaw or neck). \
+  - If the bottom band is empty flat bg → the pet is too small / \
+  positioned too high. ZOOM IN slightly so the chest fills the \
+  bottom 18-22%. \
+The output is a shoulders-up portrait. The bottom 25% of the canvas \
+showing only the jaw with nothing below = FORBIDDEN.
+- HEAD-ONLY-IS-WRONG CHECK: does the pet's head occupy more than \
+~70% of the visible pet (i.e. the head is most of what you see, \
+with shoulders just barely visible or not at all)? If yes, the WPAP \
+convention has overridden the shoulders-up framing rule — REDRAW \
+with the pet smaller in frame so the head is roughly the upper half \
+and the shoulders + chest are the lower portion. The WPAP-style \
+faceting is the LOOK; the framing is shoulders-up, not WPAP-style \
+head-only.
 - IF UNSURE: zoom OUT, not in. A pet rendered slightly smaller with \
-generous headroom and a visible chest is ALWAYS better than a pet \
-zoomed in tight with clipped ears.
+generous headroom AND visible shoulders/chest is ALWAYS better than \
+a pet zoomed in tight with clipped ears or a missing torso.
 
 FINAL CHECK BEFORE OUTPUT — EYES ARE NOT HEADLIGHTS, NOT POSSESSED \
 (CRITICAL — this is the #1 source of creepy renders):
