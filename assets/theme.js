@@ -285,20 +285,46 @@
         atcBtn.textContent = 'Add to Cart \u2014 ' + variant.priceFormatted + ' CAD';
       }
 
-      // Scroll gallery to mockup slide for this variant (if available)
+      // Scroll gallery to the slide that matches the chosen variant.
+      //
+      // Three resolution paths, in order:
+      //   1. _mockupSlideMap (NxN sizeKey → slide index) — populated
+      //      by pdp-portrait-inject.js when the customer has a saved
+      //      portrait. This is the path used during the live preview
+      //      flow; each injected mockup slide carries data-variant-size.
+      //   2. imageMap (Shopify image id → slide index) + variant.imageId
+      //      — works in the no-portrait case (i.e. the customer landed
+      //      on a PDP without a saved preview, so the gallery is the
+      //      Shopify product images instead of the injected mockups).
+      //      The size→slide map is empty in that case, but Shopify
+      //      admin still associates each variant with an image id, so
+      //      we can route through that.
+      //   3. Variant index in product.variants → slide index — last-
+      //      resort fallback that assumes images are uploaded in the
+      //      same order as variants. Beats parking on slide 0, which
+      //      was the previous fallback (clicking 12×16 with no portrait
+      //      saved silently scrolled back to the first mockup).
       if (window._galleryScrollTo) {
+        const mockupMap = window._mockupSlideMap || {};
         const variantTitle = variant.title || '';
-        // Extract size like "10×10" from variant title → normalize to "10x10"
         const sizeMatch = variantTitle.match(/(\d+)\D+(\d+)/);
         const sizeKey = sizeMatch ? sizeMatch[1] + 'x' + sizeMatch[2] : null;
-        const mockupMap = window._mockupSlideMap || {};
+
+        let targetSlide = null;
 
         if (sizeKey && mockupMap[sizeKey] !== undefined) {
-          window._galleryScrollTo(mockupMap[sizeKey]);
-        } else {
-          // Fallback: scroll to portrait slide (index 0)
-          window._galleryScrollTo(0);
+          targetSlide = mockupMap[sizeKey];
+        } else if (variant.imageId && Array.isArray(imageMap)) {
+          const found = imageMap.find(img => img.id === variant.imageId);
+          if (found) targetSlide = found.index;
         }
+
+        if (targetSlide === null) {
+          const variantIdx = variants.findIndex(v => v.id === variant.id);
+          if (variantIdx !== -1) targetSlide = variantIdx;
+        }
+
+        if (targetSlide !== null) window._galleryScrollTo(targetSlide);
       }
 
       // Update sticky price

@@ -44,11 +44,18 @@
 
   <div class="hero__layout container">
     <div class="hero__content">
-    <p class="hero__eyebrow" data-reveal>{{ section.settings.eyebrow | default: 'From your phone to your wall' }}</p>
-    <h1 class="hero__title" data-reveal>{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
-    <p class="hero__sub" data-reveal>{{ section.settings.subheading | default: 'Museum-grade canvas, gallery-wrapped and built to outlast the wall it hangs on.' }}</p>
+    {%- comment -%}
+      Above-the-fold hero copy paints immediately — no data-reveal.
+      The hero already runs its own staged photo→watercolour→canvas
+      cross-fade, and a 0.6–0.9s opacity-0 stagger on top of that left
+      the eyebrow + headline invisible during the photo phase (the
+      asset's lightest, lowest-contrast frame).
+    {%- endcomment -%}
+    <p class="hero__eyebrow">{{ section.settings.eyebrow | default: 'From your phone to your wall' }}</p>
+    <h1 class="hero__title">{{ section.settings.heading | default: 'They deserve a spot on the wall.' }}</h1>
+    <p class="hero__sub">{{ section.settings.subheading | default: 'Museum-grade canvas, gallery-wrapped and built to outlast the wall it hangs on.' }}</p>
 
-    <div class="hero__cta-group" data-reveal>
+    <div class="hero__cta-group">
       <a href="{{ section.settings.cta_url | default: '/pages/create' }}" class="btn btn--canvas-frame btn--large">
         <span class="btn__canvas-inner">
           {{ section.settings.cta_label | default: 'Create My Portrait' }}
@@ -112,27 +119,36 @@
      in this zone so the wash is invisible on them; Frame C (canvas on
      wall, with the eucalyptus vase + console pushing toward center-
      left) gets a meaningful legibility lift in the column where the
-     subhead and CTA wrap. Stops at ~55% so the visual on the right
-     never feels veiled. */
+     subhead and CTA wrap. Stops at ~58% so the visual on the right
+     never feels veiled.
+
+     Earlier the wash held opacity longer in the lower half of the
+     section but faded in over a 96px mask near the top — that left
+     the eyebrow zone (~168–220px from the top) sitting on a near-
+     transparent wash during the photo phase. The wash now starts at
+     the top of the section with a much shorter 48px feather, holds
+     0.94+ opacity through 35% of the column, and rolls off slower
+     so a light-cream subject in the right two-thirds (Frame 1's
+     phone photo) can't bleed into the headline column. */
   .hero--transform::after {
     content: '';
-    /* Anchored near the top of the section but with a vertical mask so
-       the wash's top edge fades in softly — no hard horizontal line
-       crossing near the eyebrow, and the eyebrow gets generous cream
-       padding above it. The mask hands off smoothly to the dark header
-       gradient, which is fully transparent by 96px. */
-    position: absolute; top: 24px; bottom: 0; left: 0;
-    width: 60%;
+    position: absolute; top: 0; bottom: 0; left: 0;
+    width: 62%;
     background: linear-gradient(
       to right,
       rgba(250, 248, 245, 0.98) 0%,
-      rgba(250, 248, 245, 0.92) 25%,
-      rgba(250, 248, 245, 0.55) 55%,
-      rgba(250, 248, 245, 0.18) 80%,
+      rgba(250, 248, 245, 0.94) 35%,
+      rgba(250, 248, 245, 0.7) 60%,
+      rgba(250, 248, 245, 0.25) 82%,
       rgba(250, 248, 245, 0) 100%
     );
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 96px, #000 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 96px, #000 100%);
+    /* Top fade is now short (48px) so the wash reaches the eyebrow
+       with full opacity. The dark header gradient (110px tall, fades
+       out by 78%) sits over the top portion of the wash, so the
+       upper edge still hands off cleanly to the header chrome
+       without a visible horizontal seam. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 48px, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 48px, #000 100%);
     z-index: 1; pointer-events: none;
   }
   @media (max-width: 760px) {

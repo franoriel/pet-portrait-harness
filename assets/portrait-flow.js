@@ -2134,7 +2134,17 @@ function UploadStep({ state, setPhoto, update, canContinue, onContinue }) {
 
 /* ── PhotoLicenseConsent ───────────────────────────────────── */
 
+// Two-tier consent block:
+//   1. Bold opener — the only thing the customer needs to read to
+//      tick the box. Plain English, no legalese.
+//   2. Chevron-collapsed licence detail — the same non-exclusive
+//      licence sentence we used to inline as a wall of text. Hidden
+//      by default; expands on click of "Licence details" with no
+//      effect on the checkbox state. Toggle is button-typed and
+//      stop-propagated so a click on it doesn't bubble up to the
+//      wrapping label and tick the consent box.
 function PhotoLicenseConsent({ accepted, onChange }) {
+  const [expanded, setExpanded] = useState(false);
   return React.createElement('label', {
     htmlFor: 'pf-terms-accept',
     style: {
@@ -2154,20 +2164,62 @@ function PhotoLicenseConsent({ accepted, onChange }) {
                accentColor: tokens.colorBrand, flexShrink: 0 },
       'aria-describedby': 'pf-terms-text',
     }),
-    React.createElement('span', {
+    React.createElement('div', {
       id: 'pf-terms-text',
-      style: { fontFamily: fontSans, fontSize: 'var(--text-xs)', lineHeight: 1.5,
-               color: tokens.colorMuted },
+      style: { flex: 1, fontFamily: fontSans, lineHeight: 1.5 },
     },
-      'I confirm I own all rights to this photo (or have permission from the ' +
-      'owner), and I grant Pet Printables a non-exclusive licence to reproduce, ' +
-      'modify, and print it solely to fulfil my order. ',
-      React.createElement('a', {
-        href: '/policies/terms-of-service', target: '_blank', rel: 'noopener',
-        style: { color: tokens.colorBrand, textDecoration: 'underline' },
-        onClick: (e) => e.stopPropagation(),
-      }, 'Read full terms'),
-      '.',
+      // Plain-English opener — the part the customer actually needs
+      // to confirm. Bolded so it reads as the consent itself, not a
+      // preamble to legalese.
+      React.createElement('p', {
+        style: {
+          fontSize: 'var(--text-sm)', fontWeight: 600,
+          color: tokens.colorBrand, margin: 0, lineHeight: 1.4,
+        },
+      }, 'I own this photo (or have permission from the owner).'),
+      // Chevron toggle. button type=button so a tap doesn't submit
+      // any wrapping form, and onClick stops propagation so the
+      // wrapping <label> doesn't bounce the click into the checkbox.
+      React.createElement('button', {
+        type: 'button',
+        onClick: (e) => { e.preventDefault(); e.stopPropagation(); setExpanded(v => !v); },
+        'aria-expanded': expanded,
+        'aria-controls': 'pf-terms-detail',
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: '4px',
+          background: 'transparent', border: 'none', padding: '4px 0 0',
+          margin: 0, cursor: 'pointer',
+          fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 500,
+          color: tokens.colorMuted, letterSpacing: '0.02em',
+        },
+      },
+        'Licence details',
+        React.createElement('span', {
+          'aria-hidden': true,
+          style: {
+            display: 'inline-block',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s ease',
+            lineHeight: 1, fontSize: '0.7em',
+          },
+        }, '▾'),
+      ),
+      expanded && React.createElement('p', {
+        id: 'pf-terms-detail',
+        style: {
+          fontSize: 'var(--text-xs)', color: tokens.colorMuted,
+          margin: '8px 0 0', lineHeight: 1.5,
+        },
+      },
+        'You grant Pet Printables a non-exclusive licence to reproduce, ' +
+        'modify, and print this photo solely to fulfil your order. ',
+        React.createElement('a', {
+          href: '/policies/terms-of-service', target: '_blank', rel: 'noopener',
+          style: { color: tokens.colorBrand, textDecoration: 'underline' },
+          onClick: (e) => e.stopPropagation(),
+        }, 'Read full terms'),
+        '.',
+      ),
     ),
   );
 }
@@ -4081,9 +4133,19 @@ function PageHero({ stage }) {
                 style: {
                   fontFamily: fontSans, fontSize: 'var(--text-xs)', fontWeight: 600,
                   color: tokens.colorMuted, textTransform: 'uppercase',
-                  letterSpacing: '0.02em', marginTop: '5px', display: 'block',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  letterSpacing: '0.02em', marginTop: '5px',
+                  // Allow up to two lines so longer names ("Bold Graphic
+                  // Poster", "Renaissance Royalty", "Minimal Line Art")
+                  // render in full instead of clipping to "BOLD GRAPHI…"
+                  // The card width stays at 100px to preserve the
+                  // marquee's visual rhythm; the label just wraps.
                   maxWidth: '100px',
+                  lineHeight: 1.25,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  overflowWrap: 'break-word',
                 },
               }, style.name),
             ),
