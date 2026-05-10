@@ -2242,16 +2242,32 @@ def _remove_poster_halos(
 def _snap_poster_to_palette(
     img: Image.Image,
     palette: dict[str, str],
+    max_distance: Optional[int] = None,
 ) -> Image.Image:
-    """Snap every pixel in the image to the NEAREST canonical palette
-    colour (bg_left, bg_right, or one of the accent hexes). Eliminates
-    Gemini's recurring failure mode of adding ink-grain / halftone /
-    distressed texture inside the polygon shapes despite the prompt's
-    "ABSOLUTELY NO TEXTURE" rule.
+    """Snap pixels in the image to the NEAREST canonical palette colour
+    (bg_left, bg_right, or one of the accent hexes).
 
-    Result: every polygon shape is a single uniform palette colour, no
-    gradient, no noise, no texture. Reads as a clean vector
-    illustration rather than a photographed silk-screen poster.
+    `max_distance` (RGB Euclidean) gates the snap:
+
+      None  → snap every pixel to its nearest palette colour. Use only
+              when you're certain the image already lives entirely
+              inside the palette (catastrophic if any pet has off-
+              palette fur — collapses the whole pet into bg).
+
+      45-50 → snap only pixels within ~45 RGB of a palette colour. This
+              is the SAFE setting for cleaning anti-aliased edge
+              halos: anti-aliased intermediates between two palette
+              colours sit ~10-30 RGB from the nearest member, so they
+              get snapped clean. Genuinely off-palette pet pixels
+              (warm-coat dog on a cool palette, etc.) sit >100 RGB
+              from any member and stay untouched. Eliminates the
+              "transparent-PNG-pasted-on-bg" white-fringe look that
+              destroys print quality on canvas.
+
+    Result: silhouette and inter-block edges become razor sharp at the
+    pixel level — no white fringing, no light-mauve halos, no soft
+    intermediate pixels between accent and bg. Reads as a clean vector
+    illustration rather than a low-res screen-print scan.
 
     Implementation: vectorised numpy distance computation. ~150ms on a
     1024×1024 image with 9 palette colours.
@@ -2282,13 +2298,32 @@ def _snap_poster_to_palette(
         # Reshape so we can broadcast: arr (H,W,1,3), palette (1,1,N,3).
         diff = arr[:, :, None, :] - palette_arr[None, None, :, :]
         dist = (diff * diff).sum(axis=-1)                   # (H, W, N)
-        nearest = dist.argmin(axis=-1)                      # (H, W)
-        snapped = palette_arr[nearest].astype(np.uint8)     # (H, W, 3)
+        nearest_idx = dist.argmin(axis=-1)                  # (H, W)
+        snapped = palette_arr[nearest_idx].astype(np.uint8) # (H, W, 3)
+
+        if max_distance is None:
+            log.info(
+                "bold-graphic-poster: snapped ALL pixels to %d-colour palette",
+                len(palette_colors),
+            )
+            return Image.fromarray(snapped, "RGB")
+
+        # Gated snap: only pixels within max_distance of nearest palette
+        # member get snapped. Genuinely off-palette pixels stay as-is.
+        max_dist_sq = max_distance * max_distance
+        nearest_dist_sq = np.take_along_axis(
+            dist, nearest_idx[:, :, None], axis=-1
+        ).squeeze(-1)                                       # (H, W)
+        snap_mask = nearest_dist_sq <= max_dist_sq          # (H, W)
+        out = arr.copy()
+        out[snap_mask] = snapped[snap_mask]
+        snapped_pct = float(snap_mask.sum()) / snap_mask.size * 100
         log.info(
-            "bold-graphic-poster: snapped pixels to %d-colour palette",
-            len(palette_colors),
+            "bold-graphic-poster: gated palette-snap (max_distance=%d) "
+            "snapped %.1f%% of pixels (anti-aliased edges → exact palette)",
+            max_distance, snapped_pct,
         )
-        return Image.fromarray(snapped, "RGB")
+        return Image.fromarray(out.astype(np.uint8), "RGB")
     except ImportError:
         log.warning(
             "bold-graphic-poster: numpy not available — skipping palette snap"
@@ -5521,15 +5556,24 @@ def _generate_inner(
                     padded, _palette, interior_tol=_interior_tol,
                 )
                 padded = _remove_poster_halos(padded, _palette)
-                # _snap_poster_to_palette was tried here — it eliminated
-                # texture but was catastrophic on warm-coat pets in
-                # cool/warm palette mismatches: a golden dog on the rose
-                # palette has warm-brown fur pixels that are CLOSER to
-                # bg_left (#F2BAC2 dusty pink) than to any accent, so
-                # snapping collapsed the dog into bg. Disabled until we
-                # have a smarter "snap only pixels already near a
-                # palette colour" implementation that preserves pet
-                # pixels falling outside the palette.
+                # GATED PALETTE SNAP — kills the "transparent-PNG-pasted-
+                # on-bg" white-fringe / light-mauve halo look that destroys
+                # print quality on canvas. _remove_poster_halos catches
+                # PURE-white halos (RGB > 235), but Gemini's anti-aliasing
+                # often leaves intermediate-colour edge pixels (light
+                # cream, light mauve, light bg-tinted accent) along the
+                # pet/bg boundary that aren't pure white but read as halo
+                # at print scale.
+                #
+                # The unconditional snap was disabled previously because
+                # it collapsed warm-coat pets on cool palettes into bg.
+                # max_distance=45 fixes that: anti-aliased intermediates
+                # sit ~10-30 RGB from the nearest palette member and get
+                # snapped clean; genuinely off-palette pet pixels (>100
+                # RGB from any member) stay untouched.
+                padded = _snap_poster_to_palette(
+                    padded, _palette, max_distance=45,
+                )
             else:
                 padded = add_background_padding(
                     ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
