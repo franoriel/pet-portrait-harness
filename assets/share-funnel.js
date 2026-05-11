@@ -19,7 +19,20 @@
     hashtag: root.dataset.brandHashtag || '#petprintables',
     handle:  root.dataset.brandHandle  || '@petprintables',
     domain:  root.dataset.brandDomain  || 'petprintables.ca',
+    logoUrl: root.dataset.logoUrl      || '',
   };
+
+  // Preload the wordmark so drawStory can render it synchronously. Treated
+  // as best-effort — if the asset fails to load, drawStory skips the logo
+  // and renders the rest of the composition.
+  let brandLogoImage = null;
+  if (BRAND.logoUrl) {
+    const lg = new Image();
+    lg.crossOrigin = 'anonymous';
+    lg.onload = () => { brandLogoImage = lg; };
+    lg.onerror = () => { brandLogoImage = null; };
+    lg.src = BRAND.logoUrl;
+  }
 
   // Style list — kept in sync with assets/portrait-flow.js STYLES + the
   // Flask /generate whitelist. Background defaults are deliberately
@@ -342,7 +355,8 @@
 
   function drawStory() {
     const w = canvas.width, h = canvas.height;
-    // Warm vertical gradient.
+    // Warm vertical gradient (kept — same brand-frame feel as before, just
+    // without the chrome that used to sit on top of it).
     const grd = ctx.createLinearGradient(0, 0, 0, h);
     grd.addColorStop(0, '#F3EDE6');
     grd.addColorStop(0.55, '#E4DDD4');
@@ -350,53 +364,52 @@
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, w, h);
 
-    // Portrait fills upper portion (3:4 fits naturally → height ~1280 at w=960).
-    const imgW = 960;
-    const imgH = imgW * 4 / 3; // 1280
-    const imgX = (w - imgW) / 2;
-    const imgY = 160;
-    // Soft shadow under portrait.
+    // ── Wordmark, small + top-centered ───────────────────────
+    // Target wordmark width ~280px so it reads as "made by" rather than
+    // dominating the composition. Aspect ratio preserved from the source
+    // SVG; skipped silently if the asset failed to load.
+    const logoTop = 80;
+    let postLogoY = logoTop;
+    if (brandLogoImage && brandLogoImage.naturalWidth) {
+      const logoW = 280;
+      const logoH = logoW * (brandLogoImage.naturalHeight / brandLogoImage.naturalWidth);
+      ctx.drawImage(brandLogoImage, (w - logoW) / 2, logoTop, logoW, logoH);
+      postLogoY = logoTop + logoH;
+    }
+
+    // ── Portrait — bigger than before ────────────────────────
+    // Full-bleed-ish: 40px side margins → 1000px wide × 1333px tall (3:4).
+    // Sits just under the wordmark with a small breathing gap.
+    const sideMargin = 40;
+    const imgW = w - sideMargin * 2; // 1000
+    const imgH = imgW * 4 / 3;       // 1333.33
+    const imgX = sideMargin;
+    const imgY = postLogoY + 40;
     ctx.shadowColor = 'rgba(0,0,0,0.18)';
     ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 12;
+    ctx.shadowOffsetY = 14;
     drawCover(state.portraitImage, imgX, imgY, imgW, imgH, 24);
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
-    // Pet name + tagline.
-    const captionY = imgY + imgH + 80;
-    ctx.textAlign = 'center';
+    // ── Pet name — canvas-product styling ────────────────────
+    // Same italic Cormorant Garamond used on physical canvas products,
+    // sized to fill the strip beneath the portrait. Skipped entirely
+    // when the customer didn't enter a name (matches canvas behaviour).
     if (state.petName) {
-      ctx.font = 'italic 600 110px "Cormorant Garamond", "Georgia", serif';
+      const nameBaselineY = imgY + imgH + 180;
+      // Scale the font down for long names so it never spills past the
+      // canvas edges (max width = canvas width minus 80px gutters).
+      const maxNameWidth = w - 160;
+      let fontPx = 180;
+      ctx.font = `italic 500 ${fontPx}px "Cormorant Garamond", "Georgia", serif`;
+      while (ctx.measureText(state.petName).width > maxNameWidth && fontPx > 80) {
+        fontPx -= 8;
+        ctx.font = `italic 500 ${fontPx}px "Cormorant Garamond", "Georgia", serif`;
+      }
+      ctx.textAlign = 'center';
       ctx.fillStyle = '#1C1C1C';
-      ctx.fillText(state.petName, w / 2, captionY);
-    } else {
-      ctx.font = 'italic 600 96px "Cormorant Garamond", "Georgia", serif';
-      ctx.fillStyle = '#1C1C1C';
-      ctx.fillText('Pet portrait, made instantly', w / 2, captionY);
+      ctx.fillText(state.petName, w / 2, nameBaselineY);
     }
-    ctx.font = '500 32px "Inter", system-ui, sans-serif';
-    ctx.fillStyle = '#6B6B63';
-    ctx.fillText('made my pet a portrait at', w / 2, captionY + 70);
-
-    // Domain pill.
-    const pillText = BRAND.domain;
-    ctx.font = '600 38px "Inter", system-ui, sans-serif';
-    const pillW = ctx.measureText(pillText).width + 80;
-    const pillH = 76;
-    const pillX = (w - pillW) / 2;
-    const pillY = captionY + 110;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 38);
-    ctx.fillStyle = '#2F2F2A';
-    ctx.fill();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(pillText, w / 2, pillY + pillH / 2);
-    ctx.textBaseline = 'alphabetic';
-
-    // Hashtag at very bottom.
-    ctx.font = '500 28px "Inter", system-ui, sans-serif';
-    ctx.fillStyle = '#8B7D6B';
-    ctx.fillText(BRAND.hashtag, w / 2, h - 80);
   }
 
   /* draw img into rect with object-fit: cover semantics + optional rounded corners */
