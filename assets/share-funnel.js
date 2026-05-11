@@ -73,7 +73,37 @@
     format: 'feed', // 'feed' or 'story'
     composedBlob: null,
     composedDataURL: null,
+    email: '',
+    referralCode: '',          // assigned by backend after email submission
+    referrerCode: '',          // captured from ?ref= on landing, if present
+    entries: 0,
+    smsConsent: false,
+    skillQuestion: '',
+    earned: { story: false, refer: false, tag: false },
   };
+
+  /* ── Referral attribution (capture ?ref= on landing) ─────── */
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const ref = (params.get('ref') || '').trim().toUpperCase().slice(0, 20);
+    if (ref) {
+      sessionStorage.setItem('sf_ref', ref);
+      state.referrerCode = ref;
+      track('funnel_referral_landing', { ref });
+    } else {
+      state.referrerCode = sessionStorage.getItem('sf_ref') || '';
+    }
+  } catch (e) {}
+
+  /* ── UTM capture (for Klaviyo attribution) ───────────────── */
+  state.utm = {};
+  try {
+    const p = new URLSearchParams(window.location.search);
+    ['utm_source','utm_medium','utm_campaign','utm_content'].forEach(k => {
+      const v = (p.get(k) || '').trim().slice(0, 60);
+      if (v) state.utm[k] = v;
+    });
+  } catch (e) {}
 
   /* ── DOM helpers ─────────────────────────────────────────── */
   const $ = (sel, ctx) => (ctx || root).querySelector(sel);
@@ -277,20 +307,159 @@
     return url;
   }
 
-  /* ── Step 4: share — render variants on <canvas> ─────────── */
+  /* ── Step 4: email gate (contest entry) ─────────────────── */
   function onPortraitReady(url) {
     state.portraitURL = url;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       state.portraitImage = img;
-      showStep('share');
-      renderVariant(state.format);
       track('funnel_generation_complete', { style_id: state.styleId });
+      enterEmailGate();
     };
     img.onerror = () => showGenerationError('Could not load the finished portrait. Please try again.');
     img.src = url;
   }
+
+  async function enterEmailGate() {
+    showStep('email-gate');
+    // Pre-render the portrait into the canvas behind the email gate so
+    // it's instant when the user lands on the share step.
+    renderVariant(state.format);
+    // Fetch the skill-testing question for today.
+    try {
+      const r = await fetch(`${API}/contest/skill-test`);
+      const d = await r.json();
+      state.skillQuestion = d.question || '';
+    } catch (e) {
+      state.skillQuestion = '12 + 18 - 5';
+    }
+    const qEl = $('#sf-skill-q');
+    if (qEl) qEl.textContent = state.skillQuestion + ' =';
+    track('funnel_email_gate_view', {});
+  }
+
+  const submitEntryBtn = $('[data-action="submit-entry"]');
+  if (submitEntryBtn) {
+    submitEntryBtn.addEventListener('click', submitContestEntry);
+  }
+
+  async function submitContestEntry() {
+    const errorEl = $('[data-error="entry"]');
+    errorEl.classList.add('sf-hidden');
+    const email = ($('#sf-email').value || '').trim();
+    const skill = ($('#sf-skill').value || '').trim();
+    state.smsConsent = $('#sf-sms-consent').checked;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errorEl.textContent = 'Please enter a valid email address.';
+      errorEl.classList.remove('sf-hidden');
+      return;
+    }
+    if (!skill) {
+      errorEl.textContent = 'Please answer the skill-testing question.';
+      errorEl.classList.remove('sf-hidden');
+      return;
+    }
+    state.email = email;
+    submitEntryBtn.disabled = true;
+    submitEntryBtn.textContent = 'Entering you in the giveaway…';
+
+    const body = {
+      email,
+      pet_name: state.petName,
+      style_id: state.styleId,
+      preview_url: state.portraitURL,
+      referrer_code: state.referrerCode,
+      sms_consent: state.smsConsent,
+      skill_answer: skill,
+      utm_source: state.utm.utm_source || '',
+      utm_medium: state.utm.utm_medium || '',
+      utm_campaign: state.utm.utm_campaign || '',
+      utm_content: state.utm.utm_content || '',
+    };
+
+    let resp;
+    try {
+      resp = await fetch(`${API}/contest/entry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      submitEntryBtn.disabled = false;
+      submitEntryBtn.textContent = 'Email my portrait + enter to win →';
+      errorEl.textContent = 'Could not reach the server. Please try again.';
+      errorEl.classList.remove('sf-hidden');
+      return;
+    }
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok) {
+      submitEntryBtn.disabled = false;
+      submitEntryBtn.textContent = 'Email my portrait + enter to win →';
+      errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+      errorEl.classList.remove('sf-hidden');
+      track('funnel_entry_error', { code: data.code || 'unknown' });
+      return;
+    }
+
+    state.referralCode = (data.referral_code || '').toUpperCase();
+    state.entries = 1 + (state.smsConsent ? 2 : 0);
+    track('funnel_contest_entry', { has_sms: !!state.smsConsent, has_referrer: !!state.referrerCode });
+    track('Lead', { content_category: 'contest', content_name: 'entry_submitted' });
+    track('CompleteRegistration', { content_category: 'contest', content_name: 'entry_submitted' });
+    advanceToShare();
+  }
+
+  function advanceToShare() {
+    showStep('share');
+    renderVariant(state.format);
+    paintEntriesPanel();
+  }
+
+  function paintEntriesPanel() {
+    const totalEl = root.querySelector('[data-entries-total]');
+    if (totalEl) totalEl.textContent = String(state.entries);
+    const referLink = `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(state.referralCode)}`;
+    const linkEl = root.querySelector('[data-refer-link]');
+    if (linkEl) linkEl.textContent = referLink;
+    // Pre-fill share captions with the referral link so the user's share
+    // is also a referral channel.
+    state.shareCaption = `Made @petprintables turn ${state.petName || 'my pet'} into a portrait — get yours free at ${referLink} ${BRAND.hashtag}`;
+  }
+
+  // Earn-more handlers
+  function claimEarn(key, bonus, btnLabel) {
+    if (state.earned[key]) return;
+    state.earned[key] = true;
+    state.entries += bonus;
+    paintEntriesPanel();
+    const li = root.querySelector(`[data-earn="${key}"]`);
+    if (li) {
+      li.classList.add('is-claimed');
+      const btn = li.querySelector('.sf-action__btn');
+      if (btn) { btn.textContent = btnLabel || 'Claimed ✓'; btn.disabled = true; }
+    }
+    track('funnel_entries_earned', { action: key, bonus, total: state.entries });
+    track('Share', { content_category: 'contest', content_name: key });
+  }
+
+  root.addEventListener('click', (e) => {
+    const action = e.target.closest && e.target.closest('[data-action]')?.dataset?.action;
+    if (!action) return;
+    if (action === 'claim-story') {
+      // Trigger the download so they can post the file, then mark claimed.
+      downloadComposed(`pet-portrait-${state.format}.png`);
+      claimEarn('story', 5, 'File saved · +5 ✓');
+    } else if (action === 'copy-refer') {
+      const txt = state.shareCaption || `${window.location.origin}${window.location.pathname}?ref=${state.referralCode}`;
+      navigator.clipboard?.writeText(txt).catch(() => {});
+      claimEarn('refer', 3, 'Link copied · +3 ✓');
+    } else if (action === 'claim-tag') {
+      const txt = state.shareCaption || '';
+      navigator.clipboard?.writeText(txt).catch(() => {});
+      claimEarn('tag', 10, 'Caption copied · +10 ✓');
+    }
+  });
 
   const canvas = $('#sf-canvas');
   const ctx = canvas.getContext('2d');

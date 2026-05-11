@@ -10,7 +10,7 @@
 
 {%- liquid
   assign hero_title = section.settings.hero_title | default: 'Get a free pet portrait. Win the canvas.'
-  assign hero_sub = section.settings.hero_sub | default: 'Upload one photo. Pick a style. We turn your pet into a free portrait you can share — and enter you to win it hand-printed on real canvas, shipped from Canada.'
+  assign hero_sub = section.settings.hero_sub | default: 'Upload one photo. Pick a style. We turn your pet into a free portrait you can share — and enter you to win it printed on real canvas, gallery-wrapped and shipped from Canada.'
   assign hero_cta = section.settings.hero_cta | default: 'Start with a photo'
   assign final_cta_label = section.settings.final_cta_label | default: 'Get this on real canvas'
   assign final_cta_url = section.settings.final_cta_url | default: '/pages/create'
@@ -77,6 +77,22 @@
   .sf-hidden { display: none !important; }
   .sf-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 18px 0 0; font-size: 12px; color: var(--sf-muted); }
   .sf-pills span { padding: 5px 12px; border-radius: 999px; background: var(--sf-surface); border: 1px solid var(--sf-border); }
+  .sf-entries { background: var(--sf-surface); border: 1px solid var(--sf-border); border-radius: 14px; padding: 20px; }
+  .sf-entries__head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .sf-entries__badge { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #2f4a35; color: #fff; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .sf-entries__lead { font-size: 14px; color: var(--sf-muted); margin: 0 0 14px; }
+  .sf-actions { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .sf-action { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 10px; background: var(--sf-bg); transition: background .15s; }
+  .sf-action.is-claimed { background: #ecf3ee; }
+  .sf-action__plus { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: var(--sf-fg); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+  .sf-action.is-claimed .sf-action__plus { background: #2f4a35; }
+  .sf-action__copy { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; }
+  .sf-action__copy strong { display: block; color: var(--sf-fg); font-size: 14px; margin-bottom: 1px; }
+  .sf-action__copy span { color: var(--sf-muted); }
+  .sf-action__copy code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; background: var(--sf-surface); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--sf-border); word-break: break-all; }
+  .sf-action__btn { flex-shrink: 0; padding: 8px 14px; border: 1px solid var(--sf-fg); background: transparent; color: var(--sf-fg); border-radius: 999px; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
+  .sf-action__btn:hover { background: var(--sf-fg); color: #fff; }
+  .sf-action.is-claimed .sf-action__btn { background: #2f4a35; color: #fff; border-color: #2f4a35; cursor: default; }
 </style>
 
 <section class="sf-wrap" aria-label="Create a shareable pet portrait">
@@ -163,6 +179,43 @@
       <p class="sf-sub" style="font-size:13px;">This usually takes 25–45 seconds.</p>
     </div>
 
+    <!-- Step 3.5: Email gate (contest entry) -->
+    <div class="sf-step" data-step="email-gate">
+      <p class="sf-eyebrow">Final step · Enter the giveaway</p>
+      <h2 class="sf-h2"><span data-pet-name>Your pet</span>'s portrait is ready.</h2>
+      <p class="sf-sub" style="text-align:left;margin-left:0;">Tell us where to send the high-res file. You'll also be entered to win the canvas version — printed on canvas, gallery-wrapped, shipped from Canada.</p>
+
+      <div class="sf-field">
+        <label class="sf-label" for="sf-email">Email</label>
+        <input id="sf-email" class="sf-input" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+      </div>
+
+      <div class="sf-field">
+        <label class="sf-label" for="sf-skill">Skill-testing question <span style="color:var(--sf-muted);font-weight:400;">(Canadian giveaway requirement)</span></label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <strong id="sf-skill-q" style="font-size:18px;color:var(--sf-fg);min-width:140px;">…</strong>
+          <input id="sf-skill" class="sf-input" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="4" placeholder="?" required style="max-width:120px;">
+        </div>
+      </div>
+
+      <label class="sf-terms">
+        <input type="checkbox" id="sf-sms-consent">
+        <span>Text me my entry confirmation + winner alert (optional). <strong>+2 bonus entries</strong> · we use SMS only for contest updates, unsubscribe with STOP.</span>
+      </label>
+
+      <p class="sf-drop__hint" style="margin-bottom:18px;">
+        By entering you agree to the
+        <a href="/pages/contest-rules" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">contest rules</a>.
+        Quebec residents excluded. ARV $109.99 CAD.
+      </p>
+
+      <div class="sf-error sf-hidden" data-error="entry"></div>
+
+      <button type="button" class="sf-btn sf-btn--full" data-action="submit-entry">
+        Email my portrait + enter to win →
+      </button>
+    </div>
+
     <!-- Step 4: Share -->
     <div class="sf-step" data-step="share" style="max-width:980px;">
       <p class="sf-eyebrow">Done · Your portrait is ready</p>
@@ -193,9 +246,44 @@
         </div>
 
         <div class="sf-side">
-          <h3 class="sf-side__h">Love it on screen? Put it on the wall.</h3>
-          <p class="sf-side__p">This same portrait, hand-printed on real canvas, gallery-wrapped, shipped from Canada. Use code <strong>SHARE15</strong> for 15% off your first canvas.</p>
-          <a href="{{ final_cta_url }}" class="sf-btn sf-btn--full sf-side__cta" data-action="pdp-cta">
+          <div class="sf-entries">
+            <div class="sf-entries__head">
+              <span class="sf-entries__badge">You're in</span>
+              <strong>Entries: <span data-entries-total>1</span></strong>
+            </div>
+            <p class="sf-entries__lead">Get more entries — each action below adds to your total.</p>
+
+            <ul class="sf-actions">
+              <li class="sf-action" data-earn="story">
+                <span class="sf-action__plus">+5</span>
+                <div class="sf-action__copy">
+                  <strong>Share to Instagram Story</strong>
+                  <span>Tag @petprintables. Save the file first, then post.</span>
+                </div>
+                <button type="button" class="sf-action__btn" data-action="claim-story">Claim</button>
+              </li>
+              <li class="sf-action" data-earn="refer">
+                <span class="sf-action__plus">+3</span>
+                <div class="sf-action__copy">
+                  <strong>Refer a friend</strong>
+                  <span>Your link: <code data-refer-link>…</code></span>
+                </div>
+                <button type="button" class="sf-action__btn" data-action="copy-refer">Copy link</button>
+              </li>
+              <li class="sf-action" data-earn="tag">
+                <span class="sf-action__plus">+10</span>
+                <div class="sf-action__copy">
+                  <strong>Tag 2 friends in an IG post</strong>
+                  <span>Use #petprintables so we can find it.</span>
+                </div>
+                <button type="button" class="sf-action__btn" data-action="claim-tag">Claim</button>
+              </li>
+            </ul>
+          </div>
+
+          <h3 class="sf-side__h" style="margin-top:32px;">Can't wait for the draw?</h3>
+          <p class="sf-side__p">Skip the contest and order your canvas directly. Code <strong>SHARE15</strong> takes 15% off.</p>
+          <a href="{{ final_cta_url }}" class="sf-btn sf-btn--ghost sf-btn--full sf-side__cta" data-action="pdp-cta">
             {{ final_cta_label }} →
           </a>
           <p class="sf-drop__hint" style="margin-top:14px;">Or <button type="button" data-action="restart" style="background:none;border:none;text-decoration:underline;color:inherit;cursor:pointer;padding:0;font-size:inherit;font-family:inherit;">try another style</button>.</p>

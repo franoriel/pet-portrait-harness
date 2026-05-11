@@ -1,0 +1,91 @@
+{%- liquid
+  assign sponsor_name = section.settings.sponsor_name | default: 'Pet Printables'
+  assign sponsor_address = section.settings.sponsor_address
+  assign prize_label = section.settings.prize_label | default: '16x20 gallery-wrapped canvas portrait'
+  assign prize_value = section.settings.prize_value | default: '109.99'
+  assign start_date = section.settings.start_date | default: 'TBD'
+  assign end_date = section.settings.end_date | default: 'TBD'
+  assign draw_date = section.settings.draw_date | default: 'TBD'
+  assign winners_count = section.settings.winners_count | default: '1'
+  assign contact_email = section.settings.contact_email | default: 'hello@petprintables.ca'
+-%}
+
+<section class="cr-wrap section-padding">
+  <style>
+    .cr-wrap { max-width: 760px; margin: 0 auto; padding: 56px 20px; color: var(--color-ink, #1c1c1c); font-family: var(--font-body, 'Inter', sans-serif); line-height: 1.6; }
+    .cr-wrap h1 { font-family: var(--font-heading, 'Cormorant Garamond', serif); font-weight: 500; font-style: italic; font-size: clamp(34px, 5vw, 52px); margin: 0 0 10px; }
+    .cr-wrap .cr-sub { color: var(--color-muted, #6b6b63); margin: 0 0 28px; font-size: 15px; }
+    .cr-wrap h2 { font-family: var(--font-heading, 'Cormorant Garamond', serif); font-weight: 500; font-style: italic; font-size: 26px; margin: 36px 0 10px; }
+    .cr-wrap p, .cr-wrap li { font-size: 15px; }
+    .cr-wrap ol { padding-left: 22px; }
+    .cr-wrap li { margin-bottom: 8px; }
+    .cr-wrap strong { font-weight: 600; }
+    .cr-back { display: inline-block; margin-top: 32px; font-size: 14px; color: var(--color-accent, #8b7d6b); text-decoration: underline; }
+  </style>
+
+  <h1>Contest Rules</h1>
+  <p class="cr-sub">No purchase necessary. Open to legal residents of Canada (excluding Quebec) who have reached the age of majority in their province of residence. Void where prohibited by law.</p>
+
+  <h2>1. Sponsor</h2>
+  <p>This contest is sponsored by <strong>{{ sponsor_name }}</strong>{% if sponsor_address %}, {{ sponsor_address }}{% endif %} (the "Sponsor").</p>
+
+  <h2>2. Contest period</h2>
+  <p>The contest begins on <strong>{{ start_date }}</strong> and ends on <strong>{{ end_date }}</strong> (the "Contest Period"). All entries must be received during the Contest Period.</p>
+
+  <h2>3. Eligibility</h2>
+  <ol>
+    <li>Open to legal residents of Canada (<strong>excluding Quebec</strong>) who have reached the age of majority in their province or territory of residence at the time of entry.</li>
+    <li>Employees of the Sponsor, its affiliates, and their immediate family members are not eligible.</li>
+    <li>Entries that are incomplete, incomprehensible, automated, fraudulent, or that the Sponsor determines to be in violation of these rules will be void.</li>
+  </ol>
+
+  <h2>4. How to enter</h2>
+  <ol>
+    <li><strong>Online entry (no purchase necessary):</strong> Visit the Pet Printables giveaway page, upload a photo of your pet, generate a digital portrait, and submit your email address along with a correct answer to the on-page skill-testing question. One (1) entry per person.</li>
+    <li><strong>Mail-in entry (no purchase necessary):</strong> Hand-write your full name, mailing address, email address, phone number, date of birth, and the answer to the skill-testing question shown on the giveaway page on the day of entry, and mail it to: {% if sponsor_address %}{{ sponsor_address }}{% else %}[Sponsor mailing address to be added in theme settings]{% endif %}. Limit one (1) mailed entry per envelope; entries must be received before the end of the Contest Period.</li>
+  </ol>
+
+  <h2>5. Bonus entries</h2>
+  <p>Additional entries may be earned by completing the actions presented on the entry-confirmation screen (sharing the generated portrait to Instagram Story tagging the Sponsor; referring a friend who completes a valid entry; tagging two friends in an Instagram post using the contest hashtag; subscribing to SMS updates). Each bonus entry is added only after the Sponsor verifies the qualifying action. Self-reported bonus entries are subject to audit at the time of the draw and may be disqualified if not substantiated.</p>
+
+  <h2>6. Skill-testing question</h2>
+  <p>To be declared a winner, a selected entrant must, without the assistance of any mechanical or electronic device, correctly answer a time-limited mathematical skill-testing question administered by the Sponsor.</p>
+
+  <h2>7. Prize</h2>
+  <p>One ({{ winners_count }}) grand prize: a <strong>{{ prize_label }}</strong>, produced using the digital portrait the winner generated on the giveaway page. Approximate retail value: <strong>${{ prize_value }} CAD</strong>. The prize is non-transferable, non-refundable, and may not be substituted for cash. Shipping to the winner's Canadian address is included.</p>
+
+  <h2>8. Draw and notification</h2>
+  <p>One (1) winner will be selected by random draw from all eligible entries on or around <strong>{{ draw_date }}</strong>. The selected entrant will be contacted by email within five (5) business days of the draw and must respond, correctly answer the skill-testing question, and confirm shipping details within seven (7) days of notification. If a selected entrant cannot be reached, fails the skill-testing question, or declines the prize, the entry will be forfeited and another entrant will be selected.</p>
+
+  <h2>9. Privacy</h2>
+  <p>Personal information collected through the contest will be used by the Sponsor to administer the contest, deliver the prize, and (with consent) send marketing communications. You may withdraw consent for marketing communications at any time by clicking the unsubscribe link in any marketing email or replying STOP to any SMS message. Personal information will not be sold to third parties.</p>
+
+  <h2>10. Release and limitation of liability</h2>
+  <p>By entering, entrants agree to release and hold harmless the Sponsor and its affiliates, directors, officers, employees, and agents from any and all liability for any injuries, losses, or damages of any kind arising from participation in the contest or acceptance/use of the prize.</p>
+
+  <h2>11. General</h2>
+  <p>This contest is in no way sponsored, endorsed, administered by, or associated with Instagram, Facebook, or Meta. By entering, you release Meta from all liability associated with this contest. The Sponsor reserves the right to cancel, suspend, or modify the contest if any fraud, technical failure, or other factor beyond the Sponsor's reasonable control impairs the integrity of the contest.</p>
+
+  <h2>12. Contact</h2>
+  <p>Questions about this contest may be directed to <a href="mailto:{{ contact_email }}" style="color:inherit;text-decoration:underline;">{{ contact_email }}</a>.</p>
+
+  <a href="/pages/free-pet-portrait" class="cr-back">← Back to the giveaway</a>
+</section>
+
+{% schema %}
+{
+  "name": "Contest Rules",
+  "settings": [
+    { "type": "text", "id": "sponsor_name", "label": "Sponsor name", "default": "Pet Printables" },
+    { "type": "textarea", "id": "sponsor_address", "label": "Sponsor mailing address (required for mail-in entries)" },
+    { "type": "text", "id": "prize_label", "label": "Prize description", "default": "16x20 gallery-wrapped canvas portrait" },
+    { "type": "text", "id": "prize_value", "label": "ARV (CAD, no $ sign)", "default": "109.99" },
+    { "type": "text", "id": "start_date", "label": "Contest start date", "info": "e.g. May 15, 2026" },
+    { "type": "text", "id": "end_date", "label": "Contest end date", "info": "e.g. June 15, 2026 at 11:59 PM ET" },
+    { "type": "text", "id": "draw_date", "label": "Draw date", "info": "e.g. June 17, 2026" },
+    { "type": "text", "id": "winners_count", "label": "Number of winners", "default": "1" },
+    { "type": "text", "id": "contact_email", "label": "Contest contact email", "default": "hello@petprintables.ca" }
+  ],
+  "presets": [{ "name": "Contest Rules" }]
+}
+{% endschema %}
