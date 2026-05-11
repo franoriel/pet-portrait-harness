@@ -112,14 +112,17 @@ def create_template(api_key: str, name: str, html: str) -> str:
 
 
 def update_template(api_key: str, template_id: str, name: str, html: str) -> None:
-    """PATCH an existing template's name + html in place."""
+    """PATCH an existing template's name + html in place.
+
+    Note: editor_type is NOT settable on PATCH — Klaviyo locks it at
+    CREATE time. Only name + html may be updated.
+    """
     body = {
         "data": {
             "type": "template",
             "id": template_id,
             "attributes": {
                 "name": name,
-                "editor_type": "CODE",
                 "html": html,
             },
         }
