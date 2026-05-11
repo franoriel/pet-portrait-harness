@@ -2947,7 +2947,7 @@ async function submitNewsletterSignup({ firstName, lastName, email, phoneE164, s
       'https://a.klaviyo.com/client/subscriptions?company_id=' + encodeURIComponent(companyId),
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'revision': '2024-10-15' },
+        headers: { 'Content-Type': 'application/json', 'revision': '2025-04-15' },
         body: JSON.stringify(payload),
       }
     );
