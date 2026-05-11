@@ -385,8 +385,95 @@ def _request_too_large(e):
 @app.route("/status/<job_id>", methods=["OPTIONS"])
 @app.route("/preview/<filename>", methods=["OPTIONS"])
 @app.route("/download/<filename>", methods=["OPTIONS"])
+@app.route("/contest/entry", methods=["OPTIONS"])
+@app.route("/contest/skill-test", methods=["OPTIONS"])
 def _options_preflight(**_):
     return "", 204
+
+
+# ---------------------------------------------------------------------------
+# Contest entry — captures email + sends to Klaviyo + Meta CAPI Lead.
+# Powers the Share Funnel's email gate. Designed to be tolerant: missing
+# env vars (Klaviyo key, Meta CAPI token) make the relevant leg a no-op
+# rather than failing the entire entry.
+# ---------------------------------------------------------------------------
+
+_EMAIL_RE = _re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+@app.route("/contest/skill-test", methods=["GET"])
+def contest_skill_test():
+    """Returns the day's skill-testing question (Canadian compliance)."""
+    from contest import todays_skill_test
+    question, _expected = todays_skill_test()
+    return jsonify(question=question)
+
+
+@app.route("/contest/entry", methods=["POST"])
+def contest_entry():
+    from contest import (
+        referral_code, push_klaviyo_entry, send_meta_capi_lead,
+        validate_skill_test, increment_referrer_entries,
+    )
+
+    ip = _client_ip()
+    allowed, reason = check_rate_limit(ip, "generate")
+    if not allowed:
+        return jsonify(error=reason, code="rate_limited"), 429
+
+    # Inputs — accept JSON or form-encoded.
+    data = request.get_json(silent=True) or request.form
+    email = (data.get("email") or "").strip().lower()
+    pet_name = (data.get("pet_name") or "").strip()[:40]
+    style_id = (data.get("style_id") or "").strip()[:40]
+    preview_url = (data.get("preview_url") or "").strip()[:500]
+    referrer = (data.get("referrer_code") or "").strip().upper()[:20]
+    sms_consent = str(data.get("sms_consent") or "").lower() in ("true", "1", "yes", "on")
+    skill_answer = (data.get("skill_answer") or "").strip()
+    utm = {
+        "source":   (data.get("utm_source")   or "").strip()[:60],
+        "medium":   (data.get("utm_medium")   or "").strip()[:60],
+        "campaign": (data.get("utm_campaign") or "").strip()[:60],
+        "content":  (data.get("utm_content")  or "").strip()[:60],
+    }
+
+    if not _EMAIL_RE.match(email):
+        return jsonify(error="Please enter a valid email address.", code="email_invalid"), 400
+    if not validate_skill_test(skill_answer):
+        return jsonify(error="Skill-testing answer is incorrect. Please try again.",
+                       code="skill_test_failed"), 400
+
+    code = referral_code(pet_name, email)
+    fbc = request.cookies.get("_fbc", "")
+    fbp = request.cookies.get("_fbp", "")
+    user_agent = request.headers.get("User-Agent", "")
+    source_url = request.headers.get("Referer", "")
+
+    klaviyo_ok = push_klaviyo_entry(
+        email=email, pet_name=pet_name, style_id=style_id,
+        preview_url=preview_url, code=code, referrer_code=referrer or None,
+        sms_consent=sms_consent, utm=utm,
+    )
+    capi_ok = send_meta_capi_lead(
+        email=email, pet_name=pet_name, style_id=style_id,
+        client_ip=ip, user_agent=user_agent, event_source_url=source_url,
+        fbc=fbc, fbp=fbp,
+    )
+    if referrer:
+        increment_referrer_entries(referrer)
+
+    log.info(
+        "[contest] entry email=%s pet=%s code=%s ref=%s klaviyo=%s capi=%s sms=%s",
+        email, pet_name, code, referrer or "-",
+        klaviyo_ok, capi_ok, sms_consent,
+    )
+
+    return jsonify(
+        ok=True,
+        referral_code=code,
+        share_url_suffix=f"?ref={code}",
+        klaviyo=klaviyo_ok,
+        capi=capi_ok,
+    )
 
 UPLOAD_DIR = Path("uploads")
 
