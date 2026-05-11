@@ -2906,65 +2906,101 @@ function normalizePhoneE164(raw) {
   return null;
 }
 
-/* Klaviyo Subscribe API call — single POST that handles email + optional
- * SMS subscription on the same profile. List-level double-opt-in (set in
- * Klaviyo admin) controls whether a confirmation email is sent. */
+/* Klaviyo Subscribe API call — handles email + optional SMS subscription
+ * with retry-without-SMS fallback. The /discount cookie is always applied
+ * if the form was valid (the customer earned it by filling the form), and
+ * Klaviyo failures are logged but never block the user. Mirrors the
+ * cart-recapture pattern in cart-items.liquid. */
 async function submitNewsletterSignup({ firstName, lastName, email, phoneE164, smsConsent, source }) {
   const klaviyo = (window.petPrintables && window.petPrintables.klaviyo) || {};
   const companyId = klaviyo.publicKey;
   const listId    = klaviyo.listId;
-  if (!companyId || !listId) {
-    throw new Error('Klaviyo not configured');
-  }
 
-  const subscriptions = { email: { marketing: { consent: 'SUBSCRIBED' } } };
-  if (phoneE164 && smsConsent) {
-    subscriptions.sms = { marketing: { consent: 'SUBSCRIBED' } };
-  }
+  async function callKlaviyo(includeSms) {
+    if (!companyId || !listId) throw new Error('Klaviyo not configured');
 
-  const profileAttrs = {
-    email,
-    first_name: firstName,
-    last_name: lastName,
-    subscriptions,
-    properties: { source: source || 'create-page-popup' },
-  };
-  if (phoneE164 && smsConsent) profileAttrs.phone_number = phoneE164;
-
-  const payload = {
-    data: {
-      type: 'subscription',
-      attributes: {
-        custom_source: source || 'Pet Printables — Create Page Popup',
-        profile: { data: { type: 'profile', attributes: profileAttrs } },
-      },
-      relationships: { list: { data: { type: 'list', id: listId } } },
-    },
-  };
-
-  const res = await fetch(
-    'https://a.klaviyo.com/client/subscriptions?company_id=' + encodeURIComponent(companyId),
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'revision': '2024-10-15',
-      },
-      body: JSON.stringify(payload),
+    const subscriptions = { email: { marketing: { consent: 'SUBSCRIBED' } } };
+    if (includeSms && phoneE164) {
+      subscriptions.sms = { marketing: { consent: 'SUBSCRIBED' } };
     }
-  );
-  // Klaviyo returns 202 Accepted on success (subscription queued for processing).
-  if (!res.ok && res.status !== 202) {
-    const txt = await res.text().catch(() => '');
-    throw new Error('Klaviyo signup failed (' + res.status + '): ' + txt.slice(0, 120));
+    const profileAttrs = {
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      subscriptions,
+      properties: { source: source || 'create-page-popup' },
+    };
+    if (includeSms && phoneE164) profileAttrs.phone_number = phoneE164;
+
+    const payload = {
+      data: {
+        type: 'subscription',
+        attributes: {
+          custom_source: source || 'Pet Printables — Create Page Popup',
+          profile: { data: { type: 'profile', attributes: profileAttrs } },
+        },
+        relationships: { list: { data: { type: 'list', id: listId } } },
+      },
+    };
+
+    const res = await fetch(
+      'https://a.klaviyo.com/client/subscriptions?company_id=' + encodeURIComponent(companyId),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'revision': '2024-10-15' },
+        body: JSON.stringify(payload),
+      }
+    );
+    // Klaviyo returns 202 Accepted on success (subscription queued for processing).
+    if (!res.ok && res.status !== 202) {
+      const txt = await res.text().catch(() => '');
+      const err = new Error('Klaviyo signup failed (' + res.status + '): ' + txt.slice(0, 200));
+      err.status = res.status;
+      err.body = txt;
+      throw err;
+    }
   }
 
-  // Apply the $5-off discount cookie regardless of whether the customer
-  // also opted into SMS — the discount is for joining the email list.
+  let klaviyoError = null;
+  try {
+    await callKlaviyo(!!(smsConsent && phoneE164));
+  } catch (err) {
+    // If the SMS branch was the likely culprit (list not SMS-configured,
+    // phone-format edge case, etc.), retry email-only so the customer's
+    // signup still lands in the list. Only ever surface failure if the
+    // email-only path also fails — at which point we still apply the
+    // discount below, since the customer kept their side of the deal.
+    if (smsConsent && phoneE164) {
+      console.warn('Newsletter: Klaviyo with SMS failed, retrying email-only:', err);
+      try {
+        await callKlaviyo(false);
+      } catch (err2) {
+        klaviyoError = err2;
+      }
+    } else {
+      klaviyoError = err;
+    }
+  }
+
+  // Always apply the $5-off discount cookie — the customer filled the form,
+  // they get the discount. Klaviyo can drop the profile on the floor without
+  // also dropping the customer's coupon.
   await fetch('/discount/PETFAM2026', {
     credentials: 'same-origin', redirect: 'manual',
   }).catch(() => {});
   saveNewsletterStatus('signed_up');
+
+  if (klaviyoError) {
+    console.error('Newsletter signup: Klaviyo failed (discount still applied):', klaviyoError);
+    if (window.pp_track) {
+      try {
+        window.pp_track('NewsletterSignupKlaviyoError', {
+          status: klaviyoError.status || 'unknown',
+          message: String(klaviyoError.message || '').slice(0, 200),
+        });
+      } catch {}
+    }
+  }
 }
 
 function NewsletterModal({ isOpen, onClose, onSignedUp }) {
@@ -3513,7 +3549,7 @@ const CANVAS_SIZES = [
     priceFramed: 171.50, variantIdFramed: 47267981885589 },
 ];
 
-function ProductGallery({ state, retryFromStyle, startFresh }) {
+function ProductGallery({ state, update, retryFromStyle, startFresh }) {
   const mainImage = state.previewImages[0] || state.previewCdnUrls[0];
   const [selectedSize, setSelectedSize] = useState('12x12'); // first unframed size
   const [wantsName, setWantsName] = useState(false);
@@ -3666,6 +3702,18 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       setGeneratingNamedPreview(false);
     });
   }, [namedPreviewUrl, localName, state.selectedStyleId, state.previewCdnUrls, state.previewImages, generatingNamedPreview]);
+
+  // When the user edits the pet name while already opted in to a named
+  // version, debounce-regenerate the on-canvas name so the preview updates
+  // without forcing a re-click of "Yes, with their name".
+  useEffect(() => {
+    if (!wantsName || !styleAllowsName) return;
+    if (!localName.trim()) return;
+    if (namedPreviewUrl) return;
+    if (generatingNamedPreview) return;
+    const t = setTimeout(() => { handleNameToggle(true); }, 700);
+    return () => clearTimeout(t);
+  }, [localName, wantsName, styleAllowsName, namedPreviewUrl, generatingNamedPreview, handleNameToggle]);
 
   // Go to PDP with all params
   const handleContinue = useCallback(() => {
@@ -3971,13 +4019,21 @@ function ProductGallery({ state, retryFromStyle, startFresh }) {
       styleAllowsName && React.createElement('p', { style: { ...s.smallCaps, margin: '0 0 10px' } },
         localName.trim() ? `Add "${localName}" to the keepsake?` : 'Add your pet\'s name to the keepsake?'
       ),
-      styleAllowsName && !localName.trim() && React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '10px' } },
+      styleAllowsName && React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '10px' } },
         React.createElement('input', {
           type: 'text',
           placeholder: "Pet's name (optional)",
           value: localName,
           maxLength: 20,
-          onChange: (e) => { setLocalName(e.target.value); setNamedPreviewUrl(null); setNameError(null); },
+          'aria-label': "Pet's name",
+          onChange: (e) => {
+            setLocalName(e.target.value);
+            setNamedPreviewUrl(null);
+            setNamedPreviewUrl3x4(null);
+            setNamedPreviewUrl1x1(null);
+            setNameError(null);
+            if (update) update({ petName: e.target.value });
+          },
           style: {
             flex: 1, padding: '10px 14px',
             border: `1px solid ${tokens.colorBorder}`, borderRadius: tokens.radiusCard,
@@ -4209,7 +4265,8 @@ function PortraitFlow() {
       }); break;
     case STAGES.GALLERY:
       content = React.createElement(ProductGallery, {
-        state, retryFromStyle: flow.retryFromStyle, startFresh: flow.startFresh,
+        state, update: flow.update,
+        retryFromStyle: flow.retryFromStyle, startFresh: flow.startFresh,
       }); break;
     default: content = null;
   }
