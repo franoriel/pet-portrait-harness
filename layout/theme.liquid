@@ -37,14 +37,54 @@
     Shopify's hosted checkout runs on a separate domain, so this tag does
     NOT fire during /checkout. For full purchase/conversion tracking,
     enable the "Google & YouTube" Shopify sales channel and paste the
-    same Measurement ID (G-7JB4WNCP8Q) there.
+    same Measurement ID in there. The Measurement ID can be overridden
+    via theme settings (settings.ga4_measurement_id); falls back to the
+    hardcoded ID below if unset.
   {%- endcomment -%}
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7JB4WNCP8Q"></script>
+  {%- assign ga4_id = settings.ga4_measurement_id | default: 'G-7JB4WNCP8Q' -%}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-7JB4WNCP8Q');
+    gtag('config', {{ ga4_id | json }});
+  </script>
+
+  {%- comment -%} Meta Pixel — installed and initialised by the official
+    "Facebook & Instagram" Shopify sales channel app. We do NOT inject
+    fbq() ourselves here: doing so would double-fire PageView and create
+    duplicate Pixel IDs. The window.pp_track() helper below just rides
+    on whatever fbq() the app exposes, so as long as the sales channel
+    is connected our funnel events (Lead / CompleteRegistration / Share /
+    custom) flow through the same pixel as PageView.
+  {%- endcomment -%}
+
+  {%- comment -%} Funnel telemetry helper — one entry point that fans out
+    to GA4 (gtag) and the Meta Pixel that the Shopify Meta sales channel
+    has already injected. Sections call window.pp_track(name, props).
+    Standard Meta events (PageView/Lead/CompleteRegistration/Share/etc.)
+    are sent via track(); anything else goes through trackCustom().
+    No-op for fbq when the sales channel app is disconnected.
+  {%- endcomment -%}
+  <script>
+    (function () {
+      var META_STD = {
+        PageView:1, ViewContent:1, Lead:1, CompleteRegistration:1,
+        AddToWishlist:1, InitiateCheckout:1, AddToCart:1, Purchase:1,
+        Search:1, Contact:1, Subscribe:1, StartTrial:1
+      };
+      window.pp_track = function (name, props) {
+        props = props || {};
+        try { if (window.gtag) gtag('event', name, props); } catch (e) {}
+        try {
+          if (window.fbq) {
+            if (META_STD[name]) fbq('track', name, props);
+            else fbq('trackCustom', name, props);
+          }
+        } catch (e) {}
+        try { (window.dataLayer = window.dataLayer || []).push(Object.assign({event:name}, props)); } catch (e) {}
+      };
+    })();
   </script>
 </head>
 

@@ -50,6 +50,13 @@
     ]
   },
   {
+    "name": "Tracking & Pixels",
+    "settings": [
+      { "type": "paragraph", "content": "Meta Pixel is installed by the Facebook & Instagram Shopify sales channel — do not paste a Pixel ID here. Funnel events (Lead, Share, etc.) ride on the pixel that app injects." },
+      { "type": "text", "id": "ga4_measurement_id", "label": "GA4 Measurement ID", "default": "G-7JB4WNCP8Q", "info": "Google Analytics 4 ID (G-XXXXXXXXXX). Leave default to use the production property." }
+    ]
+  },
+  {
     "name": "SEO & Metadata",
     "settings": [
       { "type": "text", "id": "seo_title_suffix", "label": "Page title suffix", "default": "Pet Printables — Custom Pet Portraits Canada" },

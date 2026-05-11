@@ -1,0 +1,227 @@
+{%- comment -%}
+  Share-funnel section — single-page funnel optimised for top-of-funnel
+  paid traffic. Drives Meta Pixel + GA4 events at every step so the
+  resulting events fuel lookalike audiences. Output is a branded
+  shareable image in Feed (1:1) and Story (9:16) formats.
+
+  Steps: hero → upload → style → generating → share
+  Tracking: window.pp_track(name, props) — defined in layout/theme.liquid
+{%- endcomment -%}
+
+{%- liquid
+  assign hero_title = section.settings.hero_title | default: 'Turn your pet into shareable art.'
+  assign hero_sub = section.settings.hero_sub | default: 'Upload a photo. Pick a style. Get a branded portrait you can post to Instagram and Facebook in under a minute. Free.'
+  assign hero_cta = section.settings.hero_cta | default: 'Start with a photo'
+  assign final_cta_label = section.settings.final_cta_label | default: 'Get this on real canvas'
+  assign final_cta_url = section.settings.final_cta_url | default: '/pages/create'
+  assign brand_hashtag = section.settings.brand_hashtag | default: '#petprintables'
+  assign brand_handle = section.settings.brand_handle | default: '@petprintables'
+  assign brand_domain = section.settings.brand_domain | default: 'petprintables.ca'
+-%}
+
+<style>
+  .sf-wrap { --sf-fg: var(--color-ink, #1c1c1c); --sf-muted: var(--color-muted, #6b6b63); --sf-accent: var(--color-accent, #8b7d6b); --sf-bg: var(--color-bg, #faf8f5); --sf-surface: var(--color-surface, #fff); --sf-border: var(--color-border, #e4ddd4); }
+  .sf-wrap { font-family: var(--font-body, 'Inter', sans-serif); color: var(--sf-fg); }
+  .sf-step { display: none; padding: 56px 20px; max-width: 760px; margin: 0 auto; }
+  .sf-step.is-active { display: block; }
+  .sf-step--hero { max-width: 880px; text-align: center; padding-top: 72px; padding-bottom: 64px; }
+  .sf-eyebrow { letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--sf-muted); margin-bottom: 18px; }
+  .sf-h1 { font-family: var(--font-heading, 'Cormorant Garamond', serif); font-weight: 500; font-style: italic; font-size: clamp(36px, 6vw, 64px); line-height: 1.06; margin: 0 0 18px; color: var(--sf-fg); }
+  .sf-sub { font-size: 17px; line-height: 1.55; color: var(--sf-muted); max-width: 560px; margin: 0 auto 32px; }
+  .sf-h2 { font-family: var(--font-heading, 'Cormorant Garamond', serif); font-weight: 500; font-style: italic; font-size: clamp(28px, 4.4vw, 44px); margin: 0 0 8px; line-height: 1.1; }
+  .sf-label { font-size: 13px; letter-spacing: .04em; font-weight: 500; color: var(--sf-fg); display: block; margin-bottom: 8px; }
+  .sf-input { width: 100%; padding: 14px 16px; font-size: 16px; border: 1px solid var(--sf-border); border-radius: 10px; background: var(--sf-surface); font-family: inherit; color: var(--sf-fg); }
+  .sf-input:focus { outline: 2px solid var(--sf-fg); outline-offset: 1px; }
+  .sf-field { margin-bottom: 22px; }
+  .sf-drop { border: 2px dashed var(--sf-border); border-radius: 14px; padding: 36px 20px; text-align: center; background: var(--sf-surface); cursor: pointer; transition: border-color .15s, background .15s; }
+  .sf-drop:hover, .sf-drop.is-dragover { border-color: var(--sf-fg); background: #fbf7f0; }
+  .sf-drop.is-filled { padding: 14px; }
+  .sf-drop__preview { display: none; max-width: 100%; max-height: 240px; border-radius: 8px; }
+  .sf-drop.is-filled .sf-drop__preview { display: inline-block; }
+  .sf-drop.is-filled .sf-drop__copy { display: none; }
+  .sf-drop__hint { font-size: 13px; color: var(--sf-muted); margin-top: 8px; }
+  .sf-terms { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--sf-muted); line-height: 1.5; margin-bottom: 24px; }
+  .sf-terms input { margin-top: 3px; flex-shrink: 0; }
+  .sf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 30px; min-height: 56px; border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 500; letter-spacing: .02em; cursor: pointer; border: none; background: var(--sf-fg); color: #fff; transition: transform .12s, background .12s; }
+  .sf-btn:hover:not(:disabled) { background: #000; transform: translateY(-1px); }
+  .sf-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .sf-btn--full { width: 100%; }
+  .sf-btn--ghost { background: transparent; color: var(--sf-fg); border: 1.5px solid var(--sf-border); }
+  .sf-btn--ghost:hover:not(:disabled) { background: var(--sf-surface); border-color: var(--sf-fg); transform: translateY(-1px); }
+  .sf-styles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 28px 0; }
+  @media (min-width: 640px) { .sf-styles { grid-template-columns: repeat(4, 1fr); } }
+  .sf-style { position: relative; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; cursor: pointer; border: 2px solid transparent; background: var(--sf-surface); transition: transform .15s, border-color .15s; }
+  .sf-style:hover { transform: translateY(-2px); }
+  .sf-style.is-active { border-color: var(--sf-fg); }
+  .sf-style img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sf-style__name { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 10px; font-size: 12px; font-weight: 500; color: #fff; background: linear-gradient(to top, rgba(0,0,0,.7), transparent); text-align: left; }
+  .sf-progress { width: 100%; max-width: 320px; height: 4px; background: var(--sf-border); border-radius: 2px; overflow: hidden; margin: 32px auto; }
+  .sf-progress__bar { height: 100%; width: 0; background: var(--sf-fg); transition: width .4s ease; }
+  .sf-spinner { width: 36px; height: 36px; border: 3px solid var(--sf-border); border-top-color: var(--sf-fg); border-radius: 50%; animation: sfspin 1s linear infinite; margin: 0 auto 20px; }
+  @keyframes sfspin { to { transform: rotate(360deg); } }
+  .sf-result { display: grid; gap: 28px; }
+  @media (min-width: 760px) { .sf-result { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .sf-preview { background: var(--sf-surface); border-radius: 14px; padding: 18px; box-shadow: 0 2px 18px rgba(0,0,0,.04); }
+  .sf-tabs { display: flex; gap: 6px; padding: 4px; background: var(--sf-bg); border-radius: 999px; margin-bottom: 16px; }
+  .sf-tab { flex: 1; padding: 10px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--sf-muted); cursor: pointer; background: transparent; border: none; font-family: inherit; transition: background .15s, color .15s; }
+  .sf-tab.is-active { background: var(--sf-fg); color: #fff; }
+  .sf-canvas-wrap { position: relative; width: 100%; background: #f4f0ea; border-radius: 10px; overflow: hidden; }
+  .sf-canvas-wrap canvas { width: 100%; height: auto; display: block; }
+  .sf-share-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .sf-share-actions .sf-btn { padding: 14px 16px; font-size: 14px; min-height: 48px; }
+  .sf-side { padding: 8px 0; }
+  .sf-side__h { font-family: var(--font-heading, 'Cormorant Garamond', serif); font-weight: 500; font-style: italic; font-size: 30px; margin: 0 0 10px; }
+  .sf-side__p { font-size: 15px; line-height: 1.55; color: var(--sf-muted); margin: 0 0 22px; }
+  .sf-side__cta { display: block; text-align: center; text-decoration: none; }
+  .sf-error { color: var(--color-danger, #9e3b33); font-size: 14px; margin-top: 10px; }
+  .sf-hidden { display: none !important; }
+  .sf-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 18px 0 0; font-size: 12px; color: var(--sf-muted); }
+  .sf-pills span { padding: 5px 12px; border-radius: 999px; background: var(--sf-surface); border: 1px solid var(--sf-border); }
+</style>
+
+<section class="sf-wrap" aria-label="Create a shareable pet portrait">
+  <div id="sf-root"
+       data-api="{{ settings.portrait_api_url | default: 'https://web-production-a392e.up.railway.app' }}"
+       data-turnstile-key="{{ settings.turnstile_site_key }}"
+       data-brand-hashtag="{{ brand_hashtag | escape }}"
+       data-brand-handle="{{ brand_handle | escape }}"
+       data-brand-domain="{{ brand_domain | escape }}"
+       data-final-cta-label="{{ final_cta_label | escape }}"
+       data-final-cta-url="{{ final_cta_url | escape }}">
+
+    <!-- Step 0: Hero -->
+    <div class="sf-step sf-step--hero is-active" data-step="hero">
+      <p class="sf-eyebrow">Free · 60 seconds · Made in Canada</p>
+      <h1 class="sf-h1">{{ hero_title }}</h1>
+      <p class="sf-sub">{{ hero_sub }}</p>
+      <button type="button" class="sf-btn" data-action="start">
+        {{ hero_cta }}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+      <div class="sf-pills">
+        <span>Instagram-ready</span>
+        <span>Facebook Feed + Story</span>
+        <span>No watermark on Story</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div class="sf-step" data-step="upload">
+      <p class="sf-eyebrow">Step 1 of 3</p>
+      <h2 class="sf-h2">Photo of your pet</h2>
+      <p class="sf-sub" style="text-align:left;margin-left:0;">Clear face, eyes visible, single pet in frame. JPG, PNG or WebP.</p>
+
+      <div class="sf-field">
+        <label class="sf-label" for="sf-pet-name">Pet's name</label>
+        <input id="sf-pet-name" class="sf-input" type="text" maxlength="20" placeholder="e.g. Biscuit" autocomplete="off">
+      </div>
+
+      <div class="sf-field">
+        <div class="sf-drop" tabindex="0" role="button" aria-label="Upload pet photo">
+          <input type="file" id="sf-photo" accept="image/jpeg,image/png,image/webp" hidden>
+          <img class="sf-drop__preview" alt="">
+          <div class="sf-drop__copy">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true" style="margin-bottom:8px;color:var(--sf-muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <div style="font-weight:500;">Tap to upload a photo</div>
+            <div class="sf-drop__hint">or drop one here</div>
+          </div>
+        </div>
+      </div>
+
+      <label class="sf-terms">
+        <input type="checkbox" id="sf-terms">
+        <span>I own the rights to this photo and agree it can be used to generate a portrait. <a href="/pages/terms" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Terms</a>.</span>
+      </label>
+
+      <div id="sf-turnstile" style="margin:10px 0;display:flex;justify-content:center;"></div>
+      <div class="sf-error sf-hidden" data-error="upload"></div>
+
+      <button type="button" class="sf-btn sf-btn--full" data-action="to-style" disabled>Pick a style →</button>
+    </div>
+
+    <!-- Step 2: Style -->
+    <div class="sf-step" data-step="style">
+      <p class="sf-eyebrow">Step 2 of 3</p>
+      <h2 class="sf-h2">Pick a style</h2>
+      <p class="sf-sub" style="text-align:left;margin-left:0;">Each one renders in about 30 seconds.</p>
+
+      <div class="sf-styles" id="sf-style-grid"></div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="sf-btn sf-btn--ghost" data-action="back-to-upload">← Back</button>
+        <button type="button" class="sf-btn" style="flex:1;" data-action="generate" disabled>Generate my portrait</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Generating -->
+    <div class="sf-step" data-step="generating" style="text-align:center;">
+      <div class="sf-spinner" aria-hidden="true"></div>
+      <h2 class="sf-h2">Painting <span data-pet-name>your pet</span>…</h2>
+      <p class="sf-sub" data-progress-copy="">Brushing in the first layer of colour.</p>
+      <div class="sf-progress"><div class="sf-progress__bar" id="sf-progress-bar"></div></div>
+      <p class="sf-sub" style="font-size:13px;">This usually takes 25–45 seconds.</p>
+    </div>
+
+    <!-- Step 4: Share -->
+    <div class="sf-step" data-step="share" style="max-width:980px;">
+      <p class="sf-eyebrow">Done · Your portrait is ready</p>
+      <h2 class="sf-h2" style="margin-bottom:18px;"><span data-pet-name>Your pet</span> looks incredible.</h2>
+
+      <div class="sf-result">
+        <div class="sf-preview">
+          <div class="sf-tabs" role="tablist">
+            <button class="sf-tab is-active" data-format="feed" role="tab" aria-selected="true">📷 Feed (1:1)</button>
+            <button class="sf-tab" data-format="story" role="tab" aria-selected="false">📱 Story (9:16)</button>
+          </div>
+          <div class="sf-canvas-wrap">
+            <canvas id="sf-canvas" width="1080" height="1080" aria-label="Shareable pet portrait preview"></canvas>
+          </div>
+          <div class="sf-share-actions">
+            <button type="button" class="sf-btn" data-action="share">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
+            <button type="button" class="sf-btn sf-btn--ghost" data-action="download">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Download
+            </button>
+          </div>
+          <p class="sf-drop__hint" style="text-align:center;margin-top:12px;">
+            Tag <strong>{{ brand_handle }}</strong> so we can re-share it.
+          </p>
+        </div>
+
+        <div class="sf-side">
+          <h3 class="sf-side__h">Love it on screen? Put it on the wall.</h3>
+          <p class="sf-side__p">This same portrait, hand-printed on real canvas, gallery-wrapped, shipped from Canada. Use code <strong>SHARE15</strong> for 15% off your first canvas.</p>
+          <a href="{{ final_cta_url }}" class="sf-btn sf-btn--full sf-side__cta" data-action="pdp-cta">
+            {{ final_cta_label }} →
+          </a>
+          <p class="sf-drop__hint" style="margin-top:14px;">Or <button type="button" data-action="restart" style="background:none;border:none;text-decoration:underline;color:inherit;cursor:pointer;padding:0;font-size:inherit;font-family:inherit;">try another style</button>.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="{{ 'share-funnel.js' | asset_url }}" defer></script>
+</section>
+
+{% schema %}
+{
+  "name": "Share Funnel",
+  "settings": [
+    { "type": "text", "id": "hero_title", "label": "Hero title", "default": "Turn your pet into shareable art." },
+    { "type": "textarea", "id": "hero_sub", "label": "Hero sub-headline", "default": "Upload a photo. Pick a style. Get a branded portrait you can post to Instagram and Facebook in under a minute. Free." },
+    { "type": "text", "id": "hero_cta", "label": "Hero CTA label", "default": "Start with a photo" },
+    { "type": "header", "content": "Branding overlay" },
+    { "type": "text", "id": "brand_hashtag", "label": "Hashtag (Story overlay)", "default": "#petprintables" },
+    { "type": "text", "id": "brand_handle", "label": "Handle (Story + Feed corner)", "default": "@petprintables" },
+    { "type": "text", "id": "brand_domain", "label": "Domain text (Story footer)", "default": "petprintables.ca" },
+    { "type": "header", "content": "Soft store CTA" },
+    { "type": "text", "id": "final_cta_label", "label": "CTA label", "default": "Get this on real canvas" },
+    { "type": "url", "id": "final_cta_url", "label": "CTA URL", "default": "/pages/create" }
+  ],
+  "presets": [{ "name": "Share Funnel" }]
+}
+{% endschema %}

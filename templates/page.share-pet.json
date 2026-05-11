@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "main": {
+      "type": "share-funnel",
+      "settings": {}
+    }
+  },
+  "order": ["main"]
+}
