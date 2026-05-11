@@ -2809,6 +2809,7 @@ function PuppySVG() {
 function GeneratingState() {
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [fadeKey, setFadeKey] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -2816,6 +2817,20 @@ function GeneratingState() {
       setFadeKey(prev => prev + 1);
     }, 2800);
     return () => clearInterval(timer);
+  }, []);
+
+  // Time-based fill: 0% → 90% over ~55s, then holds at 90% until the parent
+  // flips stage to PREVIEW (component unmounts). Mirrors the contest funnel
+  // bar so users see how close they are instead of an infinite indeterminate
+  // slide.
+  useEffect(() => {
+    const startedAt = Date.now();
+    const TARGET_MS = 55000;
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      setProgress(Math.min(90, (elapsed / TARGET_MS) * 90));
+    }, 400);
+    return () => clearInterval(tick);
   }, []);
 
   return React.createElement('div', {
@@ -2858,16 +2873,17 @@ function GeneratingState() {
     // Sub
     React.createElement('p', {
       style: { ...s.bodyMuted, margin: 0 },
-    }, 'Usually just a few seconds'),
+    }, 'Usually about a minute'),
     // Progress bar
     React.createElement('div', {
       style: { width: '100%', maxWidth: '240px', height: '2px', background: tokens.colorBorder, borderRadius: '1px', overflow: 'hidden' },
       role: 'progressbar', 'aria-label': 'Generation progress',
+      'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': Math.round(progress),
     },
       React.createElement('div', {
         style: {
-          width: '35%', height: '100%', background: tokens.colorAccent, borderRadius: '1px',
-          animation: 'pf-progress-indeterminate 2s ease-in-out infinite',
+          width: progress + '%', height: '100%', background: tokens.colorAccent, borderRadius: '1px',
+          transition: 'width 0.6s ease-out',
         },
       }),
     ),
