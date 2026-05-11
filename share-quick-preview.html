@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share quick — preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { background: #faf8f5; margin: 0; font-family: 'Inter', sans-serif; color: #1c1c1c; }
+  .preview-banner { background: #2f2f2a; color: #f3ede6; padding: 8px 14px; font: 500 12px Inter, sans-serif; letter-spacing: .04em; text-align: center; }
+  .preview-banner code { background: rgba(255,255,255,.1); padding: 2px 6px; border-radius: 4px; }
+
+  /* Mirror of the Liquid section CSS — keep in sync with sections/share-quick.liquid */
+  .sq-wrap { --sq-fg:#1c1c1c; --sq-muted:#6b6b63; --sq-accent:#8b7d6b; --sq-bg:#faf8f5; --sq-surface:#fff; --sq-border:#e4ddd4; --sq-success:#2f4a35; background:var(--sq-bg); }
+  .sq-container { max-width:520px; margin:0 auto; padding:40px 20px 80px; text-align:center; }
+  .sq-wordmark { max-width:160px; margin:0 auto 24px; opacity:.85; }
+  .sq-h1 { font-family:'Cormorant Garamond',serif; font-weight:500; font-style:italic; font-size:clamp(28px,5vw,38px); line-height:1.08; margin:0 0 10px; }
+  .sq-sub { font-size:15px; line-height:1.55; color:var(--sq-muted); margin:0 0 24px; }
+  .sq-image-card { background:#fff; border:1px solid var(--sq-border); border-radius:14px; padding:16px; margin-bottom:22px; }
+  .sq-image { width:100%; max-width:100%; height:auto; max-height:60vh; object-fit:contain; border-radius:8px; display:block; margin:0 auto; background:#f4efe7; }
+  .sq-image-fallback { padding:60px 20px; color:var(--sq-muted); font-size:14px; }
+  .sq-caption-card { background:#fff; border:1px solid var(--sq-border); border-radius:10px; padding:14px 16px; margin-bottom:22px; text-align:left; }
+  .sq-caption-label { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--sq-accent); font-weight:600; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+  .sq-caption-text { font-size:14px; line-height:1.5; color:var(--sq-fg); word-break:break-word; }
+  .sq-caption-copy-btn { background:transparent; border:1px solid var(--sq-border); color:var(--sq-fg); padding:4px 10px; border-radius:999px; font-size:11px; font-family:inherit; cursor:pointer; }
+  .sq-caption-copy-btn.is-copied { background:var(--sq-success); color:#fff; border-color:var(--sq-success); }
+  .sq-platforms { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+  .sq-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 12px; border-radius:12px; font-family:inherit; font-size:14px; font-weight:500; cursor:pointer; text-decoration:none; border:1px solid var(--sq-border); background:#fff; color:var(--sq-fg); }
+  .sq-btn:hover { transform:translateY(-1px); }
+  .sq-btn--full { grid-column:1/-1; }
+  .sq-btn--ig { background:linear-gradient(45deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color:#fff; border:none; }
+  .sq-btn--fb { background:#1877f2; color:#fff; border:none; }
+  .sq-btn--wa { background:#25d366; color:#fff; border:none; }
+  .sq-btn--x  { background:#000; color:#fff; border:none; }
+  .sq-btn--secondary { background:var(--sq-bg); color:var(--sq-fg); border-color:var(--sq-border); }
+  .sq-tip { font-size:13px; line-height:1.5; color:var(--sq-muted); margin:20px 0 0; padding:14px; background:#f3ede6; border-radius:10px; text-align:left; }
+  .sq-tip strong { color:var(--sq-fg); }
+  .sq-toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--sq-fg); color:#fff; padding:12px 20px; border-radius:999px; font-size:14px; font-weight:500; opacity:0; pointer-events:none; transition:opacity .25s; z-index:9999; }
+  .sq-toast.is-visible { opacity:1; }
+  .sq-back { display:inline-block; margin-top:30px; font-size:13px; color:var(--sq-accent); text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="preview-banner">
+  Share-quick preview · Tracking events go to <code>window.__sqEvents</code>
+</div>
+
+<script>
+  window.__sqEvents = [];
+  window.pp_track = function (name, props) {
+    window.__sqEvents.push({ name, props: props || {} });
+    console.log('[pp_track]', name, props || {});
+  };
+</script>
+
+<section class="sq-wrap" aria-label="Share your pet portrait">
+  <div class="sq-container" id="sq-root"
+       data-brand-handle="@petprintables"
+       data-brand-hashtag="#petprintables"
+       data-brand-domain="petprintables.ca"
+       data-logo-url="assets/wordmark_black.svg">
+
+    <img class="sq-wordmark" src="assets/wordmark_black.svg" alt="Pet Printables" />
+
+    <h1 class="sq-h1">Share <span data-pet-name>your pet</span>'s portrait</h1>
+    <p class="sq-sub">Pick a platform — we'll prep the caption and your referral link.</p>
+
+    <div class="sq-image-card">
+      <img id="sq-image" class="sq-image" src="" alt="Your pet portrait" />
+      <div class="sq-image-fallback" id="sq-image-fallback" style="display:none;">
+        We couldn't find the portrait link. Open the email again and tap the share button there.
+      </div>
+    </div>
+
+    <div class="sq-caption-card">
+      <div class="sq-caption-label">
+        <span>Caption (tap copy)</span>
+        <button type="button" class="sq-caption-copy-btn" data-action="copy-caption">Copy</button>
+      </div>
+      <div class="sq-caption-text" id="sq-caption-text">…</div>
+    </div>
+
+    <div class="sq-platforms">
+      <button type="button" class="sq-btn sq-btn--ig sq-btn--full" data-action="share-instagram">📸 Open Instagram</button>
+      <button type="button" class="sq-btn sq-btn--fb" data-action="share-facebook">📘 Facebook</button>
+      <a href="#" class="sq-btn sq-btn--wa" data-action="share-whatsapp">💬 WhatsApp</a>
+      <a href="#" class="sq-btn sq-btn--x" data-action="share-x">𝕏 Post on X</a>
+      <button type="button" class="sq-btn sq-btn--secondary sq-btn--full" data-action="share-system">↗ Other (AirDrop, Messages, etc.)</button>
+      <button type="button" class="sq-btn sq-btn--secondary sq-btn--full" data-action="download">⤓ Save image to device</button>
+    </div>
+
+    <div class="sq-tip">
+      <strong>Sharing to Instagram Story?</strong>
+      Tap <em>Save image to device</em> first, then tap <em>Open Instagram</em>. The caption is already on your clipboard — paste it into the sticker.
+    </div>
+
+    <a href="/share-funnel-preview.html" class="sq-back">← Back to the giveaway page</a>
+  </div>
+
+  <div class="sq-toast" id="sq-toast" role="status" aria-live="polite"></div>
+</section>
+
+<script src="assets/share-quick.js"></script>
+</body>
+</html>

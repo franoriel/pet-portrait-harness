@@ -1,0 +1,131 @@
+{%- comment -%}
+  Share micro-page — landed from email Share buttons. Single-purpose,
+  mobile-first. Reads ?img= (portrait URL), ?ref= (referral code),
+  ?pet= (pet name), ?platform= (ig-story|ig-feed|fb-story|fb-feed|wa|x|copy).
+
+  When platform is set, the page auto-triggers the relevant action
+  (Web Share API, deep link, or clipboard). When platform is unset,
+  the page shows the full picker.
+
+  Brand-voice clean: no "art" language, wordmark at top, pet head never
+  cropped (always object-fit:contain on the share image).
+{%- endcomment -%}
+
+{%- liquid
+  assign brand_handle = section.settings.brand_handle | default: '@petprintables'
+  assign brand_hashtag = section.settings.brand_hashtag | default: '#petprintables'
+  assign brand_domain = section.settings.brand_domain | default: 'petprintables.ca'
+-%}
+
+<section class="sq-wrap" aria-label="Share your pet portrait">
+  <style>
+    .sq-wrap { --sq-fg: var(--color-ink, #1c1c1c); --sq-muted: var(--color-muted, #6b6b63); --sq-accent: var(--color-accent, #8b7d6b); --sq-bg: var(--color-bg, #faf8f5); --sq-surface: var(--color-surface, #fff); --sq-border: var(--color-border, #e4ddd4); --sq-success: #2f4a35; }
+    .sq-wrap { font-family: var(--font-body, 'Inter', sans-serif); color: var(--sq-fg); background: var(--sq-bg); }
+    .sq-container { max-width: 520px; margin: 0 auto; padding: 40px 20px 80px; text-align: center; }
+    .sq-wordmark { max-width: 160px; margin: 0 auto 24px; opacity: .85; }
+    .sq-h1 { font-family: var(--font-heading, 'Cormorant Garamond', serif); font-weight: 500; font-style: italic; font-size: clamp(28px, 5vw, 38px); line-height: 1.08; margin: 0 0 10px; }
+    .sq-sub { font-size: 15px; line-height: 1.55; color: var(--sq-muted); margin: 0 0 24px; }
+    .sq-image-card { background: var(--sq-surface); border: 1px solid var(--sq-border); border-radius: 14px; padding: 16px; margin-bottom: 22px; }
+    .sq-image { width: 100%; max-width: 100%; height: auto; max-height: 60vh; object-fit: contain; border-radius: 8px; display: block; margin: 0 auto; background: #f4efe7; }
+    .sq-image-fallback { padding: 60px 20px; color: var(--sq-muted); font-size: 14px; }
+    .sq-caption-card { background: var(--sq-surface); border: 1px solid var(--sq-border); border-radius: 10px; padding: 14px 16px; margin-bottom: 22px; text-align: left; }
+    .sq-caption-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sq-accent); font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .sq-caption-text { font-size: 14px; line-height: 1.5; color: var(--sq-fg); word-break: break-word; }
+    .sq-caption-copy-btn { background: transparent; border: 1px solid var(--sq-border); color: var(--sq-fg); padding: 4px 10px; border-radius: 999px; font-size: 11px; font-family: inherit; cursor: pointer; }
+    .sq-caption-copy-btn.is-copied { background: var(--sq-success); color: #fff; border-color: var(--sq-success); }
+
+    .sq-platforms { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .sq-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 12px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; border: 1px solid var(--sq-border); background: var(--sq-surface); color: var(--sq-fg); transition: transform .12s; }
+    .sq-btn:hover { transform: translateY(-1px); }
+    .sq-btn--primary { background: var(--sq-fg); color: #fff; border-color: var(--sq-fg); }
+    .sq-btn--full { grid-column: 1 / -1; }
+    .sq-btn svg { flex-shrink: 0; }
+    .sq-btn--ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: #fff; border: none; }
+    .sq-btn--fb { background: #1877f2; color: #fff; border: none; }
+    .sq-btn--wa { background: #25d366; color: #fff; border: none; }
+    .sq-btn--x  { background: #000; color: #fff; border: none; }
+    .sq-btn--secondary { background: var(--sq-bg); color: var(--sq-fg); border-color: var(--sq-border); }
+    .sq-tip { font-size: 13px; line-height: 1.5; color: var(--sq-muted); margin: 20px 0 0; padding: 14px; background: #f3ede6; border-radius: 10px; text-align: left; }
+    .sq-tip strong { color: var(--sq-fg); }
+    .sq-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--sq-fg); color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 9999; }
+    .sq-toast.is-visible { opacity: 1; }
+    .sq-back { display: inline-block; margin-top: 30px; font-size: 13px; color: var(--sq-accent); text-decoration: underline; }
+  </style>
+
+  <div class="sq-container" id="sq-root"
+       data-brand-handle="{{ brand_handle | escape }}"
+       data-brand-hashtag="{{ brand_hashtag | escape }}"
+       data-brand-domain="{{ brand_domain | escape }}"
+       data-logo-url="{{ 'wordmark_black.svg' | asset_url }}">
+
+    <img class="sq-wordmark" src="{{ 'wordmark_black.svg' | asset_url }}" alt="Pet Printables" />
+
+    <h1 class="sq-h1">Share <span data-pet-name>your pet</span>'s portrait</h1>
+    <p class="sq-sub">Pick a platform — we'll prep the caption and your referral link.</p>
+
+    <div class="sq-image-card">
+      <img id="sq-image" class="sq-image" src="" alt="Your pet portrait" />
+      <div class="sq-image-fallback" id="sq-image-fallback" style="display:none;">
+        We couldn't find the portrait link. Open the email again and tap the share button there.
+      </div>
+    </div>
+
+    <div class="sq-caption-card">
+      <div class="sq-caption-label">
+        <span>Caption (tap copy)</span>
+        <button type="button" class="sq-caption-copy-btn" data-action="copy-caption">Copy</button>
+      </div>
+      <div class="sq-caption-text" id="sq-caption-text">…</div>
+    </div>
+
+    <div class="sq-platforms">
+      <button type="button" class="sq-btn sq-btn--ig sq-btn--full" data-action="share-instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.3 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .3-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.3-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.3 2.2-.4 1.2-.1 1.6-.1 4.8-.1zm0 1.6c-3.1 0-3.5 0-4.7.1-1 .1-1.5.2-1.9.3-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.1.4-.3.9-.3 1.9-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1 .2 1.5.3 1.9.2.5.4.8.7 1.1.3.3.6.5 1.1.7.4.1.9.3 1.9.3 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1-.1 1.5-.2 1.9-.3.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.1-.4.3-.9.3-1.9.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1-.2-1.5-.3-1.9-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.4-.1-.9-.3-1.9-.3-1.2-.1-1.6-.1-4.7-.1zM12 7.2c2.6 0 4.8 2.1 4.8 4.8s-2.1 4.8-4.8 4.8S7.2 14.6 7.2 12 9.4 7.2 12 7.2zm0 1.6c-1.8 0-3.2 1.4-3.2 3.2s1.4 3.2 3.2 3.2 3.2-1.4 3.2-3.2-1.4-3.2-3.2-3.2zm5-2.5a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2z"/></svg>
+        Open Instagram
+      </button>
+      <button type="button" class="sq-btn sq-btn--fb" data-action="share-facebook">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12c0-5.5-4.5-10-10-10S2 6.5 2 12c0 5 3.7 9.1 8.4 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7C18.3 21.1 22 17 22 12z"/></svg>
+        Facebook
+      </button>
+      <a href="#" class="sq-btn sq-btn--wa" data-action="share-whatsapp">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A10.5 10.5 0 003.6 17.1L2 22l5-1.6a10.5 10.5 0 0013.5-16.9zM12 20.3a8.3 8.3 0 01-4.4-1.2l-.3-.2-3.1.9.9-3-.2-.3a8.3 8.3 0 1115.4-4.4 8.3 8.3 0 01-8.3 8.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.2-.1-1-.4-2-1.2-.7-.6-1.2-1.4-1.4-1.6-.1-.2 0-.4.1-.5.1-.1.2-.3.4-.4.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5 0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.2-.9.9-.9 2.2 0 1.3.9 2.5 1.1 2.7.1.2 1.9 2.9 4.5 4 .6.3 1.1.4 1.5.6.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2 0-.1-.2-.2-.4-.3z"/></svg>
+        WhatsApp
+      </a>
+      <a href="#" class="sq-btn sq-btn--x" data-action="share-x">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+        Post on X
+      </a>
+      <button type="button" class="sq-btn sq-btn--secondary sq-btn--full" data-action="share-system">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Other (AirDrop, Messages, etc.)
+      </button>
+      <button type="button" class="sq-btn sq-btn--secondary sq-btn--full" data-action="download">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Save image to device
+      </button>
+    </div>
+
+    <div class="sq-tip">
+      <strong>Sharing to Instagram Story?</strong>
+      Tap <em>Save image to device</em> first, then tap <em>Open Instagram</em>. The caption is already on your clipboard — paste it into the sticker.
+    </div>
+
+    <a href="/pages/free-pet-portrait" class="sq-back">← Back to the giveaway page</a>
+  </div>
+
+  <div class="sq-toast" id="sq-toast" role="status" aria-live="polite"></div>
+
+  <script src="{{ 'share-quick.js' | asset_url }}" defer></script>
+</section>
+
+{% schema %}
+{
+  "name": "Share Quick",
+  "settings": [
+    { "type": "text", "id": "brand_handle", "label": "Handle in caption", "default": "@petprintables" },
+    { "type": "text", "id": "brand_hashtag", "label": "Hashtag in caption", "default": "#petprintables" },
+    { "type": "text", "id": "brand_domain", "label": "Domain in caption", "default": "petprintables.ca" }
+  ],
+  "presets": [{ "name": "Share Quick" }]
+}
+{% endschema %}

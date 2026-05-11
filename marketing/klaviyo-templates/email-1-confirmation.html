@@ -68,15 +68,94 @@
           </td>
         </tr>
 
-        <!-- Primary CTA -->
+        <!-- Share-now CTAs — 5 platform-specific buttons that skip the
+             funnel and either open the share dialog directly (FB, X,
+             WhatsApp) or land on /pages/share which deep-links into IG
+             with image saved + caption clipboard-ready. -->
         <tr>
-          <td class="mob-pad-x" style="padding:0 36px 28px 36px;text-align:center;">
-            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+          <td class="mob-pad-x" style="padding:0 36px 8px 36px;text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;font-size:22px;color:#1C1C1C;">
+            Share it in one tap
+          </td>
+        </tr>
+        <tr>
+          <td class="mob-pad-x" style="padding:0 36px 20px 36px;text-align:center;font-size:13px;line-height:1.5;color:#6B6B63;">
+            Each button opens the right app. Caption + your referral link are pre-filled.
+          </td>
+        </tr>
+
+        <!-- Instagram — full-width gradient button (primary surface for pet content) -->
+        <tr>
+          <td class="mob-pad-x" style="padding:0 36px 10px 36px;">
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
               <tr>
-                <td align="center" bgcolor="#1C1C1C" style="border-radius:999px;">
-                  <a href="https://petprintables.ca/pages/free-pet-portrait?ref={{ event.contest_referral_code }}" style="display:inline-block;padding:16px 32px;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:15px;font-weight:500;color:#FFFFFF;text-decoration:none;border-radius:999px;">
-                    Share your portrait + grab more entries →
+                <td align="center" style="background:#dc2743;background:linear-gradient(45deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);border-radius:12px;">
+                  <a href="https://petprintables.ca/pages/share?platform=ig&ref={{ event.contest_referral_code }}&pet={{ event.pet_name|url_encode }}&img={{ event.pet_preview_url|url_encode }}" style="display:block;padding:14px 12px;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;">
+                    📸 Open Instagram
                   </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Facebook + WhatsApp — side by side -->
+        <tr>
+          <td class="mob-pad-x" style="padding:0 36px 10px 36px;">
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td class="mob-stack" valign="top" width="50%" style="padding:0 5px 0 0;">
+                  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" bgcolor="#1877F2" style="border-radius:12px;">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fpetprintables.ca%2Fpages%2Ffree-pet-portrait%3Fref%3D{{ event.contest_referral_code }}" style="display:block;padding:14px 8px;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;">
+                          📘 Facebook
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td class="mob-stack" valign="top" width="50%" style="padding:0 0 0 5px;">
+                  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" bgcolor="#25D366" style="border-radius:12px;">
+                        <a href="https://wa.me/?text=Made%20%40petprintables%20turn%20{{ event.pet_name|url_encode }}%20into%20a%20portrait%20%E2%80%94%20get%20yours%20free%20at%20https%3A%2F%2Fpetprintables.ca%2Fpages%2Ffree-pet-portrait%3Fref%3D{{ event.contest_referral_code }}%20%23petprintables" style="display:block;padding:14px 8px;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;">
+                          💬 WhatsApp
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- X (Twitter) + More -->
+        <tr>
+          <td class="mob-pad-x" style="padding:0 36px 24px 36px;">
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td class="mob-stack" valign="top" width="50%" style="padding:0 5px 0 0;">
+                  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" bgcolor="#000000" style="border-radius:12px;">
+                        <a href="https://twitter.com/intent/tweet?text=Made%20%40petprintables%20turn%20{{ event.pet_name|url_encode }}%20into%20a%20portrait%20%E2%80%94%20get%20yours%20free%20at%20https%3A%2F%2Fpetprintables.ca%2Fpages%2Ffree-pet-portrait%3Fref%3D{{ event.contest_referral_code }}%20%23petprintables" style="display:block;padding:14px 8px;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;">
+                          𝕏 Post on X
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td class="mob-stack" valign="top" width="50%" style="padding:0 0 0 5px;">
+                  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" bgcolor="#FAF8F5" style="border-radius:12px;border:1px solid #E4DDD4;">
+                        <a href="https://petprintables.ca/pages/share?ref={{ event.contest_referral_code }}&pet={{ event.pet_name|url_encode }}&img={{ event.pet_preview_url|url_encode }}" style="display:block;padding:14px 8px;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#1C1C1C;text-decoration:none;border-radius:12px;">
+                          ↗ More options
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>

@@ -19,6 +19,28 @@
   {{ content_for_header }}
   {{ 'base.css' | asset_url | stylesheet_tag }}
 
+  {%- comment -%} Open Graph + Twitter cards for the contest funnel.
+    When a FB Share button in a Klaviyo email links to /pages/free-pet-portrait
+    (with a ?ref= referral code appended), Facebook scrapes these tags to
+    build the link preview. Without them the preview is blank or generic.
+    Restricted to the share-pet + share page templates so it doesn't
+    pollute other pages' page-level OG that Shopify already emits.
+  {%- endcomment -%}
+  {%- if template == 'page.share-pet' or template == 'page.share' -%}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Pet Printables">
+    <meta property="og:title" content="Free pet portrait + canvas giveaway · Pet Printables">
+    <meta property="og:description" content="Upload one photo. Get a free portrait of your pet. Enter to win the canvas version. Made in Canada.">
+    <meta property="og:image" content="https:{{ 'example-soft-watercolour.webp' | asset_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Free pet portrait + canvas giveaway">
+    <meta name="twitter:description" content="Upload one photo. Get a free portrait of your pet. Enter to win the canvas version.">
+    <meta name="twitter:image" content="https:{{ 'example-soft-watercolour.webp' | asset_url }}">
+  {%- endif -%}
+
   <script>
     window.petPrintables = {
       moneyFormat: {{ shop.money_format | json }},
