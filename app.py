@@ -386,6 +386,7 @@ def _request_too_large(e):
 @app.route("/preview/<filename>", methods=["OPTIONS"])
 @app.route("/download/<filename>", methods=["OPTIONS"])
 @app.route("/contest/entry", methods=["OPTIONS"])
+@app.route("/contest/earn", methods=["OPTIONS"])
 @app.route("/contest/skill-test", methods=["OPTIONS"])
 def _options_preflight(**_):
     return "", 204
@@ -412,7 +413,7 @@ def contest_skill_test():
 def contest_entry():
     from contest import (
         referral_code, push_klaviyo_entry, send_meta_capi_lead,
-        validate_skill_test, increment_referrer_entries,
+        validate_skill_test, credit_referrer, BONUS_VALUES,
     )
 
     ip = _client_ip()
@@ -458,22 +459,89 @@ def contest_entry():
         client_ip=ip, user_agent=user_agent, event_source_url=source_url,
         fbc=fbc, fbp=fbp,
     )
+    # Credit the referrer with +3 entries (fires a Klaviyo event on their
+    # profile if we can resolve their email from their referral code).
+    referrer_credited = False
     if referrer:
-        increment_referrer_entries(referrer)
+        referrer_credited = credit_referrer(referrer, email, pet_name)
 
     log.info(
-        "[contest] entry email=%s pet=%s code=%s ref=%s klaviyo=%s capi=%s sms=%s",
+        "[contest] entry email=%s pet=%s code=%s ref=%s referrer_credited=%s klaviyo=%s capi=%s sms=%s",
         email, pet_name, code, referrer or "-",
-        klaviyo_ok, capi_ok, sms_consent,
+        referrer_credited, klaviyo_ok, capi_ok, sms_consent,
     )
+
+    # Base 1 entry + 2 SMS bonus (if consented). Bonus claims happen on
+    # /contest/earn separately. The "total" returned here is what the UI
+    # initially shows — it's optimistic; the source of truth for the draw
+    # is the sum of all Klaviyo events on the profile.
+    entries_initial = 1 + (BONUS_VALUES["sms_consent"] if sms_consent else 0)
 
     return jsonify(
         ok=True,
         referral_code=code,
         share_url_suffix=f"?ref={code}",
+        entries=entries_initial,
         klaviyo=klaviyo_ok,
         capi=capi_ok,
     )
+
+
+# ---------------------------------------------------------------------------
+# Bonus claim — share-screen "earn more entries" actions.
+# ---------------------------------------------------------------------------
+
+# Simple in-process dedup so the same profile can't spam-click the same
+# bonus button. Resets on process restart; not a security boundary (the
+# draw audit is the real one) but kills the obvious abuse vector.
+_BONUS_DEDUP: dict = {}
+_BONUS_DEDUP_TTL = 60 * 60 * 24 * 30  # 30 days
+
+def _dedup_seen(email: str, bonus_type: str) -> bool:
+    key = f"{email}:{bonus_type}"
+    now = _time.time()
+    # Trim expired entries occasionally
+    if len(_BONUS_DEDUP) > 5000:
+        for k, ts in list(_BONUS_DEDUP.items()):
+            if now - ts > _BONUS_DEDUP_TTL:
+                _BONUS_DEDUP.pop(k, None)
+    if key in _BONUS_DEDUP:
+        return True
+    _BONUS_DEDUP[key] = now
+    return False
+
+
+@app.route("/contest/earn", methods=["POST"])
+def contest_earn():
+    """Record a self-attested bonus claim. Fires `Contest Entries Earned`
+    on the entrant's Klaviyo profile.
+
+    Frontend POSTs after the user clicks Claim on a share-step action.
+    Server records once per (email, bonus_type) pair.
+    """
+    from contest import record_bonus_claim, BONUS_VALUES
+
+    ip = _client_ip()
+    allowed, reason = check_rate_limit(ip, "status")
+    if not allowed:
+        return jsonify(error=reason, code="rate_limited"), 429
+
+    data = request.get_json(silent=True) or request.form
+    email = (data.get("email") or "").strip().lower()
+    bonus_type = (data.get("bonus_type") or "").strip().lower()
+    proof_url = (data.get("proof_url") or "").strip()[:500]
+
+    if not _EMAIL_RE.match(email):
+        return jsonify(error="Email required.", code="email_required"), 400
+    if bonus_type not in BONUS_VALUES or bonus_type == "referral":
+        return jsonify(error="Unknown bonus type.", code="bad_bonus_type"), 400
+
+    if _dedup_seen(email, bonus_type):
+        return jsonify(ok=True, deduped=True, bonus_value=0,
+                       message="Already claimed."), 200
+
+    ok, bonus = record_bonus_claim(email=email, bonus_type=bonus_type, proof_url=proof_url)
+    return jsonify(ok=ok, bonus_value=bonus)
 
 UPLOAD_DIR = Path("uploads")
 

@@ -427,20 +427,40 @@
     state.shareCaption = `Made @petprintables turn ${state.petName || 'my pet'} into a portrait — get yours free at ${referLink} ${BRAND.hashtag}`;
   }
 
-  // Earn-more handlers
-  function claimEarn(key, bonus, btnLabel) {
-    if (state.earned[key]) return;
-    state.earned[key] = true;
-    state.entries += bonus;
+  // Earn-more handlers. Self-attested bonus claims POST to /contest/earn
+  // so the Klaviyo event fires and the draw audit has a trail. The UI
+  // optimistically marks the row claimed; the server is the source of
+  // truth at draw time.
+  async function claimEarn(uiKey, serverBonusType, bonusValue, btnLabel, opts) {
+    opts = opts || {};
+    if (state.earned[uiKey]) return;
+    state.earned[uiKey] = true;
+    state.entries += bonusValue;
     paintEntriesPanel();
-    const li = root.querySelector(`[data-earn="${key}"]`);
+    const li = root.querySelector(`[data-earn="${uiKey}"]`);
     if (li) {
       li.classList.add('is-claimed');
       const btn = li.querySelector('.sf-action__btn');
       if (btn) { btn.textContent = btnLabel || 'Claimed ✓'; btn.disabled = true; }
     }
-    track('funnel_entries_earned', { action: key, bonus, total: state.entries });
-    track('Share', { content_category: 'contest', content_name: key });
+    track('funnel_entries_earned', { action: uiKey, bonus: bonusValue, total: state.entries });
+    track('Share', { content_category: 'contest', content_name: uiKey });
+
+    // Record server-side. Best-effort — failure does not undo the UI
+    // claim, but is logged for audit.
+    if (state.email && serverBonusType) {
+      try {
+        await fetch(`${API}/contest/earn`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: state.email,
+            bonus_type: serverBonusType,
+            proof_url: opts.proofUrl || '',
+          }),
+        });
+      } catch (e) { /* server outage shouldn't break the UX */ }
+    }
   }
 
   root.addEventListener('click', (e) => {
@@ -449,15 +469,26 @@
     if (action === 'claim-story') {
       // Trigger the download so they can post the file, then mark claimed.
       downloadComposed(`pet-portrait-${state.format}.png`);
-      claimEarn('story', 5, 'File saved · +5 ✓');
+      claimEarn('story', 'story_share', 5, 'File saved · +5 ✓');
     } else if (action === 'copy-refer') {
+      // Refer is NOT claimed on copy — copying just gives them the link.
+      // The +3 fires server-side automatically when a referee enters.
+      // UI shows "Link copied" feedback without false +3.
       const txt = state.shareCaption || `${window.location.origin}${window.location.pathname}?ref=${state.referralCode}`;
       navigator.clipboard?.writeText(txt).catch(() => {});
-      claimEarn('refer', 3, 'Link copied · +3 ✓');
+      const li = root.querySelector('[data-earn="refer"]');
+      if (li) {
+        const btn = li.querySelector('.sf-action__btn');
+        if (btn) {
+          btn.textContent = 'Copied ✓';
+          setTimeout(() => { btn.textContent = 'Copy link'; }, 2200);
+        }
+      }
+      track('funnel_refer_link_copied', {});
     } else if (action === 'claim-tag') {
       const txt = state.shareCaption || '';
       navigator.clipboard?.writeText(txt).catch(() => {});
-      claimEarn('tag', 10, 'Caption copied · +10 ✓');
+      claimEarn('tag', 'ig_post_tag', 10, 'Caption copied · +10 ✓');
     }
   });
 

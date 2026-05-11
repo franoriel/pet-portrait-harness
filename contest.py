@@ -34,6 +34,17 @@ log = logging.getLogger(__name__)
 KLAVIYO_API_ROOT = "https://a.klaviyo.com/api"
 META_CAPI_ROOT = "https://graph.facebook.com/v19.0"
 CONTEST_EVENT_NAME = "Contest Entry Submitted"
+BONUS_EVENT_NAME = "Contest Entries Earned"
+REFERRAL_EVENT_NAME = "Contest Referral Earned"
+
+# Per-bonus-type values. Single source of truth — front-end UI labels
+# should match these. Anything not in this dict is rejected by /contest/earn.
+BONUS_VALUES = {
+    "story_share":  5,    # User self-attests they shared portrait to IG Story
+    "ig_post_tag": 10,    # User self-attests they tagged 2 friends in an IG post
+    "sms_consent":  2,    # Bonus for SMS opt-in (granted at entry time, not via /earn)
+    "referral":     3,    # Earned per referee who completes /contest/entry
+}
 
 
 # ---------------------------------------------------------------------------
@@ -152,32 +163,136 @@ def push_klaviyo_entry(
         return False
 
 
-def increment_referrer_entries(referrer_code: str) -> bool:
-    """Increment the referrer's contest_referrals_count by 1 in Klaviyo.
+def _klaviyo_headers() -> dict:
+    api_key = os.environ.get("KLAVIYO_API_KEY", "").strip()
+    return {
+        "Authorization": f"Klaviyo-API-Key {api_key}",
+        "revision": "2024-10-15",
+        "Content-Type": "application/json",
+        "accept": "application/json",
+    }
 
-    Klaviyo doesn't expose atomic-increment on profile properties directly,
-    so we fire a custom event ("Contest Referral Earned") instead. The
-    Klaviyo flow can count these events per profile to compute total
-    entries from referrals. Returns False on no-op (no API key) or error.
+
+def lookup_email_by_referral_code(code: str) -> Optional[str]:
+    """Find the email of the profile whose contest_referral_code matches.
+
+    Used to attribute referral bonuses back to the original referrer.
+    Returns None if no profile, no API key, or any error.
     """
     api_key = os.environ.get("KLAVIYO_API_KEY", "").strip()
-    if not api_key or not referrer_code:
+    if not api_key or not code:
+        return None
+    try:
+        # Klaviyo profile filter: bracket-notation for custom-property keys.
+        filter_str = f'equals(properties["contest_referral_code"],"{code}")'
+        r = requests.get(
+            f"{KLAVIYO_API_ROOT}/profiles",
+            headers=_klaviyo_headers(),
+            params={"filter": filter_str, "page[size]": 1},
+            timeout=8,
+        )
+        if r.status_code >= 400:
+            log.warning("[klaviyo:lookup] FAIL %s %s", r.status_code, r.text[:200])
+            return None
+        items = (r.json() or {}).get("data") or []
+        if not items:
+            return None
+        email = (items[0].get("attributes") or {}).get("email")
+        return email
+    except Exception as exc:
+        log.warning("[klaviyo:lookup] EXCEPTION %s", exc)
+        return None
+
+
+def fire_klaviyo_event(
+    *, email: str, metric_name: str, properties: dict,
+) -> bool:
+    """Generic helper — fires a Klaviyo metric event on a given profile."""
+    api_key = os.environ.get("KLAVIYO_API_KEY", "").strip()
+    if not api_key or not email:
         return False
     try:
-        # We can't directly target a profile by referral code via Klaviyo —
-        # so we publish an "unattached" event and a downstream Klaviyo flow
-        # (Segment: contest_referral_code == X) attaches it to the right
-        # profile when matched. Limitation: the flow must look up by code.
-        # Simpler alternative: front-end stamps the referrer's email when
-        # the friend completes, so the event has a known profile. We do
-        # that path — the JS POSTs ?ref=CODE on entry and the backend
-        # resolves the email at attribution time. For now this is a
-        # placeholder that logs the intent.
-        log.info("[klaviyo:contest] referral earned: code=%s", referrer_code)
+        body = {
+            "data": {
+                "type": "event",
+                "attributes": {
+                    "properties": properties,
+                    "metric": {"data": {"type": "metric", "attributes": {"name": metric_name}}},
+                    "profile": {"data": {"type": "profile", "attributes": {"email": email}}},
+                },
+            }
+        }
+        r = requests.post(
+            f"{KLAVIYO_API_ROOT}/events",
+            headers=_klaviyo_headers(), json=body, timeout=8,
+        )
+        if r.status_code >= 400:
+            log.warning("[klaviyo:event] %s FAIL %s %s", metric_name, r.status_code, r.text[:200])
+            return False
         return True
     except Exception as exc:
-        log.warning("[klaviyo:contest] referral-event EXCEPTION %s", exc)
+        log.warning("[klaviyo:event] %s EXCEPTION %s", metric_name, exc)
         return False
+
+
+def record_bonus_claim(
+    *, email: str, bonus_type: str, proof_url: str = "",
+) -> tuple[bool, int]:
+    """Record a self-attested bonus claim (story_share / ig_post_tag).
+
+    Fires a `Contest Entries Earned` event on the entrant's profile. The
+    event property `entries_earned` carries the bonus value so Klaviyo
+    can sum per profile. Returns (success, bonus_value).
+
+    Note: dedup (one claim per bonus_type per profile) is enforced by
+    the segment query at draw time, not at write time — Klaviyo doesn't
+    cheaply support write-time uniqueness. The audit log captures every
+    attempt with timestamp.
+    """
+    if bonus_type not in BONUS_VALUES or bonus_type == "referral":
+        return False, 0
+    bonus = BONUS_VALUES[bonus_type]
+    ok = fire_klaviyo_event(
+        email=email,
+        metric_name=BONUS_EVENT_NAME,
+        properties={
+            "bonus_type": bonus_type,
+            "entries_earned": bonus,
+            "proof_url": proof_url or "",
+            "claimed_at": int(time.time()),
+        },
+    )
+    log.info("[contest:bonus] email=%s type=%s bonus=%d ok=%s", email, bonus_type, bonus, ok)
+    return ok, bonus
+
+
+def credit_referrer(referrer_code: str, referee_email: str, referee_pet_name: str) -> bool:
+    """Attribute a +N entry to the referrer when their referee enters.
+
+    Looks up the referrer's email by their referral code, then fires a
+    `Contest Referral Earned` event on that profile. Idempotent at the
+    event level — Klaviyo dedupes events with identical properties +
+    same minute, so accidental double-fires are absorbed.
+    """
+    if not referrer_code:
+        return False
+    referrer_email = lookup_email_by_referral_code(referrer_code)
+    if not referrer_email:
+        log.info("[contest:refer] code=%s no profile found (may not exist yet)", referrer_code)
+        return False
+    ok = fire_klaviyo_event(
+        email=referrer_email,
+        metric_name=REFERRAL_EVENT_NAME,
+        properties={
+            "entries_earned": BONUS_VALUES["referral"],
+            "referee_email": referee_email,
+            "referee_pet_name": referee_pet_name,
+            "credited_at": int(time.time()),
+        },
+    )
+    log.info("[contest:refer] code=%s referrer=%s referee=%s ok=%s",
+             referrer_code, referrer_email, referee_email, ok)
+    return ok
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="format-detection" content="telephone=no, address=no, email=no">
+  <title>You won the canvas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; }
+    @media only screen and (max-width: 480px) {
+      .mob-pad-x { padding-left: 20px !important; padding-right: 20px !important; }
+      .mob-h1 { font-size: 44px !important; line-height: 1.05 !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#FAF8F5;font-family:'Inter',Helvetica,Arial,sans-serif;color:#1C1C1C;">
+<!-- Email 5 — Winner. Send via one-shot Campaign to a segment of one
+     (winner's contest_referral_code). REPLACE [SKILL_Q] and [SKILL_A]
+     before sending — the skill-test answer in this email is the one
+     the winner must reply with, not the daily rotating one. -->
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background:#FAF8F5;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E4DDD4;border-radius:14px;">
+
+        <!-- Winner banner -->
+        <tr>
+          <td style="padding:0;">
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background:#2F4A35;border-radius:14px 14px 0 0;">
+              <tr>
+                <td class="mob-pad-x" style="padding:28px 36px;text-align:center;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#F3EDE6;font-weight:600;">
+                  Winner · Free Pet Portrait Giveaway
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="mob-pad-x mob-h1" style="padding:36px 36px 6px 36px;text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;font-size:54px;line-height:1.05;color:#1C1C1C;">
+            You won.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="mob-pad-x" style="padding:14px 36px 0 36px;text-align:center;font-size:16px;line-height:1.6;color:#6B6B63;">
+            Out of <strong style="color:#1C1C1C;">[total_entries]</strong> entries across <strong style="color:#1C1C1C;">[total_entrants]</strong> people, the random draw picked you. {{ event.pet_name|default:"Your pet" }}'s portrait is heading to canvas — printed on canvas, gallery-wrapped, shipped from Canada.
+          </td>
+        </tr>
+
+        <!-- Portrait preview -->
+        <tr>
+          <td class="mob-pad-x" style="padding:24px 36px 0 36px;text-align:center;">
+            <img src="{{ event.pet_preview_url }}" alt="{{ event.pet_name|default:'Your pet' }}'s winning portrait" width="380" style="display:block;max-width:380px;width:100%;height:auto;border-radius:10px;margin:0 auto;border:1px solid #E4DDD4;">
+          </td>
+        </tr>
+
+        <!-- Skill test block -->
+        <tr>
+          <td class="mob-pad-x" style="padding:32px 36px 0 36px;">
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background:#F3EDE6;border-radius:10px;">
+              <tr>
+                <td style="padding:22px 24px;">
+                  <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8B7D6B;font-weight:600;margin-bottom:6px;">Skill-testing question (Canadian rules)</div>
+                  <div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:28px;color:#1C1C1C;line-height:1.2;">
+                    What is (15 + 7) × 2 − 4?
+                  </div>
+                  <div style="font-size:13px;color:#6B6B63;margin-top:8px;line-height:1.5;">
+                    Solve it yourself, no calculator. Reply to this email with the answer.
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- What we need -->
+        <tr>
+          <td class="mob-pad-x" style="padding:28px 36px 0 36px;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:24px;color:#1C1C1C;">
+            Then we'll need
+          </td>
+        </tr>
+
+        <tr>
+          <td class="mob-pad-x" style="padding:10px 36px 0 36px;font-size:15px;line-height:1.7;color:#1C1C1C;">
+            <ol style="margin:0;padding-left:22px;">
+              <li style="margin-bottom:8px;">Your full Canadian shipping address (no PO box if avoidable)</li>
+              <li style="margin-bottom:8px;">Preferred canvas size — <strong>16×20 standard</strong>, or upgrade to 20×24 / 24×30 if you want to cover the extra production cost</li>
+              <li style="margin-bottom:8px;">Confirm we can use the portrait you generated of <em>{{ event.pet_name|default:"your pet" }}</em> as the print file</li>
+            </ol>
+          </td>
+        </tr>
+
+        <!-- Reply window warning -->
+        <tr>
+          <td class="mob-pad-x" style="padding:24px 36px 28px 36px;">
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border:1px solid #E4DDD4;border-radius:8px;">
+              <tr>
+                <td style="padding:16px 22px;font-size:14px;line-height:1.55;color:#1C1C1C;">
+                  Reply within <strong>7 days of this email</strong> or we'll redraw. Don't make us redraw.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="mob-pad-x" style="padding:0 36px 32px 36px;font-size:15px;line-height:1.5;color:#1C1C1C;">
+            — Gio
+          </td>
+        </tr>
+
+      </table>
+
+      <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;margin-top:18px;">
+        <tr>
+          <td style="padding:8px 36px 0 36px;text-align:center;font-size:12px;line-height:1.6;color:#6B6B63;">
+            Pet Printables · Made in Canada<br>
+            {% unsubscribe %}
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+</body>
+</html>

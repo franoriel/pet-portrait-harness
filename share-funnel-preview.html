@@ -53,6 +53,18 @@
       return Promise.resolve(new Response(JSON.stringify({ question: '12 + 18 - 5' }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }));
     }
+    if (/\/contest\/earn/.test(url)) {
+      try {
+        const body = JSON.parse(init?.body || '{}');
+        const bonusMap = { story_share: 5, ig_post_tag: 10, sms_consent: 2 };
+        const bonus = bonusMap[body.bonus_type] || 0;
+        console.log('[mock /contest/earn]', body.bonus_type, '+' + bonus);
+        return Promise.resolve(new Response(JSON.stringify({ ok: true, bonus_value: bonus }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }));
+      } catch (e) {
+        return Promise.resolve(new Response('{"ok":false}', { status: 500 }));
+      }
+    }
     if (/\/contest\/entry/.test(url)) {
       // Validate the skill-answer field — anything non-25 errors so we can
       // exercise the error path in preview testing.
@@ -249,8 +261,8 @@
                 <button type="button" class="sf-action__btn" data-action="claim-story">Claim</button>
               </li>
               <li class="sf-action" data-earn="refer">
-                <span class="sf-action__plus">+3</span>
-                <div class="sf-action__copy"><strong>Refer a friend</strong><span>Your link: <code data-refer-link>…</code></span></div>
+                <span class="sf-action__plus">+3<small style="display:block;font-size:9px;opacity:.8;letter-spacing:.04em;">per friend</small></span>
+                <div class="sf-action__copy"><strong>Refer a friend</strong><span>Credited when they enter. Your link: <code data-refer-link>…</code></span></div>
                 <button type="button" class="sf-action__btn" data-action="copy-refer">Copy link</button>
               </li>
               <li class="sf-action" data-earn="tag">
