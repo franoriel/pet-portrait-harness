@@ -17,6 +17,9 @@
   .sq-h1 { font-family:'Cormorant Garamond',serif; font-weight:500; font-style:italic; font-size:clamp(28px,5vw,38px); line-height:1.08; margin:0 0 10px; }
   .sq-sub { font-size:15px; line-height:1.55; color:var(--sq-muted); margin:0 0 24px; }
   .sq-image-card { background:#fff; border:1px solid var(--sq-border); border-radius:14px; padding:16px; margin-bottom:22px; }
+  .sq-tabs { display:flex; gap:6px; padding:4px; background:var(--sq-bg); border-radius:999px; margin-bottom:14px; }
+  .sq-tab { flex:1; padding:9px 12px; border-radius:999px; font-size:13px; font-weight:500; color:var(--sq-muted); cursor:pointer; background:transparent; border:none; font-family:inherit; transition:background .15s,color .15s; }
+  .sq-tab.is-active { background:var(--sq-fg); color:#fff; }
   .sq-image { width:100%; max-width:100%; height:auto; max-height:60vh; object-fit:contain; border-radius:8px; display:block; margin:0 auto; background:#f4efe7; }
   .sq-image-fallback { padding:60px 20px; color:var(--sq-muted); font-size:14px; }
   .sq-caption-card { background:#fff; border:1px solid var(--sq-border); border-radius:10px; padding:14px 16px; margin-bottom:22px; text-align:left; }
@@ -66,6 +69,10 @@
     <p class="sq-sub">Pick a platform — we'll prep the caption and your referral link.</p>
 
     <div class="sq-image-card">
+      <div class="sq-tabs" id="sq-format-toggle" role="tablist">
+        <button type="button" class="sq-tab is-active" data-format="feed" role="tab">📷 Feed (1:1)</button>
+        <button type="button" class="sq-tab" data-format="story" role="tab">📱 Story (9:16)</button>
+      </div>
       <img id="sq-image" class="sq-image" src="" alt="Your pet portrait" />
       <div class="sq-image-fallback" id="sq-image-fallback" style="display:none;">
         We couldn't find the portrait link. Open the email again and tap the share button there.
