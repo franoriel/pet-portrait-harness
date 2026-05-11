@@ -9,8 +9,8 @@
 {%- endcomment -%}
 
 {%- liquid
-  assign hero_title = section.settings.hero_title | default: 'Turn your pet into shareable art.'
-  assign hero_sub = section.settings.hero_sub | default: 'Upload a photo. Pick a style. Get a branded portrait you can post to Instagram and Facebook in under a minute. Free.'
+  assign hero_title = section.settings.hero_title | default: 'Get a free pet portrait. Win the canvas.'
+  assign hero_sub = section.settings.hero_sub | default: 'Upload one photo. Pick a style. We turn your pet into a free portrait you can share — and enter you to win it hand-printed on real canvas, shipped from Canada.'
   assign hero_cta = section.settings.hero_cta | default: 'Start with a photo'
   assign final_cta_label = section.settings.final_cta_label | default: 'Get this on real canvas'
   assign final_cta_url = section.settings.final_cta_url | default: '/pages/create'
@@ -92,7 +92,7 @@
 
     <!-- Step 0: Hero -->
     <div class="sf-step sf-step--hero is-active" data-step="hero">
-      <p class="sf-eyebrow">Free · 60 seconds · Made in Canada</p>
+      <p class="sf-eyebrow">Giveaway · Made in Canada · No purchase necessary</p>
       <h1 class="sf-h1">{{ hero_title }}</h1>
       <p class="sf-sub">{{ hero_sub }}</p>
       <button type="button" class="sf-btn" data-action="start">
@@ -100,9 +100,9 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
       <div class="sf-pills">
-        <span>Instagram-ready</span>
-        <span>Facebook Feed + Story</span>
-        <span>No watermark on Story</span>
+        <span>Free to enter</span>
+        <span>Real canvas prize</span>
+        <span>Open to Canada</span>
       </div>
     </div>
 
