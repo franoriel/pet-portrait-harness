@@ -415,24 +415,9 @@
             {%- comment -%}
               Free-shipping threshold tracker.
 
-              cart.total_price is in cents — $95 CAD = 9500 cents.
-
-              When a magnet upsell is going to render below (the existing
-              [data-magnet-upsell] card, gated on exactly-one-portrait-in-
-              cart), we make the bar actionable by surfacing a "Pin a
-              Fridge Magnet" jump-to-action link directly in the bar. The
-              link scrolls + focuses the magnet upsell card so the
-              customer sees it, and the existing card handles the actual
-              add — including copying the portrait's print-file properties
-              into the magnet line item so Printful can fulfil it. Without
-              that property copy a magnet add is unfulfillable, so we
-              never duplicate the bare /cart/add path here.
-
-              When the magnet upsell isn't going to render (no portraits
-              yet, or 2+ portraits where which-design-to-magnet is
-              ambiguous), the bar stays informational — no broken CTA.
+              cart.total_price is in cents — $110 CAD = 11000 cents.
             {%- endcomment -%}
-            {%- assign free_ship_cents = 9500 -%}
+            {%- assign free_ship_cents = 11000 -%}
             {%- assign remaining_cents = free_ship_cents | minus: cart.total_price -%}
 
             {%- comment -%}
@@ -468,22 +453,6 @@
                 <div style="height:6px;background:var(--color-border);border-radius:99px;overflow:hidden;">
                   <div style="height:100%;width:{{ progress_pct }}%;background:linear-gradient(90deg,var(--color-primary),var(--color-accent));border-radius:99px;transition:width 0.5s ease;"></div>
                 </div>
-                {%- if fst_show_magnet_link -%}
-                  {%- assign fst_magnet_price = fst_magnet_product.price_min -%}
-                  {%- assign fst_gap_after = remaining_cents | minus: fst_magnet_price -%}
-                  <a href="#magnet-upsell"
-                     data-jump-to-magnet
-                     style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-family:var(--font-body);font-size:var(--text-sm);font-weight:600;color:var(--color-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">
-                    {%- if fst_gap_after <= 0 -%}
-                      Add a Fridge Magnet ({{ fst_magnet_price | money }}) to unlock free shipping
-                    {%- else -%}
-                      Add a Fridge Magnet ({{ fst_magnet_price | money }}) to get closer
-                    {%- endif -%}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M12 5v14M19 12l-7 7-7-7"/>
-                    </svg>
-                  </a>
-                {%- endif -%}
               </div>
             {%- else -%}
               <div class="free-ship-tracker free-ship-tracker--achieved" style="margin:14px 0;padding:14px;background:#E8F5E9;border-radius:var(--radius-card);border:1px solid #81C784;">
@@ -618,7 +587,8 @@
               {%- endif -%}
             {%- endfor -%}
 
-            {%- if source_portrait_url != '' and portrait_line_count == 1 -%}
+            {%- comment -%}Magnet upsell removed — re-enable when magnet is back{%- endcomment -%}
+            {%- if false -%}
             <div
               id="magnet-upsell"
               class="magnet-upsell"
