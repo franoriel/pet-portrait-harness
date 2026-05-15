@@ -3348,8 +3348,8 @@ def add_background_padding(
 
 def _modern_shape_art_reframe(
     img: Image.Image,
-    pad_top_ratio: float = 0.05,
-    pad_side_ratio: float = 0.02,
+    pad_top_ratio: float = 0.10,
+    pad_side_ratio: float = 0.07,
     pad_bottom_ratio: float = 0.0,
     target_aspect: tuple = PORTRAIT_RATIO,
 ) -> Image.Image:
@@ -3378,7 +3378,7 @@ def _modern_shape_art_reframe(
                    (0, h - corner_size), (w - corner_size, h - corner_size)]:
         cp.extend(rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata())
     if not cp:
-        return add_background_padding(img, padding_ratio=0.10)
+        return add_background_padding(img, padding_ratio=0.15)
     bg_r = sum(p[0] for p in cp) / len(cp)
     bg_g = sum(p[1] for p in cp) / len(cp)
     bg_b = sum(p[2] for p in cp) / len(cp)
@@ -3402,7 +3402,7 @@ def _modern_shape_art_reframe(
                 found = True
 
     if not found or fg_max_x <= fg_min_x or fg_max_y <= fg_min_y:
-        return add_background_padding(img, padding_ratio=0.10)
+        return add_background_padding(img, padding_ratio=0.15)
 
     # Sanity check on the detected bbox. Low-contrast pets (a white
     # cat on a cream Modern bg, a cream dog on warm beige, etc.) drop
@@ -3547,6 +3547,64 @@ def _center_line_art(img: Image.Image) -> Image.Image:
 
     shifted = Image.new('RGB', (w, h), bg_color)
     shifted.paste(rgb, (dx, dy))
+    return shifted
+
+
+def _center_horizontal_weight(img: Image.Image) -> Image.Image:
+    """Shift image content LEFT or RIGHT so the visual mass is horizontally
+    centred. Vertical position is never changed (flush-bottom rule preserved).
+
+    Works by sampling corners for the background colour, then finding the
+    horizontal extent of foreground pixels. If the subject's centre-x is
+    more than 1.5% away from the canvas mid-point, the whole image is
+    translated horizontally and the exposed strip is filled with the
+    background colour.
+
+    No-op when:
+      • foreground detection fails (degenerate / very low contrast)
+      • subject is already within ±1.5% of horizontal centre
+    """
+    rgb = img.convert('RGB')
+    w, h = rgb.size
+
+    corner_size = max(8, min(w, h) // 50)
+    corner_pixels: list = []
+    for x0, y0 in [(0, 0), (w - corner_size, 0),
+                   (0, h - corner_size), (w - corner_size, h - corner_size)]:
+        corner_pixels.extend(
+            rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata()
+        )
+    if not corner_pixels:
+        return img
+    avg_r = sum(p[0] for p in corner_pixels) / len(corner_pixels)
+    avg_g = sum(p[1] for p in corner_pixels) / len(corner_pixels)
+    avg_b = sum(p[2] for p in corner_pixels) / len(corner_pixels)
+    bg_color = (int(avg_r), int(avg_g), int(avg_b))
+    bg_lum = 0.299 * avg_r + 0.587 * avg_g + 0.114 * avg_b
+
+    grey = rgb.convert('L')
+    pxl = grey.load()
+    fg_min_x, fg_max_x = w, 0
+    found = False
+    for y in range(0, h, 3):
+        for x in range(0, w, 3):
+            if abs(pxl[x, y] - bg_lum) > 40:
+                if x < fg_min_x:
+                    fg_min_x = x
+                if x > fg_max_x:
+                    fg_max_x = x
+                found = True
+
+    if not found or fg_max_x <= fg_min_x:
+        return img
+
+    subject_cx = (fg_min_x + fg_max_x) / 2
+    dx = int(round(w / 2 - subject_cx))
+    if abs(dx) < int(w * 0.015):
+        return img  # already centred, skip
+
+    shifted = Image.new('RGB', (w, h), bg_color)
+    shifted.paste(rgb, (dx, 0))   # dy=0 — never shift vertically
     return shifted
 
 
@@ -3839,7 +3897,7 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
             return _modern_shape_art_reframe(
                 img,
                 pad_top_ratio=0.30,
-                pad_side_ratio=0.06,
+                pad_side_ratio=0.11,
                 pad_bottom_ratio=0,
                 target_aspect=PRINT_ASPECT_1_1,
             )
@@ -5959,9 +6017,10 @@ def _generate_inner(
                 sum(p[2] for p in pixels) // n,
             )
             padded = add_background_padding(
-                ai_image_no_name, padding_ratio=0.12, solid_bg_color=bg,
+                ai_image_no_name, padding_ratio=0.17, solid_bg_color=bg,
                 pad_bottom_ratio=0,
             )
+            padded = _center_horizontal_weight(padded)
         elif style == "bold-graphic-poster":
             # Cubist 2-tone vertical-split bg. We KNOW the exact target
             # bg colours from the palette pick, so pad with the canonical
@@ -5982,7 +6041,7 @@ def _generate_inner(
                 trimmed = _trim_off_palette_margin(ai_image_no_name, _palette)
                 padded = _pad_split_bg(
                     trimmed, _palette,
-                    padding_ratio=0.12, pad_bottom_ratio=0,
+                    padding_ratio=0.17, pad_bottom_ratio=0,
                 )
                 # BG FLATTEN — Gemini reliably reads the prompt's "vertical
                 # 2-tone split" but routinely drops a soft vignette / corner
@@ -6034,23 +6093,25 @@ def _generate_inner(
                 # the name.
                 padded = _bgp_reframe_anchor_bottom(
                     padded, _palette,
-                    top_room_ratio=0.16,
+                    top_room_ratio=0.21,
                     bottom_pad_ratio=0.0,
-                    side_pad_ratio=0.06,
+                    side_pad_ratio=0.11,
                     target_aspect=(4, 5),
                 )
             else:
                 padded = add_background_padding(
-                    ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
+                    ai_image_no_name, padding_ratio=0.17, pad_bottom_ratio=0,
                 )
+                padded = _center_horizontal_weight(padded)
         else:
             # All other organic-bg styles (watercolor, charcoal, aura,
             # renaissance, line art): pad top + sides only so the pet's
             # natural bottom (fur fade, paw line) lands flush at the
             # canvas bottom — universal flush-bottom rule.
             padded = add_background_padding(
-                ai_image_no_name, padding_ratio=0.12, pad_bottom_ratio=0,
+                ai_image_no_name, padding_ratio=0.17, pad_bottom_ratio=0,
             )
+            padded = _center_horizontal_weight(padded)
         ai_image_no_name.close()
         ai_image_no_name = padded
 

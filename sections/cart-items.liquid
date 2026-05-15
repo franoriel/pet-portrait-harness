@@ -1581,6 +1581,7 @@
             existingProps['_Show Name'] = 'No';
             existingProps['_Portrait URL'] = noNameUrl;
             existingProps['_Print File URL'] = noNameUrl;
+            existingProps['_No Name URL'] = noNameUrl;          // must survive the cart PATCH — Shopify replaces the full properties object
             existingProps['_No Name Preview URL'] = noNameUrl; // keep magnet thumb in sync
             btn.disabled = true;
             updateCart(existingProps).then(function () {
