@@ -40,6 +40,7 @@
 
   --radius:         16px;
   --radius-sm:      6px;
+  --radius-card:    12px;
   --radius-pill:    100px;
   --shadow:         0 4px 24px rgba(0,0,0,0.08);
   --shadow-sm:      0 2px 8px rgba(0,0,0,0.06);
@@ -1863,7 +1864,9 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .pagination__ellipsis { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--color-muted); }
 
 /* ── Cart page ──────────────────────────────────────────────── */
-.cart-page { padding: 24px var(--gutter) var(--section-gap); }
+/* Horizontal padding lives on .container--mid — removing it here
+   prevents double-guttering on mobile (32px each side → 16px). */
+.cart-page { padding: 24px 0 var(--section-gap); }
 .cart-page__title { margin-bottom: 32px; font-size: clamp(var(--text-lg), 3vw, var(--text-2xl)); }
 .cart-page__layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
 .cart-page__item {
@@ -1879,9 +1882,9 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .cart-page__item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .cart-page__item-header { display: flex; justify-content: space-between; gap: 12px; }
 .cart-page__item-header > div:first-child { min-width: 0; flex: 1; }
-.cart-page__item-title { font-family: var(--font-heading); font-size: var(--text-base); font-weight: 600; }
+.cart-page__item-title { font-family: var(--font-heading); font-size: var(--text-base); font-weight: 600; overflow-wrap: break-word; word-break: break-word; }
 .cart-page__item-title:hover { color: var(--color-primary); }
-.cart-page__item-variant,.cart-page__item-prop { font-size: var(--text-sm); color: var(--color-muted); }
+.cart-page__item-variant,.cart-page__item-prop { font-size: var(--text-sm); color: var(--color-muted); overflow-wrap: break-word; word-break: break-word; }
 .cart-page__remove { color: var(--color-muted); transition: color var(--transition); flex-shrink: 0; }
 .cart-page__remove:hover { color: var(--color-ink); }
 .cart-page__item-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 8px; }

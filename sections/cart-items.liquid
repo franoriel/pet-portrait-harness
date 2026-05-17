@@ -214,7 +214,7 @@
                       {%- endcase -%}
                       <div class="cart-page__item-portrait-meta" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;">
                         {%- if pet_name_val != blank -%}
-                          <p class="cart-page__item-pet-name" style="margin:0;font-family:var(--font-heading,serif);font-style:italic;font-size:var(--text-lg);color:var(--color-ink);line-height:1.2;">
+                          <p class="cart-page__item-pet-name" style="margin:0;font-family:var(--font-heading,serif);font-style:italic;font-size:var(--text-lg);color:var(--color-ink);line-height:1.2;overflow-wrap:break-word;word-break:break-word;">
                             {{ pet_name_val }}{% if pet_name_val contains "'" or pet_name_val contains "’" %}{% else %}'s{% endif %} portrait
                           </p>
                         {%- endif -%}
@@ -252,7 +252,7 @@
                   </a>
                 </div>
                 {%- if pet_name_val != blank -%}
-                <div class="cart-page__name-toggle" style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:var(--text-sm);">
+                <div class="cart-page__name-toggle" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:var(--text-sm);">
                   <span style="color:var(--color-muted);">Name on portrait:</span>
                   <button type="button" class="cart-name-btn" data-name-value="Yes"
                           aria-pressed="{% if show_name == 'Yes' %}true{% else %}false{% endif %}"
