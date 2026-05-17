@@ -527,6 +527,72 @@ def _map_style_id(react_style_id: str) -> str:
 # File upload (cloud storage)
 # ---------------------------------------------------------------------------
 
+def generate_bleed_file(print_path: Path, product_key: str, style: Optional[str] = None) -> Path:
+    """Generate a bleed variant of the print file with 30% extra canvas on every
+    side (measured against the front-face dimension). Intended for manual
+    editing before re-uploading to Printful — never sent automatically.
+
+    The bleed area is filled with the artwork's background colour (solid-fill
+    for flat-bg styles like neon-pop-art, edge-replicated for organic styles).
+    Output DPI matches the source (300 DPI).
+    """
+    file_w, file_h = PRINT_SIZES[product_key]
+    front_w, front_h = FRONT_FACE_SIZES[product_key]
+
+    img = Image.open(print_path)
+    img.load()
+
+    # Extract the front face from the centre of the wrapped print file
+    offset_x = (file_w - front_w) // 2
+    offset_y = (file_h - front_h) // 2
+    front = img.crop((offset_x, offset_y, offset_x + front_w, offset_y + front_h))
+    img.close()
+
+    bleed_x = int(front_w * 0.30)
+    bleed_y = int(front_h * 0.30)
+    total_w = front_w + 2 * bleed_x
+    total_h = front_h + 2 * bleed_y
+
+    flat_bg_styles = {"neon-pop-art", "bold-graphic-poster", "modern-shape-art"}
+    if style in flat_bg_styles:
+        # Sample bg from top corners (pet never reaches there)
+        cs = max(8, min(front_w, front_h) // 50)
+        corners = (
+            list(front.convert("RGB").crop((0, 0, cs, cs)).getdata()),
+            list(front.convert("RGB").crop((front_w - cs, 0, front_w, cs)).getdata()),
+        )
+        pixels = corners[0] + corners[1]
+        n = len(pixels)
+        bg = (
+            sum(p[0] for p in pixels) // n,
+            sum(p[1] for p in pixels) // n,
+            sum(p[2] for p in pixels) // n,
+        )
+        out = Image.new("RGB", (total_w, total_h), bg)
+        out.paste(front.convert("RGB"), (bleed_x, bleed_y))
+    else:
+        out = Image.new("RGB", (total_w, total_h), (255, 255, 255))
+        out.paste(front.convert("RGB"), (bleed_x, bleed_y))
+        # Edge-replicate: stretch the outermost pixel row/column into each bleed band
+        if bleed_x > 0:
+            left_col = front.convert("RGB").crop((0, 0, 1, front_h)).resize((bleed_x, front_h), Image.NEAREST)
+            right_col = front.convert("RGB").crop((front_w - 1, 0, front_w, front_h)).resize((bleed_x, front_h), Image.NEAREST)
+            out.paste(left_col, (0, bleed_y))
+            out.paste(right_col, (bleed_x + front_w, bleed_y))
+        if bleed_y > 0:
+            top_row = front.convert("RGB").crop((0, 0, front_w, 1)).resize((front_w, bleed_y), Image.NEAREST)
+            bot_row = front.convert("RGB").crop((0, front_h - 1, front_w, front_h)).resize((front_w, bleed_y), Image.NEAREST)
+            out.paste(top_row, (bleed_x, 0))
+            out.paste(bot_row, (bleed_x, bleed_y + front_h))
+
+    bleed_path = print_path.with_name(print_path.stem + "_bleed30.png")
+    out.save(bleed_path, "PNG", dpi=(300, 300))
+    log.info(
+        "Bleed file saved: %s (%dx%d, 30%% per side)", bleed_path, total_w, total_h
+    )
+    return bleed_path
+
+
 def upload_print_file(local_path: Path) -> str:
     """
     Upload a print-ready file to Cloudflare R2 and return a public URL.

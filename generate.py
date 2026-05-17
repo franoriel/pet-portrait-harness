@@ -478,7 +478,7 @@ outlines never trail off into the background — they always loop back to \
 meet another part of the contour. Open contours that bleed into negative \
 space are forbidden.
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
 area for the script:
 - The pet's head, ears, ANY part of the line, and any stray mark MUST \
@@ -543,8 +543,8 @@ unusable. Treat it as a screen-print: ink covers the entire sheet.
 - COMPOSITION OPTIONS — pick ONE and commit to it (do not produce a \
 hybrid):
   (a) FULL-BLEED PORTRAIT: the pet's body extends past the canvas \
-  edges where appropriate (ears can crop at the top safe-zone \
-  boundary, shoulders can crop at the side edges, chest cuts off at \
+  edges where appropriate (ears can crop at the upper boundary, \
+  shoulders can crop at the side edges, chest cuts off at \
   the bottom edge) so the artwork reads as a confident edge-to-edge \
   composition with no visible bg margin around the pet.
   (b) CLEAN BUST CROP: the pet is composed as a tight head + neck + \
@@ -558,7 +558,7 @@ hybrid):
 (never on the background)
 - Fine art illustration style, high resolution 300dpi, print-ready
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
 area for the type:
 - The pet's head, ears, fur fly-aways, and ANY graphic accents MUST \
@@ -574,16 +574,20 @@ COMPOSITION:
 - Head and chest, facing forward with personality and attitude
 - The PET itself occupies 70-75% of image height — top of ears at \
 ~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing room \
+The reserved upper band (top ~22%) is what creates the breathing room \
 above the ears.
 - The BACKGROUND is ONE single saturated colour, perfectly uniform from \
 corner to corner, extending edge-to-edge with NO internal rectangles, \
 panels, bars, checker zones, or empty bands. The same colour you see in \
 one corner you see in every other corner.
-- Do NOT include any text, words, letters, watermarks, or signatures anywhere
+- Do NOT include any text, words, letters, watermarks, or signatures anywhere. \
+IMPORTANT: these are layout instructions for YOU — do NOT paint the words \
+"safe zone", "upper band", "type band", "zone", or any composition guide \
+labels as visible text or shapes in the artwork.
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
 oil paint, 3D render, blurry, low resolution, text, watermark, border, \
+composition guide words or labels rendered as visible artwork, \
 solid color bars or panels at image edges, white margin around the \
 artwork, off-colour fade at the canvas perimeter, anti-aliased \
 softening that leaves any pixel less than fully saturated at the \
@@ -611,7 +615,7 @@ jeweled collar, or regal military sash appropriate to the animal
 - Subtle craquelure texture for authenticity
 - Fine art illustration style, high resolution 300dpi, print-ready
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
 area for the engraved-style type:
 - The pet's head, crown, ears, drapery folds, and ANY decorative detail \
@@ -627,7 +631,7 @@ COMPOSITION:
 - Head and upper body in regal pose, noble and dignified
 - The PET itself (head + upper body) occupies 70-75% of image height — \
 top of head/crown at ~25-28% from top, bottom of body at ~96-99% from top, \
-centered horizontally. The reserved name safe zone (top ~22%) is what \
+centered horizontally. The reserved upper band (top ~22%) is what \
 creates the breathing room above the head.
 - The BACKGROUND (dark moody drapery/column) extends edge-to-edge naturally \
 to all four sides. No reserved panels, bars, color blocks, or empty bands
@@ -1862,7 +1866,7 @@ ending in a hard cut.
 - High-end pet portrait artist's piece. Premium, intimate, museum-quality.
 - Fine art illustration style, high resolution 300dpi, print-ready.
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
 area for hand-drawn type:
 - The pet's head, ears, charcoal strokes, stray marks, and ANY hatching \
@@ -1878,7 +1882,7 @@ COMPOSITION:
 - Head and chest, calm pose, direct gentle gaze.
 - The PET itself occupies 70-75% of image height — top of ears at \
 ~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing room \
+The reserved upper band (top ~22%) is what creates the breathing room \
 above the ears.
 - BOTTOM SILHOUETTE — CRITICAL: the chest must dissolve organically into the \
 paper texture with looser strokes, never end in a flat horizontal cut.
@@ -1894,7 +1898,7 @@ pink / rose / peach cast at the edges or corners, NO colour gradient \
 across the paper. Pet and paper are drawn in the same medium in the same \
 pass.
 - RECURRING FAILURE MODE TO AVOID: a faint rosy / warm-pink / peach cast \
-across the top portion of the canvas (especially in the upper safe zone \
+across the top portion of the canvas (especially in the upper band \
 or above the pet's head) — Gemini sometimes mimics aged-paper / \
 tea-stained-paper / vintage-photograph effects that introduce a localised \
 warm tint. The paper is FLAT uniform #F4EFE7 cream — never a rosy wash, \
@@ -1929,7 +1933,7 @@ STYLE:
 - Mystical, spiritual, new-age aesthetic — calming and beautiful
 - Fine art illustration style, high resolution 300dpi, print-ready
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
 area for the type:
 - The pet's head, ears, fur fly-aways, and the most intense portion of \
@@ -1945,7 +1949,7 @@ COMPOSITION:
 - Head and chest, serene expression, gentle eye contact
 - The PET itself occupies 70-75% of image height — top of ears at \
 ~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing room \
+The reserved upper band (top ~22%) is what creates the breathing room \
 above the ears; the aura still radiates BELOW the chest.
 - The BACKGROUND (aura gradient) radiates symmetrically and fills every edge \
 as one continuous smooth wash. No reserved panels, bars, color blocks, or \
@@ -2028,7 +2032,7 @@ edges of the canvas can fade back to clean paper, but the painted area is \
 clearly wider than the pet itself.
 - The wash extends BELOW the chest where applicable, and may breathe \
 sideways into the upper corners — but the TOP of the canvas above the \
-pet is treated as a calm clean-paper area (see NAME SAFE ZONE).
+pet is treated as a calm clean-paper area (see UPPER BAND).
 
 NAME CLEARANCE — CRITICAL: A handwritten pet name will be composited \
 into the upper portion of the finished image. The pet must be positioned \
@@ -2055,7 +2059,7 @@ COMPOSITION:
 - Slight natural vignette
 - The PET itself occupies 70-75% of image height — top of ears at \
 ~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing \
+The reserved upper band (top ~22%) is what creates the breathing \
 room above the ears; the pet still feels confidently present below it.
 - The BACKGROUND (watercolor wash and natural bleed edges) extends to every \
 edge of the canvas. No reserved panels, bars, color blocks, or empty bands
@@ -2675,7 +2679,7 @@ straight vertical line falling below the figure — this MUST NOT happen.
 outlines never trail off into the dark field — they always loop back to \
 meet another part of the contour.
 
-NAME SAFE ZONE — CRITICAL: A pet name will be composited into the TOP \
+UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
 area for the type:
 - The pet's head, ears, ANY part of the ivory line, and any stray mark \
@@ -2690,7 +2694,7 @@ COMPOSITION:
 - Head and chest, direct or three-quarter gaze.
 - The PET (formed by the single ivory line) occupies 76-78% of image \
 height — top of ears at ~22% from top (right at the bottom edge of the \
-name safe zone), bottom of chest at ~96-99% from top, centered \
+upper band bottom edge), bottom of chest at ~96-99% from top, centered \
 horizontally. The line should fill the canvas confidently. The widest \
 point of the figure (ear-to-ear or shoulder-to-shoulder) reaches \
 ~85-92% of canvas width.
@@ -2751,7 +2755,7 @@ imagining a wooden floor, table, or shelf the pet is on; do NOT do this.
 - The wash is soft, rounded, organic — variation comes from wet-on-wet \
 bleeds and subtle pigment pools, never from straight strokes.
 
-NAME SAFE ZONE — CRITICAL: A handwritten pet name will be composited \
+UPPER BAND — CRITICAL: A handwritten pet name will be composited \
 into the TOP of the finished image. Reserve the upper ~22% of the canvas \
 for legible script:
 - The pet's head, ears, fur fly-aways, ink linework, and bright accent \
@@ -2768,7 +2772,7 @@ COMPOSITION:
 - Slight natural vignette
 - The PET itself occupies 70-75% of image height — top of ears at \
 ~25-28% from top, bottom of chest at ~96-99% from top, centered horizontally. \
-The reserved name safe zone (top ~22%) is what creates the breathing \
+The reserved upper band (top ~22%) is what creates the breathing \
 room above the ears.
 - The BACKGROUND (deep pigmented dark watercolor wash) extends to every edge \
 of the canvas. No reserved panels, bars, color blocks, or empty bands

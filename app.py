@@ -28,6 +28,7 @@ from fulfillment import (
     PRODUCT_RATIOS,
     build_product_key,
     create_printful_order,
+    generate_bleed_file,
     generate_print_file,
     upload_print_file,
     parse_order_items,
@@ -200,7 +201,7 @@ import re as _re
 # could break out of a prompt string.
 PET_NAME_MAX = 20
 _PET_NAME_PATTERN = _re.compile(
-    r"^[A-Za-z0-9\s\-\u2019'.]{1," + str(PET_NAME_MAX) + r"}$",
+    r"^[A-Za-z0-9\s\-\u2019'.&+]{1," + str(PET_NAME_MAX) + r"}$",
     _re.UNICODE,
 )
 
@@ -2575,6 +2576,9 @@ def admin_style_smoke_test(style_id: str):
 
             print_url = upload_print_file(print_path)
 
+            bleed_path = generate_bleed_file(print_path, pk, style=style_id)
+            bleed_url = upload_print_file(bleed_path)
+
             expected_w, expected_h = PRINT_SIZES[pk]
             expected_ratio_w, expected_ratio_h = PRODUCT_RATIOS[pk]
 
@@ -2588,6 +2592,7 @@ def admin_style_smoke_test(style_id: str):
                 "format": actual_format,
                 "size_bytes": print_path.stat().st_size,
                 "url": print_url,
+                "bleed_url": bleed_url,
                 "url_reachable": _head_ok(print_url) if print_url else False,
                 "served_from_r2": bool(_r2_key_from_url(print_url)) if print_url else False,
                 "dimensions_match": (actual_w, actual_h) == (expected_w, expected_h),
@@ -2777,6 +2782,17 @@ def _process_fulfillment(order_id: str, items: list, recipient: dict):
             )
             print_url = upload_print_file(print_path)
             creative_print_url[creative_key] = print_url
+
+            try:
+                bleed_path = generate_bleed_file(print_path, largest_product_key, style=style)
+                bleed_url = upload_print_file(bleed_path)
+                log.info(
+                    "Order #%s — bleed file (30%%) ready for creative %s/%s: %s",
+                    order_id, pet_name, style, bleed_url,
+                )
+            except Exception:
+                log.exception("Order #%s — bleed file generation failed (non-fatal)", order_id)
+
             log.info(
                 "Order #%s — print file ready for creative %s/%s: %s",
                 order_id, pet_name, style, print_url,
