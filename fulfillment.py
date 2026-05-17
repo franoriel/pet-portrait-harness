@@ -350,6 +350,25 @@ def _split_bg_pad(
 # Hi-res print file generation
 # ---------------------------------------------------------------------------
 
+def _center_noname_watercolor(img: Image.Image) -> Image.Image:
+    """Centre-shift a no-name watercolor source before print scaling.
+
+    The watercolor AI reserves a ~22% empty name-safe band at the top.
+    Cropping 11% (half the band) from the top and padding 11% white at
+    the bottom preserves the 4:5 aspect ratio and centres the pet in the
+    print area — matching what the Step 3/4 mockup previews show.
+    Only applied to no-name orders; named prints have the band composited.
+    """
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    w, h = img.size
+    crop_px = max(1, int(round(h * 0.11)))
+    cropped = img.crop((0, crop_px, w, h))
+    canvas = Image.new("RGB", (w, h), (255, 255, 255))
+    canvas.paste(cropped, (0, 0))
+    return canvas
+
+
 def generate_print_file(
     photo_path: Path,
     pet_name: str,
@@ -411,6 +430,12 @@ def generate_print_file(
         log.info("Using R2 composited image for upscale (no Gemini re-generation)")
         img = Image.open(r2_path)
         img.load()
+
+        # No-name watercolor: shift image up 11% to centre the pet and remove
+        # the empty name-safe band before scaling to print dimensions.
+        if show_name.strip().lower() == "no" and _map_style_id(style) == "watercolor":
+            img = _center_noname_watercolor(img)
+            log.info("           applied no-name watercolor centering shift")
 
         # Crop the source to the FRONT-FACE aspect (1:1 / 3:4 / 4:5).
         # The wrap padding is added later by wrap_print_file_with_bleed().

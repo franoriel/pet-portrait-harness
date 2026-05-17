@@ -3940,11 +3940,12 @@ function ProductGallery({ state, update, retryFromStyle, startFresh }) {
               //     the empty bg above the name and re-pads the bottom,
               //     so the name sits tight to the top edge. Use
               //     'center top' so the cover crop preserves the name.
-              //   No-name / main image → source still carries the full
-              //     ~22% upper band (empty paper/bg above the pet).
-              //     'center bottom' anchors the pet to the bottom of
-              //     the cover crop, removing the top whitespace.
+              //   No-name watercolor → source carries the ~22% empty name band.
+              //     scale(1.35) from origin-y=70% crops the band and centres
+              //     the pet (shows source y≈18–92%). Matches Step 3 preview.
+              //   Other no-name → objectFit cover handles it naturally.
               const isNamed = effectiveWantsName && !!namedPreviewUrl;
+              const isWatercolor = state.selectedStyleId === 'soft-watercolour';
               return {
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
@@ -3952,6 +3953,7 @@ function ProductGallery({ state, update, retryFromStyle, startFresh }) {
                 objectFit: 'cover',
                 objectPosition: isNamed ? 'center top' : 'center bottom',
                 display: 'block',
+                ...(!isNamed && isWatercolor ? { transform: 'scale(1.35)', transformOrigin: '50% 70%' } : {}),
               };
             })(),
           }),

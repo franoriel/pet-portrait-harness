@@ -488,10 +488,11 @@
           // must remain visible; no crop needed.
           hScale = 100; vScale = 100; topPct = 0; leftPct = 0;
         } else {
-          // No-name: scale up 30% flush-bottom to crop the empty name band
-          // (~22% of source) so the pet ears land at ~6% from the face top.
+          // No-name: scale 130% centred (topPct=-15) to show source y≈11–89%.
+          // Mirrors the scale(1.35)/origin-70% transform in Step 3/4 previews
+          // and the 11% top-crop applied to no-name watercolor print files.
           hScale = 130; vScale = 130;
-          topPct = -30;                                 // flush-bottom crop
+          topPct = -15;                                 // centred crop
           leftPct = -15;                                // centred horizontally
         }
       }
@@ -507,11 +508,12 @@
         topPct = 0;
         leftPct = (100 - hScale) / 2;                   // centred horizontally
       } else {
-        // No-name: scale up 30% flush-bottom to strip the empty name band.
+        // No-name: scale 130% centred to show source y≈11–89%, matching
+        // the print file centering and Step 3/4 canvas mockup previews.
         var overscale = 1.30;
         hScale = 100 * (srcAspect / faceAspect) * overscale;
         vScale = 100 * overscale;
-        topPct = -(vScale - 100);                       // flush-bottom
+        topPct = -((vScale - 100) / 2);                 // centred (not flush-bottom)
         leftPct = (100 - hScale) / 2;                   // centred horizontally
       }
     } else {
