@@ -77,18 +77,18 @@ const MODERN_COLORS = [
 ];
 const MODERN_COLOR_IDS = MODERN_COLORS.map(c => c.id);
 
-// Watercolor wash-tint palette — 8 background colours for Soft Watercolour.
-// Each tints the ambient paper and wash halo; the pet's coat is always
-// faithful to the photo. IDs map to WATERCOLOR_BG_COLORS in generate.py.
+// Watercolor wash-mark palette — 8 colours for the painted halo and bleeds
+// around the pet. The paper stays white; only the painted marks carry this tint.
+// IDs map to WATERCOLOR_BG_COLORS in generate.py.
 const WATERCOLOR_COLORS = [
-  { id: 'paper',      hex: '#FAFAF8', label: 'White' },
-  { id: 'cream',      hex: '#F5EDE0', label: 'Cream' },
-  { id: 'blush',      hex: '#F2D8D2', label: 'Blush' },
-  { id: 'sage',       hex: '#C8D8BE', label: 'Sage' },
-  { id: 'sky',        hex: '#C5D9E8', label: 'Sky' },
-  { id: 'lavender',   hex: '#D6CCE6', label: 'Lavender' },
-  { id: 'terracotta', hex: '#E8C8B8', label: 'Terracotta' },
-  { id: 'taupe',      hex: '#D4C4AA', label: 'Taupe' },
+  { id: 'violet', hex: '#9B7DB8', label: 'Violet' },
+  { id: 'blue',   hex: '#7499BC', label: 'Blue' },
+  { id: 'teal',   hex: '#5EA8A0', label: 'Teal' },
+  { id: 'blush',  hex: '#C87878', label: 'Blush' },
+  { id: 'sage',   hex: '#7AAF82', label: 'Sage' },
+  { id: 'peach',  hex: '#C8906A', label: 'Peach' },
+  { id: 'slate',  hex: '#6E8FAA', label: 'Slate' },
+  { id: 'gold',   hex: '#C8A050', label: 'Gold' },
 ];
 const WATERCOLOR_COLOR_IDS = WATERCOLOR_COLORS.map(c => c.id);
 
@@ -2526,7 +2526,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
 
       if (isWatercolor) {
         const active = state.backgroundMode && WATERCOLOR_COLOR_IDS.includes(state.backgroundMode)
-          ? state.backgroundMode : 'paper';
+          ? state.backgroundMode : 'violet';
         return React.createElement('div', {
           style: {
             marginTop: '20px', padding: '16px', background: tokens.colorWhite,

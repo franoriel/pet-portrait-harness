@@ -475,21 +475,31 @@
     var hScaleOverride, vScaleOverride, leftPctOverride, topPctOverride;
     var sampleNeonBg = false;
     if (srcMatchesFace) {
-      // Source already matches the canvas face aspect (per-aspect
-      // un-watermarked print PNG). Render flush — what's on screen is
-      // exactly what Printful's printer receives, modulo resolution.
-      hScale = 100;
-      vScale = 100;
-      leftPct = 0;
-      topPct = 0;
+      if (isSquare) {
+        // Square face: render flush — no overflow needed.
+        hScale = 100;
+        vScale = 100;
+        leftPct = 0;
+        topPct = 0;
+      } else {
+        // Portrait face: scale up 15% and centre so the pet fills the canvas
+        // face rather than showing the empty name-safe band at the top.
+        hScale = 115;
+        vScale = 115;
+        leftPct = -7.5;
+        topPct = -7.5;
+      }
       coverPosition = 'center center';
     } else if (isFlushBottomMaster) {
       var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
       var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
-      hScale = 100 * (srcAspect / faceAspect);          // image_w as % of face_w
-      vScale = 100;                                     // image_h fills face_h
-      leftPct = (100 - hScale) / 2;                     // centred horizontally
-      topPct = 0;
+      // Scale 15% larger than flush-fill to allow centred vertical crop;
+      // this removes most of the empty name-safe-band from the top of the canvas.
+      var overscale = 1.15;
+      hScale = 100 * (srcAspect / faceAspect) * overscale;
+      vScale = 100 * overscale;
+      topPct = -(vScale - 100) / 2;                     // centre vertically
+      leftPct = (100 - hScale) / 2;                     // centre horizontally
     } else {
       if (srcIs1x1) {
         cropTopFrac = 0;
