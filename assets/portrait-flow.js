@@ -3512,21 +3512,24 @@ function PreviewStep({ state, update, selectPreview, onContinue, retryFromUpload
         // second tiled mark on top read as duplicates.
         React.createElement('img', {
           src: mainImage, alt: state.petName ? `Keepsake of ${state.petName}` : 'Your pet keepsake preview',
-          style: {
-            // No client-side zoom. Earlier zooms (140% then 110%) cut
-            // into the subject for styles whose AI source already
-            // fills the canvas (Modern, Renaissance, Aura Gradient).
-            // The named version renders at 100% and reads perfectly,
-            // so we mirror that here for consistency. max-width
-            // override beats the global
-            // `img, video { max-width:100% }` rule in base.css.
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            maxWidth: 'none', maxHeight: 'none',
-            objectFit: 'cover',
-            objectPosition: 'center center',
-            display: 'block',
-          },
+          style: (() => {
+            // Watercolor source always carries a ~22% empty name-safe band
+            // at the top. In a 4:5 container showing a 4:5 source, objectFit
+            // has nothing to crop — the full image shows including the blank
+            // top. Scale 1.35× from origin-y=70% pushes the name band above
+            // the visible area (source y≈18–92% shown) and centres the pet.
+            // Other styles fill their canvas edge-to-edge; no zoom needed.
+            const isWatercolor = state.selectedStyleId === 'soft-watercolour';
+            return {
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              maxWidth: 'none', maxHeight: 'none',
+              objectFit: 'cover',
+              objectPosition: 'center center',
+              display: 'block',
+              ...(isWatercolor ? { transform: 'scale(1.35)', transformOrigin: '50% 70%' } : {}),
+            };
+          })(),
         }),
       ),
       React.createElement('p', {
