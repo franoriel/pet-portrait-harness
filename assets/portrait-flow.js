@@ -3859,32 +3859,22 @@ function ProductGallery({ state, update, retryFromStyle, startFresh }) {
             src: displayImage,
             alt: localName ? `Keepsake of ${localName}` : 'Your keepsake',
             style: (() => {
-              // Conditional zoom-crop.
-              //
-              // When a name IS composited, generate.py now runs
-              // `_tighten_top_after_name` on the server which already
-              // crops the empty bg above the name and re-pads the
-              // bottom, so the source arrives with the name near the
-              // top edge. Any client-side top crop would clip into
-              // the now-tighter name — so we render the named source
-              // at 100% with no offset.
-              //
-              // When there's no name, we still want to drop the
-              // server's 10% padding ring + the AI's name-safe zone
-              // empty bg, so we zoom in 140% (≈14% crop per side).
-              //
-              // max-width override beats the global
-              // `img, video { max-width:100% }` rule in base.css.
-              // Both name and no-name variants render at 100% — the
-              // named version proved the right composition, so the
-              // unnamed mirrors it for consistency. Earlier zoom-in
-              // attempts cut into the pet on tighter source styles.
+              // object-position strategy:
+              //   Named image  → _tighten_top_after_name already crops
+              //     the empty bg above the name and re-pads the bottom,
+              //     so the name sits tight to the top edge. Use
+              //     'center top' so the cover crop preserves the name.
+              //   No-name / main image → source still carries the full
+              //     ~22% upper band (empty paper/bg above the pet).
+              //     'center bottom' anchors the pet to the bottom of
+              //     the cover crop, removing the top whitespace.
+              const isNamed = effectiveWantsName && !!namedPreviewUrl;
               return {
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
                 maxWidth: 'none', maxHeight: 'none',
                 objectFit: 'cover',
-                objectPosition: 'center center',
+                objectPosition: isNamed ? 'center top' : 'center bottom',
                 display: 'block',
               };
             })(),
