@@ -675,10 +675,12 @@ def generate_route():
     # (teal/cobalt/rose/citrus/forest/rust/violet/ember). Anything else falls
     # back to 'auto'.
     from generate import MODERN_BG_COLORS, POSTER_PALETTES
+    from generate import WATERCOLOR_BG_COLORS
     _BG_VALID = (
         "auto", "light", "dark",
         *MODERN_BG_COLORS.keys(),
         *POSTER_PALETTES.keys(),
+        *WATERCOLOR_BG_COLORS.keys(),
     )
     background_mode_raw = (request.form.get("background_mode") or "auto").strip().lower()
     background_mode = background_mode_raw if background_mode_raw in _BG_VALID else "auto"
@@ -690,6 +692,9 @@ def generate_route():
     # default 'teal' when the request didn't carry a valid palette id.
     if style == "bold-graphic-poster" and background_mode not in POSTER_PALETTES:
         background_mode = "teal"
+    # Watercolor locks to a wash-tint palette — default to 'paper' (white).
+    if style == "watercolor" and background_mode not in WATERCOLOR_BG_COLORS:
+        background_mode = "paper"
     # Optional variation seed — when the customer regenerates the same
     # photo + style they used recently, the client passes a non-zero
     # seed and the server picks one of N variation hints to nudge Gemini
@@ -1745,10 +1750,11 @@ def add_name():
     image_url = (data.get("image_url") or "").strip()
     style_raw = (data.get("style") or "watercolor").strip()
     background_mode = (data.get("background_mode") or "auto").strip().lower()
-    from generate import MODERN_BG_COLORS, POSTER_PALETTES
+    from generate import MODERN_BG_COLORS, POSTER_PALETTES, WATERCOLOR_BG_COLORS
     if background_mode not in ("auto", "light", "dark",
                                *MODERN_BG_COLORS.keys(),
-                               *POSTER_PALETTES.keys()):
+                               *POSTER_PALETTES.keys(),
+                               *WATERCOLOR_BG_COLORS.keys()):
         background_mode = "auto"
 
     # Validate pet_name

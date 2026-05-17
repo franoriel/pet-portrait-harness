@@ -657,6 +657,22 @@ MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
     "charcoal":   ("#2E2A26", "warm charcoal"),
 }
 
+# 8 wash-tint colours offered to customers via the Soft Watercolour background
+# picker. Each colour sets the dominant tint of the watercolor wash and paper
+# tone — from classic white paper to soft lifestyle hues that pair with
+# real home decor palettes. All sit inside CMYK gamut for print fidelity.
+# id → (hex, descriptive name used in prompt)
+WATERCOLOR_BG_COLORS: dict[str, tuple[str, str]] = {
+    "paper":      ("#FAFAF8", "clean white"),
+    "cream":      ("#F5EDE0", "warm cream ivory"),
+    "blush":      ("#F2D8D2", "soft dusty blush"),
+    "sage":       ("#C8D8BE", "muted sage green"),
+    "sky":        ("#C5D9E8", "soft powder blue"),
+    "lavender":   ("#D6CCE6", "soft lavender"),
+    "terracotta": ("#E8C8B8", "warm terracotta peach"),
+    "taupe":      ("#D4C4AA", "warm sandy taupe"),
+}
+
 # Bold Graphic Poster background seam position, expressed as a fraction of
 # canvas width measured from the left edge. 0.38 (golden-ratio adjacent)
 # puts the seam off-centre — narrow LEFT panel + wide RIGHT panel — so a
@@ -1974,7 +1990,7 @@ not override it.
 
 STYLE:
 - Loose expressive brushwork, soft wet-on-wet color washes
-- White paper background with natural watercolor bleed edges
+- {{WATERCOLOR_WASH_NAME}} paper background with natural watercolor bleed edges
 - Painterly fur texture with subtle fine ink linework on facial features
 - Warm soft lighting, no harsh shadows
 - Fine art illustration style, high resolution 300dpi, print-ready
@@ -1996,7 +2012,7 @@ a built environment behind or beneath the subject.
 edges, no curtain folds, no window frames.
 - NO surface texture: no canvas weave, no linen, no rough plaster, no \
 concrete, no marble, no granite, no fabric, no leather, no metal. \
-Just clean white watercolor paper with the watercolor wash painted \
+Just {{WATERCOLOR_WASH_NAME}} watercolor paper with the watercolor wash painted \
 on it. RECURRING FAILURE MODE TO AVOID: faint horizontal pencil-like \
 streaks running across the lower third of the canvas, OR drifting \
 across the RIGHT or LEFT third at chest/leg height (the model \
@@ -2006,6 +2022,15 @@ in any colour, at any length, anywhere on the canvas — including \
 short fragments that only span 10-30% of the width. If a viewer can \
 trace a straight or near-straight horizontal segment on the canvas, \
 the image is wrong.
+
+BACKGROUND WASH COLOUR — CRITICAL:
+- The paper and ambient wash tint throughout the entire painting is \
+{{WATERCOLOR_WASH_NAME}} ({{WATERCOLOR_WASH_HEX}}). All wet bleeds, \
+atmospheric halos, and background washes carry this tone from edge to \
+edge. The paper is this colour consistently — no patchiness, no \
+variation, no shift from one area to another.
+- The pet's coat colours are faithfully preserved from the uploaded photo \
+regardless of the background wash colour selected.
 
 WASH SHAPE — CRITICAL:
 - The wash is a SOFT, ROUNDED, ORGANIC HALO around the pet. Edges of \
@@ -2608,8 +2633,16 @@ def _snap_poster_to_palette(
         return img
 
 
-def build_watercolor_prompt(_style_vars: Optional[dict] = None) -> str:
-    return _WATERCOLOR_TEMPLATE
+def build_watercolor_prompt(style_vars: Optional[dict] = None) -> str:
+    color_id = (style_vars or {}).get("watercolor_bg") or "paper"
+    if color_id not in WATERCOLOR_BG_COLORS:
+        color_id = "paper"
+    hex_code, name = WATERCOLOR_BG_COLORS[color_id]
+    return (
+        _WATERCOLOR_TEMPLATE
+        .replace("{{WATERCOLOR_WASH_HEX}}", hex_code)
+        .replace("{{WATERCOLOR_WASH_NAME}}", name)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -3067,7 +3100,8 @@ _STYLE_BACKGROUND_SUPPORT: dict[str, set[str]] = {
     "naturalist":          {"auto"},
     # Only three current styles expose light/dark — the rest keep their
     # baked-in look. Matches portrait-flow.js STYLES[].backgrounds.
-    "watercolor":          {"auto"},
+    # Watercolor exposes an 8-swatch wash-tint palette (same pattern as Modern).
+    "watercolor":          set(WATERCOLOR_BG_COLORS.keys()),
     "minimal-line-art":    {"auto", "light", "dark"},
     # Modern + Bold Graphic Poster expose dedicated colour palettes instead
     # of auto/light/dark — Modern uses MODERN_BG_COLORS (8 single-tone
@@ -5865,6 +5899,12 @@ def _generate_inner(
     # builder injects the bg + accent colours, and reset background_mode.
     if style == "bold-graphic-poster" and background_mode in POSTER_PALETTES:
         style_vars = {**(style_vars or {}), "poster_palette": background_mode}
+        background_mode = "auto"
+    # Watercolor uses background_mode as a wash-tint colour selector
+    # (paper/cream/blush/etc.) — lift into style_vars["watercolor_bg"] and
+    # reset background_mode so no generic light/dark override is appended.
+    if style == "watercolor" and background_mode in WATERCOLOR_BG_COLORS:
+        style_vars = {**(style_vars or {}), "watercolor_bg": background_mode}
         background_mode = "auto"
 
     log.info("[generate] %s  '%s'  ←  %s", style, pet_name, photo.name)
