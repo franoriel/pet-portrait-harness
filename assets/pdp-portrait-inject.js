@@ -482,24 +482,26 @@
         leftPct = 0;
         topPct = 0;
       } else {
-        // Portrait face: scale up 15% and centre so the pet fills the canvas
-        // face rather than showing the empty name-safe band at the top.
-        hScale = 115;
-        vScale = 115;
-        leftPct = -7.5;
-        topPct = -7.5;
+        // Portrait face: scale up 30% flush-bottom so the name-safe band
+        // (~22% of source) is cropped off the top entirely, landing the
+        // pet ears at ~6% from the face top with the pet body at ~95%.
+        // topPct = -(vScale - 100) keeps the image flush to the face bottom
+        // so no gap opens at the base of the canvas.
+        hScale = 130;
+        vScale = 130;
+        topPct = -30;                                   // flush-bottom crop
+        leftPct = -15;                                  // centred horizontally
       }
       coverPosition = 'center center';
     } else if (isFlushBottomMaster) {
       var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
       var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
-      // Scale 15% larger than flush-fill to allow centred vertical crop;
-      // this removes most of the empty name-safe-band from the top of the canvas.
-      var overscale = 1.15;
+      // Scale up 30% flush-bottom to strip the name-safe band off the top.
+      var overscale = 1.30;
       hScale = 100 * (srcAspect / faceAspect) * overscale;
       vScale = 100 * overscale;
-      topPct = -(vScale - 100) / 2;                     // centre vertically
-      leftPct = (100 - hScale) / 2;                     // centre horizontally
+      topPct = -(vScale - 100);                         // flush-bottom: image bottom = face bottom
+      leftPct = (100 - hScale) / 2;                     // centred horizontally
     } else {
       if (srcIs1x1) {
         cropTopFrac = 0;
