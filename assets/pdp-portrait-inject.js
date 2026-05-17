@@ -497,28 +497,20 @@
         cropSideFrac = 0;
       } else if (styleId === 'neon-pop-art') {
         // Neon Pop Art on a square face from the 4:5 master.
-        // The bg is a single uniform saturated colour, so we can extend
-        // it across the canvas face and center the pet vertically (no
-        // bottom-anchoring — the user reads bottom-anchored as "too low"
-        // because there's no breathing room above OR below). Strategy:
-        //   - IMG element 80% × 100% of face → matches source 4:5 aspect
-        //   - top = -12% face so the empty name-safe-zone band at the
-        //     top of source is clipped above the canvas face
-        //   - pet center (source y≈62%) lands at face y≈50%
-        //   - bottom 12% + left 10% + right 10% of face are empty;
-        //     fillCanvasFaceFromCorner() samples the source's top-left
-        //     corner after image load and paints canvas-face that exact
-        //     hex so the side / bottom margins read as one continuous
-        //     saturated bg. CORS-safe; degrades to leaving canvas-face
-        //     transparent if sampling fails.
+        // Scale source to fill 100% of face width (hScale=100). Since
+        // source is 4:5 the element must be 125% tall to keep the aspect
+        // (100 / 0.8 = 125). Bottom-anchor so the pet's feet land at
+        // canvas-face y=100%: topPct = 100 - 125 = -25. The top 25% of
+        // the source (name band + upper bg) is clipped by cropWindow;
+        // for the named case the 1:1 derivative (srcIs1x1 path) is used
+        // instead so this only runs for the no-name fallback.
         cropTopFrac = 0;
         cropBotFrac = 0;
         cropSideFrac = 0;
-        hScaleOverride = 80;
-        vScaleOverride = 100;
-        leftPctOverride = 10;
-        topPctOverride = -12;
-        sampleNeonBg = true;
+        hScaleOverride = 100;
+        vScaleOverride = 125;
+        leftPctOverride = 0;
+        topPctOverride = -25;
       } else {
         // Other styles on a square face from the 4:5 master (watercolor
         // / charcoal etc.): cover-crop with bottom anchoring so the
