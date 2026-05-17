@@ -662,15 +662,17 @@ MODERN_BG_COLORS: dict[str, tuple[str, str]] = {
 # tone — from classic white paper to soft lifestyle hues that pair with
 # real home decor palettes. All sit inside CMYK gamut for print fidelity.
 # id → (hex, descriptive name used in prompt)
+# These are WASH MARK colours — the painted halos and bleeds around the pet.
+# The paper surface always stays clean white; only the marks carry this tint.
 WATERCOLOR_BG_COLORS: dict[str, tuple[str, str]] = {
-    "paper":      ("#FAFAF8", "clean white"),
-    "cream":      ("#F5EDE0", "warm cream ivory"),
-    "blush":      ("#F2D8D2", "soft dusty blush"),
-    "sage":       ("#C8D8BE", "muted sage green"),
-    "sky":        ("#C5D9E8", "soft powder blue"),
-    "lavender":   ("#D6CCE6", "soft lavender"),
-    "terracotta": ("#E8C8B8", "warm terracotta peach"),
-    "taupe":      ("#D4C4AA", "warm sandy taupe"),
+    "violet":  ("#9B7DB8", "soft violet purple"),
+    "blue":    ("#7499BC", "dusty powder blue"),
+    "teal":    ("#5EA8A0", "soft teal green"),
+    "blush":   ("#C87878", "dusty rose blush"),
+    "sage":    ("#7AAF82", "soft sage green"),
+    "peach":   ("#C8906A", "warm peach"),
+    "slate":   ("#6E8FAA", "blue-gray slate"),
+    "gold":    ("#C8A050", "warm golden ochre"),
 }
 
 # Bold Graphic Poster background seam position, expressed as a fraction of
@@ -1990,7 +1992,7 @@ not override it.
 
 STYLE:
 - Loose expressive brushwork, soft wet-on-wet color washes
-- {{WATERCOLOR_WASH_NAME}} paper background with natural watercolor bleed edges
+- White paper background with natural watercolor bleed edges in {{WATERCOLOR_WASH_NAME}} tones
 - Painterly fur texture with subtle fine ink linework on facial features
 - Warm soft lighting, no harsh shadows
 - Fine art illustration style, high resolution 300dpi, print-ready
@@ -2012,7 +2014,7 @@ a built environment behind or beneath the subject.
 edges, no curtain folds, no window frames.
 - NO surface texture: no canvas weave, no linen, no rough plaster, no \
 concrete, no marble, no granite, no fabric, no leather, no metal. \
-Just {{WATERCOLOR_WASH_NAME}} watercolor paper with the watercolor wash painted \
+Just clean white watercolor paper with the watercolor wash painted \
 on it. RECURRING FAILURE MODE TO AVOID: faint horizontal pencil-like \
 streaks running across the lower third of the canvas, OR drifting \
 across the RIGHT or LEFT third at chest/leg height (the model \
@@ -2023,14 +2025,16 @@ short fragments that only span 10-30% of the width. If a viewer can \
 trace a straight or near-straight horizontal segment on the canvas, \
 the image is wrong.
 
-BACKGROUND WASH COLOUR — CRITICAL:
-- The paper and ambient wash tint throughout the entire painting is \
-{{WATERCOLOR_WASH_NAME}} ({{WATERCOLOR_WASH_HEX}}). All wet bleeds, \
-atmospheric halos, and background washes carry this tone from edge to \
-edge. The paper is this colour consistently — no patchiness, no \
-variation, no shift from one area to another.
-- The pet's coat colours are faithfully preserved from the uploaded photo \
-regardless of the background wash colour selected.
+WATERCOLOR MARK COLOUR — CRITICAL:
+- The painted watercolor wash marks, color halo, wet bleeds, and \
+atmospheric washes surrounding the pet are rendered in \
+{{WATERCOLOR_WASH_NAME}} ({{WATERCOLOR_WASH_HEX}}) tones. This is the \
+dominant tint for ALL painted marks and atmospheric color in the artwork. \
+The paper surface underneath remains plain clean white — NOT tinted, NOT \
+coloured, NOT off-white. The paper is white; only the painted marks carry \
+the selected colour.
+- The pet's coat color is faithfully preserved from the uploaded photo — \
+the mark colour tints the background washes, not the animal.
 
 WASH SHAPE — CRITICAL:
 - The wash is a SOFT, ROUNDED, ORGANIC HALO around the pet. Edges of \

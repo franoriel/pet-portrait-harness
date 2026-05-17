@@ -692,9 +692,9 @@ def generate_route():
     # default 'teal' when the request didn't carry a valid palette id.
     if style == "bold-graphic-poster" and background_mode not in POSTER_PALETTES:
         background_mode = "teal"
-    # Watercolor locks to a wash-tint palette — default to 'paper' (white).
+    # Watercolor locks to a wash-mark colour palette — default to 'violet'.
     if style == "watercolor" and background_mode not in WATERCOLOR_BG_COLORS:
-        background_mode = "paper"
+        background_mode = "violet"
     # Optional variation seed — when the customer regenerates the same
     # photo + style they used recently, the client passes a non-zero
     # seed and the server picks one of N variation hints to nudge Gemini
