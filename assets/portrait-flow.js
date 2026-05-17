@@ -77,6 +77,21 @@ const MODERN_COLORS = [
 ];
 const MODERN_COLOR_IDS = MODERN_COLORS.map(c => c.id);
 
+// Watercolor wash-tint palette — 8 background colours for Soft Watercolour.
+// Each tints the ambient paper and wash halo; the pet's coat is always
+// faithful to the photo. IDs map to WATERCOLOR_BG_COLORS in generate.py.
+const WATERCOLOR_COLORS = [
+  { id: 'paper',      hex: '#FAFAF8', label: 'White' },
+  { id: 'cream',      hex: '#F5EDE0', label: 'Cream' },
+  { id: 'blush',      hex: '#F2D8D2', label: 'Blush' },
+  { id: 'sage',       hex: '#C8D8BE', label: 'Sage' },
+  { id: 'sky',        hex: '#C5D9E8', label: 'Sky' },
+  { id: 'lavender',   hex: '#D6CCE6', label: 'Lavender' },
+  { id: 'terracotta', hex: '#E8C8B8', label: 'Terracotta' },
+  { id: 'taupe',      hex: '#D4C4AA', label: 'Taupe' },
+];
+const WATERCOLOR_COLOR_IDS = WATERCOLOR_COLORS.map(c => c.id);
+
 // Bold Graphic Poster palette — 8 paired-tone palettes. Each one drives
 // a vertical 2-tone background split (left half = `left`, right half =
 // `right`). IDs map to POSTER_PALETTES in generate.py so the backend can
@@ -119,7 +134,8 @@ const STYLES = [
     name: 'Soft Watercolour',
     available: true,
     exampleImage: 'example-soft-watercolour.webp',
-    backgrounds: ['auto'],
+    // Uses wash-tint palette instead of auto/light/dark — see WATERCOLOR_COLORS.
+    backgrounds: WATERCOLOR_COLOR_IDS,
   },
   {
     id: 'modern-shape-art',
@@ -2448,6 +2464,7 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
       const allowed = backgroundsFor(state.selectedStyleId);
       const isModern = state.selectedStyleId === 'modern-shape-art';
       const isPoster = state.selectedStyleId === 'bold-graphic-poster';
+      const isWatercolor = state.selectedStyleId === 'soft-watercolour';
 
       if (isPoster) {
         const active = state.backgroundMode && POSTER_PALETTE_IDS.includes(state.backgroundMode)
@@ -2501,6 +2518,62 @@ function StyleStep({ state, update, selectStyle, onGenerate, canGenerate, onBack
                     color: isActive ? tokens.colorAccent : tokens.colorBrand,
                   },
                 }, p.label),
+              );
+            }),
+          ),
+        );
+      }
+
+      if (isWatercolor) {
+        const active = state.backgroundMode && WATERCOLOR_COLOR_IDS.includes(state.backgroundMode)
+          ? state.backgroundMode : 'paper';
+        return React.createElement('div', {
+          style: {
+            marginTop: '20px', padding: '16px', background: tokens.colorWhite,
+            borderRadius: tokens.radiusCard, border: `1px solid ${tokens.colorBorder}`,
+          },
+        },
+          React.createElement('p', {
+            style: { ...s.smallCaps, margin: '0 0 10px', fontSize: 'var(--text-xs)', textAlign: 'center' },
+          }, 'Wash colour'),
+          React.createElement('div', {
+            style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' },
+            role: 'radiogroup', 'aria-label': 'Wash colour',
+          },
+            WATERCOLOR_COLORS.map(c => {
+              const isActive = active === c.id;
+              return React.createElement('button', {
+                key: c.id, type: 'button', role: 'radio',
+                'aria-checked': isActive,
+                'aria-label': `${c.label} wash (${c.hex})`,
+                onClick: () => {
+                  update({ backgroundMode: c.id });
+                  saveSession({ ...state, backgroundMode: c.id });
+                },
+                style: {
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: '6px', padding: '8px 4px',
+                  border: isActive ? `2px solid ${tokens.colorAccent}` : `1px solid ${tokens.colorBorder}`,
+                  borderRadius: '10px',
+                  background: isActive ? tokens.colorAccentLight : tokens.colorWhite,
+                  cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+                },
+              },
+                React.createElement('span', {
+                  'aria-hidden': true,
+                  style: {
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: c.hex,
+                    border: `1px solid rgba(28, 28, 28, 0.10)`,
+                    boxShadow: isActive ? `0 0 0 2px ${tokens.colorAccent}, 0 0 0 4px ${tokens.colorAccentLight}` : 'inset 0 1px 2px rgba(28,28,28,0.06)',
+                  },
+                }),
+                React.createElement('span', {
+                  style: {
+                    fontFamily: fontSans, fontWeight: 600, fontSize: 'var(--text-xs)',
+                    color: isActive ? tokens.colorAccent : tokens.colorBrand,
+                  },
+                }, c.label),
               );
             }),
           ),
