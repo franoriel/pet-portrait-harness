@@ -424,25 +424,34 @@ def generate_print_file(
         if abs(source_ratio - target_ratio) > 0.01:
             img = crop_to_ratio(img, ratio, gravity="center")
 
-        # Resize to FRONT-FACE pixel dimensions. The wrap step below pads
-        # this up to file dimensions; the name is composited at front-face
-        # coordinates so its position is independent of the wrap.
-        needs_upscale = img.width < front_w or img.height < front_h
-        if (img.width, img.height) != (front_w, front_h):
-            img = img.resize((front_w, front_h), Image.LANCZOS)
-
-        # UnsharpMask removed. On hard-edged styles (Bold Graphic Poster,
-        # Modern Shape Art), the ~5x linear upscale from Gemini's ~1024px
-        # output to FRONT_FACE_SIZES (4800-6000px) produces visible
-        # aliasing on cubist polygon boundaries. UnsharpMask AMPLIFIES
-        # those edge artifacts — it was making the jaggies worse, not
-        # better. Without it, edges are slightly softer but the print
-        # reads as a clean vector illustration rather than a pixel-y
-        # upscale.
-        # The needs_upscale variable is preserved so future code can
-        # re-introduce a smarter resampling strategy (2x supersampling
-        # + Gaussian blur) without restructuring the surrounding code.
+        # Scale source to cover the full print-file dimensions so actual
+        # artwork fills every pixel of the wrap — no edge-pixel drag.
+        #
+        # Strategy: scale to whichever axis the source is proportionally
+        # smaller in (so it over-fills the other axis), then center-crop
+        # the overflow. The net result is that the front face maps to
+        # FRONT_FACE_SIZES exactly and the bleed band shows real image
+        # content instead of a 1-pixel stretched edge.
+        #
+        # For magnets PRINT_SIZES == FRONT_FACE_SIZES so this is a
+        # straight resize with no crop.
+        src_aspect = img.width / img.height
+        file_aspect = file_w / file_h
+        if src_aspect >= file_aspect:
+            # Source is wider-or-equal → scale to fill height
+            scaled_h = file_h
+            scaled_w = max(file_w, int(round(file_h * src_aspect)))
+        else:
+            # Source is narrower → scale to fill width
+            scaled_w = file_w
+            scaled_h = max(file_h, int(round(file_w / src_aspect)))
+        needs_upscale = img.width < scaled_w or img.height < scaled_h
         _ = needs_upscale  # noqa: F841 — kept for future use
+        img = img.resize((scaled_w, scaled_h), Image.LANCZOS)
+        crop_x = (scaled_w - file_w) // 2
+        crop_y = (scaled_h - file_h) // 2
+        if crop_x or crop_y:
+            img = img.crop((crop_x, crop_y, crop_x + file_w, crop_y + file_h))
 
         # The R2 source is already-composited from preview generation —
         # it has the customer's name baked in (or is the no-name variant
@@ -488,11 +497,6 @@ def generate_print_file(
             f"Investigate R2 (key/bucket/prefix) and retry the order."
         )
 
-    # For canvas variants, expand the front-face composition to the full
-    # file dimensions by padding sampled-bg-coloured wrap around it. For
-    # magnets (no wrap), wrap_print_file_with_bleed is a no-op.
-    img = wrap_print_file_with_bleed(img, product_key, style=_map_style_id(style))
-
     # Save with 300 DPI metadata embedded for print shops
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     safe_name = "".join(c for c in pet_name.lower() if c.isalnum()) or "pet"
@@ -532,8 +536,12 @@ def generate_bleed_file(print_path: Path, product_key: str, style: Optional[str]
     side (measured against the front-face dimension). Intended for manual
     editing before re-uploading to Printful — never sent automatically.
 
-    The bleed area is filled with the artwork's background colour (solid-fill
-    for flat-bg styles like neon-pop-art, edge-replicated for organic styles).
+    30% per side is a uniform scale factor: total = front × 1.6 on each axis,
+    which preserves the original aspect ratio for all canvas sizes. The bleed
+    area contains real image content (same cover-scale approach as the print
+    file) rather than edge-pixel drag — we extract the front face from the
+    wrapped print file and scale it up to the bleed dimensions via LANCZOS.
+
     Output DPI matches the source (300 DPI).
     """
     file_w, file_h = PRINT_SIZES[product_key]
@@ -542,48 +550,20 @@ def generate_bleed_file(print_path: Path, product_key: str, style: Optional[str]
     img = Image.open(print_path)
     img.load()
 
-    # Extract the front face from the centre of the wrapped print file
+    # Extract the front face from the centre of the wrapped print file.
+    # The print file is already at file_w × file_h with the front face
+    # centred; bleed bands on all sides contain real artwork content.
     offset_x = (file_w - front_w) // 2
     offset_y = (file_h - front_h) // 2
     front = img.crop((offset_x, offset_y, offset_x + front_w, offset_y + front_h))
     img.close()
 
-    bleed_x = int(front_w * 0.30)
-    bleed_y = int(front_h * 0.30)
-    total_w = front_w + 2 * bleed_x
-    total_h = front_h + 2 * bleed_y
-
-    flat_bg_styles = {"neon-pop-art", "bold-graphic-poster", "modern-shape-art"}
-    if style in flat_bg_styles:
-        # Sample bg from top corners (pet never reaches there)
-        cs = max(8, min(front_w, front_h) // 50)
-        corners = (
-            list(front.convert("RGB").crop((0, 0, cs, cs)).getdata()),
-            list(front.convert("RGB").crop((front_w - cs, 0, front_w, cs)).getdata()),
-        )
-        pixels = corners[0] + corners[1]
-        n = len(pixels)
-        bg = (
-            sum(p[0] for p in pixels) // n,
-            sum(p[1] for p in pixels) // n,
-            sum(p[2] for p in pixels) // n,
-        )
-        out = Image.new("RGB", (total_w, total_h), bg)
-        out.paste(front.convert("RGB"), (bleed_x, bleed_y))
-    else:
-        out = Image.new("RGB", (total_w, total_h), (255, 255, 255))
-        out.paste(front.convert("RGB"), (bleed_x, bleed_y))
-        # Edge-replicate: stretch the outermost pixel row/column into each bleed band
-        if bleed_x > 0:
-            left_col = front.convert("RGB").crop((0, 0, 1, front_h)).resize((bleed_x, front_h), Image.NEAREST)
-            right_col = front.convert("RGB").crop((front_w - 1, 0, front_w, front_h)).resize((bleed_x, front_h), Image.NEAREST)
-            out.paste(left_col, (0, bleed_y))
-            out.paste(right_col, (bleed_x + front_w, bleed_y))
-        if bleed_y > 0:
-            top_row = front.convert("RGB").crop((0, 0, front_w, 1)).resize((front_w, bleed_y), Image.NEAREST)
-            bot_row = front.convert("RGB").crop((0, front_h - 1, front_w, front_h)).resize((front_w, bleed_y), Image.NEAREST)
-            out.paste(top_row, (bleed_x, 0))
-            out.paste(bot_row, (bleed_x, bleed_y + front_h))
+    # 30% per side → total = front × 1.6 on each axis.
+    # Because the scale is uniform, the bleed-file aspect ratio equals the
+    # front-face aspect ratio — no crop needed, straight LANCZOS resize.
+    total_w = int(round(front_w * 1.6))
+    total_h = int(round(front_h * 1.6))
+    out = front.convert("RGB").resize((total_w, total_h), Image.LANCZOS)
 
     bleed_path = print_path.with_name(print_path.stem + "_bleed30.png")
     out.save(bleed_path, "PNG", dpi=(300, 300))
