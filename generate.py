@@ -4527,19 +4527,15 @@ def _detect_text_color(image: Image.Image) -> tuple:
 # Per-style text rendering config — controls how the name looks on each style
 STYLE_TEXT_CONFIG: dict[str, dict] = {
     "watercolor": {
-        # Sacramento is a thin handwritten script — bumped size_ratio
-        # because scripts have low x-height and look small at serif
-        # sizing. The watercolor prompt reserves the top ~22% of the
-        # canvas as a NAME SAFE ZONE (clean paper / calm wash, pet
-        # below y=22%). zone_top 0.11 lands the script's vertical
-        # centre inside that band — comfortably above the pet's ears
-        # (which sit at y≈25-28%) and well clear of the 1:1 centre
-        # crop edge on square canvas variants. Opacity 1.0 with the
-        # true-black override in composite_name so the name reads as
-        # confident hand-written ink, not faded pencil.
-        "size_ratio": 0.08,
+        # Sacramento handwritten script. size_ratio 0.10 gives the name
+        # enough visual weight on a large canvas without overwhelming the
+        # pet. zone_top 0.17 places the name's vertical centre at 17% of
+        # source height — approximately halfway between the canvas top and
+        # the pet's ears (y≈28%), which reads as intentionally anchored
+        # rather than a floating label at the top edge.
+        "size_ratio": 0.10,
         "transform": "title",
-        "zone_top": 0.11,
+        "zone_top": 0.17,
         "letter_spacing": 0,
         "opacity": 1.0,
     },

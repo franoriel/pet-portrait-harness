@@ -331,6 +331,7 @@
     opts = opts || {};
     var srcMatchesFace = !!opts.srcMatchesFace;
     var applyCssWatermark = !!opts.applyCssWatermark;
+    var mockupShowName = !!opts.showName;
     // Outer container: square 1:1 slide. Linen backdrop matches the
     // pre-photographed Printful product mockup used for tall variants
     // so the square mockups read as the same product family. The
@@ -482,26 +483,37 @@
         leftPct = 0;
         topPct = 0;
       } else {
-        // Portrait face: scale up 30% flush-bottom so the name-safe band
-        // (~22% of source) is cropped off the top entirely, landing the
-        // pet ears at ~6% from the face top with the pet body at ~95%.
-        // topPct = -(vScale - 100) keeps the image flush to the face bottom
-        // so no gap opens at the base of the canvas.
-        hScale = 130;
-        vScale = 130;
-        topPct = -30;                                   // flush-bottom crop
-        leftPct = -15;                                  // centred horizontally
+        if (mockupShowName) {
+          // Named portrait: render flush — name composited at zone_top≈0.17
+          // must remain visible; no crop needed.
+          hScale = 100; vScale = 100; topPct = 0; leftPct = 0;
+        } else {
+          // No-name: scale up 30% flush-bottom to crop the empty name band
+          // (~22% of source) so the pet ears land at ~6% from the face top.
+          hScale = 130; vScale = 130;
+          topPct = -30;                                 // flush-bottom crop
+          leftPct = -15;                                // centred horizontally
+        }
       }
       coverPosition = 'center center';
     } else if (isFlushBottomMaster) {
       var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
       var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
-      // Scale up 30% flush-bottom to strip the name-safe band off the top.
-      var overscale = 1.30;
-      hScale = 100 * (srcAspect / faceAspect) * overscale;
-      vScale = 100 * overscale;
-      topPct = -(vScale - 100);                         // flush-bottom: image bottom = face bottom
-      leftPct = (100 - hScale) / 2;                     // centred horizontally
+      if (mockupShowName) {
+        // Named: fill face height, overflow sides, no vertical crop so the
+        // name at zone_top≈0.17 stays visible at face y≈17%.
+        hScale = 100 * (srcAspect / faceAspect);        // e.g. 106.7% for 12×16
+        vScale = 100;
+        topPct = 0;
+        leftPct = (100 - hScale) / 2;                   // centred horizontally
+      } else {
+        // No-name: scale up 30% flush-bottom to strip the empty name band.
+        var overscale = 1.30;
+        hScale = 100 * (srcAspect / faceAspect) * overscale;
+        vScale = 100 * overscale;
+        topPct = -(vScale - 100);                       // flush-bottom
+        leftPct = (100 - hScale) / 2;                   // centred horizontally
+      }
     } else {
       if (srcIs1x1) {
         cropTopFrac = 0;
@@ -769,7 +781,7 @@
       var clientMockup = createClientMockup(
         pick.url, dim.w, dim.h, sizeKey,
         !!pick.srcIs1x1, styleId,
-        { srcMatchesFace: pick.matches, applyCssWatermark: pick.watermark }
+        { srcMatchesFace: pick.matches, applyCssWatermark: pick.watermark, showName: showName }
       );
       mockupSlide.appendChild(clientMockup);
 
@@ -1143,14 +1155,14 @@
           var rebuilt = createClientMockup(
             matchedPrintUrl, dim.w, dim.h, sizeKey,
             false, styleId,
-            { srcMatchesFace: true, applyCssWatermark: true }
+            { srcMatchesFace: true, applyCssWatermark: true, showName: showName }
           );
           slide.appendChild(rebuilt);
         } else {
           // Fallback: watermarked WebP + legacy crop math.
           var useSquareSrc = isSq && !!url1x1;
           var srcForSlide = useSquareSrc ? url1x1 : url;
-          var rebuiltFallback = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc, styleId);
+          var rebuiltFallback = createClientMockup(srcForSlide, dim.w, dim.h, sizeKey, useSquareSrc, styleId, { showName: showName });
           slide.appendChild(rebuiltFallback);
         }
       });
