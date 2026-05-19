@@ -401,11 +401,11 @@
 
   /* ── Free-shipping celebration ─────────────────────────────
      Fires a one-shot confetti toast the first time a session's
-     cart crosses the $110 threshold. Session-scoped so a refresh
+     cart crosses the $125 threshold. Session-scoped so a refresh
      doesn't re-fire; resets automatically if the cart drops back
      below the threshold, so removing and re-adding items can
      trigger a new celebration. */
-  const FREE_SHIP_CENTS = 11000;
+  const FREE_SHIP_CENTS = 12500;
   const CELEBRATE_KEY   = 'pf_free_ship_celebrated';
 
   function injectFreeShipStyles() {
@@ -610,7 +610,7 @@
         </div>`).join('');
 
       // Fire one-shot celebration toast the first time the cart crosses
-      // the $110 free-shipping threshold during this session.
+      // the $125 free-shipping threshold during this session.
       maybeCelebrateFreeShipping(cart.total_price);
 
       if (footer) {

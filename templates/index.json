@@ -36,7 +36,7 @@
           "type": "item",
           "settings": {
             "icon": "✦",
-            "text": "Free shipping over $110 — Canada only"
+            "text": "Free shipping over $125 — Canada only"
           }
         },
         "b3": {
@@ -137,7 +137,7 @@
         "eyebrow": "Ready?",
         "heading": "The keepsake they'll never take down.",
         "subheading": "Upload one photo. The preview is free. Pay only if you love it.",
-        "cta_label": "Create their keepsake",
+        "cta_label": "Start here",
         "cta_url": "/pages/create"
       }
     }

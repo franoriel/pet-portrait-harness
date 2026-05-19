@@ -415,9 +415,9 @@
             {%- comment -%}
               Free-shipping threshold tracker.
 
-              cart.total_price is in cents — $110 CAD = 11000 cents.
+              cart.total_price is in cents — $125 CAD = 12500 cents.
             {%- endcomment -%}
-            {%- assign free_ship_cents = 11000 -%}
+            {%- assign free_ship_cents = 12500 -%}
             {%- assign remaining_cents = free_ship_cents | minus: cart.total_price -%}
 
             {%- comment -%}
