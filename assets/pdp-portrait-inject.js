@@ -486,14 +486,16 @@
         leftPct = 0;
         topPct = 0;
       } else {
-        if (mockupShowName) {
+        if (mockupShowName || styleId === 'neon-pop-art') {
           // Named portrait: render flush — name composited at zone_top≈0.17
           // must remain visible; no crop needed.
+          // Neon Pop Art: no name zone in the print file — already composed for
+          // the full canvas face. Render flush so the saturated bg fills
+          // edge-to-edge with no artificial zoom crop.
           hScale = 100; vScale = 100; topPct = 0; leftPct = 0;
         } else {
-          // No-name: scale 130% centred (topPct=-15) to show source y≈11–89%.
-          // Mirrors the scale(1.35)/origin-70% transform in Step 3/4 previews
-          // and the 11% top-crop applied to no-name watercolor print files.
+          // No-name non-neon: scale 130% centred to show source y≈11–89%,
+          // cropping the empty name-safe-zone at the top of the print file.
           hScale = 130; vScale = 130;
           topPct = -15;                                 // centred crop
           leftPct = -15;                                // centred horizontally
