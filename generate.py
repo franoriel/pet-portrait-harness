@@ -526,7 +526,10 @@ neon green, bright orange, vivid yellow.
 - Match the animal's actual eye shape and expression from the photo.
 
 STYLE:
-- Bold thick black outlines (comic book / screen print weight)
+- Bold thick black outlines on the PET'S body parts, fur edges, and \
+facial features only (comic book / screen print weight). NO outline, \
+border, or framing line around the entire composition — the background \
+meets the canvas edge cleanly with no decorative ring or oval.
 - Flat saturated color fills — no gradients within sections, hard color boundaries
 - ONE bright, contrasting background colour — a single saturated pop tone \
 (hot pink, electric blue, neon green, vivid yellow, or similar). NO multi-zone \
@@ -581,7 +584,11 @@ IMPORTANT: these are layout instructions for YOU — do NOT paint the words \
 labels as visible text or shapes in the artwork.
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
-oil paint, 3D render, blurry, low resolution, text, watermark, border, \
+oil paint, 3D render, blurry, low resolution, text, watermark, \
+any visible border or framing line around the composition — this means \
+NO oval frame, NO circular outline, NO rounded-rectangle border, NO \
+vignette ring, NO decorative edge around the entire artwork — all bold \
+outlines are restricted to the pet's individual body parts only, \
 composition guide words or labels rendered as visible artwork, \
 solid color bars or panels at image edges, white margin around the \
 artwork, off-colour fade at the canvas perimeter, anti-aliased \
