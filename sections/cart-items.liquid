@@ -794,6 +794,68 @@
               </p>
             </div>
 
+            {%- comment -%}
+              Gift / Memorial — customer can flag the order and add a
+              short personal message. Saved as two cart attributes:
+                gift_type   → "Gift" or "Memorial"
+                gift_message → the free-text note
+              The cart note is also updated to surface both values
+              plainly in the Shopify order admin. Klaviyo reads
+              note_attributes on the Placed Order event to branch into
+              the memorial-specific flow.
+            {%- endcomment -%}
+            <div
+              id="cart-gift-block"
+              style="margin:12px 0;padding:14px 16px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);font-family:var(--font-body);"
+            >
+              <p style="margin:0 0 10px;font-size:var(--text-sm);font-weight:600;color:var(--color-ink);">
+                Is this a special order?
+              </p>
+              <div style="display:flex;gap:20px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--text-sm);color:var(--color-ink);">
+                  <input
+                    type="checkbox"
+                    id="GiftTypeGift"
+                    data-gift-type="Gift"
+                    style="width:18px;height:18px;accent-color:var(--color-primary);flex-shrink:0;"
+                  >
+                  <span>🎁 This is a gift</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--text-sm);color:var(--color-ink);">
+                  <input
+                    type="checkbox"
+                    id="GiftTypeMemorial"
+                    data-gift-type="Memorial"
+                    style="width:18px;height:18px;accent-color:var(--color-primary);flex-shrink:0;"
+                  >
+                  <span>🕊 This is a memorial</span>
+                </label>
+              </div>
+
+              <div id="cart-gift-message-wrap" hidden style="margin-top:12px;">
+                <label for="CartGiftMessage" style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--color-ink);margin-bottom:6px;">
+                  <span id="cart-gift-message-label">Add a personal message</span>
+                  <span style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs);margin-left:6px;">(optional · included with your order)</span>
+                </label>
+                <textarea
+                  id="CartGiftMessage"
+                  rows="3"
+                  maxlength="280"
+                  placeholder="Write your message here…"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-family:var(--font-body);font-size:var(--text-sm);color:var(--color-ink);background:#fff;resize:vertical;line-height:1.5;"
+                ></textarea>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                  <span
+                    id="cart-gift-status"
+                    role="status"
+                    aria-live="polite"
+                    style="font-size:var(--text-xs);color:var(--color-muted);min-height:1em;"
+                  ></span>
+                  <span id="cart-gift-chars" style="font-size:var(--text-xs);color:var(--color-muted);">0 / 280</span>
+                </div>
+              </div>
+            </div>
+
             <a href="/checkout" data-checkout-btn class="btn btn--primary btn--full btn--large" style="margin-bottom:10px;">
               Checkout → <span style="font-size:var(--text-sm);opacity:0.85;">{{ cart.total_price | money }} CAD</span>
             </a>
@@ -1976,6 +2038,117 @@
       window.location.href = '/discount/' + encodeURIComponent(code)
         + '?return_to=' + encodeURIComponent('/cart');
     });
+  })();
+
+  /* ── Gift / Memorial ──────────────────────────────────────────
+     Saves gift_type ("Gift" or "Memorial") and gift_message as
+     cart attributes via /cart/update.js.  The cart note is also
+     updated so both values appear plainly in the Shopify order
+     admin without the merchant having to expand "Additional
+     details". Klaviyo reads note_attributes[gift_type] to trigger
+     the memorial-specific flow.
+
+     Behaviour:
+       - The two checkboxes are mutually exclusive (checking one
+         unchecks the other and saves the new type).
+       - The message textarea is hidden until at least one box is
+         checked; it persists if the type is swapped.
+       - Textarea changes are debounced 600 ms before saving so we
+         don't hammer the API on every keystroke.
+       - Unchecking both clears gift_type, gift_message, and note.
+  ───────────────────────────────────────────────────────────── */
+  (function () {
+    var checkboxGift     = document.getElementById('GiftTypeGift');
+    var checkboxMemorial = document.getElementById('GiftTypeMemorial');
+    var messageWrap      = document.getElementById('cart-gift-message-wrap');
+    var textarea         = document.getElementById('CartGiftMessage');
+    var statusEl         = document.getElementById('cart-gift-status');
+    var charEl           = document.getElementById('cart-gift-chars');
+    var labelEl          = document.getElementById('cart-gift-message-label');
+    if (!checkboxGift || !checkboxMemorial || !messageWrap || !textarea) return;
+
+    var saveTimer = null;
+
+    function setStatus(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.style.color = isErr ? 'var(--color-warning,#B45309)' : 'var(--color-muted)';
+    }
+
+    function activeType() {
+      if (checkboxGift.checked)     return 'Gift';
+      if (checkboxMemorial.checked) return 'Memorial';
+      return '';
+    }
+
+    function updateMessageLabel(type) {
+      if (!labelEl) return;
+      labelEl.textContent = type === 'Memorial' ? 'Add a tribute message' : 'Add a personal message';
+    }
+
+    function buildNote(type, msg) {
+      if (!type) return '';
+      var prefix = type === 'Memorial' ? 'Memorial message' : 'Gift message';
+      return msg ? prefix + ': ' + msg : prefix;
+    }
+
+    function saveToCart(type, msg) {
+      setStatus('Saving…');
+      return fetch('/cart/update.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          note: buildNote(type, msg),
+          attributes: { 'gift_type': type, 'gift_message': msg }
+        })
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error('SAVE_FAILED');
+          setStatus('Saved');
+          setTimeout(function () { setStatus(''); }, 2000);
+        })
+        .catch(function () { setStatus('Could not save — please try again', true); });
+    }
+
+    function onTypeChange(e) {
+      var clicked = e.currentTarget;
+      var other   = clicked === checkboxGift ? checkboxMemorial : checkboxGift;
+      if (clicked.checked) other.checked = false;
+      var type = activeType();
+      updateMessageLabel(type);
+      messageWrap.hidden = !type;
+      saveToCart(type, textarea.value.trim());
+    }
+
+    function onMessageInput() {
+      if (charEl) charEl.textContent = textarea.value.length + ' / 280';
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        var type = activeType();
+        if (type) saveToCart(type, textarea.value.trim());
+      }, 600);
+    }
+
+    checkboxGift.addEventListener('change', onTypeChange);
+    checkboxMemorial.addEventListener('change', onTypeChange);
+    textarea.addEventListener('input', onMessageInput);
+
+    // Restore from existing cart attributes on page load.
+    {%- assign saved_gift_type    = cart.attributes.gift_type    | default: '' -%}
+    {%- assign saved_gift_message = cart.attributes.gift_message | default: '' -%}
+    {% if saved_gift_type == 'Gift' %}
+      checkboxGift.checked = true;
+      updateMessageLabel('Gift');
+      messageWrap.hidden = false;
+    {% elsif saved_gift_type == 'Memorial' %}
+      checkboxMemorial.checked = true;
+      updateMessageLabel('Memorial');
+      messageWrap.hidden = false;
+    {% endif %}
+    {% if saved_gift_message != '' %}
+      textarea.value = {{ saved_gift_message | json }};
+      if (charEl) charEl.textContent = textarea.value.length + ' / 280';
+    {% endif %}
   })();
 </script>
 
