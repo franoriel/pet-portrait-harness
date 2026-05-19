@@ -28,7 +28,7 @@
         "type": "announcement-bar",
         "settings": {
           "show_bar": false,
-          "text": "<p>Made in Canada · Free shipping on orders over $110 CAD · We currently ship within Canada only</p>",
+          "text": "<p>Made in Canada · Free shipping on orders over $125 CAD · We currently ship within Canada only</p>",
           "link": ""
         }
       },
