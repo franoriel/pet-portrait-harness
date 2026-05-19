@@ -579,7 +579,10 @@
     canvasFace.appendChild(cropWindow);
 
     var portraitImg = document.createElement('img');
-    if (sampleNeonBg) portraitImg.crossOrigin = 'anonymous';
+    // Never set crossOrigin on the visible portrait image — if the CDN doesn't
+    // return CORS headers, crossOrigin='anonymous' blocks the image from loading
+    // entirely, not just the canvas-sampling. Use a separate hidden image for
+    // the corner-sample so the visible portrait always loads.
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
@@ -589,32 +592,30 @@
       + 'object-fit:cover;object-position:' + coverPosition + ';display:block;';
     cropWindow.appendChild(portraitImg);
 
-    // Neon Pop Art square: sample the source's top-left corner once
-    // the image loads and paint the canvas face that exact saturated
-    // hex. The pet sits in the middle 80% × 88% of the face; the side
-    // and bottom margins outside that area read as one continuous
-    // saturated bg. CORS-safe: requires the CDN to send Access-Control-
-    // Allow-Origin (Cloudinary / our preview endpoint already do); if
-    // it doesn't, the catch leaves canvas-face transparent and we get
-    // the original linen-margin fallback.
+    // Neon Pop Art: sample the source corner via a separate CORS-flagged image
+    // so the visible portrait img never gets crossOrigin (which would block it
+    // from loading if the CDN lacks CORS headers).
     if (sampleNeonBg) {
+      var samplerImg = new Image();
+      samplerImg.crossOrigin = 'anonymous';
+      samplerImg.src = portraitSrc;
       var paintFromCorner = function () {
         try {
           var c = document.createElement('canvas');
           c.width = 4; c.height = 4;
           var cx = c.getContext('2d');
-          cx.drawImage(portraitImg, 0, 0, 4, 4, 0, 0, 4, 4);
+          cx.drawImage(samplerImg, 0, 0, 4, 4, 0, 0, 4, 4);
           var d = cx.getImageData(0, 0, 4, 4).data;
           var r = 0, g = 0, b = 0;
           for (var i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
           var n = d.length / 4;
           canvasFace.style.background = 'rgb(' + Math.round(r/n) + ',' + Math.round(g/n) + ',' + Math.round(b/n) + ')';
         } catch (e) {
-          // CORS / decode error — leave transparent, accept the linen-margin fallback.
+          // CORS unavailable — leave canvasFace transparent, accept linen fallback.
         }
       };
-      if (portraitImg.complete && portraitImg.naturalWidth > 0) paintFromCorner();
-      else portraitImg.addEventListener('load', paintFromCorner, { once: true });
+      if (samplerImg.complete && samplerImg.naturalWidth > 0) paintFromCorner();
+      else samplerImg.addEventListener('load', paintFromCorner, { once: true });
     }
 
     // Canvas weave texture overlay (SVG noise, multiply blend)
