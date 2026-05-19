@@ -6055,9 +6055,16 @@ def _generate_inner(
                 sum(p[1] for p in pixels) // n,
                 sum(p[2] for p in pixels) // n,
             )
+            # pad_bottom_ratio=0.14 adds ~14% solid bg beneath the chest.
+            # The AI's 22% name-safe-zone + 17% programmatic top padding
+            # already put ~39% of bg above the ears; 0% bottom made the
+            # composition extremely bottom-heavy on 12×16 and 16×20 canvas
+            # faces. 14% bottom sets the chest at ~87% of the final image
+            # height, leaving ~13% neon bg below — closer to a balanced
+            # Andy-Warhol-style poster composition.
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.17, solid_bg_color=bg,
-                pad_bottom_ratio=0,
+                pad_bottom_ratio=0.14,
             )
             padded = _center_horizontal_weight(padded)
         elif style == "bold-graphic-poster":
