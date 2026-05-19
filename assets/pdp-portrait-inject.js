@@ -354,8 +354,8 @@
     // Canvas wrapper sized proportionally to variant dimensions.
     // Larger sizes fill more of the container so the visual scale matches reality.
     var MAX_CANVAS_DIM = 20; // largest available canvas dimension (inches)
-    var MAX_PCT = 90;        // container % for the largest canvas (16×20)
-    var MIN_PCT = 74;        // container % for the smallest canvas (12×12)
+    var MAX_PCT = 78;        // container % for the largest canvas (16×20)
+    var MIN_PCT = 62;        // container % for the smallest canvas (12×12)
     var maxDim = Math.max(widthIn, heightIn);
     var scaledPct = MIN_PCT + ((maxDim - 12) / (MAX_CANVAS_DIM - 12)) * (MAX_PCT - MIN_PCT);
 
