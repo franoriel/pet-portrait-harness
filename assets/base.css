@@ -1869,6 +1869,10 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .cart-page { padding: 24px 0 var(--section-gap); }
 .cart-page__title { margin-bottom: 32px; font-size: clamp(var(--text-lg), 3vw, var(--text-2xl)); }
 .cart-page__layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+/* min-width:0 overrides the default min-width:auto on grid items, preventing
+   child content from inflating the 1fr column beyond the container width. */
+.cart-page__items,
+.cart-page__summary { min-width: 0; }
 .cart-page__item {
   display: flex; gap: 16px;
   padding: 20px 0;
@@ -1887,7 +1891,7 @@ textarea.form-input { min-height: 120px; resize: vertical; }
 .cart-page__item-variant,.cart-page__item-prop { font-size: var(--text-sm); color: var(--color-muted); overflow-wrap: break-word; word-break: break-word; }
 .cart-page__remove { color: var(--color-muted); transition: color var(--transition); flex-shrink: 0; }
 .cart-page__remove:hover { color: var(--color-ink); }
-.cart-page__item-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 8px; }
+.cart-page__item-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 8px; min-width: 0; }
 .cart-page__item-price { font-weight: 700; font-size: var(--text-base); white-space: nowrap; }
 .cart-qty { display: flex; align-items: center; gap: 0; border: 1.5px solid var(--color-border); border-radius: var(--radius-pill); overflow: hidden; }
 .cart-qty__btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: var(--text-base); color: var(--color-ink); transition: background var(--transition); }
