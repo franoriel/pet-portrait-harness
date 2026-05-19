@@ -583,6 +583,9 @@
     // return CORS headers, crossOrigin='anonymous' blocks the image from loading
     // entirely, not just the canvas-sampling. Use a separate hidden image for
     // the corner-sample so the visible portrait always loads.
+    portraitImg.onerror = function () {
+      if (portraitImg.src !== previewUrl && previewUrl) { portraitImg.src = previewUrl; }
+    };
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
     portraitImg.loading = 'lazy';
