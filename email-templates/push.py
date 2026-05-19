@@ -21,6 +21,7 @@ import requests
 TEMPLATES = {
     "01": ("UUeDPj", "01-order-confirmation.html", "PP — 01 Order Confirmation v2"),
     "02": ("Tsw3XT", "02-gift-download.html", "PP — 02 A Gift For You v2 (24h Download)"),
+    "03": ("",       "03-memorial.html",           "PP — 03 Memorial Order Confirmation"),
 }
 
 API_KEY = os.environ.get("KLAVIYO_API_KEY", "").strip()
@@ -100,7 +101,10 @@ def push(slug: str) -> None:
     template_id, filename, expected_name = TEMPLATES[slug]
     html = (HERE / filename).read_text(encoding="utf-8")
 
-    code, text = patch_template(template_id, html)
+    if template_id:
+        code, text = patch_template(template_id, html)
+    else:
+        code, text = 404, "no id hint"
 
     if code == 404:
         print(f"     id {template_id} 404'd — falling back to name lookup ({expected_name!r})")

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>A portrait to carry them forward</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Inter:wght@400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: #FAF8F5; }
+    a { color: #1C1C1C; text-decoration: underline; }
+
+    .brand-cream { background: #FAF8F5; }
+    .brand-card  { background: #FFFFFF; }
+    .brand-ink   { color: #1C1C1C; }
+    .brand-muted { color: #6B6B63; }
+    .brand-accent { color: #8B7D6B; }
+
+    .serif-heading { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 400; line-height: 1.1; color: #1C1C1C; }
+    .sans      { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #1C1C1C; }
+    .eyebrow   { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8B7D6B; }
+    .handwritten { font-family: 'Caveat', 'Brush Script MT', cursive; font-size: 22px; line-height: 1.5; color: #2F2F2A; }
+
+    .cta-primary { background: #2F2F2A; color: #FFFFFF !important; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; padding: 16px 32px; text-decoration: none !important; display: inline-block; border-radius: 4px; }
+
+    @media (max-width: 620px) {
+      .container { width: 100% !important; max-width: 100% !important; }
+      .px-mobile { padding-left: 24px !important; padding-right: 24px !important; }
+      .stack { display: block !important; width: 100% !important; }
+      .h1-mobile { font-size: 30px !important; }
+    }
+  </style>
+</head>
+<body class="brand-cream" style="margin:0;padding:0;background:#FAF8F5;">
+  <!-- Pre-header -->
+  <div style="display:none;font-size:1px;color:#FAF8F5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    {{ event.line_items.0.properties.pet_name|default:"Your pet"|capitalize }}'s portrait is being made with care. A small tribute to a life that mattered.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF8F5;">
+    <tr>
+      <td align="center" style="padding:32px 0 16px;">
+
+        <!-- LOGO -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:8px 0 24px;">
+              <span class="serif-heading" style="font-size:24px;color:#1C1C1C;letter-spacing:0.02em;">Pet Printables</span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- HERO — portrait preview -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:0;">
+              <a href="{{ event.extra.order_status_url|default:'https://petprintables.ca' }}" style="text-decoration:none;display:block;">
+                <img
+                  src="{{ event.line_items.0.properties.preview_url|default:'https://petprintables.ca/cdn/shop/files/example-modern-shape-art-v2.webp' }}"
+                  alt="{{ event.line_items.0.properties.pet_name|default:'Your pet' }}'s portrait"
+                  width="600"
+                  style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;"
+                />
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <!-- OPENING -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#FAF8F5;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:40px 48px 8px;">
+              <p class="eyebrow" style="margin:0 0 14px;">In loving memory</p>
+              <h1 class="serif-heading h1-mobile" style="margin:0 0 20px;font-size:38px;line-height:1.1;">
+                {{ event.line_items.0.properties.pet_name|default:"They" }} deserved to be remembered well.
+              </h1>
+              <p class="sans" style="margin:0;font-size:15px;line-height:1.7;color:#6B6B63;max-width:420px;margin-left:auto;margin-right:auto;">
+                We received your order and we are honoured that you chose us for this. We will take good care of it.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- HANDWRITTEN NOTE -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td class="px-mobile" style="padding:28px 48px 8px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFFDF8;border:1px solid #E4DDD4;border-radius:6px;">
+                <tr>
+                  <td style="padding:32px 36px;">
+                    <p class="eyebrow" style="margin:0 0 16px;color:#8B7D6B;">A note from the team</p>
+                    <p class="handwritten" style="margin:0 0 12px;">
+                      Hi {{ first_name|default:"there" }},
+                    </p>
+                    <p class="handwritten" style="margin:0 0 12px;">
+                      Grief is not a small thing. We know the space that {{ event.line_items.0.properties.pet_name|default:"they" }} left behind. We wanted you to know that we read your note, and we are making this with that in mind.
+                    </p>
+                    <p class="handwritten" style="margin:0 0 12px;">
+                      A portrait keeps something present that cannot be held anymore. That is exactly what this is for.
+                    </p>
+                    <p class="handwritten" style="margin:0;">
+                      With care,<br>
+                      The Pet Printables team
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- WHAT HAPPENS NEXT -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td class="px-mobile" style="padding:40px 48px 8px;">
+              <p class="eyebrow" style="margin:0 0 20px;text-align:center;">What happens next</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;width:48px;" class="serif-heading"><span style="font-size:22px;color:#8B7D6B;">1.</span></td>
+                  <td style="padding:14px 0 14px 4px;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">We print it</p>
+                    <p class="sans" style="margin:0;font-size:14px;line-height:1.6;color:#6B6B63;">Museum-grade canvas, gallery-wrapped over a hardwood frame. Takes 1-2 business days.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;width:48px;" class="serif-heading"><span style="font-size:22px;color:#8B7D6B;">2.</span></td>
+                  <td style="padding:14px 0 14px 4px;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">It ships</p>
+                    <p class="sans" style="margin:0;font-size:14px;line-height:1.6;color:#6B6B63;">3-5 business days across Canada, packed carefully. Tracking comes by email.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;width:48px;" class="serif-heading"><span style="font-size:22px;color:#8B7D6B;">3.</span></td>
+                  <td style="padding:14px 0 14px 4px;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">It finds its place</p>
+                    <p class="sans" style="margin:0;font-size:14px;line-height:1.6;color:#6B6B63;">Hanging hardware is pre-installed. One nail and {{ event.line_items.0.properties.pet_name|default:"they" }} are home again.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ORDER SUMMARY -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td class="px-mobile" style="padding:32px 48px 8px;">
+              <p class="eyebrow" style="margin:0 0 16px;text-align:center;">Your order</p>
+              {% for item in event.extra.line_items %}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom:1px solid #E4DDD4;">
+                <tr>
+                  <td style="padding:14px 0;vertical-align:top;">
+                    <p class="sans" style="margin:0 0 4px;font-size:15px;font-weight:600;color:#1C1C1C;">{{ item.title|default:item.name }}</p>
+                    {% if item.properties.pet_name %}
+                    <p class="sans" style="margin:0;font-size:13px;color:#6B6B63;">For {{ item.properties.pet_name }}{% if item.variant_title %} · {{ item.variant_title }}{% endif %}</p>
+                    {% elif item.variant_title %}
+                    <p class="sans" style="margin:0;font-size:13px;color:#6B6B63;">{{ item.variant_title }}</p>
+                    {% endif %}
+                  </td>
+                  <td align="right" style="padding:14px 0;vertical-align:top;white-space:nowrap;">
+                    <p class="sans" style="margin:0;font-size:15px;color:#1C1C1C;">${{ item.line_price|default:item.price|floatformat:2 }}</p>
+                  </td>
+                </tr>
+              </table>
+              {% endfor %}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;">
+                <tr>
+                  <td class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">Subtotal</td>
+                  <td align="right" class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">${{ event.extra.sub_total|default:event.extra.subtotal_price|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                  <td class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">Shipping</td>
+                  <td align="right" class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">${{ event.extra.shipping|default:event.extra.total_shipping_price_set.shop_money.amount|floatformat:2|default:"0.00" }}</td>
+                </tr>
+                {% if event.extra.tax %}
+                <tr>
+                  <td class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">Tax</td>
+                  <td align="right" class="sans" style="padding:6px 0;font-size:14px;color:#6B6B63;">${{ event.extra.tax|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td class="sans" style="padding:14px 0 6px;font-size:16px;font-weight:600;color:#1C1C1C;border-top:1px solid #E4DDD4;">Total</td>
+                  <td align="right" class="sans" style="padding:14px 0 6px;font-size:16px;font-weight:600;color:#1C1C1C;border-top:1px solid #E4DDD4;">${{ event.extra.value|default:event.extra.total_price|floatformat:2 }} CAD</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- CTA -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:32px 48px 16px;">
+              <a href="{{ event.extra.order_status_url|default:'https://petprintables.ca/account' }}" class="cta-primary" style="background:#2F2F2A;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;padding:16px 32px;text-decoration:none;display:inline-block;border-radius:4px;">TRACK YOUR ORDER</a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" class="px-mobile" style="padding:0 48px 16px;">
+              <p class="sans" style="margin:0;font-size:13px;color:#6B6B63;">
+                Need anything at all? Just reply to this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- FOOTER -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:48px 48px 32px;border-top:1px solid #E4DDD4;margin-top:32px;">
+              <p class="serif-heading" style="margin:0 0 12px;font-size:18px;color:#1C1C1C;">Pet Printables</p>
+              <p class="sans" style="margin:0 0 8px;font-size:12px;color:#6B6B63;">
+                A modern tribute to unconditional love.
+              </p>
+              <p class="sans" style="margin:0 0 16px;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
+                808 Nelson Street, Vancouver, BC V6Z 2A9
+              </p>
+              <p class="sans" style="margin:0;font-size:11px;color:#8B7D6B;letter-spacing:0.04em;">
+                {% unsubscribe 'Unsubscribe' %} · <a href="https://petprintables.ca" style="color:#8B7D6B;text-decoration:underline;">petprintables.ca</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -62,6 +62,39 @@ Klaviyo's MCP doesn't expose flow creation, so this is a one-time UI step.
 4. Subject: `A small gift for {{ person.pet_name|default:"you" }}`
 5. Set Live
 
+## Flow 3: Memorial Order Confirmation
+
+Fires instead of the standard order confirmation when a customer checked "This is a memorial" on the cart page. Uses template `PP — 03 Memorial Order Confirmation`.
+
+**How the signal reaches Klaviyo:** The cart page writes `gift_type = "Memorial"` as a Shopify cart attribute. Shopify carries cart attributes into the order as `note_attributes` (an array of `{name, value}` objects). The Klaviyo Shopify integration surfaces these on the `Placed Order` event under `event.extra.note_attributes`.
+
+**Setup (UI work, ~5 min):**
+1. Upload the template: `KLAVIYO_API_KEY=... python3 email-templates/push.py 03`
+   (push.py will need a `03` entry added — see push.py for the pattern; template name `PP — 03 Memorial Order Confirmation`)
+2. Klaviyo → Flows → Create from scratch
+3. Trigger: Metric → `Placed Order` (Shopify)
+4. Add a **Flow Filter** immediately after the trigger:
+   - Property: `event.extra.note_attributes` → contains → `{name: "gift_type", value: "Memorial"}`
+   - In Klaviyo's UI: "Properties about someone" is wrong here — use "Properties about the event". Path: `note_attributes[].value` contains `Memorial`, or use the structured filter: `note_attributes` → any item where `name` equals `gift_type` AND `value` equals `Memorial`.
+   - Practical shortcut: filter on `event.extra.note` → contains → `Memorial message` (the cart note is always set to `"Memorial message"` or `"Memorial message: <text>"` when gift_type is Memorial).
+5. Action: Email → choose template `PP — 03 Memorial Order Confirmation`
+6. Subject: `{{ person.pet_name|default:"Your portrait" }} — we will take good care of this`
+7. Send delay: **immediate** (no 30-min window needed — no order_url dependency)
+8. Set Live
+
+**Suppression rule on Flows 1 and 2:** Add the inverse filter to Flows 1 and 2 so standard confirmation emails do not also fire on memorial orders:
+- Flow filter: `note` does NOT contain `Memorial message`
+  (or the structured version: `note_attributes` → no item where `value` equals `Memorial`)
+
+**Template variables used (same as template 01):**
+- `{{ first_name }}` — customer first name
+- `{{ event.line_items.0.properties.pet_name }}` — pet name
+- `{{ event.line_items.0.properties.preview_url }}` — portrait preview image
+- `{{ event.extra.order_status_url }}` — order tracking link
+- `{{ event.extra.order_number }}`, `{{ event.extra.line_items }}`, totals — order summary
+
+The template does not use `person.order_url` so there is no 30-minute race to worry about.
+
 ## Troubleshooting: gift email CTA goes to `/account` instead of the portraits page
 
 Symptom: customer clicks the gift email's CTA and lands on `https://petprintables.ca/account` (a Shopify customer-account sign-in / orders page) instead of the Flask `/portraits/<token>` digital-files page.
