@@ -530,7 +530,14 @@ STYLE:
 facial features only (comic book / screen print weight). NO outline, \
 border, or framing line around the entire composition — the background \
 meets the canvas edge cleanly with no decorative ring or oval.
-- Flat saturated color fills — no gradients within sections, hard color boundaries
+- COMPLETE FLAT COLOR FILLS — every single section of the pet's body \
+must be filled with a solid saturated colour: face, ears, neck, chest, \
+shoulders, all fur sections — top to bottom, edge to edge of the pet. \
+NO outline-only areas anywhere on the pet. NO sketch-style or \
+unfinished-looking sections where lines are drawn but the interior is \
+left as background colour. Every closed region bounded by black outlines \
+is filled with a distinct flat pop art colour. Think of it like a \
+screen-print: if it has an outline, it has a fill. No exceptions.
 - ONE bright, contrasting background colour — a single saturated pop tone \
 (hot pink, electric blue, neon green, vivid yellow, or similar). NO multi-zone \
 backgrounds, NO geometric color blocks behind the pet, NO checker or stripe \
@@ -585,6 +592,9 @@ labels as visible text or shapes in the artwork.
 
 Avoid: photography, photorealism, soft edges, muted colors, watercolor, \
 oil paint, 3D render, blurry, low resolution, text, watermark, \
+outline-only or sketch-only body regions where the pet's fur or body \
+sections show only lines with unfilled interiors — every outlined region \
+must be filled with flat colour, \
 any visible border or framing line around the composition — this means \
 NO oval frame, NO circular outline, NO rounded-rectangle border, NO \
 vignette ring, NO decorative edge around the entire artwork — all bold \
