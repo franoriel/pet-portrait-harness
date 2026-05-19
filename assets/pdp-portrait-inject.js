@@ -339,7 +339,7 @@
     // portrait covers it edge to edge so any style's own background
     // sells the canvas face. No flat white rectangle on linen.
     var container = document.createElement('div');
-    container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
+    container.style.cssText = 'width:100%;height:100%;border-radius:16px;'
       + 'overflow:hidden;position:relative;'
       + "background-image:url(" + _assetBase + "linen-texture.webp);"
       + 'background-size:cover;background-position:center;';
@@ -375,15 +375,12 @@
     // around the actual visible artwork silhouette (not around an
     // invisible bounding box), so removing the white canvas-face fill
     // doesn't lose the "product on a wall" depth cue.
+    var canvasLeftPct = ((100 - canvasStyleW) / 2).toFixed(4);
+    var canvasTopPct  = ((100 - canvasStyleH) / 2).toFixed(4);
     var canvasWrap = document.createElement('div');
-    // Absolute-center the canvas in the linen square. flex cross-axis centering
-    // requires a definite container height — browsers are inconsistent when that
-    // height comes from aspect-ratio. left/top 50% + translate(-50%,-50%) is
-    // unconditional and works on every browser.
     canvasWrap.style.cssText = 'position:absolute;'
-      + 'left:50%;top:50%;transform:translate(-50%,-50%);'
-      + 'width:' + canvasStyleW + '%;'
-      + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'left:' + canvasLeftPct + '%;top:' + canvasTopPct + '%;'
+      + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
       + 'border-radius:2px;overflow:hidden;'
       + (isFramedProduct
         ? 'box-shadow:0 10px 18px rgba(40,28,18,0.22),0 2px 4px rgba(40,28,18,0.18);'
