@@ -342,8 +342,7 @@
     container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
       + 'overflow:hidden;position:relative;'
       + "background-image:url(" + _assetBase + "linen-texture.webp);"
-      + 'background-size:cover;background-position:center;'
-      + 'display:flex;align-items:center;justify-content:center;';
+      + 'background-size:cover;background-position:center;';
 
     // Subtle directional light from upper-left (matches Printful style)
     var lightGradient = document.createElement('div');
@@ -377,16 +376,15 @@
     // invisible bounding box), so removing the white canvas-face fill
     // doesn't lose the "product on a wall" depth cue.
     var canvasWrap = document.createElement('div');
-    canvasWrap.style.cssText = 'position:relative;'
+    // Absolute-center the canvas in the linen square. flex cross-axis centering
+    // requires a definite container height — browsers are inconsistent when that
+    // height comes from aspect-ratio. left/top 50% + translate(-50%,-50%) is
+    // unconditional and works on every browser.
+    canvasWrap.style.cssText = 'position:absolute;'
+      + 'left:50%;top:50%;transform:translate(-50%,-50%);'
       + 'width:' + canvasStyleW + '%;'
       + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
-      + 'max-width:' + scaledPct + '%;'
       + 'border-radius:2px;overflow:hidden;'
-      // box-shadow instead of filter:drop-shadow — iOS Safari misplaces
-      // flex items that carry a CSS filter, causing portrait-aspect sizes
-      // (12×16, 16×20) to render flush-left instead of flex-centred.
-      // aspect-ratio instead of height:% — Safari doesn't resolve percentage
-      // heights when the flex container's own height comes from aspect-ratio.
       + (isFramedProduct
         ? 'box-shadow:0 10px 18px rgba(40,28,18,0.22),0 2px 4px rgba(40,28,18,0.18);'
         : 'box-shadow:0 8px 16px rgba(60,45,30,0.18),0 1px 3px rgba(60,45,30,0.14);');
