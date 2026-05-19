@@ -540,19 +540,14 @@ softening at the canvas perimeter, NO unprinted margin, NO let-the- \
 white-paper-show artifact. If the bg colour does not reach the very \
 last pixel column on the left, right, top, and bottom, the result is \
 unusable. Treat it as a screen-print: ink covers the entire sheet.
-- COMPOSITION OPTIONS — pick ONE and commit to it (do not produce a \
-hybrid):
-  (a) FULL-BLEED PORTRAIT: the pet's body extends past the canvas \
-  edges where appropriate (ears can crop at the upper boundary, \
-  shoulders can crop at the side edges, chest cuts off at \
-  the bottom edge) so the artwork reads as a confident edge-to-edge \
-  composition with no visible bg margin around the pet.
-  (b) CLEAN BUST CROP: the pet is composed as a tight head + neck + \
-  upper-shoulder bust with crisp clean line terminations — the bust \
-  silhouette ends in a confident horizontal cut or smooth taper, \
-  surrounded by the saturated bg with NO ragged fur fly-aways, NO \
-  random splatters, NO pet body parts that don't fully resolve.
-  Either way, the bg is fully solid and edge-to-edge.
+- COMPOSITION — CLEAN BUST CROP: the pet is a confident head + neck + \
+upper-shoulder portrait. The bust silhouette ends in clean, intentional \
+line terminations — no ragged fur fly-aways, no random splatters, no \
+partial body parts that don't fully resolve. All visible anatomy is \
+complete and anatomically correct — the pet does NOT extend to or crop \
+at any canvas edge. The pet sits comfortably within the canvas, \
+surrounded by the saturated bg on all sides. The bg is fully solid \
+and edge-to-edge.
 - Andy Warhol meets Keith Haring aesthetic — playful, graphic, punchy
 - Halftone dot texture in select areas of the PET ONLY for retro pop feel \
 (never on the background)

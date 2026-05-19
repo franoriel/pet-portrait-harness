@@ -473,7 +473,10 @@
     var coverPosition = 'center top';
     var hScale, vScale, leftPct, topPct;
     var hScaleOverride, vScaleOverride, leftPctOverride, topPctOverride;
-    var sampleNeonBg = false;
+    // For neon pop art, sample the source's top-left corner to paint the
+    // canvas face with the exact saturated bg — fills any sub-pixel gap
+    // between the image and the face edge so no linen/white bleeds through.
+    var sampleNeonBg = (styleId === 'neon-pop-art');
     if (srcMatchesFace) {
       if (isSquare) {
         // Square face: render flush — no overflow needed.
@@ -649,13 +652,18 @@
     // frame already provides clear edge separation, and the 4-sided
     // 1px highlight reads as a "second inner frame" against dark
     // portraits like a black French Bulldog on a dark wood frame).
+    // Neon pop art uses a much lower opacity — the standard 0.6 white
+    // reads as a stark border against the high-chroma saturated bg.
     if (!isFramedProduct) {
       var edgeHighlight = document.createElement('div');
       edgeHighlight.style.cssText = 'position:absolute;inset:0;pointer-events:none;'
-        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),'
-        +           'inset 0 -1px 0 rgba(0,0,0,0.06),'
-        +           'inset 1px 0 0 rgba(255,255,255,0.3),'
-        +           'inset -1px 0 0 rgba(0,0,0,0.04);';
+        + (styleId === 'neon-pop-art'
+          ? 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),'
+          +            'inset 0 -1px 0 rgba(0,0,0,0.08);'
+          : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),'
+          +            'inset 0 -1px 0 rgba(0,0,0,0.06),'
+          +            'inset 1px 0 0 rgba(255,255,255,0.3),'
+          +            'inset -1px 0 0 rgba(0,0,0,0.04);');
       canvasFace.appendChild(edgeHighlight);
     }
 
