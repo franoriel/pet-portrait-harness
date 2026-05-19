@@ -378,12 +378,15 @@
     // doesn't lose the "product on a wall" depth cue.
     var canvasWrap = document.createElement('div');
     canvasWrap.style.cssText = 'position:relative;'
-      + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
-      + 'max-width:' + scaledPct + '%;max-height:' + scaledPct + '%;'
+      + 'width:' + canvasStyleW + '%;'
+      + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'max-width:' + scaledPct + '%;'
       + 'border-radius:2px;overflow:hidden;'
       // box-shadow instead of filter:drop-shadow — iOS Safari misplaces
       // flex items that carry a CSS filter, causing portrait-aspect sizes
       // (12×16, 16×20) to render flush-left instead of flex-centred.
+      // aspect-ratio instead of height:% — Safari doesn't resolve percentage
+      // heights when the flex container's own height comes from aspect-ratio.
       + (isFramedProduct
         ? 'box-shadow:0 10px 18px rgba(40,28,18,0.22),0 2px 4px rgba(40,28,18,0.18);'
         : 'box-shadow:0 8px 16px rgba(60,45,30,0.18),0 1px 3px rgba(60,45,30,0.14);');
