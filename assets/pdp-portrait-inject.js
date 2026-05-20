@@ -508,9 +508,11 @@
     } else if (isFlushBottomMaster) {
       var srcAspect = 4 / 5;                            // PORTRAIT_RATIO
       var faceAspect = widthIn / heightIn;              // e.g. 0.75 for 12×16
-      if (mockupShowName) {
-        // Named: fill face height, overflow sides, no vertical crop so the
-        // name at zone_top≈0.17 stays visible at face y≈17%.
+      if (mockupShowName || styleId === 'neon-pop-art') {
+        // Named: fill face height, overflow sides — name at zone_top≈0.17
+        // stays visible at face y≈17%.
+        // Neon pop art: same math gives correct bottom-anchor — source y=100%
+        // (pet's feet) maps to face y=100% with no vertical crop.
         hScale = 100 * (srcAspect / faceAspect);        // e.g. 106.7% for 12×16
         vScale = 100;
         topPct = 0;
@@ -768,10 +770,17 @@
     // before /add-name finished).
     function pickPrintSrcForFace(faceW, faceH) {
       var isSq = faceW === faceH;
+      // Neon pop art always renders from the 4:5 master. Per-face print files
+      // are composed for printing (centered or bleed-padded) and leave the pet
+      // floating in the mockup. The 4:5 master + dimension-aware bottom-anchor
+      // CSS in createClientMockup positions the pet correctly for every size.
+      if (styleId === 'neon-pop-art') {
+        return { url: previewUrl, matches: false, watermark: false, srcIs1x1: false };
+      }
       var isThreeByFour = (faceW === 3 && faceH === 4) || (faceW * 4 === faceH * 3);
       var isFourByFive = (faceW === 4 && faceH === 5) || (faceW * 5 === faceH * 4);
       // Per-aspect PNG (un-watermarked) — best, matches what's printed.
-      if (isSq && data.printFileUrl1x1 && styleId !== 'neon-pop-art') {
+      if (isSq && data.printFileUrl1x1) {
         return { url: data.printFileUrl1x1, matches: true, watermark: true };
       }
       if (isThreeByFour && data.printFileUrl3x4) {
@@ -783,7 +792,7 @@
       // Fallback: 4:5 master with the existing crop math. Source is the
       // already-watermarked WebP — no CSS overlay needed.
       var has1x1Wm = !!data.namedPreviewUrl1x1;
-      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm && styleId !== 'neon-pop-art';
+      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm;
       var fallbackUrl = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
       return { url: fallbackUrl, matches: false, watermark: false, srcIs1x1: useSquareSrc };
     }
