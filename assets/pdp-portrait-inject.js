@@ -339,7 +339,7 @@
     // portrait covers it edge to edge so any style's own background
     // sells the canvas face. No flat white rectangle on linen.
     var container = document.createElement('div');
-    container.style.cssText = 'width:100%;height:100%;border-radius:16px;'
+    container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
       + 'overflow:hidden;position:relative;'
       + 'display:grid;place-content:center;'
       + "background-image:url(" + _assetBase + "linen-texture.webp);"
@@ -376,11 +376,8 @@
     // around the actual visible artwork silhouette (not around an
     // invisible bounding box), so removing the white canvas-face fill
     // doesn't lose the "product on a wall" depth cue.
-    var canvasLeftPct = ((100 - canvasStyleW) / 2).toFixed(4);
-    var canvasTopPct  = ((100 - canvasStyleH) / 2).toFixed(4);
     var canvasWrap = document.createElement('div');
-    canvasWrap.style.cssText = 'position:absolute;'
-      + 'left:' + canvasLeftPct + '%;top:' + canvasTopPct + '%;'
+    canvasWrap.style.cssText = 'position:relative;'
       + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
       + 'border-radius:2px;overflow:hidden;'
       + (isFramedProduct
