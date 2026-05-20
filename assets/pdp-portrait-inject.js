@@ -771,7 +771,7 @@
       var isThreeByFour = (faceW === 3 && faceH === 4) || (faceW * 4 === faceH * 3);
       var isFourByFive = (faceW === 4 && faceH === 5) || (faceW * 5 === faceH * 4);
       // Per-aspect PNG (un-watermarked) — best, matches what's printed.
-      if (isSq && data.printFileUrl1x1) {
+      if (isSq && data.printFileUrl1x1 && styleId !== 'neon-pop-art') {
         return { url: data.printFileUrl1x1, matches: true, watermark: true };
       }
       if (isThreeByFour && data.printFileUrl3x4) {
