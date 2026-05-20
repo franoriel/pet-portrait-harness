@@ -783,7 +783,7 @@
       // Fallback: 4:5 master with the existing crop math. Source is the
       // already-watermarked WebP — no CSS overlay needed.
       var has1x1Wm = !!data.namedPreviewUrl1x1;
-      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm;
+      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm && styleId !== 'neon-pop-art';
       var fallbackUrl = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
       return { url: fallbackUrl, matches: false, watermark: false, srcIs1x1: useSquareSrc };
     }

@@ -819,7 +819,21 @@
                     data-gift-type="Gift"
                     style="width:18px;height:18px;accent-color:var(--color-primary);flex-shrink:0;"
                   >
-                  <span>🎁 This is a gift</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0;color:#8B7D6B;">
+                      <!-- gift box body -->
+                      <rect x="1.5" y="6.5" width="12" height="7" rx="0.75" stroke="currentColor" stroke-width="1.1"/>
+                      <!-- lid -->
+                      <rect x="0.75" y="4.25" width="13.5" height="2.5" rx="0.75" stroke="currentColor" stroke-width="1.1"/>
+                      <!-- vertical ribbon -->
+                      <line x1="7.5" y1="4.25" x2="7.5" y2="13.5" stroke="currentColor" stroke-width="1.1"/>
+                      <!-- bow left loop -->
+                      <path d="M7.5 4.25 C6.5 2.5 3.5 2 4 4 C4.5 5.5 6.5 5 7.5 4.25Z" stroke="currentColor" stroke-width="1" fill="none" stroke-linejoin="round"/>
+                      <!-- bow right loop -->
+                      <path d="M7.5 4.25 C8.5 2.5 11.5 2 11 4 C10.5 5.5 8.5 5 7.5 4.25Z" stroke="currentColor" stroke-width="1" fill="none" stroke-linejoin="round"/>
+                    </svg>
+                    This is a gift
+                  </span>
                 </label>
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--text-sm);color:var(--color-ink);">
                   <input
@@ -828,7 +842,21 @@
                     data-gift-type="Memorial"
                     style="width:18px;height:18px;accent-color:var(--color-primary);flex-shrink:0;"
                   >
-                  <span>🕊 This is a memorial</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0;color:#8B7D6B;">
+                      <!-- main pad -->
+                      <ellipse cx="7.5" cy="10.2" rx="3.2" ry="2.5" fill="currentColor" opacity="0.85"/>
+                      <!-- top-left toe -->
+                      <ellipse cx="3.6" cy="6.8" rx="1.15" ry="1.45" transform="rotate(-15 3.6 6.8)" fill="currentColor" opacity="0.85"/>
+                      <!-- top center-left toe -->
+                      <ellipse cx="6.1" cy="5.2" rx="1.15" ry="1.45" fill="currentColor" opacity="0.85"/>
+                      <!-- top center-right toe -->
+                      <ellipse cx="8.9" cy="5.2" rx="1.15" ry="1.45" fill="currentColor" opacity="0.85"/>
+                      <!-- top-right toe -->
+                      <ellipse cx="11.4" cy="6.8" rx="1.15" ry="1.45" transform="rotate(15 11.4 6.8)" fill="currentColor" opacity="0.85"/>
+                    </svg>
+                    This is a memorial
+                  </span>
                 </label>
               </div>
 
