@@ -341,7 +341,7 @@
     var container = document.createElement('div');
     container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
       + 'overflow:hidden;position:relative;'
-      + 'display:grid;place-items:center;'
+      + 'display:grid;place-content:center;'
       + "background-image:url(" + _assetBase + "linen-texture.webp);"
       + 'background-size:cover;background-position:center;';
 
