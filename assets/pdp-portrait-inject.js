@@ -781,7 +781,7 @@
       }
       // Fallback (print file not yet in session): 4:5 master with crop math.
       var has1x1Wm = !!data.namedPreviewUrl1x1;
-      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm;
+      var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm && styleId !== 'neon-pop-art';
       var fallbackUrl = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
       return { url: fallbackUrl, matches: false, watermark: false, srcIs1x1: useSquareSrc };
     }
