@@ -378,8 +378,7 @@
     // doesn't lose the "product on a wall" depth cue.
     var canvasWrap = document.createElement('div');
     canvasWrap.style.cssText = 'position:relative;'
-      + 'width:' + canvasStyleW + '%;'
-      + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
       + 'border-radius:2px;overflow:hidden;'
       + (isFramedProduct
         ? 'box-shadow:0 10px 18px rgba(40,28,18,0.22),0 2px 4px rgba(40,28,18,0.18);'
@@ -409,7 +408,15 @@
       // the canvas face. A subtle inset shadow at the top sells the
       // recess depth without competing with the portrait's own edges.
       canvasFace = document.createElement('div');
-      canvasFace.style.cssText = 'position:absolute;inset:6%;overflow:hidden;'
+      // top/bottom inset must equal 6% of canvasWrap WIDTH (same as frame
+      // padding:6%) so the black border looks visually uniform on all four
+      // sides. CSS top/bottom % resolves against HEIGHT, so we adjust:
+      // insetV = 6% * (widthIn/heightIn)
+      var frameInsetV = (6 * widthIn / heightIn).toFixed(4);
+      canvasFace.style.cssText = 'position:absolute;'
+        + 'top:' + frameInsetV + '%;bottom:' + frameInsetV + '%;'
+        + 'left:6%;right:6%;'
+        + 'overflow:hidden;'
         + 'background:transparent;'
         + 'box-shadow:inset 0 2px 5px rgba(0,0,0,0.28);';
       canvasWrap.appendChild(canvasFace);
@@ -1028,13 +1035,19 @@
     namelessNote.style.cssText = 'margin-bottom:16px;padding:14px 16px;'
       + 'border:1.5px solid var(--color-border, #e5e0db);border-radius:12px;'
       + 'background:var(--color-accent-light, #f7f1e8);';
-    var copy = styleId === 'neon-pop-art'
-      ? "This one runs hot — saturated, electric, edge-to-edge. Type would dim the glow, so we keep this style nameless and let the colour do the talking."
-      : styleId === 'renaissance-royalty'
-        ? "Old-master portraits never wore a label. We honour the tradition — your pet stands alone in the gallery, the way the masters intended."
-        : "Aura portraits live in their soft halo of colour. Adding type would break the spell, so this style ships without a name — pure mood.";
+    var eyebrow, copy;
+    if (styleId === 'neon-pop-art') {
+      eyebrow = 'Electric. Edge-to-edge. All colour.';
+      copy = 'Bold geometric pop art — saturated hues, high contrast, and your pet\'s personality turned all the way up. No name on this style; the colour is the statement.';
+    } else if (styleId === 'renaissance-royalty') {
+      eyebrow = 'Old masters. New subject.';
+      copy = 'Painted in the tradition of 17th-century portraiture — rich shadows, dramatic light, your pet as the noble subject. No inscription; the masters never needed one.';
+    } else {
+      eyebrow = 'Pure mood. Zero noise.';
+      copy = 'Soft gradients and a quiet glow that fills a room without shouting. No name on this style — text would break the spell.';
+    }
     namelessNote.innerHTML =
-      '<p style="font-family:\'Inter\',sans-serif;font-size:var(--text-xs);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-muted,#8a8580);margin:0 0 6px;">A nameless piece, on purpose</p>'
+      '<p style="font-family:\'Inter\',sans-serif;font-size:var(--text-xs);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-muted,#8a8580);margin:0 0 6px;">' + eyebrow + '</p>'
       + '<p style="font-family:\'Inter\',sans-serif;font-size:var(--text-sm);color:var(--color-ink,#1C1C1C);margin:0;line-height:1.5;">' + copy + '</p>';
     var insertHost = document.querySelector('.product-form, form[action*="/cart/add"]');
     if (insertHost && insertHost.parentNode) insertHost.parentNode.insertBefore(namelessNote, insertHost);
