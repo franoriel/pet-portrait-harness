@@ -2844,10 +2844,20 @@ def _process_fulfillment(order_id: str, items: list, recipient: dict):
             log.error("Order #%s — no Printful items to send", order_id)
             return
 
+        gift_message = ""
+        for it in items:
+            msg = (it.get("gift_message") or "").strip()
+            is_gift = (it.get("gift") or "").strip().lower() == "yes"
+            is_memorial = (it.get("memorial") or "").strip().lower() == "yes"
+            if (is_gift or is_memorial) and msg:
+                gift_message = msg
+                break
+
         result = create_printful_order(
             shopify_order_id=order_id,
             recipient=recipient,
             items=pf_items,
+            gift_message=gift_message,
         )
         log.info(
             "Order #%s — Printful order %s created (%d item%s, %d unique print files)",

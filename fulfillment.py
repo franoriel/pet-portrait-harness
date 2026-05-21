@@ -818,12 +818,18 @@ def tags_from_order_items(items: list[dict]) -> list[str]:
     Emits:
         style:<style>     — one per unique portrait style
         product:<type>    — one per unique product_type
+        gift              — if any item has _Gift=Yes
+        memorial          — if any item has _Memorial=Yes
     """
     styles = {str(i.get("style") or "").strip() for i in items if i.get("style")}
     products = {str(i.get("product_type") or "").strip() for i in items if i.get("product_type")}
     tags = []
     tags += [f"style:{s}" for s in sorted(styles) if s]
     tags += [f"product:{p}" for p in sorted(products) if p]
+    if any(str(i.get("gift") or "").strip().lower() == "yes" for i in items):
+        tags.append("gift")
+    if any(str(i.get("memorial") or "").strip().lower() == "yes" for i in items):
+        tags.append("memorial")
     return tags
 
 
@@ -848,6 +854,7 @@ def create_printful_order(
     shopify_order_id: str,
     recipient: dict,
     items: list[dict],
+    gift_message: str = "",
 ) -> dict:
     """
     Create a draft order in Printful with one or more items.
@@ -863,6 +870,7 @@ def create_printful_order(
                  variant_id (int) — Printful catalog variant
                  quantity (int)
                  print_file_url (str) — public URL of the print-ready PNG
+        gift_message: Optional packing slip message (gift or memorial note).
 
     Returns:
         Printful API response as dict.
@@ -895,9 +903,13 @@ def create_printful_order(
         "items": pf_items,
     }
 
+    if gift_message:
+        payload["packing_slip"] = {"message": gift_message[:300]}
+
     log.info(
-        "Creating Printful order for Shopify #%s (%d item%s)",
+        "Creating Printful order for Shopify #%s (%d item%s%s)",
         shopify_order_id, len(pf_items), "" if len(pf_items) == 1 else "s",
+        ", with packing slip" if gift_message else "",
     )
 
     resp = requests.post(
@@ -1049,6 +1061,11 @@ def parse_order_items(order: dict) -> list[dict]:
             "product_type": product_type,
             "size": size,
             "quantity": li.get("quantity", 1),
+            # Gift / memorial — order-level metadata; same on all line items.
+            # gift_message is included in the Printful packing slip when non-empty.
+            "gift": props.get("_Gift", "No"),
+            "memorial": props.get("_Memorial", "No"),
+            "gift_message": (props.get("_Gift Message") or "").strip(),
         })
 
     return items
