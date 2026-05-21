@@ -1609,7 +1609,7 @@
       'Pet Name': petName,
       '_Style': data.styleId || '',
       '_Font Size': fontSize,
-      '_Show Name': wantsName ? 'Yes' : 'No',
+      '_Show Name': showName ? 'Yes' : 'No',
       '_Frame': wantsFrame ? 'Framed' : 'No frame',
       '_Job ID': data.jobId || '',
       '_Portrait URL': previewUrlForCart,                    // watermarked preview for display
