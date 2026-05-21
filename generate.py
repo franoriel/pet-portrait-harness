@@ -3964,13 +3964,15 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
     if style_id == "neon-pop-art":
-        # Neon pop art 1:1: centre-crop to square. The 4:5 master has a
-        # name-safe-zone that leaves ~15-20% solid bg above the pet's head.
-        # Padding sides preserves that empty zone and makes the dog look
-        # small/floating on the 12×12 canvas. Cropping 10% from each end
-        # brings the head to ~5-10% from the top — tight and impactful like
-        # a Warhol portrait — and keeps the full chest visible at ~90%.
-        return crop_to_ratio(img, target_aspect, gravity="center")
+        # Neon pop art 1:1: anchor at the bottom (gravity="bottom"), cropping
+        # the top 20% of the 4:5 master. This works correctly because
+        # pad_bottom_ratio=0 puts the chest flush near the 4:5 bottom (~91%).
+        # gravity="bottom" then gives: head at ~6% from top of 1:1, chest at
+        # ~89% — dog fills 83% of the square with no bottom float.
+        # (Previous attempts with gravity="bottom" failed because
+        # pad_bottom_ratio=0.14 left the chest at only ~81% of the 4:5, so
+        # even a bottom-anchored crop still had ~20% empty bg below.)
+        return crop_to_ratio(img, target_aspect, gravity="bottom")
     if style_id in {
         "watercolor", "minimal-line-art",
         "renaissance-royalty", "charcoal", "aura-gradient",
@@ -6102,7 +6104,7 @@ def _generate_inner(
             )
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.17, solid_bg_color=bg,
-                pad_bottom_ratio=0.14,
+                pad_bottom_ratio=0,
             )
             # FLATTEN — snap near-bg pixels in the combined padded image to
             # the exact bg colour. Euclidean ≤ 90 (same tol as poster style).
