@@ -795,6 +795,7 @@
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
       var pick = pickPrintSrcForFace(dim.w, dim.h);
+      console.log('[PetPrintables] mockup', sizeKey, 'src:', pick.url, 'matches:', pick.matches);
       var clientMockup = createClientMockup(
         pick.url, dim.w, dim.h, sizeKey,
         !!pick.srcIs1x1, styleId,
