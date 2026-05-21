@@ -102,7 +102,10 @@
       data.previewUrl1x1 || '',
     ]);
     var hasLocal = urls.some(function (u) { return u && u.indexOf('/preview/') !== -1; });
-    if (!hasLocal || !data.jobId) return;
+    // Also fire if per-aspect CDN URLs are missing — sessions saved before the
+    // CDN upload completed won't have /preview/ URLs but still need upgrading.
+    var missingAspects = !data.printFileUrl1x1 || !data.printFileUrl3x4;
+    if ((!hasLocal && !missingAspects) || !data.jobId) return;
     var apiBase = (window.petPrintables && window.petPrintables.previewApi) || 'https://web-production-a392e.up.railway.app';
     fetch(apiBase + '/status/' + encodeURIComponent(data.jobId))
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -796,7 +799,6 @@
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
       var pick = pickPrintSrcForFace(dim.w, dim.h);
-      console.log('[PetPrintables] mockup', sizeKey, 'src:', pick.url, 'matches:', pick.matches);
       var clientMockup = createClientMockup(
         pick.url, dim.w, dim.h, sizeKey,
         !!pick.srcIs1x1, styleId,
