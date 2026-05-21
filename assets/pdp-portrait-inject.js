@@ -596,12 +596,15 @@
       + 'object-fit:cover;object-position:' + coverPosition + ';display:block;';
     cropWindow.appendChild(portraitImg);
 
-    // Neon Pop Art: sample the source corner via a separate CORS-flagged image
-    // so the visible portrait img never gets crossOrigin (which would block it
-    // from loading if the CDN lacks CORS headers).
+    // Neon Pop Art: sample the source corner to paint the canvas face bg.
+    // Do NOT set crossOrigin='anonymous' — the R2 CDN has no CORS headers,
+    // and a failed CORS preflight poisons the browser cache for the same URL,
+    // blocking the main portraitImg from loading even though it doesn't need
+    // CORS. Without crossOrigin the sampler loads fine; getImageData throws
+    // (tainted canvas) and the catch leaves canvasFace transparent — a minor
+    // visual tradeoff vs. completely blank canvases.
     if (sampleNeonBg) {
       var samplerImg = new Image();
-      samplerImg.crossOrigin = 'anonymous';
       samplerImg.src = portraitSrc;
       var paintFromCorner = function () {
         try {
