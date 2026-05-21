@@ -598,7 +598,7 @@
     };
     portraitImg.src = portraitSrc;
     portraitImg.alt = (petName || 'Portrait') + ' on ' + label + ' canvas';
-    portraitImg.loading = 'lazy';
+    portraitImg.loading = 'eager';
     portraitImg.style.cssText = 'position:absolute;'
       + 'left:' + leftPct + '%;top:' + topPct + '%;'
       + 'width:' + hScale + '%;height:' + vScale + '%;'
