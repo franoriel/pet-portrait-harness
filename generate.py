@@ -3957,15 +3957,14 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
     if style_id == "neon-pop-art":
-        # Neon pop art 1:1 crop: anchor at the BOTTOM of the 4:5 master,
-        # crop the top (which holds the excess name-safe-zone bg).
-        # The 4:5 master has ~30-39% solid bg above the ears (name-safe-zone +
-        # 17% programmatic padding). gravity="bottom" removes the top ~20%
-        # of that, leaving ~24% bg above the ears in the 1:1 — enough breathing
-        # room without the pet floating in a sea of empty bg.
-        # Result: ears at ~24%, chest at ~84%, 16% bg below — pet fills ~60%
-        # of the square in a balanced Andy-Warhol-poster composition.
-        return crop_to_ratio(img, target_aspect, gravity="bottom")
+        # Neon pop art 1:1: pad sides with the solid neon bg colour — never
+        # crop height. The 4:5 master is a tight bust composition (head at
+        # ~15-20% from top, chest at ~85-90%), so ANY height crop loses either
+        # the head or the chest. _pad_sides_to_aspect adds matching bg strips
+        # on the left and right to reach 1:1 without touching the vertical.
+        # solid_bg=True samples the top-corner bg colour (always pure neon,
+        # never pet) so the strips are indistinguishable from the existing bg.
+        return _pad_sides_to_aspect(img, target_aspect, solid_bg=True)
     if style_id in {
         "watercolor", "minimal-line-art",
         "renaissance-royalty", "charcoal", "aura-gradient",
