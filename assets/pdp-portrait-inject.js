@@ -766,16 +766,10 @@
     // before /add-name finished).
     function pickPrintSrcForFace(faceW, faceH) {
       var isSq = faceW === faceH;
-      // Neon pop art always renders from the 4:5 master. Per-face print files
-      // are composed for printing (centered or bleed-padded) and leave the pet
-      // floating in the mockup. The 4:5 master + dimension-aware bottom-anchor
-      // CSS in createClientMockup positions the pet correctly for every size.
-      if (styleId === 'neon-pop-art') {
-        return { url: previewUrl, matches: false, watermark: false, srcIs1x1: false };
-      }
       var isThreeByFour = (faceW === 3 && faceH === 4) || (faceW * 4 === faceH * 3);
       var isFourByFive = (faceW === 4 && faceH === 5) || (faceW * 5 === faceH * 4);
-      // Per-aspect PNG (un-watermarked) — best, matches what's printed.
+      // Per-aspect print file — exact file Printful prints from. Render flush
+      // so the mockup matches the printed product edge-for-edge.
       if (isSq && data.printFileUrl1x1) {
         return { url: data.printFileUrl1x1, matches: true, watermark: true };
       }
@@ -785,8 +779,7 @@
       if (isFourByFive && data.printFileUrl) {
         return { url: data.printFileUrl, matches: true, watermark: true };
       }
-      // Fallback: 4:5 master with the existing crop math. Source is the
-      // already-watermarked WebP — no CSS overlay needed.
+      // Fallback (print file not yet in session): 4:5 master with crop math.
       var has1x1Wm = !!data.namedPreviewUrl1x1;
       var useSquareSrc = isSq && data.wantsName !== false && has1x1Wm;
       var fallbackUrl = useSquareSrc ? data.namedPreviewUrl1x1 : previewUrl;
