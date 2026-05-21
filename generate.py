@@ -516,29 +516,43 @@ pushed to canvas edges.\
 
 _NEON_POP_ART_TEMPLATE = """\
 Transform this photo into a neon pop art pet portrait — fine art quality, \
-gallery-ready. Think Andy Warhol's Endangered Species series or Marilyn Diptych: \
-bold, iconic, sophisticated. This hangs in a creative director's loft or an \
-LA influencer's home — NOT a cartoon, NOT a children's illustration.
+gallery-ready. Think Andy Warhol's Endangered Species series: bold, iconic, \
+designed by a professional colorist. This hangs in a creative director's loft \
+or an LA influencer's home — NOT a cartoon, NOT a children's illustration.
 
-COLOR ACCURACY — THIS IS CRITICAL:
-- Use the animal's fur/coat pattern and markings as the structural guide. \
-Reinterpret the coat in bold saturated pop art colors — but preserve all \
-distinguishing markings, patches, and patterns from the original photo.
-- LIMIT TO 4-5 INTENTIONAL COLORS on the pet — deliberate like a screen-print \
-ink run, not a rainbow. Each color section is a graphic choice. \
-Pick from: hot pink, electric blue, neon green, bright orange, vivid yellow, \
-violet — but use only 4-5 total across the entire pet.
-- Match the animal's actual eye shape and expression from the photo.
+COLOUR STRATEGY — DESIGNED, NOT RANDOM. THIS IS CRITICAL:
+A professional colorist made every choice here. The palette has a clear \
+hierarchy — not a rainbow where all colours fight equally for attention.
+
+- DOMINANT COLOUR (covers ~50% of the pet — face, top of head, main fur mass): \
+Choose ONE bold saturated warm tone: golden yellow, hot orange, hot magenta, \
+or vivid coral. This is the colour that reads across the room.
+- SHADOW / DEPTH COLOUR (covers ~30% — ear interiors, under-chin, fur depth, \
+body shadow): Choose ONE cool contrasting tone: electric blue, deep cobalt, \
+rich violet, or deep teal. Warm dominant + cool shadow = professional contrast.
+- ACCENT COLOUR(S) (covers ~20% — small pops on ear tips, nose bridge, \
+chest highlights, tongue): One or two bright accents: lime green, hot pink, \
+neon cyan, or electric orange. Small areas only — punchy, not overwhelming.
+- BACKGROUND: ONE flat saturated pop colour chosen to STRONGLY contrast the \
+dominant pet colour. Proven pairings: golden/orange dog → electric blue or \
+deep purple bg; magenta dog → lime green or cobalt bg; yellow dog → hot pink \
+or violet bg. The background and dominant pet colour should feel like they \
+were chosen together by a designer.
+
+Use the animal's actual fur/coat markings as the structural guide for WHERE \
+colour sections fall. Preserve distinguishing patches, markings, and patterns. \
+Match the animal's actual eye shape and expression from the photo.
 
 STYLE:
 - Bold black outlines on the PET'S body parts, fur edges, and \
 facial features only — screen-print weight, like a Warhol silkscreen. \
 NO outline, border, or framing line around the entire composition — the \
 background meets the canvas edge cleanly with no decorative ring or oval.
-- COMPLETE FLAT COLOR FILLS — every single section of the pet's body \
-must be filled with a solid saturated colour: face, ears, neck, chest, \
-shoulders, all fur sections — top to bottom, edge to edge of the pet. \
-NO outline-only areas anywhere on the pet. NO sketch-style or \
+- COMPLETE FLAT COLOR FILLS — every section of the pet is a single solid \
+flat colour with hard edges. NO gradients, NO soft blending between sections. \
+Face, ears, neck, chest, shoulders, all fur sections — every closed region \
+bounded by black outlines is filled with one flat pop art colour. \
+NO outline-only or sketch-style unfinished sections. \
 unfinished-looking sections where lines are drawn but the interior is \
 left as background colour. Every closed region bounded by black outlines \
 is filled with a distinct flat pop art colour. Think of it like a \
@@ -564,9 +578,11 @@ at any canvas edge. The pet sits comfortably within the canvas, \
 surrounded by the saturated bg on all sides. The bg is fully solid \
 and edge-to-edge.
 - Andy Warhol silkscreen aesthetic — graphic, powerful, iconic. \
-NOT Keith Haring cartoon energy. Sophisticated, not cute.
-- Halftone dot texture in select areas of the PET ONLY for retro screen-print \
-feel (never on the background)
+NOT cartoon energy. Sophisticated, not cute.
+- Halftone dot texture in ONE or TWO shadow areas of the pet ONLY (the \
+darkest depth-colour sections) — sparse and deliberate, like a real \
+screen-print registration. NEVER on the background, NEVER covering more \
+than 20% of the pet surface.
 - Fine art print quality, high resolution 300dpi, print-ready
 
 UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
