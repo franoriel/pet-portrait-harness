@@ -349,7 +349,6 @@
     var container = document.createElement('div');
     container.style.cssText = 'width:100%;aspect-ratio:1/1;border-radius:16px;'
       + 'overflow:hidden;position:relative;'
-      + 'display:grid;place-content:center;'
       + "background-image:url(" + _assetBase + "linen-texture.webp);"
       + 'background-size:cover;background-position:center;';
 
@@ -385,8 +384,13 @@
     // invisible bounding box), so removing the white canvas-face fill
     // doesn't lose the "product on a wall" depth cue.
     var canvasWrap = document.createElement('div');
-    canvasWrap.style.cssText = 'position:relative;'
-      + 'width:' + canvasStyleW + '%;height:' + canvasStyleH + '%;'
+    // Absolutely centred so the wrap's height derives from its own
+    // aspect-ratio + definite width, not from a % of the grid-container
+    // (which can be 0 when the parent height comes from aspect-ratio).
+    canvasWrap.style.cssText = 'position:absolute;'
+      + 'width:' + canvasStyleW + '%;'
+      + 'aspect-ratio:' + widthIn + '/' + heightIn + ';'
+      + 'top:50%;left:50%;transform:translate(-50%,-50%);'
       + 'border-radius:2px;overflow:hidden;'
       + (isFramedProduct
         ? 'box-shadow:0 10px 18px rgba(40,28,18,0.22),0 2px 4px rgba(40,28,18,0.18);'
