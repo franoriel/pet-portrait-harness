@@ -6084,13 +6084,32 @@ def _generate_inner(
                 sum(p[1] for p in pixels) // n,
                 sum(p[2] for p in pixels) // n,
             )
-            # pad_bottom_ratio=0.14 adds ~14% solid bg beneath the chest.
-            # The AI's 22% name-safe-zone + 17% programmatic top padding
-            # already put ~39% of bg above the ears; 0% bottom made the
-            # composition extremely bottom-heavy on 12×16 and 16×20 canvas
-            # faces. 14% bottom sets the chest at ~87% of the final image
-            # height, leaving ~13% neon bg below — closer to a balanced
-            # Andy-Warhol-style poster composition.
+            # Normalise the AI's bg pixels to the exact sampled colour before
+            # padding. Gemini leaves subtle edge vignette / corner darkening
+            # even when the prompt demands edge-to-edge solid colour — the
+            # AI-generated perimeter is slightly darker than the interior bg,
+            # and when our solid-colour padding surrounds it the contrast reads
+            # as a visible rectangular border. Snapping all pixels within ~70
+            # RGB-distance of the true bg to exactly that colour eliminates
+            # the seam. Pet colours (hot pink, electric blue, orange, yellow)
+            # sit 200–600 RGB units from any solid neon bg and are untouched.
+            try:
+                import numpy as _np
+                _arr = _np.array(ai_image_no_name.convert("RGB"), dtype=_np.int32)
+                _diff = _np.abs(_arr - _np.array(bg, dtype=_np.int32)).sum(axis=2)
+                _mask = _diff <= 70
+                _out = _arr.copy()
+                _out[_mask] = _np.array(bg, dtype=_np.int32)
+                ai_image_no_name = Image.fromarray(_out.astype(_np.uint8))
+            except ImportError:
+                _img_rgb = ai_image_no_name.convert("RGB")
+                _pixels = list(_img_rgb.getdata())
+                _pixels = [
+                    bg if abs(p[0]-bg[0])+abs(p[1]-bg[1])+abs(p[2]-bg[2]) <= 70 else p
+                    for p in _pixels
+                ]
+                _img_rgb.putdata(_pixels)
+                ai_image_no_name = _img_rgb
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.17, solid_bg_color=bg,
                 pad_bottom_ratio=0.14,
