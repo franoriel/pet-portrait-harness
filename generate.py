@@ -39,6 +39,11 @@ log = logging.getLogger(__name__)
 MAX_CONCURRENT_GENERATIONS = int(os.environ.get("MAX_CONCURRENT_GENERATIONS", 20))
 _generation_semaphore = threading.Semaphore(MAX_CONCURRENT_GENERATIONS)
 
+# Small pool for fire-and-forget background tasks (e.g. eye-critic) that must
+# not block the customer-facing generation hot path.
+from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor
+_bg_pool = _ThreadPoolExecutor(max_workers=2, thread_name_prefix="gen-bg")
+
 OUTPUT_DIR = Path("output")
 FONTS_DIR  = Path("fonts")
 
@@ -6023,35 +6028,38 @@ def _generate_inner(
                 log.debug("[generate] flat-sticker check passed (style=%s)", style)
 
         # Failure-mode check #4: eye-quality critic (Gemini-as-judge).
-        # LOG ONLY for now — same calibration rollout as dark-stencil.
-        # Scoped to BGP + modern-shape-art because those are where eye
-        # failures surfaced (creepy/glowing irises, missing eyes on
-        # fluffy faces, divergent gaze). The critic costs ~$0.0001 per
-        # call — rounding error on the $0.04 base generation cost — so
-        # firing it on every candidate is fine. Set
-        # PP_DISABLE_EYE_CRITIC=1 to bypass.
+        # LOG ONLY — same calibration rollout as dark-stencil. Runs in a
+        # background thread so it never adds latency to the customer-facing
+        # hot path (the result is observational only; no retry is triggered).
+        # Scoped to BGP + modern-shape-art. Set PP_DISABLE_EYE_CRITIC=1 to skip.
         if style in ("bold-graphic-poster", "modern-shape-art"):
-            critique = _critique_eyes(candidate_bytes)
-            if critique is not None:
+            _critique_bytes = candidate_bytes
+            _critique_style = style
+            _critique_attempt = ocr_attempt
+            _critique_max = _OCR_MAX_REGEN
+            def _run_eye_critique(
+                _b=_critique_bytes, _s=_critique_style,
+                _a=_critique_attempt, _m=_critique_max,
+            ):
+                critique = _critique_eyes(_b)
+                if critique is None:
+                    return  # fail-open — disabled or Gemini unreachable
                 if critique["min_score"] < _EYE_CRITIC_MIN_SCORE:
                     log.warning(
                         "[generate] eye-critic min_score=%d (visible=%d "
                         "non_creepy=%d gaze=%d) issues=%r on attempt %d/%d "
                         "(style=%s) — NOT retrying yet (logging-only mode); "
-                        "shipping this candidate",
+                        "shipped",
                         critique["min_score"], critique["visible"],
                         critique["non_creepy"], critique["gaze_symmetric"],
-                        critique["issues"], ocr_attempt + 1,
-                        _OCR_MAX_REGEN + 1, style,
+                        critique["issues"], _a + 1, _m + 1, _s,
                     )
                 else:
                     log.debug(
                         "[generate] eye-critic passed min_score=%d (style=%s)",
-                        critique["min_score"], style,
+                        critique["min_score"], _s,
                     )
-            # critique is None → fail-open (Gemini critic unreachable or
-            # disabled). Don't log warning — that's the expected disabled
-            # path, not a failure.
+            _bg_pool.submit(_run_eye_critique)
 
         # All blocking checks passed — accept this candidate.
         raw_bytes = candidate_bytes
