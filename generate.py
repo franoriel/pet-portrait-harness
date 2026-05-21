@@ -3956,24 +3956,28 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
                 target_aspect=PRINT_ASPECT_1_1,
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
+    if style_id == "neon-pop-art":
+        # Neon pop art has a solid uniform background; the name safe zone
+        # at the top is plain background, not a calm-paper/wash band.
+        # Side-padding only preserves height but leaves 10-15% background
+        # above AND below the pet in the 1:1 file, making the pet float
+        # in every square-canvas mockup AND on the printed canvas.
+        # Center-crop clips ~10% from top and bottom: dog head lands at
+        # ≈3% of the square, body flush at ≈97%. Names composite at
+        # zone_top≈0.17 in the 4:5 — after 10% top clip they land at
+        # ≈8.75% of the 1:1 face, comfortably visible.
+        return crop_to_ratio(img, target_aspect)
     if style_id in {
-        "watercolor", "minimal-line-art", "neon-pop-art",
+        "watercolor", "minimal-line-art",
         "renaissance-royalty", "charcoal", "aura-gradient",
         "bold-graphic-poster",
     }:
         # Pad sides to preserve the top NAME SAFE ZONE — a centred
         # tight-crop would drop the calm-paper / calm-wash / calm-field
         # band and put the pet's ears flush against the new canvas top.
-        # Saturated-flat-bg styles fill the side pad with the corner-
-        # sampled bg colour (edge replication can streak imperfect AI
-        # edges into a visible band); organic-bg styles edge-replicate
-        # so wash / halo / paper texture continues smoothly outward.
-        # neon-pop-art is the only single-flat-bg style still using the
-        # corner-sampled solid fill — bold-graphic-poster's 2-tone vertical
-        # split is preserved correctly by edge replication (each side pads
-        # with that side's bg colour).
-        solid_bg = style_id == "neon-pop-art"
-        return _pad_sides_to_aspect(img, target_aspect, solid_bg=solid_bg)
+        # Organic-bg styles edge-replicate so wash / halo / paper texture
+        # continues smoothly outward.
+        return _pad_sides_to_aspect(img, target_aspect, solid_bg=False)
     if style_id == "aura-gradient":
         return crop_to_ratio(img, target_aspect)
     return _tight_crop_to_aspect(img, target_aspect=target_aspect)
