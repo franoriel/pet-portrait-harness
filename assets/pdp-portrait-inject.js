@@ -532,21 +532,17 @@
         cropBotFrac = 0;
         cropSideFrac = 0;
       } else if (styleId === 'neon-pop-art') {
-        // Neon Pop Art on a square face from the 4:5 master.
-        // Scale source to fill 100% of face width (hScale=100). Since
-        // source is 4:5 the element must be 125% tall to keep the aspect
-        // (100 / 0.8 = 125). Bottom-anchor so the pet's feet land at
-        // canvas-face y=100%: topPct = 100 - 125 = -25. The top 25% of
-        // the source (name band + upper bg) is clipped by cropWindow;
-        // for the named case the 1:1 derivative (srcIs1x1 path) is used
-        // instead so this only runs for the no-name fallback.
+        // Neon pop art, square face, 4:5 master source.
+        // The 4:5 preview has ~10-15% solid bg above and below the pet;
+        // the pet body is NOT flush at source y=100%, so bottom-anchoring
+        // via topPct=-25 leaves a visible gap. Center-crop instead:
+        // object-fit:cover + object-position:center clips equal margins
+        // (~10%) from top and bottom, placing the pet body at ≈3–97% of
+        // the canvas face regardless of the exact bg margin height.
         cropTopFrac = 0;
         cropBotFrac = 0;
         cropSideFrac = 0;
-        hScaleOverride = 100;
-        vScaleOverride = 125;
-        leftPctOverride = 0;
-        topPctOverride = -25;
+        coverPosition = 'center center';
       } else {
         // Other styles on a square face from the 4:5 master (watercolor
         // / charcoal etc.): cover-crop with bottom anchoring so the
