@@ -1474,6 +1474,105 @@
     }
   }
 
+  // ── Gift / Memorial picker ─────────────────────────────────
+  // Two independent checkboxes; either or both can be selected.
+  // A shared free-text note appears when at least one is checked.
+  // Values sync to hidden form inputs so they travel with the order.
+  (function buildGiftMemorialPicker() {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:16px;padding:14px 16px;'
+      + 'border:1.5px solid var(--color-border,#e5e0db);border-radius:12px;'
+      + 'background:var(--color-surface,#faf9f7);display:flex;flex-direction:column;gap:12px;';
+
+    var heading = document.createElement('p');
+    heading.style.cssText = "margin:0;font-family:'Inter',sans-serif;font-size:var(--text-xs);"
+      + 'font-weight:600;letter-spacing:0.06em;text-transform:uppercase;'
+      + 'color:var(--color-muted,#8a8580);';
+    heading.textContent = 'This portrait is…';
+    wrap.appendChild(heading);
+
+    var checkboxArea = document.createElement('div');
+    checkboxArea.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+    function makeCheckRow(labelText) {
+      var lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:10px;cursor:pointer;';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.style.cssText = 'width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:#1C1C1C;';
+      var txt = document.createElement('span');
+      txt.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-sm);"
+        + 'font-weight:500;color:var(--color-ink,#1C1C1C);';
+      txt.textContent = labelText;
+      lbl.appendChild(cb);
+      lbl.appendChild(txt);
+      return { row: lbl, cb: cb };
+    }
+
+    var giftRow     = makeCheckRow('A gift');
+    var memorialRow = makeCheckRow('A memorial');
+    checkboxArea.appendChild(giftRow.row);
+    checkboxArea.appendChild(memorialRow.row);
+    wrap.appendChild(checkboxArea);
+
+    // Shared message — shown when either checkbox is checked
+    var msgSection = document.createElement('div');
+    msgSection.style.cssText = 'display:none;flex-direction:column;gap:6px;';
+
+    var msgLabel = document.createElement('p');
+    msgLabel.style.cssText = "margin:0;font-family:'Inter',sans-serif;font-size:var(--text-xs);"
+      + 'font-weight:600;letter-spacing:0.05em;text-transform:uppercase;'
+      + 'color:var(--color-muted,#8a8580);';
+    msgLabel.textContent = 'Personal message (optional)';
+
+    var msgHint = document.createElement('p');
+    msgHint.style.cssText = "margin:0;font-family:'Inter',sans-serif;font-size:var(--text-xs);"
+      + 'color:var(--color-muted,#8a8580);line-height:1.4;';
+    msgHint.textContent = 'We’ll include this with your order.';
+
+    var msgArea = document.createElement('textarea');
+    msgArea.placeholder = 'e.g. “For Mum — a tribute to 14 wonderful years with Biscuit.”';
+    msgArea.maxLength = 300;
+    msgArea.rows = 3;
+    msgArea.style.cssText = "font-family:'Inter',sans-serif;font-size:var(--text-sm);"
+      + 'color:var(--color-ink,#1C1C1C);width:100%;box-sizing:border-box;'
+      + 'padding:10px 12px;border:1.5px solid var(--color-border,#e5e0db);'
+      + 'border-radius:8px;background:#fff;resize:vertical;line-height:1.5;'
+      + 'outline:none;transition:border-color 0.15s;';
+    msgArea.addEventListener('focus', function () { msgArea.style.borderColor = '#1C1C1C'; });
+    msgArea.addEventListener('blur',  function () { msgArea.style.borderColor = 'var(--color-border,#e5e0db)'; });
+
+    msgSection.appendChild(msgLabel);
+    msgSection.appendChild(msgHint);
+    msgSection.appendChild(msgArea);
+    wrap.appendChild(msgSection);
+
+    function syncInputs() {
+      var f = document.querySelector('.product-form, form[action*="/cart/add"]');
+      if (!f) return;
+      var gi  = f.querySelector('input[name="properties[_Gift]"]');
+      var mi  = f.querySelector('input[name="properties[_Memorial]"]');
+      var gmi = f.querySelector('input[name="properties[_Gift Message]"]');
+      if (gi)  gi.value  = giftRow.cb.checked     ? 'Yes' : 'No';
+      if (mi)  mi.value  = memorialRow.cb.checked  ? 'Yes' : 'No';
+      if (gmi) gmi.value = msgArea.value.trim();
+    }
+
+    function onToggle() {
+      var anyChecked = giftRow.cb.checked || memorialRow.cb.checked;
+      msgSection.style.display = anyChecked ? 'flex' : 'none';
+      syncInputs();
+    }
+
+    giftRow.cb.addEventListener('change', onToggle);
+    memorialRow.cb.addEventListener('change', onToggle);
+    msgArea.addEventListener('input', syncInputs);
+
+    if (insertTarget && insertTarget.parentNode) {
+      insertTarget.parentNode.insertBefore(wrap, insertTarget);
+    }
+  })();
+
   // ── Inject hidden line item properties into the product form ──
   var form = document.querySelector('.product-form, form[action*="/cart/add"]');
   if (form) {
@@ -1519,6 +1618,9 @@
       '_Print File URL 3x4': printFileUrl3x4,                // un-watermarked hi-res 3:4 PNG (canvas-12x16)
       '_Print File URL 1x1': printFileUrl1x1,                // un-watermarked hi-res 1:1 PNG (canvas-12x12 / 16x16)
       '_No Name Preview URL': cdnUrls[1] || cdnUrls[0] || '', // watermarked no-name WebP for cart display (e.g. magnet upsell thumbnail)
+      '_Gift': 'No',          // updated reactively by gift/memorial picker UI
+      '_Memorial': 'No',
+      '_Gift Message': '',
     };
     Object.keys(props).forEach(function (key) {
       var input = document.createElement('input');
