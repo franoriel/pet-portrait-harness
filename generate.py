@@ -6102,22 +6102,13 @@ def _generate_inner(
                 sum(p[1] for p in pixels) // n,
                 sum(p[2] for p in pixels) // n,
             )
-            # Mirror the bold-graphic-poster border fix exactly:
-            #   1. TRIM  — walk inward from each edge, removing rows/cols
-            #              where fewer than 55% of pixels are within Euclidean
-            #              70 of the true bg. Physically removes the AI's dark
-            #              vignette/edge-darkening before padding touches it.
-            #   2. FLATTEN — after padding, snap every pixel in the combined
-            #              image that is within Euclidean 90 of the bg to
-            #              exactly the sampled bg colour, killing any remaining
-            #              near-bg variation inside the AI content area.
-            # Pet colours (hot pink, electric blue, orange) sit 200-600
-            # Euclidean units from any solid neon bg — untouchable at tol 90.
-            _bg_hex = "#{:02X}{:02X}{:02X}".format(*bg)
-            _fake_pal = {"bg_left_hex": _bg_hex, "bg_right_hex": _bg_hex}
-            ai_image_no_name = _trim_off_palette_margin(
-                ai_image_no_name, _fake_pal, bg_match_tol=70, row_threshold=0.55,
-            )
+            # Border-seam fix: the AI's vignette/edge-darkening can leave a
+            # visible rectangle where programmatic padding meets AI content.
+            # We fix this AFTER padding via Euclidean ≤ 90 flatten (below).
+            # We do NOT trim the AI image before padding — _trim_off_palette_margin
+            # walks from every edge and with pad_bottom_ratio=0 the pet is flush
+            # at the bottom, so bottom rows are all pet pixels, causing the trim
+            # to aggressively cut into the pet and corrupt the image.
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.17, solid_bg_color=bg,
                 pad_bottom_ratio=0,
