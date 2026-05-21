@@ -155,11 +155,6 @@
 
   if (!previewUrls.length) return;
 
-  console.log('[PetPrintables] previewUrls count:', previewUrls.length,
-    '| url[0] type:', (previewUrls[0] || '').slice(0, 30),
-    '| previewDataUrls type:', Array.isArray(data.previewDataUrls) ? 'array(' + (data.previewDataUrls||[]).length + ')' : typeof data.previewDataUrls,
-    '| previewCdnUrls type:', Array.isArray(data.previewCdnUrls) ? 'array(' + (data.previewCdnUrls||[]).length + ')' : typeof data.previewCdnUrls);
-
   // Check expiry (7 days)
   var age = Date.now() - new Date(data.generatedAt).getTime();
   if (age > 24 * 60 * 60 * 1000) { try { localStorage.removeItem(LS_KEY); } catch (e) {} return; }
@@ -597,7 +592,6 @@
     // entirely, not just the canvas-sampling. Use a separate hidden image for
     // the corner-sample so the visible portrait always loads.
     portraitImg.onerror = function () {
-      console.warn('[PetPrintables] portraitImg onerror, src was:', (portraitImg.src||'').slice(0,80));
       if (portraitImg.src !== previewUrl && previewUrl) { portraitImg.src = previewUrl; }
     };
     portraitImg.src = portraitSrc;
@@ -800,7 +794,6 @@
       return { url: fallbackUrl, matches: false, watermark: false, srcIs1x1: useSquareSrc };
     }
 
-    console.log('[PetPrintables] gallery found:', !!gallery, '| sizes:', Object.keys(sizes), '| previewUrl:', (previewUrl||'').slice(0,60));
     var allSizeKeys = Object.keys(sizes);
     allSizeKeys.forEach(function (sizeKey) {
       var dim = sizes[sizeKey];
@@ -810,7 +803,6 @@
       mockupSlide.setAttribute('data-variant-size', sizeKey);
 
       var pick = pickPrintSrcForFace(dim.w, dim.h);
-      console.log('[PetPrintables] mockup', sizeKey, '| pick.url:', (pick.url||'').slice(0,60), '| matches:', pick.matches);
       var clientMockup = createClientMockup(
         pick.url, dim.w, dim.h, sizeKey,
         !!pick.srcIs1x1, styleId,
