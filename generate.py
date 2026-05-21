@@ -3626,15 +3626,13 @@ def _center_line_art(img: Image.Image) -> Image.Image:
     return shifted
 
 
-def _center_horizontal_weight(img: Image.Image) -> Image.Image:
+def _center_horizontal_weight(img: Image.Image, known_bg=None) -> Image.Image:
     """Shift image content LEFT or RIGHT so the visual mass is horizontally
     centred. Vertical position is never changed (flush-bottom rule preserved).
 
-    Works by sampling corners for the background colour, then finding the
-    horizontal extent of foreground pixels. If the subject's centre-x is
-    more than 1.5% away from the canvas mid-point, the whole image is
-    translated horizontally and the exposed strip is filled with the
-    background colour.
+    known_bg: optional (R,G,B) tuple. When provided, skips corner sampling
+    (needed for flush-bottom styles where bottom corners contain pet pixels,
+    which would corrupt the bg estimate and shift the image incorrectly).
 
     No-op when:
       • foreground detection fails (degenerate / very low contrast)
@@ -3643,19 +3641,23 @@ def _center_horizontal_weight(img: Image.Image) -> Image.Image:
     rgb = img.convert('RGB')
     w, h = rgb.size
 
-    corner_size = max(8, min(w, h) // 50)
-    corner_pixels: list = []
-    for x0, y0 in [(0, 0), (w - corner_size, 0),
-                   (0, h - corner_size), (w - corner_size, h - corner_size)]:
-        corner_pixels.extend(
-            rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata()
-        )
-    if not corner_pixels:
-        return img
-    avg_r = sum(p[0] for p in corner_pixels) / len(corner_pixels)
-    avg_g = sum(p[1] for p in corner_pixels) / len(corner_pixels)
-    avg_b = sum(p[2] for p in corner_pixels) / len(corner_pixels)
-    bg_color = (int(avg_r), int(avg_g), int(avg_b))
+    if known_bg is not None:
+        avg_r, avg_g, avg_b = known_bg
+        bg_color = (int(avg_r), int(avg_g), int(avg_b))
+    else:
+        corner_size = max(8, min(w, h) // 50)
+        corner_pixels: list = []
+        for x0, y0 in [(0, 0), (w - corner_size, 0),
+                       (0, h - corner_size), (w - corner_size, h - corner_size)]:
+            corner_pixels.extend(
+                rgb.crop((x0, y0, x0 + corner_size, y0 + corner_size)).getdata()
+            )
+        if not corner_pixels:
+            return img
+        avg_r = sum(p[0] for p in corner_pixels) / len(corner_pixels)
+        avg_g = sum(p[1] for p in corner_pixels) / len(corner_pixels)
+        avg_b = sum(p[2] for p in corner_pixels) / len(corner_pixels)
+        bg_color = (int(avg_r), int(avg_g), int(avg_b))
     bg_lum = 0.299 * avg_r + 0.587 * avg_g + 0.114 * avg_b
 
     grey = rgb.convert('L')
@@ -6130,7 +6132,7 @@ def _generate_inner(
                 ]
                 _pp.putdata(_pxs)
                 padded = _pp
-            padded = _center_horizontal_weight(padded)
+            padded = _center_horizontal_weight(padded, known_bg=bg)
         elif style == "bold-graphic-poster":
             # Cubist 2-tone vertical-split bg. We KNOW the exact target
             # bg colours from the palette pick, so pad with the canonical
