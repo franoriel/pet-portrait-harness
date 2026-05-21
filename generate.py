@@ -6084,36 +6084,43 @@ def _generate_inner(
                 sum(p[1] for p in pixels) // n,
                 sum(p[2] for p in pixels) // n,
             )
-            # Normalise the AI's bg pixels to the exact sampled colour before
-            # padding. Gemini leaves subtle edge vignette / corner darkening
-            # even when the prompt demands edge-to-edge solid colour — the
-            # AI-generated perimeter is slightly darker than the interior bg,
-            # and when our solid-colour padding surrounds it the contrast reads
-            # as a visible rectangular border. Snapping all pixels within ~70
-            # RGB-distance of the true bg to exactly that colour eliminates
-            # the seam. Pet colours (hot pink, electric blue, orange, yellow)
-            # sit 200–600 RGB units from any solid neon bg and are untouched.
-            try:
-                import numpy as _np
-                _arr = _np.array(ai_image_no_name.convert("RGB"), dtype=_np.int32)
-                _diff = _np.abs(_arr - _np.array(bg, dtype=_np.int32)).sum(axis=2)
-                _mask = _diff <= 70
-                _out = _arr.copy()
-                _out[_mask] = _np.array(bg, dtype=_np.int32)
-                ai_image_no_name = Image.fromarray(_out.astype(_np.uint8))
-            except ImportError:
-                _img_rgb = ai_image_no_name.convert("RGB")
-                _pixels = list(_img_rgb.getdata())
-                _pixels = [
-                    bg if abs(p[0]-bg[0])+abs(p[1]-bg[1])+abs(p[2]-bg[2]) <= 70 else p
-                    for p in _pixels
-                ]
-                _img_rgb.putdata(_pixels)
-                ai_image_no_name = _img_rgb
+            # Mirror the bold-graphic-poster border fix exactly:
+            #   1. TRIM  — walk inward from each edge, removing rows/cols
+            #              where fewer than 55% of pixels are within Euclidean
+            #              70 of the true bg. Physically removes the AI's dark
+            #              vignette/edge-darkening before padding touches it.
+            #   2. FLATTEN — after padding, snap every pixel in the combined
+            #              image that is within Euclidean 90 of the bg to
+            #              exactly the sampled bg colour, killing any remaining
+            #              near-bg variation inside the AI content area.
+            # Pet colours (hot pink, electric blue, orange) sit 200-600
+            # Euclidean units from any solid neon bg — untouchable at tol 90.
+            _bg_hex = "#{:02X}{:02X}{:02X}".format(*bg)
+            _fake_pal = {"bg_left_hex": _bg_hex, "bg_right_hex": _bg_hex}
+            ai_image_no_name = _trim_off_palette_margin(
+                ai_image_no_name, _fake_pal, bg_match_tol=70, row_threshold=0.55,
+            )
             padded = add_background_padding(
                 ai_image_no_name, padding_ratio=0.17, solid_bg_color=bg,
                 pad_bottom_ratio=0.14,
             )
+            # FLATTEN — snap near-bg pixels in the combined padded image to
+            # the exact bg colour. Euclidean ≤ 90 (same tol as poster style).
+            try:
+                import numpy as _np2
+                _pa = _np2.array(padded.convert("RGB"), dtype=_np2.int32)
+                _d2 = ((_pa - _np2.array(bg, dtype=_np2.int32)) ** 2).sum(axis=2)
+                _m2 = _d2 <= 90 * 90
+                _pa[_m2] = _np2.array(bg, dtype=_np2.int32)
+                padded = Image.fromarray(_pa.astype(_np2.uint8))
+            except ImportError:
+                _pp = padded.convert("RGB")
+                _pxs = [
+                    bg if (p[0]-bg[0])**2+(p[1]-bg[1])**2+(p[2]-bg[2])**2 <= 8100
+                    else p for p in _pp.getdata()
+                ]
+                _pp.putdata(_pxs)
+                padded = _pp
             padded = _center_horizontal_weight(padded)
         elif style == "bold-graphic-poster":
             # Cubist 2-tone vertical-split bg. We KNOW the exact target
