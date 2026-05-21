@@ -3875,15 +3875,16 @@ def _pad_sides_to_aspect(
     pad_right = pad_total - pad_left
 
     if solid_bg:
-        # Sample the top corners — for solid-bg styles the corners are
-        # always pure background (the pet sits in the lower-middle and
-        # the name safe zone keeps the top corners free of detail).
-        cs = max(8, min(w, h) // 50)
-        corners = (
-            img.crop((0, 0, cs, cs)).getdata(),
-            img.crop((w - cs, 0, w, cs)).getdata(),
-        )
-        pixels = list(corners[0]) + list(corners[1])
+        # Sample bg from the centre-top strip (middle 40% width, top 10%
+        # height). Tiny corner squares misfired when the AI left a pixel of
+        # pet fur or edge artifact at a corner — the sample averaged wrong
+        # and produced a mismatched side-strip colour. The name-safe-zone
+        # centre-top is always clean solid bg for saturated-flat-bg styles.
+        sample_x0 = w * 3 // 10
+        sample_x1 = w * 7 // 10
+        sample_h  = max(10, h // 10)
+        strip = img.crop((sample_x0, 0, sample_x1, sample_h)).getdata()
+        pixels = list(strip)
         n = len(pixels)
         bg = (
             sum(p[0] for p in pixels) // n,
@@ -6057,17 +6058,21 @@ def _generate_inner(
             # Single-saturated-bg style: edge replication produces streaks
             # when the pet touches an edge (especially the bottom, which
             # the composition rule explicitly allows). Sample the bg colour
-            # from the top corners — pet never reaches there — and fill
-            # the padding ring with that solid colour.
-            #
-            # pad_bottom_ratio=0 enforces the universal flush-bottom rule.
+            # from the centre-top strip — the AI always leaves the upper
+            # name-safe-zone (top ~22%) as clean solid bg, and the centre
+            # of that strip is furthest from any pet edge or corner artifact.
+            # Tiny corner squares (old approach) misfired when the AI put
+            # even a pixel of coloured fur near a corner — the averaged
+            # sample came out wrong and painted a visible double-frame ring
+            # around the portrait (e.g. blue ring around a green-bg portrait).
             sw, sh = ai_image_no_name.size
-            cs = max(8, min(sw, sh) // 50)
-            corners = (
-                ai_image_no_name.crop((0, 0, cs, cs)).getdata(),
-                ai_image_no_name.crop((sw - cs, 0, sw, cs)).getdata(),
-            )
-            pixels = list(corners[0]) + list(corners[1])
+            sample_x0 = sw * 3 // 10          # middle 40% of width
+            sample_x1 = sw * 7 // 10
+            sample_h  = max(10, sh // 10)     # top 10% of height
+            strip = ai_image_no_name.crop(
+                (sample_x0, 0, sample_x1, sample_h)
+            ).getdata()
+            pixels = list(strip)
             n = len(pixels)
             bg = (
                 sum(p[0] for p in pixels) // n,
