@@ -165,6 +165,10 @@
               {%- if property.first == '_Style' -%}{%- assign style_val = property.last -%}{%- endif -%}
               {%- if property.first == '_Job ID' -%}{%- assign job_id_val = property.last -%}{%- endif -%}
             {%- endfor -%}
+            {%- assign style_allows_name = true -%}
+            {%- if style_val == 'neon-pop-art' or style_val == 'renaissance-royalty' or style_val == 'aura-gradient' -%}
+              {%- assign style_allows_name = false -%}
+            {%- endif -%}
             <div class="cart-page__item"
                  data-cart-item="{{ item.key }}"
                  data-show-name="{{ show_name }}"
@@ -251,7 +255,7 @@
                     </svg>
                   </a>
                 </div>
-                {%- if pet_name_val != blank -%}
+                {%- if pet_name_val != blank and style_allows_name -%}
                 <div class="cart-page__name-toggle" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:var(--text-sm);">
                   <span style="color:var(--color-muted);">Name on portrait:</span>
                   <button type="button" class="cart-name-btn" data-name-value="Yes"
