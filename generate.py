@@ -515,21 +515,26 @@ pushed to canvas edges.\
 """
 
 _NEON_POP_ART_TEMPLATE = """\
-Transform this photo into a neon pop art pet portrait.
+Transform this photo into a neon pop art pet portrait — fine art quality, \
+gallery-ready. Think Andy Warhol's Endangered Species series or Marilyn Diptych: \
+bold, iconic, sophisticated. This hangs in a creative director's loft or an \
+LA influencer's home — NOT a cartoon, NOT a children's illustration.
 
 COLOR ACCURACY — THIS IS CRITICAL:
 - Use the animal's fur/coat pattern and markings as the structural guide. \
 Reinterpret the coat in bold saturated pop art colors — but preserve all \
 distinguishing markings, patches, and patterns from the original photo.
-- The overall palette should be electric and vibrant: hot pink, electric blue, \
-neon green, bright orange, vivid yellow.
+- LIMIT TO 4-5 INTENTIONAL COLORS on the pet — deliberate like a screen-print \
+ink run, not a rainbow. Each color section is a graphic choice. \
+Pick from: hot pink, electric blue, neon green, bright orange, vivid yellow, \
+violet — but use only 4-5 total across the entire pet.
 - Match the animal's actual eye shape and expression from the photo.
 
 STYLE:
-- Bold thick black outlines on the PET'S body parts, fur edges, and \
-facial features only (comic book / screen print weight). NO outline, \
-border, or framing line around the entire composition — the background \
-meets the canvas edge cleanly with no decorative ring or oval.
+- Bold black outlines on the PET'S body parts, fur edges, and \
+facial features only — screen-print weight, like a Warhol silkscreen. \
+NO outline, border, or framing line around the entire composition — the \
+background meets the canvas edge cleanly with no decorative ring or oval.
 - COMPLETE FLAT COLOR FILLS — every single section of the pet's body \
 must be filled with a solid saturated colour: face, ears, neck, chest, \
 shoulders, all fur sections — top to bottom, edge to edge of the pet. \
@@ -558,10 +563,11 @@ complete and anatomically correct — the pet does NOT extend to or crop \
 at any canvas edge. The pet sits comfortably within the canvas, \
 surrounded by the saturated bg on all sides. The bg is fully solid \
 and edge-to-edge.
-- Andy Warhol meets Keith Haring aesthetic — playful, graphic, punchy
-- Halftone dot texture in select areas of the PET ONLY for retro pop feel \
-(never on the background)
-- Fine art illustration style, high resolution 300dpi, print-ready
+- Andy Warhol silkscreen aesthetic — graphic, powerful, iconic. \
+NOT Keith Haring cartoon energy. Sophisticated, not cute.
+- Halftone dot texture in select areas of the PET ONLY for retro screen-print \
+feel (never on the background)
+- Fine art print quality, high resolution 300dpi, print-ready
 
 UPPER BAND — CRITICAL: A pet name will be composited into the TOP \
 of the finished image. Reserve the upper ~22% of the canvas as a CALM \
@@ -3958,14 +3964,13 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
     if style_id == "neon-pop-art":
-        # Neon pop art 1:1: pad sides with the solid neon bg colour — never
-        # crop height. The 4:5 master is a tight bust composition (head at
-        # ~15-20% from top, chest at ~85-90%), so ANY height crop loses either
-        # the head or the chest. _pad_sides_to_aspect adds matching bg strips
-        # on the left and right to reach 1:1 without touching the vertical.
-        # solid_bg=True samples the top-corner bg colour (always pure neon,
-        # never pet) so the strips are indistinguishable from the existing bg.
-        return _pad_sides_to_aspect(img, target_aspect, solid_bg=True)
+        # Neon pop art 1:1: centre-crop to square. The 4:5 master has a
+        # name-safe-zone that leaves ~15-20% solid bg above the pet's head.
+        # Padding sides preserves that empty zone and makes the dog look
+        # small/floating on the 12×12 canvas. Cropping 10% from each end
+        # brings the head to ~5-10% from the top — tight and impactful like
+        # a Warhol portrait — and keeps the full chest visible at ~90%.
+        return crop_to_ratio(img, target_aspect, gravity="center")
     if style_id in {
         "watercolor", "minimal-line-art",
         "renaissance-royalty", "charcoal", "aura-gradient",
