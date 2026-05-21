@@ -3957,16 +3957,16 @@ def derive_aspect(img: Image.Image, target_aspect: tuple, style_id: str = "") ->
             )
         return _modern_shape_art_reframe(img, target_aspect=target_aspect)
     if style_id == "neon-pop-art":
-        # Neon pop art has a solid uniform background; the name safe zone
-        # at the top is plain background, not a calm-paper/wash band.
-        # Side-padding only preserves height but leaves 10-15% background
-        # above AND below the pet in the 1:1 file, making the pet float
-        # in every square-canvas mockup AND on the printed canvas.
-        # Center-crop clips ~10% from top and bottom: dog head lands at
-        # ≈3% of the square, body flush at ≈97%. Names composite at
-        # zone_top≈0.17 in the 4:5 — after 10% top clip they land at
-        # ≈8.75% of the 1:1 face, comfortably visible.
-        return crop_to_ratio(img, target_aspect)
+        # Neon pop art: anchor to top, crop from bottom.
+        # gravity="top" preserves the background breathing room above the
+        # pet's head (same margin visible in the step-3 preview) and
+        # removes empty background from the bottom, pushing the pet's body
+        # toward the canvas bottom. Center-crop was shifting the pet too
+        # high: clipping 10% off the top put the ears flush against the
+        # canvas edge and left excess background below the body.
+        # Names composite at zone_top≈0.17 in the 4:5 — fully preserved
+        # since gravity="top" removes nothing from the top.
+        return crop_to_ratio(img, target_aspect, gravity="top")
     if style_id in {
         "watercolor", "minimal-line-art",
         "renaissance-royalty", "charcoal", "aura-gradient",
